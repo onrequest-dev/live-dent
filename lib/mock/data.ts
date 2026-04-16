@@ -12,7 +12,8 @@ export const mockClinic: Clinic = {
   logo: '/img/logo.png',
   subscriptionStatus: 'active',
   createdAt: new Date('2023-01-01'),
-  
+  address:'دوار الشيخ تلت عإيدك التالتة بتمد راسك بين اجريك بتشوف العيادة',
+
   doctorProfile: {
     fullName: 'د. أحمد محمد العنزي',
     specialization: 'دكتوراه في تركيبات وتجميل الأسنان',
@@ -29,6 +30,8 @@ export const mockClinic: Clinic = {
     ],
     photo: '/img/image.png',
     contactEmail: 'dr.ahmed@ebtesama-clinic.com',
+    graduationYear: 2004,
+    university:'جامعة الجنق'
   },
   
   settings: {

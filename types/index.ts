@@ -9,7 +9,7 @@ export interface Clinic {
   logo?: string;                        // رابط صورة الشعار (اختياري) - يستخدم في الصفحة العامة وفي كرت المريض
   subscriptionStatus: 'active' | 'expired' | 'trial'; // حالة الاشتراك في النظام: active=مدفوع وفعال | expired=منتهي | trial=فترة تجريبية مجانية
   createdAt: Date;                      // تاريخ ووقت إنشاء حساب العيادة في النظام
-
+  address?: string;                     //عنوان العيادة
   doctorProfile: DoctorProfile;         // بيانات الطبيب الشخصية (تستخدم لعمل صفحة CV عامة)
 
   settings: {                           // إعدادات قابلة للتخصيص من قبل الطبيب
@@ -29,6 +29,8 @@ export interface DoctorProfile {
   experience: string[];      // الخبرات العملية - مصفوفة نصوص (مثال: ["10 سنوات في مجال زراعة الأسنان", "مدير مركز الابتسامة الطبي منذ 2018"])
   photo?: string;            // رابط الصورة الشخصية للطبيب (اختياري)
   contactEmail?: string;     // بريد إلكتروني مخصص لاستقبال استفسارات المرضى (قد يختلف عن بريد تسجيل الدخول)
+  graduationYear: number;     // سنة التخرج
+  university: string;         //الجامعة التي تخرج منها
 }
 
 // 📅 أوقات العمل لأيام الأسبوع

@@ -200,6 +200,19 @@ export default function DoctorCVPage({ params }: { params: { clinicId: string } 
                   {doctor.about}
                 </p>
               </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                <p className="text-gray-600 leading-relaxed max-w-2xl text-lg">
+                   خريج جامعة : {doctor.university} 
+                </p>
+                <p className="text-gray-600 leading-relaxed max-w-2xl text-lg">
+                    عام : {doctor.graduationYear}
+                </p>
+              </motion.div>
             </motion.div>
           </div>
 
@@ -262,8 +275,8 @@ export default function DoctorCVPage({ params }: { params: { clinicId: string } 
                       <MapPin size={22} style={{ color: primaryColor }} />
                     </motion.div>
                     <div>
-                      <p className="text-xs text-gray-500 mb-1">الموقع</p>
-                      <p className="font-medium text-gray-800">الرياض، المملكة العربية السعودية</p>
+                      <p className="text-xs text-gray-500 mb-1">يعمل حاليا في :{clinic.name}</p>
+                      <p className="font-medium text-gray-800">{clinic.address}</p>
                     </div>
                   </div>
                 </div>

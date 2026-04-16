@@ -119,8 +119,7 @@ export default function PublicClinicPage({ params }: { params: { clinicId: strin
                   </div>
                   <div className="text-right flex-1 min-w-0">
                     <p className="text-sm text-gray-500 mb-1">موقع العيادة</p>
-                    <p className="font-bold text-gray-800 truncate">الرياض</p>
-                    <p className="text-sm text-gray-600 truncate">حي الياسمين، طريق الملك عبدالعزيز</p>
+                    <p className="text-sm text-gray-600 truncate">{clinic.address}</p>
                   </div>
                 </div>
               </motion.div>
