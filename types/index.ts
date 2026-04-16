@@ -59,6 +59,8 @@ export interface Patient {
 
 // 3️⃣ الجلسة الموحدة (Session) - تمثل موعداً مستقبلياً أو جلسة علاجية منتهية
 // (هذا الكيان يدمج مفهوم المواعيد والجلسات المنتهية في جدول واحد لتسهيل العرض)
+export type SessionStatus = 'scheduled' | 'completed' | 'cancelled' | 'no-show' | 'in-progress';
+export type paymentMethod = 'cash' | 'card' | 'transfer';
 export interface Session {
   id: string;                      // معرف فريد للجلسة (UUID)
   clinicId: string;                // معرف العيادة (للعزل وتصفية البيانات)
@@ -70,7 +72,7 @@ export interface Session {
   endTime: Date;                   // تاريخ ووقت نهاية الموعد/الجلسة (يُحسب تلقائياً من مدة الجلسة)
 
   // 📌 الحالة
-  status: 'scheduled' | 'completed' | 'cancelled' | 'no-show'|'in-progress';
+  status: SessionStatus;
   // 'scheduled' = موعد مستقبلي محجوز ولم يحن وقته بعد
   // 'completed' = جلسة تمت بالفعل وحضرها المريض
   // 'cancelled' = موعد تم إلغاؤه قبل موعده (من قبل الطبيب أو المريض)
@@ -85,12 +87,12 @@ export interface Session {
   // 💰 الدفع الخاص بهذه الجلسة تحديداً
   sessionCost: number;              // تكلفة هذه الجلسة الواحدة (بالعملة المحلية)
   isPaid: boolean;                  // هل تم دفع تكلفة هذه الجلسة؟ (true = نعم, false = لا)
-  paymentMethod?: 'cash' | 'card' | 'transfer'; // طريقة الدفع المستخدمة (تظهر فقط إذا كانت isPaid = true)
+  paymentMethod?: paymentMethod;    // طريقة الدفع المستخدمة (تظهر فقط إذا كانت isPaid = true)
   paidAt?: Date;                    // تاريخ ووقت إتمام عملية الدفع (يظهر فقط إذا كانت isPaid = true)
 
   // 📞 نسخة مجمدة من بيانات المريض (Snapshot)
   // الهدف: إذا قام الطبيب بتغيير رقم جوال المريض غداً، لا تتغير بيانات التواصل في المواعيد القديمة المسجلة
-  patientSnapshot: {
+  patientSnapshot?: {
     name: string;                  // اسم المريض لحظة حجز/إنشاء هذه الجلسة
     phone: string;                 // رقم جوال المريض لحظة حجز/إنشاء هذه الجلسة
   };
