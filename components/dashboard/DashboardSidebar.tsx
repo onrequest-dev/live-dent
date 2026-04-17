@@ -23,6 +23,7 @@ import {
   X,
 } from 'lucide-react';
 import { mockClinic} from '@/lib/mock/data';
+// get 
 
 const menuItems = [
   { tab: 'main', label: 'الرئيسية', icon: LayoutDashboard },

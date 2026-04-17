@@ -2,6 +2,8 @@
 // types/index.ts 
 // ============================================================
 
+import { JwtPayload } from "jsonwebtoken";
+
 // 1️⃣ العيادة (Clinic) - الحساب الرئيسي للطبيب أو المركز الطبي
 export interface Clinic {
   id: string;                           // معرف فريد للعيادة في قاعدة البيانات (UUID)
@@ -127,4 +129,11 @@ export interface PatientCase {
 
   // 🔗 العلاقة (تستخدم لجلب البيانات من قاعدة البيانات)
   sessions: Session[];             // مصفوفة تحتوي على جميع جلسات هذه الحالة (مرتبة تصاعدياً حسب التاريخ)
+}
+export type ClinicEmployeeRole = 'admin'|'manager'|'employee';
+export interface ClinicEmployeeJwt extends JwtPayload {
+  id: string;
+  clinicId: string;
+  role : ClinicEmployeeRole;
+  subscriptionStatus : 'active' | 'expired' | 'trial';
 }
