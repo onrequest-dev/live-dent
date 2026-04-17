@@ -206,7 +206,7 @@ export default function PatientPage({ params }: { params: { clinicId: string; pa
             onClick={downloadCard}
             disabled={isDownloading}
             className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-medium text-white shadow-lg transition-all disabled:opacity-50 hover:shadow-xl transform hover:-translate-y-0.5"
-            style={{ background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)` }}
+            style={{ background: `linear-gradient(135deg, ${primaryColor} 0%)` }}
           >
             <Download size={20} className="animate-pulse" />
             <span>{isDownloading ? 'جاري التحميل...' : 'تحميل الكرت'}</span>
@@ -236,7 +236,7 @@ export default function PatientPage({ params }: { params: { clinicId: string; pa
           }}
         >
           {/* عناصر زخرفية SVG */}
-          <DecorativeCircles color={primaryColor} />
+          {/* <DecorativeCircles color={primaryColor} /> */}
           <WaveBackground color={primaryColor} />
           
           {/* المحتوى الرئيسي */}
@@ -279,7 +279,6 @@ export default function PatientPage({ params }: { params: { clinicId: string; pa
                 {/* شريط جانبي ملون */}
                 <div 
                   className="absolute right-0 top-0 bottom-0 w-1.5"
-                  style={{ background: `linear-gradient(180deg, ${primaryColor} 0%, ${secondaryColor} 100%)` }}
                 />
                 
                 <div className="flex items-start justify-between">
@@ -303,14 +302,6 @@ export default function PatientPage({ params }: { params: { clinicId: string; pa
                         </span>
                       </div>
                     </div>
-                  </div>
-                  
-                  {/* صورة رمزية للمريض */}
-                  <div 
-                    className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-md"
-                    style={{ background: `linear-gradient(135deg, ${primaryColor}20 0%, ${secondaryColor}20 100%)` }}
-                  >
-                    <User size={28} style={{ color: primaryColor }} />
                   </div>
                 </div>
               </div>
@@ -496,22 +487,6 @@ export default function PatientPage({ params }: { params: { clinicId: string; pa
                       {remainingAmount} ل.س
                     </span>
                   </div>
-                  
-                  {/* شريط تقدم الدفع */}
-                  <div className="mt-4">
-                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full transition-all duration-500"
-                        style={{ 
-                          width: `${totalAmount > 0 ? (totalPaid / totalAmount) * 100 : 0}%`,
-                          background: `linear-gradient(90deg, ${primaryColor} 0%, ${secondaryColor} 100%)`
-                        }}
-                      />
-                    </div>
-                    <p className="text-xs text-gray-500 mt-2 text-center">
-                      تم دفع {totalAmount > 0 ? Math.round((totalPaid / totalAmount) * 100) : 0}% من المبلغ الإجمالي
-                    </p>
-                  </div>
                 </div>
               </div>
             </div>
@@ -519,11 +494,13 @@ export default function PatientPage({ params }: { params: { clinicId: string; pa
             {/* تذييل */}
             <div className="px-6 pb-5 text-center">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-50">
-                <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: primaryColor }} />
+                <p className="text-xs text-gray-500">
+                  LiveDent نتمنى لكم الشفاء العاجل
+                </p>
+              </div>
                 <p className="text-xs text-gray-500">
                   {clinic.name} © {new Date().getFullYear()}
                 </p>
-              </div>
             </div>
           </div>
         </div>

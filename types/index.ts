@@ -85,7 +85,7 @@ export interface Session {
   // 💰 الدفع الخاص بهذه الجلسة تحديداً
   sessionCost: number;              // تكلفة هذه الجلسة الواحدة (بالعملة المحلية)
   isPaid: boolean;                  // هل تم دفع تكلفة هذه الجلسة؟ (true = نعم, false = لا)
-  paymentMethod?: 'cash' | 'card' | 'transfer'; // طريقة الدفع المستخدمة (تظهر فقط إذا كانت isPaid = true)
+  paymentMethod?: 'cash'| 'transfer'; // طريقة الدفع المستخدمة (تظهر فقط إذا كانت isPaid = true)
   paidAt?: Date;                    // تاريخ ووقت إتمام عملية الدفع (يظهر فقط إذا كانت isPaid = true)
 
   // 📞 نسخة مجمدة من بيانات المريض (Snapshot)
