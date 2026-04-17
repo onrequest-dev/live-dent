@@ -1,381 +1,174 @@
-// app/public/[clinicId]/doctor-cv/page.tsx
+// app\public\[clinicId]\doctor-cv\page.tsx
 
-'use client';
+import DoctorCVPage from '../../components/DoctorCVPage';
+import { notFound } from 'next/navigation';
+import { Clinic } from '@/types';
 
-import { mockClinic } from '@/lib/mock/data';
-import Image from 'next/image';
-import Link from 'next/link';
-import { motion, useInView } from 'framer-motion';
-import { useRef } from 'react';
-import { 
-  MapPin, 
-  Phone, 
-  Mail, 
-  Clock,
-  Award, 
-  Briefcase, 
-  GraduationCap,
-  Stethoscope,
-  ArrowRight,
-  CheckCircle2,
-  Sparkles,
-} from 'lucide-react';
+// ============================================================
+// بيانات وهمية للعرض - لتوضيح هيكل البيانات لمطور الباك إند
+// ============================================================
 
-// مكون قسم متحرك
-const AnimatedSection = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-50px" });
+const MOCK_CLINIC_DATA: Clinic = {
+  id: 'clinic-001',
+  name: 'مركز الابتسامة لطب الأسنان',
+  logo: '/img/logo.png',
+  subscriptionStatus: 'active',
+  createdAt: new Date('2023-01-01'),
+  address: 'دوار الشيخ تلت عإيدك التالتة بتمد راسك بين اجريك بتشوف العيادة',
   
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 30 }}
-      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-      transition={{ duration: 0.6, delay, ease: [0.25, 0.1, 0.25, 1] }}
-    >
-      {children}
-    </motion.div>
-  );
+  doctorProfile: {
+    fullName: 'د. أحمد محمد العنزي',
+    specialization: 'دكتوراه في تركيبات وتجميل الأسنان',
+    about: 'خبرة أكثر من 15 عاماً في مجال طب الأسنان التجميلي والتركيبات. نقدم أحدث التقنيات العالمية لضمان ابتسامة مثالية لمرضانا.',
+    education: [
+      'بكالوريوس طب وجراحة الفم والأسنان - جامعة الملك سعود',
+      'ماجستير علاج الجذور - جامعة القاهرة',
+      'دكتوراه في تركيبات الأسنان - جامعة مانشستر',
+    ],
+    experience: [
+      'استشاري تركيبات الأسنان - مستشفى الملك فيصل التخصصي (2010-2015)',
+      'مدير مركز الابتسامة لطب الأسنان (2015 - حتى الآن)',
+      'عضو الجمعية السعودية لطب الأسنان',
+    ],
+    photo: '/img/image.png',
+    contactEmail: 'dr.ahmed@ebtesama-clinic.com',
+    graduationYear: 2004,
+    university: 'جامعة الملك سعود'
+  },
+  
+  settings: {
+    defaultAppointmentDuration: 30,
+    workingHours: [
+      { day: 0, start: '09:00', end: '17:00', isClosed: false }, // الأحد
+      { day: 1, start: '09:00', end: '17:00', isClosed: false }, // الإثنين
+      { day: 2, start: '09:00', end: '17:00', isClosed: false }, // الثلاثاء
+      { day: 3, start: '09:00', end: '17:00', isClosed: false }, // الأربعاء
+      { day: 4, start: '09:00', end: '17:00', isClosed: false }, // الخميس
+      { day: 5, start: '00:00', end: '00:00', isClosed: true },  // الجمعة
+      { day: 6, start: '09:00', end: '14:00', isClosed: false }, // السبت
+    ],
+    primaryColor: '#8385da',
+    secondaryColor: '#f8f8f8',
+  },
 };
 
-// بطاقة متحركة
-const AnimatedCard = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true });
+// ============================================================
+// دوال جلب البيانات
+// ============================================================
+
+async function getClinicData(clinicId: string): Promise<Clinic | null> {
+  // محاكاة async operation
+  await new Promise(resolve => setTimeout(resolve, 100));
   
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.5, delay, ease: [0.25, 0.1, 0.25, 1] }}
-      whileHover={{ y: -4, transition: { duration: 0.2 } }}
-    >
-      {children}
-    </motion.div>
-  );
-};
-
-export default function DoctorCVPage({ params }: { params: { clinicId: string } }) {
-  const { clinicId } = params;
-  const clinic = mockClinic;
-  const primaryColor = clinic.settings.primaryColor;
-  const secondaryColor = clinic.settings.secondaryColor;
-  const doctor = clinic.doctorProfile;
-
-  const weekDays = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-
-  return (
-<div 
-  className="min-h-screen relative" 
-  dir="rtl"
-  style={{ 
-    background: `linear-gradient(180deg, ${primaryColor} 0%, ${primaryColor}dd 50%, #ffffff 100%)` 
-  }}
->
-      
-      {/* إضاءات خلفية ناعمة */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <motion.div 
-          animate={{ 
-            scale: [1, 1.1, 1],
-            opacity: [0.04, 0.06, 0.04],
-          }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -top-40 -right-40 w-96 h-96 rounded-full blur-3xl"
-          style={{ backgroundColor: primaryColor }}
-        />
-        <motion.div 
-          animate={{ 
-            scale: [1, 1.15, 1],
-            opacity: [0.03, 0.05, 0.03],
-          }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-          className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full blur-3xl"
-          style={{ backgroundColor: secondaryColor }}
-        />
-        <motion.div 
-          animate={{ 
-            scale: [1, 1.05, 1],
-            opacity: [0.02, 0.04, 0.02],
-          }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-3xl"
-          style={{ backgroundColor: primaryColor }}
-        />
-      </div>
-
-      <div className="relative z-10">
-        <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-          {/* القسم العلوي */}
-          <div className="flex flex-col md:flex-row gap-8 md:gap-12 items-center md:items-start mb-14">
-            {/* صورة الطبيب مع إطار متحرك */}
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
-              className="relative"
-            >
-              {/* إطار خارجي يدور ببطء */}
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-                className="absolute -inset-3 rounded-full opacity-20"
-                style={{ 
-                  background: `conic-gradient(from 0deg, ${primaryColor}, ${secondaryColor}, ${primaryColor})` 
-                }}
-              />
-              
-              <div className="relative w-44 h-44 sm:w-52 sm:h-52 rounded-full overflow-hidden border-4 border-white shadow-xl">
-                {doctor.photo ? (
-                  <Image
-                    src={doctor.photo}
-                    alt={doctor.fullName}
-                    width={208}
-                    height={208}
-                    className="object-cover w-full h-full"
-                  />
-                ) : (
-                  <div 
-                    className="w-full h-full flex items-center justify-center"
-                    style={{ 
-                      background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)` 
-                    }}
-                  >
-                    <Stethoscope size={80} className="text-white" />
-                  </div>
-                )}
-              </div>
-              
-              {/* نجمة صغيرة متحركة */}
-              <motion.div
-                animate={{ 
-                  y: [0, -8, 0],
-                  rotate: [0, 10, 0, -10, 0],
-                }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute -bottom-2 -left-2 w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center"
-                style={{ boxShadow: `0 4px 12px ${primaryColor}20` }}
-              >
-                <Sparkles size={20} style={{ color: primaryColor }} />
-              </motion.div>
-            </motion.div>
-
-            {/* المعلومات الأساسية */}
-            <motion.div 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
-              className="flex-1 text-center md:text-right"
-            >
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-              >
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-3">
-                  {doctor.fullName}
-                </h1>
-              </motion.div>
-              
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-              >
-                <p 
-                  className="text-xl mb-4 font-medium text-gray-900"
-                >
-                  {doctor.specialization}
-                </p>
-              </motion.div>
-              
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-              >
-                <p className="text-gray-600 leading-relaxed max-w-2xl text-lg">
-                  {doctor.about}
-                </p>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-              >
-                <p className="text-gray-600 leading-relaxed max-w-2xl text-lg">
-                   خريج جامعة : {doctor.university} 
-                </p>
-                <p className="text-gray-600 leading-relaxed max-w-2xl text-lg">
-                    عام : {doctor.graduationYear}
-                </p>
-              </motion.div>
-            </motion.div>
-          </div>
-
-          {/* بطاقات التواصل */}
-          <AnimatedSection delay={0.2}>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-14">
-              <AnimatedCard delay={0.1}>
-                <div 
-                  className="group p-5 rounded-2xl bg-white shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100"
-                  style={{ borderTop: `3px solid ${primaryColor}` }}
-                >
-                  <div className="flex items-center gap-4">
-                    <motion.div 
-                      whileHover={{ scale: 1.1 }}
-                      className="w-12 h-12 rounded-xl flex items-center justify-center"
-                      style={{ backgroundColor: `${primaryColor}10` }}
-                    >
-                      <Phone size={22} style={{ color: primaryColor }} />
-                    </motion.div>
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">اتصل بنا</p>
-                      <p className="font-medium text-gray-800" dir="ltr">+966 11 234 5678</p>
-                    </div>
-                  </div>
-                </div>
-              </AnimatedCard>
-
-              <AnimatedCard delay={0.2}>
-                <div 
-                  className="group p-5 rounded-2xl bg-white shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100"
-                  style={{ borderTop: `3px solid ${secondaryColor}` }}
-                >
-                  <div className="flex items-center gap-4">
-                    <motion.div 
-                      whileHover={{ scale: 1.1 }}
-                      className="w-12 h-12 rounded-xl flex items-center justify-center"
-                      style={{ backgroundColor: `${secondaryColor}10` }}
-                    >
-                      <Mail size={22} style={{ color: secondaryColor }} />
-                    </motion.div>
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">البريد الإلكتروني</p>
-                      <p className="font-medium text-gray-800">{doctor.contactEmail}</p>
-                    </div>
-                  </div>
-                </div>
-              </AnimatedCard>
-
-              <AnimatedCard delay={0.3}>
-                <div 
-                  className="group p-5 rounded-2xl bg-white shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100"
-                  style={{ borderTop: `3px solid ${primaryColor}` }}
-                >
-                  <div className="flex items-center gap-4">
-                    <motion.div 
-                      whileHover={{ scale: 1.1 }}
-                      className="w-12 h-12 rounded-xl flex items-center justify-center"
-                      style={{ backgroundColor: `${primaryColor}10` }}
-                    >
-                      <MapPin size={22} style={{ color: primaryColor }} />
-                    </motion.div>
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">يعمل حاليا في :{clinic.name}</p>
-                      <p className="font-medium text-gray-800">{clinic.address}</p>
-                    </div>
-                  </div>
-                </div>
-              </AnimatedCard>
-            </div>
-          </AnimatedSection>
-
-          {/* المؤهلات والخبرات */}
-          <div className="grid md:grid-cols-2 gap-8 mb-14">
-            {/* التعليم */}
-            <AnimatedSection delay={0.3}>
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <div className="flex items-center gap-3 mb-6">
-                  <motion.div 
-                    whileHover={{ rotate: 5 }}
-                    className="w-10 h-10 rounded-xl flex items-center justify-center"
-                    style={{ backgroundColor: `${primaryColor}15` }}
-                  >
-                    <GraduationCap size={22} style={{ color: primaryColor }} />
-                  </motion.div>
-                  <h2 className="text-xl font-bold text-gray-800">التعليم والمؤهلات</h2>
-                </div>
-                
-                <ul className="space-y-4">
-                  {doctor.education.map((edu, index) => (
-                    <motion.li 
-                      key={index}
-                      initial={{ opacity: 0, x: -10 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      viewport={{ once: true }}
-                      className="flex items-start gap-3 group"
-                    >
-                      <motion.div
-                        whileHover={{ scale: 1.2 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <CheckCircle2 size={20} style={{ color: secondaryColor }} className="mt-0.5 flex-shrink-0" />
-                      </motion.div>
-                      <span className="text-gray-700 group-hover:text-gray-900 transition-colors">{edu}</span>
-                    </motion.li>
-                  ))}
-                </ul>
-              </div>
-            </AnimatedSection>
-
-            {/* الخبرات */}
-            <AnimatedSection delay={0.4}>
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <div className="flex items-center gap-3 mb-6">
-                  <motion.div 
-                    whileHover={{ rotate: 5 }}
-                    className="w-10 h-10 rounded-xl flex items-center justify-center"
-                    style={{ backgroundColor: `${secondaryColor}15` }}
-                  >
-                    <Briefcase size={22} style={{ color: secondaryColor }} />
-                  </motion.div>
-                  <h2 className="text-xl font-bold text-gray-800">الخبرات العملية</h2>
-                </div>
-                
-                <ul className="space-y-4">
-                  {doctor.experience.map((exp, index) => (
-                    <motion.li 
-                      key={index}
-                      initial={{ opacity: 0, x: -10 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      viewport={{ once: true }}
-                      className="flex items-start gap-3 group"
-                    >
-                      <motion.div
-                        whileHover={{ scale: 1.2 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <CheckCircle2 size={20} style={{ color: primaryColor }} className="mt-0.5 flex-shrink-0" />
-                      </motion.div>
-                      <span className="text-gray-700 group-hover:text-gray-900 transition-colors">{exp}</span>
-                    </motion.li>
-                  ))}
-                </ul>
-              </div>
-            </AnimatedSection>
-          </div>
-        </main>
-
-        {/* Footer */}
-        <footer className="border-t border-gray-100 mt-8">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <motion.p 
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              viewport={{ once: true }}
-              className="text-center text-sm text-gray-500"
-            >
-              © {new Date().getFullYear()} {clinic.name}. جميع الحقوق محفوظة.
-            </motion.p>
-          </div>
-        </footer>
-      </div>
-    </div>
-  );
+  // TODO: استبدل هذا بالاتصال الفعلي بقاعدة البيانات
+  // مثال للـ API call:
+  // const response = await fetch(`${process.env.API_URL}/clinics/${clinicId}`);
+  // if (!response.ok) return null;
+  // return response.json();
+  
+  // حالياً: التحقق من وجود العيادة في البيانات الوهمية
+  if (clinicId !== MOCK_CLINIC_DATA.id) {
+    return null;
+  }
+  
+  return MOCK_CLINIC_DATA;
 }
+
+// ============================================================
+// Next.js Functions
+// ============================================================
+
+// لتوليد الصفحات الثابتة في وقت البناء (SSG)
+export async function generateStaticParams() {
+  // TODO: استبدل هذا بجلب جميع clinicIds من قاعدة البيانات
+  // مثال:
+  // const clinics = await fetch(`${process.env.API_URL}/clinics`).then(res => res.json());
+  // return clinics.map(clinic => ({ clinicId: clinic.id }));
+  
+  return [
+    { clinicId: 'clinic-001' },
+    // أضف المزيد من العيادات هنا
+  ];
+}
+
+// لتوليد metadata ديناميكية للـ SEO
+export async function generateMetadata({ params }: { params: { clinicId: string } }) {
+  const clinic = await getClinicData(params.clinicId);
+  
+  if (!clinic) {
+    return {
+      title: 'السيرة الذاتية - العيادة غير موجودة',
+      description: 'عذراً، العيادة المطلوبة غير موجودة'
+    };
+  }
+  
+  return {
+    title: `السيرة الذاتية - ${clinic.doctorProfile.fullName}`,
+    description: `${clinic.doctorProfile.specialization} - ${clinic.doctorProfile.about.substring(0, 150)}...`,
+    openGraph: {
+      title: `السيرة الذاتية - ${clinic.doctorProfile.fullName}`,
+      description: clinic.doctorProfile.about,
+      images: clinic.doctorProfile.photo ? [clinic.doctorProfile.photo] : clinic.logo ? [clinic.logo] : [],
+    },
+  };
+}
+
+// الصفحة الرئيسية - Server Component
+export default async function DoctorCVServerPage({ 
+  params 
+}: { 
+  params: { clinicId: string } 
+}) {
+  const clinic = await getClinicData(params.clinicId);
+  
+  if (!clinic) {
+    notFound();
+  }
+  
+  // تمرير البيانات للمكون
+  return <DoctorCVPage clinic={clinic} />;
+}
+
+/*
+ * ============================================================
+ * ملاحظات لمطور الباك إند:
+ * ============================================================
+ * 
+ * هذه الصفحة تستخدم نفس هيكل البيانات المستخدم في صفحة العيادة الرئيسية
+ * 
+ * GET /api/clinics/:clinicId
+ * 
+ * Response Structure (JSON):
+ * {
+ *   "id": string,
+ *   "name": string,
+ *   "logo": string | null,
+ *   "subscriptionStatus": "active" | "inactive" | "trial" | "expired",
+ *   "createdAt": Date,
+ *   "address": string,
+ *   "doctorProfile": {
+ *     "fullName": string,
+ *     "specialization": string,
+ *     "about": string,
+ *     "education": string[],
+ *     "experience": string[],
+ *     "photo": string | null,
+ *     "contactEmail": string,
+ *     "graduationYear": number,
+ *     "university": string
+ *   },
+ *   "settings": {
+ *     "defaultAppointmentDuration": number, // بالدقائق
+ *     "workingHours": Array<{
+ *       "day": number,        // 0 = الأحد، 1 = الإثنين، ... 6 = السبت
+ *       "start": string,      // تنسيق 24 ساعة "HH:mm"
+ *       "end": string,        // تنسيق 24 ساعة "HH:mm"
+ *       "isClosed": boolean
+ *     }>,
+ *     "primaryColor": string,  // hex color code
+ *     "secondaryColor": string // hex color code
+ *   }
+ * }
+ * 
+ * ============================================================
+ */
