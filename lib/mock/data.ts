@@ -63,7 +63,7 @@ export const mockPatients: Patient[] = [
     gender: 'female',
     age: 20,
     notes: 'تفضل مواعيد المساء - حساسية من البنسلين',
-    createdAt: new Date('2023-06-01'),
+    createdAt: new Date('2023-04-01'),
   },
   {
     id: 'patient-002',
@@ -178,7 +178,7 @@ export const mockAllSessions: Session[] = [
     toothNumber: ['16'],
     sessionCost: 450,
     isPaid: true,
-    paymentMethod: 'card',
+    paymentMethod: 'cash',
     paidAt: getDate(-7, 11, 45),
     patientSnapshot: {
       name: 'هادي قدور',
@@ -221,7 +221,7 @@ export const mockAllSessions: Session[] = [
     toothNumber: ['46'],
     sessionCost: 500,
     isPaid: true,
-    paymentMethod: 'card',
+    paymentMethod: 'cash',
     paidAt: new Date(),
     patientSnapshot: {
       name: 'محمد عبدالله الحربي',
@@ -261,7 +261,7 @@ export const mockAllSessions: Session[] = [
     toothNumber: ['36'],
     sessionCost: 600,
     isPaid: true,
-    paymentMethod: 'card',
+    paymentMethod: 'cash',
     paidAt: getDate(-10, 12, 0),
     patientSnapshot: {
       name: 'محمد عبدالله الحربي',
@@ -423,7 +423,7 @@ export const mockAllSessions: Session[] = [
     toothNumber: ['36'],
     sessionCost: 800,
     isPaid: true,
-    paymentMethod: 'card',
+    paymentMethod: 'cash',
     paidAt: getDate(-7, 15, 0),
     patientSnapshot: {
       name: 'فهد ناصر الشمري',
@@ -523,7 +523,7 @@ export const mockAllSessions: Session[] = [
     toothNumber: [],
     sessionCost: 3500,
     isPaid: true,
-    paymentMethod: 'card',
+    paymentMethod: 'cash',
     paidAt: getDate(-7, 11, 0),
     patientSnapshot: {
       name: 'لطيفة علي المطيري',

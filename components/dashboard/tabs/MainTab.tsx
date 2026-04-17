@@ -128,6 +128,11 @@ export function MainTab() {
   const [showNewAppointmentModal, setShowNewAppointmentModal] = useState(false);
   const [expandedCaseId, setExpandedCaseId] = useState<string | null>(null);
 
+  const [editingSession, setEditingSession] = useState<Session | null>(null);
+  const [showEditSessionModal, setShowEditSessionModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
+
   // تحميل البيانات
   useEffect(() => {
     loadData();
@@ -265,6 +270,50 @@ export function MainTab() {
     }
   };
 
+  // فتح نافذة التعديل
+const handleEditSession = (session: Session) => {
+  setEditingSession(session);
+  setShowEditSessionModal(true);
+};
+
+// حفظ تعديلات الجلسة
+const handleSaveSessionEdit = (updatedSessionData: Partial<Session>) => {
+  if (!editingSession) return;
+  
+  // تحديث في القائمة الرئيسية
+  setSessions(prev => prev.map(s => 
+    s.id === editingSession.id ? { ...s, ...updatedSessionData } : s
+  ));
+  
+  // تحديث في جلسات المريض المحدد إذا كان مفتوحاً
+  if (selectedPatient && editingSession.patientId === selectedPatient.id) {
+    setSelectedPatientSessions(prev => prev.map(s => 
+      s.id === editingSession.id ? { ...s, ...updatedSessionData } : s
+    ));
+  }
+  
+  setShowEditSessionModal(false);
+  setEditingSession(null);
+};
+
+// حذف الجلسة
+const handleDeleteSession = (sessionId: string) => {
+  if (!confirm('هل أنت متأكد من حذف هذه الجلسة؟')) return;
+  
+  // حذف من القائمة الرئيسية
+  setSessions(prev => prev.filter(s => s.id !== sessionId));
+  
+  // حذف من جلسات المريض المحدد إذا كان مفتوحاً
+  if (selectedPatient) {
+    setSelectedPatientSessions(prev => prev.filter(s => s.id !== sessionId));
+  }
+  
+  // إغلاق النافذة إذا كانت الجلسة المحذوفة هي التي قيد التعديل
+  if (editingSession?.id === sessionId) {
+    setShowEditSessionModal(false);
+    setEditingSession(null);
+  }
+};
   // إضافة مريض جديد
   const handleAddPatient = async (patientData: any) => {
     try {
@@ -361,6 +410,34 @@ export function MainTab() {
     });
   };
 
+  // طلب تأكيد الحذف
+const handleRequestDeleteSession = (sessionId: string) => {
+  setSessionToDelete(sessionId);
+  setShowDeleteConfirm(true);
+};
+
+// تأكيد الحذف
+const handleConfirmDeleteSession = () => {
+  if (!sessionToDelete) return;
+  
+  // حذف من القائمة الرئيسية
+  setSessions(prev => prev.filter(s => s.id !== sessionToDelete));
+  
+  // حذف من جلسات المريض المحدد إذا كان مفتوحاً
+  if (selectedPatient) {
+    setSelectedPatientSessions(prev => prev.filter(s => s.id !== sessionToDelete));
+  }
+  
+  // إغلاق النافذة إذا كانت الجلسة المحذوفة هي التي قيد التعديل
+  if (editingSession?.id === sessionToDelete) {
+    setShowEditSessionModal(false);
+    setEditingSession(null);
+  }
+  
+  // إغلاق نافذة التأكيد
+  setShowDeleteConfirm(false);
+  setSessionToDelete(null);
+};
   // تنسيق التاريخ
   const formatDate = (date: Date | string) => {
     const d = new Date(date);
@@ -641,6 +718,9 @@ export function MainTab() {
                 formatCurrency={formatCurrency}
                 calculateFinance={() => calculatePatientFinance(selectedPatient.id)}
                 calculateBirthYear={calculateBirthYear}
+                onEditSession={handleEditSession}
+                onDeleteSession={handleDeleteSession}
+                onRequestDeleteSession={handleRequestDeleteSession}
               />
             </motion.div>
           )}
@@ -717,11 +797,54 @@ export function MainTab() {
                 calculateFinance={() => calculatePatientFinance(selectedPatient.id)}
                 calculateBirthYear={calculateBirthYear}
                 isMobile
+                onEditSession={handleEditSession}      
+                onDeleteSession={handleDeleteSession} 
+                onRequestDeleteSession={handleRequestDeleteSession}
               />
             </motion.div>
           </>
         )}
       </AnimatePresence>
+
+      {/* نافذة تعديل الجلسة */}
+      <AnimatePresence>
+        {showEditSessionModal && editingSession && (
+          <EditSessionModal
+            session={editingSession}
+            primaryColor={primaryColor}
+            onClose={() => {
+              setShowEditSessionModal(false);
+              setEditingSession(null);
+            }}
+            onSave={handleSaveSessionEdit}
+            onDelete={handleDeleteSession}
+          />
+        )}
+      </AnimatePresence>
+      
+      {/* نافذة تأكيد الحذف */}
+      <ConfirmDeleteModal
+        isOpen={showDeleteConfirm}
+        onClose={() => {
+          setShowDeleteConfirm(false);
+          setSessionToDelete(null);
+        }}
+        onConfirm={handleConfirmDeleteSession}
+        primaryColor="#dc2626"
+        sessionInfo={
+          sessionToDelete 
+            ? (() => {
+                const session = sessions.find(s => s.id === sessionToDelete);
+                return session ? {
+                  date: formatDate(session.startTime),
+                  procedure: session.plannedProcedure || session.performedProcedure || 'جلسة'
+                } : undefined;
+              })()
+            : undefined
+        }
+      />
+
+
     </>
   );
 }
@@ -748,6 +871,9 @@ interface PatientDetailsCardProps {
   calculateFinance: () => { totalCost: number; totalPaid: number; totalDue: number };
   calculateBirthYear: (age: number) => number;
   isMobile?: boolean;
+  onEditSession: (session: Session) => void;
+  onDeleteSession: (sessionId: string) => void;
+  onRequestDeleteSession: (sessionId: string) => void;
 }
 
 function PatientDetailsCard({
@@ -768,6 +894,9 @@ function PatientDetailsCard({
   calculateFinance,
   calculateBirthYear,
   isMobile = false,
+  onEditSession,
+  onDeleteSession,
+  onRequestDeleteSession,
 }: PatientDetailsCardProps) {
   const finance = calculateFinance();
   const pastSessions = sessions.filter(s => s.status === 'completed' || s.status === 'scheduled');
@@ -866,38 +995,31 @@ function PatientDetailsCard({
             
             <div className="border border-gray-200 rounded-xl overflow-hidden">
               {/* رأس الجدول */}
-              <div className="grid grid-cols-6 bg-gray-50 px-4 py-3 border-b border-gray-200">
+              <div className="grid grid-cols-7 bg-gray-50 px-4 py-3 border-b border-gray-200">
                 <div className="text-xs font-medium text-gray-500 text-right">الحالة</div>
                 <div className="text-xs font-medium text-gray-500 text-right">الإجراء</div>
                 <div className="text-xs font-medium text-gray-500 text-right">التاريخ</div>
                 <div className="text-xs font-medium text-gray-500 text-right">الوقت</div>
                 <div className="text-xs font-medium text-gray-500 text-right">المدفوع</div>
                 <div className="text-xs font-medium text-gray-500 text-right">الإجمالي</div>
+                <div className="text-xs font-medium text-gray-500 text-right">إجراءات</div>
               </div>
 
               {/* صفوف الجدول */}
               <div className="divide-y divide-gray-100">
                 {sortedSessions.map((session) => (
-                  <div key={session.id} className="grid grid-cols-6 px-4 py-3 items-center hover:bg-gray-50/50">
+                  <div key={session.id} className="grid grid-cols-7 px-4 py-3 items-center hover:bg-gray-50/50">
                     {/* حالة الجلسة */}
                     <div className="flex items-center gap-2">
                       {session.status === 'scheduled' ? (
                         <>
                           <div className="w-2 h-2 rounded-full bg-yellow-400" />
                           <span className="text-sm text-yellow-700">مجدول</span>
-                          <button
-                            onClick={() => onUpdateSessionStatus(session.id, 'completed')}
-                            className="ml-2 p-1 rounded hover:bg-green-100 transition-colors"
-                            title="تحديد كمكتملة"
-                          >
-                            <CheckCircle size={16} className="text-green-600" />
-                          </button>
                         </>
                       ) : session.status === 'completed' ? (
                         <>
                           <div className="w-2 h-2 rounded-full bg-green-500" />
                           <span className="text-sm text-green-700">مكتملة</span>
-                          <CheckCircle size={14} className="text-green-500 ml-1" />
                         </>
                       ) : session.status === 'in-progress' ? (
                         <>
@@ -944,7 +1066,27 @@ function PatientDetailsCard({
                     <div className="text-sm font-semibold text-gray-900">
                       {formatCurrency(session.sessionCost)}
                     </div>
+
+                    {/* عمود الإجراءات */}
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => onEditSession(session)}
+                          className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+                          title="تعديل الجلسة"
+                        >
+                          <Edit size={16} className="text-gray-600" />
+                        </button>
+                        
+                        <button
+                          onClick={() => onRequestDeleteSession(session.id)}
+                          className="p-2 rounded-lg bg-red-50 hover:bg-red-100 transition-colors"
+                          title="حذف الجلسة"
+                        >
+                          <Trash2 size={16} className="text-red-600" />
+                        </button>
+                      </div>
                   </div>
+
                 ))}
               </div>
             </div>
@@ -959,6 +1101,367 @@ function PatientDetailsCard({
         )}
       </div>
     </div>
+  );
+}
+
+
+// ============================================================
+// نافذة تعديل الجلسة
+// ============================================================
+
+interface EditSessionModalProps {
+  session: Session;
+  primaryColor: string;
+  onClose: () => void;
+  onSave: (data: Partial<Session>) => void;
+  onDelete: (sessionId: string) => void;
+}
+
+function EditSessionModal({ 
+  session, 
+  primaryColor, 
+  onClose, 
+  onSave, 
+  onDelete 
+}: EditSessionModalProps) {
+  const [formData, setFormData] = useState({
+    status: session.status,
+    plannedProcedure: session.plannedProcedure || '',
+    performedProcedure: session.performedProcedure || '',
+    sessionCost: session.sessionCost,
+    isPaid: session.isPaid,
+    paymentMethod: session.paymentMethod || 'cash' as 'cash' | 'transfer',
+    notes: session.notes || '',
+    startTime: new Date(session.startTime).toISOString().slice(0, 16), // تنسيق للـ datetime-local
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const startTime = new Date(formData.startTime);
+    const endTime = new Date(startTime.getTime() + 30 * 60000); // إضافة 30 دقيقة
+    
+    onSave({
+      status: formData.status,
+      plannedProcedure: formData.plannedProcedure,
+      performedProcedure: formData.performedProcedure,
+      sessionCost: formData.sessionCost,
+      isPaid: formData.isPaid,
+      paymentMethod: formData.isPaid ? formData.paymentMethod : undefined,
+      paidAt: formData.isPaid && !session.isPaid ? new Date() : session.paidAt,
+      notes: formData.notes,
+      startTime: startTime,
+      endTime: endTime,
+    });
+  };
+
+  const handleDelete = () => {
+    onDelete(session.id);
+    onClose();
+  };
+
+  return (
+    <>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="p-6" style={{ background: primaryColor }}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-white flex items-center gap-3">
+                <Edit size={20} />
+                تعديل الجلسة
+              </h2>
+              <button
+                onClick={onClose}
+                className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <p className="text-white/90 mt-1">
+              المريض: {session.patientSnapshot.name}
+            </p>
+          </div>
+          
+          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            {/* حالة الجلسة */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                حالة الجلسة
+              </label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value as Session['status'] })}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent"
+                style={{ '--tw-ring-color': primaryColor } as any}
+              >
+                <option value="scheduled">مجدولة</option>
+                <option value="completed">مكتملة</option>
+                <option value="in-progress">قيد التنفيذ</option>
+                <option value="cancelled">ملغية</option>
+                <option value="no-show">لم يحضر</option>
+              </select>
+            </div>
+
+            {/* تاريخ ووقت الجلسة */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                تاريخ ووقت الجلسة
+              </label>
+              <input
+                type="datetime-local"
+                value={formData.startTime}
+                onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent"
+                style={{ '--tw-ring-color': primaryColor } as any}
+              />
+            </div>
+
+            {/* الإجراء المخطط */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                الإجراء المخطط
+              </label>
+              <input
+                type="text"
+                value={formData.plannedProcedure}
+                onChange={(e) => setFormData({ ...formData, plannedProcedure: e.target.value })}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent"
+                style={{ '--tw-ring-color': primaryColor } as any}
+                placeholder="مثال: تنظيف أسنان، حشوة..."
+              />
+            </div>
+
+            {/* الإجراء المنفذ (يظهر فقط للجلسات المكتملة) */}
+            {(formData.status === 'completed' || formData.status === 'in-progress') && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  الإجراء المنفذ
+                </label>
+                <textarea
+                  value={formData.performedProcedure}
+                  onChange={(e) => setFormData({ ...formData, performedProcedure: e.target.value })}
+                  rows={2}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent resize-none"
+                  style={{ '--tw-ring-color': primaryColor } as any}
+                  placeholder="ما تم تنفيذه فعلياً في الجلسة..."
+                />
+              </div>
+            )}
+
+            {/* تكلفة الجلسة */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                تكلفة الجلسة (ر.س)
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="50"
+                value={formData.sessionCost}
+                onChange={(e) => setFormData({ ...formData, sessionCost: Number(e.target.value) })}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent"
+                style={{ '--tw-ring-color': primaryColor } as any}
+              />
+            </div>
+
+            {/* حالة الدفع */}
+            <div className="p-4 bg-gray-50 rounded-xl space-y-3">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.isPaid}
+                  onChange={(e) => setFormData({ ...formData, isPaid: e.target.checked })}
+                  className="w-4 h-4"
+                  style={{ accentColor: primaryColor }}
+                />
+                <span className="text-gray-900 font-medium">تم دفع تكلفة الجلسة</span>
+              </label>
+
+              {/* طريقة الدفع (تظهر فقط إذا تم تحديد الدفع) */}
+              {formData.isPaid && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    طريقة الدفع
+                  </label>
+                  <select
+                    value={formData.paymentMethod}
+                    onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value as 'cash' | 'transfer' })}
+                    className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-gray-900"
+                  >
+                    <option value="cash">نقداً</option>
+                    <option value="transfer">تحويل بنكي</option>
+                  </select>
+                </div>
+              )}
+            </div>
+
+            {/* ملاحظات */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                ملاحظات
+              </label>
+              <textarea
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                rows={2}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent resize-none"
+                style={{ '--tw-ring-color': primaryColor } as any}
+                placeholder="ملاحظات إضافية..."
+              />
+            </div>
+            
+            {/* أزرار التحكم */}
+            <div className="flex gap-3 pt-4 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="px-4 py-3 bg-red-50 hover:bg-red-100 rounded-xl text-red-600 font-medium transition-colors flex items-center gap-2"
+              >
+                <Trash2 size={18} />
+                حذف الجلسة
+              </button>
+              
+              <div className="flex-1" />
+              
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-6 py-3 bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-700 font-medium transition-colors"
+              >
+                إلغاء
+              </button>
+              
+              <button
+                type="submit"
+                className="px-6 py-3 rounded-xl text-white font-medium transition-colors"
+                style={{ background: primaryColor }}
+              >
+                حفظ التعديلات
+              </button>
+            </div>
+          </form>
+        </motion.div>
+      </motion.div>
+    </>
+  );
+}
+
+// ============================================================
+// نافذة تأكيد الحذف
+// ============================================================
+
+interface ConfirmDeleteModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title?: string;
+  message?: string;
+  primaryColor?: string;
+  sessionInfo?: {
+    date?: string;
+    procedure?: string;
+  };
+}
+
+function ConfirmDeleteModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  title = "تأكيد الحذف",
+  message = "هل أنت متأكد من حذف هذه الجلسة؟",
+  primaryColor = "#dc2626",
+  sessionInfo,
+}: ConfirmDeleteModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="p-6" style={{ background: primaryColor }}>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                <Trash2 size={24} className="text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">{title}</h2>
+                <p className="text-white/80 text-sm mt-1">لا يمكن التراجع عن هذا الإجراء</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="p-6">
+            <p className="text-gray-700 text-base mb-4">{message}</p>
+
+            {sessionInfo && (
+              <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+                {sessionInfo.date && (
+                  <div className="flex items-center gap-2">
+                    <Calendar size={16} className="text-gray-400" />
+                    <span className="text-sm text-gray-600">{sessionInfo.date}</span>
+                  </div>
+                )}
+                {sessionInfo.procedure && (
+                  <div className="flex items-center gap-2">
+                    <Stethoscope size={16} className="text-gray-400" />
+                    <span className="text-sm text-gray-600">{sessionInfo.procedure}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* أزرار التحكم */}
+            <div className="flex gap-3 mt-6">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-700 font-medium transition-colors"
+              >
+                إلغاء
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onConfirm();
+                  onClose();
+                }}
+                className="flex-1 px-4 py-3 rounded-xl text-white font-medium transition-colors flex items-center justify-center gap-2"
+                style={{ background: primaryColor }}
+              >
+                <Trash2 size={18} />
+                نعم، احذف
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
 }
 

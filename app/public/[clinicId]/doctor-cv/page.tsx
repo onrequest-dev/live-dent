@@ -184,8 +184,7 @@ export default function DoctorCVPage({ params }: { params: { clinicId: string } 
                 transition={{ delay: 0.4 }}
               >
                 <p 
-                  className="text-xl mb-4 font-medium"
-                  style={{ color: primaryColor }}
+                  className="text-xl mb-4 font-medium text-gray-900"
                 >
                   {doctor.specialization}
                 </p>
