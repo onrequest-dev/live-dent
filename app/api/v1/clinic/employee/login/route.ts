@@ -27,15 +27,15 @@ export async function POST(request: NextRequest) {
         console.log("Invalid password for user:", username);
         return new Response(JSON.stringify({ message: "Invalid username or password" }), { status: 401 });
     }
-    const {data: clinicData, error: restuarantError} = await supabase_server
-        .from("restaurants")
-        .select("subscriptiontype, slug")
-        .eq("id", data.clinicId)
-        .single();
-        console.log("Restaurant data:", clinicData, "Error:", restuarantError);
+    // const {data: clinicData, error: ClinicError} = await supabase_server
+    //     .from("Clinic")
+    //     .select("id, slug")
+    //     .eq("id", data.clinicId)
+    //     .single();
+    //     console.log("clinic data:", clinicData, "Error:", ClinicError);
         const device_id = crypto.randomUUID();
-    const jwt = createJwt({id: data.id, restaurantId: data.clinicId, role: data.role, subscriptionTier: clinicData?.subscriptiontype , device_id:device_id });
-    const res =  NextResponse.json({ slug: clinicData?.slug }, { status: 200 });
+    const jwt = createJwt({id: data.id, clinicId: data.clinicId, role: data.role,subscriptionStatus:"active" , device_id:device_id });
+    const res =  NextResponse.json({ slug: data.clinicId }, { status: 200 });
     res.cookies.set("jwt", jwt || "", { path: "/", maxAge: 60 * 60 * 24 * 365 * 20, httpOnly: true });
     return res;
 }

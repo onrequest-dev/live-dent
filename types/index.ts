@@ -136,4 +136,5 @@ export interface ClinicEmployeeJwt extends JwtPayload {
   clinicId: string;
   role : ClinicEmployeeRole;
   subscriptionStatus : 'active' | 'expired' | 'trial';
+  device_id:string
 }

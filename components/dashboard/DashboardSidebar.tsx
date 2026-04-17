@@ -22,8 +22,9 @@ import {
   Menu,
   X,
 } from 'lucide-react';
-import { mockClinic} from '@/lib/mock/data';
-// get 
+import { mockClinic } from '@/lib/mock/data';
+import { Clinic } from '@/types';
+import { getClinic } from '@/client/helpers/clinic';
 
 const menuItems = [
   { tab: 'main', label: 'الرئيسية', icon: LayoutDashboard },
@@ -32,6 +33,78 @@ const menuItems = [
   { tab: 'cv', label: 'CV الطبيب', icon: UserCircle },
   { tab: 'messages', label: 'إعدادات المراسلة', icon: MessageSquareText },
 ];
+
+// مكون Skeleton للتحميل
+const SidebarSkeleton = ({ isCollapsed, isMobile }: { isCollapsed: boolean; isMobile: boolean }) => {
+  return (
+    <motion.div
+      initial={false}
+      animate={{ 
+        width: isMobile ? '100%' : (isCollapsed ? 90 : 300),
+      }}
+      transition={{ duration: 0.3, ease: "easeInOut" }}
+      className={`
+        h-screen bg-white shadow-2xl flex flex-col relative border-l-4 border-gray-200
+        ${isMobile ? 'fixed top-0 right-0 z-40 w-full max-w-[300px]' : ''}
+      `}
+    >
+      {/* هيدر القائمة - Skeleton */}
+      <div className="p-6 border-b border-gray-100">
+        {!isCollapsed || isMobile ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="relative w-12 h-12 rounded-xl bg-gray-200 animate-pulse" />
+              <div className="space-y-2">
+                <div className="h-5 w-32 bg-gray-200 rounded animate-pulse" />
+                <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-center">
+            <div className="relative w-11 h-11 rounded-xl bg-gray-200 animate-pulse" />
+          </div>
+        )}
+      </div>
+
+      {/* القائمة الرئيسية - Skeleton */}
+      <nav className="flex-1 px-3 py-4 space-y-1">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div
+            key={i}
+            className={`
+              flex items-center gap-3 px-4 py-3.5 rounded-xl
+              ${(isCollapsed && !isMobile) ? 'justify-center' : ''}
+            `}
+          >
+            <div className="w-5 h-5 bg-gray-200 rounded animate-pulse" />
+            {(!isCollapsed || isMobile) && (
+              <div className="flex-1 h-4 bg-gray-200 rounded animate-pulse" />
+            )}
+          </div>
+        ))}
+      </nav>
+
+      {/* القائمة السفلية - Skeleton */}
+      <div className="p-3 border-t border-gray-100 space-y-1">
+        {[1, 2].map((i) => (
+          <div
+            key={i}
+            className={`
+              flex items-center gap-3 px-4 py-3 w-full rounded-xl
+              ${(isCollapsed && !isMobile) ? 'justify-center' : ''}
+            `}
+          >
+            <div className="w-5 h-5 bg-gray-200 rounded animate-pulse" />
+            {(!isCollapsed || isMobile) && (
+              <div className="flex-1 h-4 bg-gray-200 rounded animate-pulse" />
+            )}
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+};
 
 export function DashboardSidebar() {
   const params = useParams();
@@ -43,6 +116,47 @@ export function DashboardSidebar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [clinicData, setClinicData] = useState<Clinic | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchClinicData() {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        console.log("Fetching clinic data...");
+        const result = await getClinic();
+        console.log("API Result:", result);
+        
+        if (!result.success) {
+          console.error("Failed to fetch clinic data:", result);
+          setError('فشل في تحميل بيانات العيادة');
+          // استخدام البيانات الوهمية كـ fallback في حالة الفشل
+          setClinicData(mockClinic);
+          return;
+        }
+        
+        if (result.data) {
+          console.log("Setting clinic data:", result.data);
+          setClinicData(result.data);
+        } else {
+          console.warn("No data returned from API, using mock data");
+          setClinicData(mockClinic);
+        }
+      } catch (err) {
+        console.error("Error fetching clinic data:", err);
+        setError('حدث خطأ في تحميل البيانات');
+        // استخدام البيانات الوهمية كـ fallback
+        setClinicData(mockClinic);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    fetchClinicData();
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -70,8 +184,62 @@ export function DashboardSidebar() {
 
   if (!mounted) return null;
 
-  const primaryColor = mockClinic.settings.primaryColor;
-  const secondaryColor =mockClinic.settings.secondaryColor;
+  // عرض Skeleton أثناء التحميل
+  if (isLoading) {
+    if (isMobile && !isMobileOpen) {
+      return (
+        <motion.button
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.3 }}
+          onClick={() => setIsMobileOpen(true)}
+          className="fixed top-2 left-4 z-50 w-10 h-10 bg-white rounded-xl shadow-lg flex items-center justify-center hover:shadow-xl transition-all border border-gray-200 md:hidden"
+        >
+          <Menu size={16} className="text-gray-400" />
+        </motion.button>
+      );
+    }
+
+    const skeletonContent = <SidebarSkeleton isCollapsed={isCollapsed} isMobile={isMobile} />;
+    
+    if (isMobile && isMobileOpen) {
+      return (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 bg-black/50 z-30 md:hidden"
+            onClick={() => setIsMobileOpen(false)}
+          />
+          {skeletonContent}
+        </>
+      );
+    }
+
+    return skeletonContent;
+  }
+
+  // عرض رسالة خطأ إذا لم تكن هناك بيانات
+  if (!clinicData) {
+    return (
+      <div className="h-screen flex items-center justify-center p-4">
+        <div className="text-center">
+          <p className="text-red-500 mb-2">⚠️ {error || 'لا توجد بيانات'}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="text-sm text-blue-500 hover:text-blue-600 underline"
+          >
+            إعادة المحاولة
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const primaryColor = clinicData.settings.primaryColor;
+  const secondaryColor = clinicData.settings.secondaryColor;
 
   // حالة الهاتف: عرض زر الفتح فقط عندما تكون القائمة مغلقة
   if (isMobile && !isMobileOpen) {
@@ -88,8 +256,6 @@ export function DashboardSidebar() {
         >
           <Menu size={16} />
         </motion.button>
-
-        {/* خلفية شفافة عند فتح القائمة - غير موجودة لأن القائمة مغلقة */}
       </>
     );
   }
@@ -151,11 +317,11 @@ export function DashboardSidebar() {
                   whileHover={{ scale: 1.05 }}
                   transition={{ type: "spring", stiffness: 400, damping: 10 }}
                 >
-                  {mockClinic.logo?.startsWith('/') ? (
+                  {clinicData.logo?.startsWith('/') ? (
                     <div className="relative w-full h-full p-1.5">
                       <Image 
-                        src={mockClinic.logo} 
-                        alt={mockClinic.name}
+                        src={clinicData.logo} 
+                        alt={clinicData.name}
                         fill
                         className="object-contain"
                         sizes="48px"
@@ -163,12 +329,12 @@ export function DashboardSidebar() {
                       />
                     </div>
                   ) : (
-                    <span className="text-3xl">{mockClinic.logo || '🦷'}</span>
+                    <span className="text-3xl">{clinicData.logo || '🦷'}</span>
                   )}
                 </motion.div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-800">{mockClinic.name}</h2>
-                  <p className="text-sm text-gray-500">{mockClinic.doctorProfile.fullName}</p>
+                  <h2 className="text-lg font-bold text-gray-800">{clinicData.name}</h2>
+                  <p className="text-sm text-gray-500">{clinicData.doctorProfile.fullName}</p>
                 </div>
               </div>
             </motion.div>
@@ -186,11 +352,11 @@ export function DashboardSidebar() {
                 whileHover={{ scale: 1.1 }}
                 transition={{ type: "spring", stiffness: 400, damping: 10 }}
               >
-                {mockClinic.logo?.startsWith('/') ? (
+                {clinicData.logo?.startsWith('/') ? (
                   <div className="relative w-full h-full p-1.5">
                     <Image 
-                      src={mockClinic.logo} 
-                      alt={mockClinic.name}
+                      src={clinicData.logo} 
+                      alt={clinicData.name}
                       fill
                       className="object-contain"
                       sizes="44px"
@@ -198,7 +364,7 @@ export function DashboardSidebar() {
                     />
                   </div>
                 ) : (
-                  <span className="text-2xl">{mockClinic.logo || '🦷'}</span>
+                  <span className="text-2xl">{clinicData.logo || '🦷'}</span>
                 )}
               </motion.div>
             </motion.div>
@@ -311,7 +477,6 @@ export function DashboardSidebar() {
     </motion.div>
   );
 
-  
   // في حالة الهاتف، نضيف خلفية شفافة عند فتح القائمة
   if (isMobile && isMobileOpen) {
     return (

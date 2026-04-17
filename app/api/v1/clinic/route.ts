@@ -24,7 +24,26 @@ export async function GET(request: NextRequest) {
         console.error("Supabase error:", error);
         return NextResponse.json({ error: "Failed to fetch clinic data" }, { status: 500 });
     }
-    return NextResponse.json({ data });
+    const doctorProfile =  {
+    fullName: 'د. أحمد محمد العنزي',
+    specialization: 'دكتوراه في تركيبات وتجميل الأسنان',
+    about: 'خبرة أكثر من 15 عاماً في مجال طب الأسنان التجميلي والتركيبات. نقدم أحدث التقنيات العالمية لضمان ابتسامة مثالية لمرضانا.',
+    education: [
+      'بكالوريوس طب وجراحة الفم والأسنان - جامعة الملك سعود',
+      'ماجستير علاج الجذور - جامعة القاهرة',
+      'دكتوراه في تركيبات الأسنان - جامعة مانشستر',
+    ],
+    experience: [
+      'استشاري تركيبات الأسنان - مستشفى الملك فيصل التخصصي (2010-2015)',
+      'مدير مركز الابتسامة لطب الأسنان (2015 - حتى الآن)',
+      'عضو الجمعية السعودية لطب الأسنان',
+    ],
+    photo: '/img/image.png',
+    contactEmail: 'dr.ahmed@ebtesama-clinic.com',
+    graduationYear: 2004,
+    university:'جامعة الجنق'
+  }
+        return NextResponse.json({data:{ ...data, doctorProfile }});
 }
 
 
