@@ -42,17 +42,16 @@ export function DashboardSidebar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-
+  const [isTablet, setIsTablet] = useState(false);
   useEffect(() => {
     setMounted(true);
     
     // التحقق من حجم الشاشة
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth < 768) {
-        setIsCollapsed(true);
-      }
-    };
+  const checkMobile = () => {
+    const width = window.innerWidth;
+    setIsMobile(width < 768); // موبايل صغير
+    setIsTablet(width >= 768 && width < 1024); // تابلت
+  };
     
     checkMobile();
     window.addEventListener('resize', checkMobile);

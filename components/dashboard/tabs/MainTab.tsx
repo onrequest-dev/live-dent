@@ -996,13 +996,13 @@ function PatientDetailsCard({
             <div className="border border-gray-200 rounded-xl overflow-hidden">
               {/* رأس الجدول */}
               <div className="grid grid-cols-7 bg-gray-50 px-4 py-3 border-b border-gray-200">
-                <div className="text-xs font-medium text-gray-500 text-right">الحالة</div>
-                <div className="text-xs font-medium text-gray-500 text-right">الإجراء</div>
-                <div className="text-xs font-medium text-gray-500 text-right">التاريخ</div>
-                <div className="text-xs font-medium text-gray-500 text-right">الوقت</div>
-                <div className="text-xs font-medium text-gray-500 text-right">المدفوع</div>
-                <div className="text-xs font-medium text-gray-500 text-right">الإجمالي</div>
-                <div className="text-xs font-medium text-gray-500 text-right">إجراءات</div>
+                <div className="text-sm font-medium text-gray-500 text-right">الحالة</div>
+                <div className="text-sm font-medium text-gray-500 text-right">الإجراء</div>
+                <div className="text-sm font-medium text-gray-500 text-right">التاريخ</div>
+                <div className="text-sm font-medium text-gray-500 text-right">الوقت</div>
+                <div className="text-sm font-medium text-gray-500 text-right">المدفوع</div>
+                <div className="text-sm font-medium text-gray-500 text-right">الإجمالي</div>
+                <div className="text-sm font-medium text-gray-500 text-right">إجراءات</div>
               </div>
 
               {/* صفوف الجدول */}
