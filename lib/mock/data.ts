@@ -58,7 +58,7 @@ export const mockPatients: Patient[] = [
   {
     id: 'patient-001',
     clinicId: 'clinic-001',
-    fullName: 'هادي قدور',
+    fullName: 'هادي ',
     phone: '352681523130',
     gender: 'female',
     age: 20,

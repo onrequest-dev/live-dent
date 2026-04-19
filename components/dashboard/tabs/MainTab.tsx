@@ -25,17 +25,22 @@ import {
   Check,
   Play,
 } from 'lucide-react';
-import { mockClinic, mockPatients, mockAllSessions, mockPatientCases } from '@/lib/mock/data';
+
 import {
   generateWhatsAppMessage,
   openWhatsAppChat,
 } from '@/lib/services/communication';
-import { Patient, Session, PatientCase } from '@/types';
+import { Clinic, Patient, PatientCase, Session } from '@/types';
 
 // ============================================================
 // خدمة API محاكية (لتحضير الربط مع الباك إند)
 // ============================================================
-
+interface MainTabProps {
+  clinicData: Clinic | null;
+  patients: Patient[];
+  patientCases: PatientCase[];
+  sessions: Session[];
+}
 const api = {
   // إضافة مريض جديد
   addPatient: async (clinicId: string, patientData: Omit<Patient, 'id' | 'clinicId' | 'createdAt'>): Promise<Patient> => {
@@ -79,42 +84,29 @@ const api = {
     // في الإصدار الحقيقي: تحديث في قاعدة البيانات
     return {} as Session;
   },
-  
-  // جلب المرضى
-  getPatients: async (clinicId: string): Promise<Patient[]> => {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    return mockPatients;
-  },
-  
-  // جلب الجلسات
-  getSessions: async (clinicId: string): Promise<Session[]> => {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    return mockAllSessions;
-  },
-  
-  // جلب الحالات
-  getCases: async (clinicId: string): Promise<PatientCase[]> => {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    return mockPatientCases;
-  },
 };
 
 // ============================================================
 // المكون الرئيسي
 // ============================================================
 
-export function MainTab() {
+export function MainTab({ 
+  clinicData, 
+  patients: initialPatients, 
+  patientCases: initialCases, 
+  sessions: initialSessions 
+}: MainTabProps) {
   const params = useParams();
   const clinicId = params?.clinicId as string;
   
-  const primaryColor = mockClinic.settings.primaryColor;
-  const secondaryColor = mockClinic.settings.secondaryColor;
+  // استخدام البيانات الحقيقية من الـ props
+  const primaryColor = clinicData?.settings.primaryColor || '#007bff';
+  const secondaryColor = clinicData?.settings.secondaryColor || '#6c757d';
   
-  // حالات البيانات
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [cases, setCases] = useState<PatientCase[]>([]);
-  const [loading, setLoading] = useState(true);
+  // حالات البيانات - تهيئتها بالبيانات الحقيقية
+  const [patients, setPatients] = useState<Patient[]>(initialPatients);
+  const [sessions, setSessions] = useState<Session[]>(initialSessions);
+  const [cases, setCases] = useState<PatientCase[]>(initialCases);
   
   // حالات الواجهة
   const [searchQuery, setSearchQuery] = useState('');
@@ -133,39 +125,11 @@ export function MainTab() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
 
-  // تحميل البيانات
   useEffect(() => {
-    loadData();
-  }, [clinicId]);
-
-  // التحقق من حجم الشاشة
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [patientsData, sessionsData, casesData] = await Promise.all([
-        api.getPatients(clinicId),
-        api.getSessions(clinicId),
-        api.getCases(clinicId),
-      ]);
-      setPatients(patientsData);
-      setSessions(sessionsData);
-      setCases(casesData);
-    } catch (error) {
-      console.error('خطأ في تحميل البيانات:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  setPatients(initialPatients);
+  setSessions(initialSessions);
+  setCases(initialCases);
+}, [initialPatients, initialSessions, initialCases]);
   // تصفية المرضى
   const filteredPatients = useMemo(() => {
     let filtered = patients;
@@ -236,18 +200,19 @@ export function MainTab() {
   };
 
   // إرسال رسالة واتساب
-  const handleWhatsApp = (patient: Patient, session?: Session, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    
-    const message = generateWhatsAppMessage({
-      patient,
-      session,
-      clinicName: mockClinic.name,
-      messageType: session ? 'reminder' : 'confirmation',
-    });
-    
-    openWhatsAppChat(patient.phone, message);
-  };
+// في دالة handleWhatsApp
+const handleWhatsApp = (patient: Patient, session?: Session, e?: React.MouseEvent) => {
+  if (e) e.stopPropagation();
+  
+  const message = generateWhatsAppMessage({
+    patient,
+    session,
+    clinicName: clinicData?.name || 'عيادة الأسنان', // ✅ استخدم clinicData بدلاً من mockClinic
+    messageType: session ? 'reminder' : 'confirmation',
+  });
+  
+  openWhatsAppChat(patient.phone, message);
+};
 
   // تحديث حالة الجلسة
   const handleUpdateSessionStatus = async (sessionId: string, newStatus: Session['status']) => {
@@ -462,19 +427,19 @@ const handleConfirmDeleteSession = () => {
     return currentYear - age;
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div 
-            className="w-16 h-16 rounded-full border-4 border-t-transparent animate-spin mx-auto mb-4"
-            style={{ borderColor: primaryColor, borderTopColor: 'transparent' }}
-          />
-          <p className="text-gray-600">جاري تحميل البيانات...</p>
-        </div>
+if (!clinicData) {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <div 
+          className="w-16 h-16 rounded-full border-4 border-t-transparent animate-spin mx-auto mb-4"
+          style={{ borderColor: '#007bff', borderTopColor: 'transparent' }}
+        />
+        <p className="text-gray-600">جاري تحميل البيانات...</p>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   return (
     <>
@@ -1190,7 +1155,7 @@ function EditSessionModal({
               </button>
             </div>
             <p className="text-white/90 mt-1">
-              المريض: {session.patientSnapshot.name}
+              {/* المريض: {session.patientSnapshot.name} */}
             </p>
           </div>
           
@@ -2116,3 +2081,5 @@ function NewAppointmentModal({ patient, primaryColor, secondaryColor, onClose, o
     </>
   );
 }
+
+

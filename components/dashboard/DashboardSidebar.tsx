@@ -1,3 +1,4 @@
+// components/dashboard/DashboardSidebar.tsx
 'use client';
 
 import Link from 'next/link';
@@ -14,17 +15,11 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  Search,
-  Bell,
   Settings,
-  Calendar,
-  CreditCard,
   Menu,
   X,
 } from 'lucide-react';
-import { mockClinic } from '@/lib/mock/data';
 import { Clinic } from '@/types';
-import { getClinic } from '@/client/helpers/clinic';
 
 const menuItems = [
   { tab: 'main', label: 'الرئيسية', icon: LayoutDashboard },
@@ -34,7 +29,12 @@ const menuItems = [
   { tab: 'messages', label: 'إعدادات المراسلة', icon: MessageSquareText },
 ];
 
-// مكون Skeleton للتحميل
+// ✅ واجهة Props
+interface DashboardSidebarProps {
+  clinicData: Clinic | null;
+}
+
+// مكون Skeleton للتحميل (لحالة عدم وجود بيانات)
 const SidebarSkeleton = ({ isCollapsed, isMobile }: { isCollapsed: boolean; isMobile: boolean }) => {
   return (
     <motion.div
@@ -48,7 +48,6 @@ const SidebarSkeleton = ({ isCollapsed, isMobile }: { isCollapsed: boolean; isMo
         ${isMobile ? 'fixed top-0 right-0 z-40 w-full max-w-[300px]' : ''}
       `}
     >
-      {/* هيدر القائمة - Skeleton */}
       <div className="p-6 border-b border-gray-100">
         {!isCollapsed || isMobile ? (
           <div className="space-y-3">
@@ -67,7 +66,6 @@ const SidebarSkeleton = ({ isCollapsed, isMobile }: { isCollapsed: boolean; isMo
         )}
       </div>
 
-      {/* القائمة الرئيسية - Skeleton */}
       <nav className="flex-1 px-3 py-4 space-y-1">
         {[1, 2, 3, 4, 5].map((i) => (
           <div
@@ -85,7 +83,6 @@ const SidebarSkeleton = ({ isCollapsed, isMobile }: { isCollapsed: boolean; isMo
         ))}
       </nav>
 
-      {/* القائمة السفلية - Skeleton */}
       <div className="p-3 border-t border-gray-100 space-y-1">
         {[1, 2].map((i) => (
           <div
@@ -106,7 +103,7 @@ const SidebarSkeleton = ({ isCollapsed, isMobile }: { isCollapsed: boolean; isMo
   );
 };
 
-export function DashboardSidebar() {
+export function DashboardSidebar({ clinicData }: DashboardSidebarProps) {
   const params = useParams();
   const searchParams = useSearchParams();
   const clinicId = params?.clinicId as string;
@@ -120,12 +117,10 @@ export function DashboardSidebar() {
   useEffect(() => {
     setMounted(true);
     
-    // التحقق من حجم الشاشة
-  const checkMobile = () => {
-    const width = window.innerWidth;
-    setIsMobile(width < 768); // موبايل صغير
-    setIsTablet(width >= 768 && width < 1024); // تابلت
-  };
+    const checkMobile = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < 768);
+    };
     
     checkMobile();
     window.addEventListener('resize', checkMobile);
@@ -134,7 +129,6 @@ export function DashboardSidebar() {
   }, []);
 
   useEffect(() => {
-    // إغلاق القائمة تلقائياً عند تغيير التبويب في حالة الهاتف
     if (isMobile) {
       setIsMobileOpen(false);
     }
@@ -142,8 +136,8 @@ export function DashboardSidebar() {
 
   if (!mounted) return null;
 
-  // عرض Skeleton أثناء التحميل
-  if (isLoading) {
+  // ✅ عرض Skeleton إذا لم تصل البيانات بعد
+  if (!clinicData) {
     if (isMobile && !isMobileOpen) {
       return (
         <motion.button
@@ -179,42 +173,22 @@ export function DashboardSidebar() {
     return skeletonContent;
   }
 
-  // عرض رسالة خطأ إذا لم تكن هناك بيانات
-  if (!clinicData) {
-    return (
-      <div className="h-screen flex items-center justify-center p-4">
-        <div className="text-center">
-          <p className="text-red-500 mb-2">⚠️ {error || 'لا توجد بيانات'}</p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="text-sm text-blue-500 hover:text-blue-600 underline"
-          >
-            إعادة المحاولة
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   const primaryColor = clinicData.settings.primaryColor;
   const secondaryColor = clinicData.settings.secondaryColor;
 
-  // حالة الهاتف: عرض زر الفتح فقط عندما تكون القائمة مغلقة
+  // حالة الهاتف: عرض زر الفتح فقط
   if (isMobile && !isMobileOpen) {
     return (
-      <>
-        {/* زر فتح القائمة في الهاتف */}
-        <motion.button
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.3 }}
-          onClick={() => setIsMobileOpen(true)}
-          className="fixed top-2 left-4 z-50 w-10 h-10 bg-white rounded-xl shadow-lg flex items-center justify-center hover:shadow-xl transition-all border border-gray-200 md:hidden"
-          style={{ color: primaryColor }}
-        >
-          <Menu size={16} />
-        </motion.button>
-      </>
+      <motion.button
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.3 }}
+        onClick={() => setIsMobileOpen(true)}
+        className="fixed top-2 left-4 z-50 w-10 h-10 bg-white rounded-xl shadow-lg flex items-center justify-center hover:shadow-xl transition-all border border-gray-200 md:hidden"
+        style={{ color: primaryColor }}
+      >
+        <Menu size={16} />
+      </motion.button>
     );
   }
 
@@ -233,7 +207,6 @@ export function DashboardSidebar() {
       `}
       style={{ borderLeftColor: primaryColor }}
     >
-      {/* زر الطي / الإغلاق */}
       <button
         onClick={() => {
           if (isMobile) {
@@ -257,7 +230,6 @@ export function DashboardSidebar() {
         </motion.div>
       </button>
 
-      {/* هيدر القائمة */}
       <div className="p-6 border-b border-gray-100">
         <AnimatePresence mode="wait">
           {!isCollapsed || isMobile ? (
@@ -275,7 +247,7 @@ export function DashboardSidebar() {
                   whileHover={{ scale: 1.05 }}
                   transition={{ type: "spring", stiffness: 400, damping: 10 }}
                 >
-                  {clinicData.logo?.startsWith('/') ? (
+                  {clinicData.logo?.startsWith('/') || clinicData.logo?.startsWith('http') ? (
                     <div className="relative w-full h-full p-1.5">
                       <Image 
                         src={clinicData.logo} 
@@ -310,7 +282,7 @@ export function DashboardSidebar() {
                 whileHover={{ scale: 1.1 }}
                 transition={{ type: "spring", stiffness: 400, damping: 10 }}
               >
-                {clinicData.logo?.startsWith('/') ? (
+                {clinicData.logo?.startsWith('/') || clinicData.logo?.startsWith('http') ? (
                   <div className="relative w-full h-full p-1.5">
                     <Image 
                       src={clinicData.logo} 
@@ -330,7 +302,6 @@ export function DashboardSidebar() {
         </AnimatePresence>
       </div>
 
-      {/* القائمة الرئيسية */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {menuItems.map((item) => {
           const href = `/dashboard/${clinicId}?tab=${item.tab}`;
@@ -384,9 +355,7 @@ export function DashboardSidebar() {
         })}
       </nav>
 
-      {/* القائمة السفلية */}
       <div className="p-3 border-t border-gray-100 space-y-1">
-        {/* الإعدادات */}
         <motion.button
           whileHover={{ x: -4 }}
           className={`
@@ -409,7 +378,6 @@ export function DashboardSidebar() {
           </AnimatePresence>
         </motion.button>
 
-        {/* تسجيل الخروج */}
         <motion.button
           whileHover={{ x: -4 }}
           className={`
@@ -435,11 +403,9 @@ export function DashboardSidebar() {
     </motion.div>
   );
 
-  // في حالة الهاتف، نضيف خلفية شفافة عند فتح القائمة
   if (isMobile && isMobileOpen) {
     return (
       <>
-        {/* خلفية شفافة */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

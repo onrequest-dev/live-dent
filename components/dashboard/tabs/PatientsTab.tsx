@@ -1,28 +1,40 @@
-// livedent\components\dashboard\tabs\PatientsTab.tsx
-
+// components/dashboard/tabs/PatientsTab.tsx
 'use client';
 
 import { useState, useMemo } from 'react';
 import { Download, Calendar, ChevronLeft, ChevronRight, List } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { mockData } from '@/lib/mock/data';
-import { Session } from '@/types';
+import { Clinic, Patient, PatientCase, Session } from '@/types';
 
 type ViewMode = 'day' | 'all';
 
-export function PatientsTab() {
-  const clinicColor = mockData.clinic.settings.primaryColor || '#8385da';
+// ✅ واجهة Props الجديدة
+interface PatientsTabProps {
+  clinicData: Clinic | null;
+  patients: Patient[];
+  patientCases: PatientCase[];
+  sessions: Session[];
+}
+
+export function PatientsTab({ 
+  clinicData, 
+  patients, 
+  patientCases, 
+  sessions 
+}: PatientsTabProps) {
+  // ✅ استخدام البيانات الحقيقية
+  const clinicColor = clinicData?.settings.primaryColor || '#8385da';
   const today = new Date();
   const [viewMode, setViewMode] = useState<ViewMode>('day');
   const [selectedDate, setSelectedDate] = useState<string>(
     today.toISOString().split('T')[0]
   );
 
-  // تجميع الجلسات حسب التاريخ
+  // ✅ تجميع الجلسات حسب التاريخ باستخدام البيانات الحقيقية
   const sessionsByDate = useMemo(() => {
     const grouped: Record<string, Session[]> = {};
     
-    mockData.sessions.forEach(session => {
+    sessions.forEach(session => {
       const dateKey = new Date(session.startTime).toISOString().split('T')[0];
       if (!grouped[dateKey]) {
         grouped[dateKey] = [];
@@ -38,15 +50,15 @@ export function PatientsTab() {
     });
 
     return grouped;
-  }, []);
+  }, [sessions]);
 
-  // جميع الجلسات مرتبة حسب التاريخ والوقت
+  // ✅ جميع الجلسات مرتبة حسب التاريخ والوقت
   const allSessionsSorted = useMemo(() => {
-    return mockData.sessions.sort((a, b) => {
+    return [...sessions].sort((a, b) => {
       const dateCompare = new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
       return dateCompare;
     });
-  }, []);
+  }, [sessions]);
 
   // التواريخ المتاحة
   const availableDates = useMemo(() => {
@@ -61,9 +73,9 @@ export function PatientsTab() {
     return allSessionsSorted;
   }, [viewMode, selectedDate, sessionsByDate, allSessionsSorted]);
 
-  // الحصول على بيانات المريض
+  // ✅ الحصول على بيانات المريض من البيانات الحقيقية
   const getPatientData = (patientId: string) => {
-    return mockData.patients.find(p => p.id === patientId);
+    return patients.find(p => p.id === patientId);
   };
 
   // تنسيق التاريخ للعرض
@@ -111,17 +123,17 @@ export function PatientsTab() {
     }
   };
 
-  // تصدير جميع البيانات إلى Excel
+  // ✅ تصدير جميع البيانات إلى Excel باستخدام البيانات الحقيقية
   const exportToExcel = () => {
-    const clinicName = mockData.clinic.name;
+    const clinicName = clinicData?.name || 'عيادة الأسنان';
     
     // إعداد بيانات التصدير
     const excelData: any[][] = [];
     
-    // الصف الأول: اسم العيادة (دمج 10 أعمدة)
+    // الصف الأول: اسم العيادة (دمج 11 عمود)
     excelData.push([clinicName]);
     
-    // الصف الثاني: عناوين الأعمدة (مرة واحدة فقط)
+    // الصف الثاني: عناوين الأعمدة
     excelData.push([
       'اليوم', 
       'التاريخ', 
@@ -165,7 +177,7 @@ export function PatientsTab() {
     const totalPaid = allSessionsSorted.reduce((sum, s) => sum + (s.isPaid ? s.sessionCost || 0 : 0), 0);
     
     excelData.push([]);
-    excelData.push(['', '', '', '', '', '', '', 'الإجمالي:', totalCost, totalPaid, '']);
+    excelData.push(['', '', '', '', '', '', '', '', 'الإجمالي:', totalCost, totalPaid, '']);
     
     // إنشاء ورقة العمل
     const wb = XLSX.utils.book_new();
@@ -235,7 +247,7 @@ export function PatientsTab() {
         }
         
         // تنسيق صف الإجمالي
-        if (excelData[R] && excelData[R][7] === 'الإجمالي:') {
+        if (excelData[R] && excelData[R][8] === 'الإجمالي:') {
           ws[cellAddress].s = {
             font: { bold: true, sz: 12 },
             fill: { fgColor: { rgb: 'F3F4F6' } },
@@ -287,6 +299,21 @@ export function PatientsTab() {
     const fileName = `جدول_المرضى_${new Date().toISOString().split('T')[0]}.xlsx`;
     XLSX.writeFile(wb, fileName);
   };
+
+  // ✅ عرض شاشة تحميل إذا لم تصل البيانات بعد
+  if (!clinicData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div 
+            className="w-16 h-16 rounded-full border-4 border-t-transparent animate-spin mx-auto mb-4"
+            style={{ borderColor: '#8385da', borderTopColor: 'transparent' }}
+          />
+          <p className="text-gray-600">جاري تحميل البيانات...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -420,7 +447,7 @@ export function PatientsTab() {
           className="py-4 px-6 text-center"
           style={{ backgroundColor: clinicColor }}
         >
-          <h2 className="text-xl font-bold text-white">{mockData.clinic.name}</h2>
+          <h2 className="text-xl font-bold text-white">{clinicData.name}</h2>
           {viewMode === 'all' && (
             <p className="text-white/80 text-sm mt-1">جميع الجلسات</p>
           )}
