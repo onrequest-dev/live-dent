@@ -21,15 +21,16 @@ import {
 } from 'lucide-react';
 import { Clinic } from '@/types';
 
+// ✅ 1. إضافة الإعدادات إلى القائمة مباشرة (بدون تكرار)
 const menuItems = [
   { tab: 'main', label: 'الرئيسية', icon: LayoutDashboard },
   { tab: 'patients', label: 'جدول المرضى', icon: Users },
   { tab: 'clinic', label: 'معلومات العيادة', icon: Building2 },
   { tab: 'cv', label: 'CV الطبيب', icon: UserCircle },
-  { tab: 'messages', label: 'إعدادات المراسلة', icon: MessageSquareText },
+  // { tab: 'messages', label: 'إعدادات المراسلة', icon: MessageSquareText },
+  { tab: 'settings', label: 'الإعدادات', icon: Settings }, 
 ];
 
-// ✅ واجهة Props
 interface DashboardSidebarProps {
   clinicData: Clinic | null;
 }
@@ -113,6 +114,32 @@ export function DashboardSidebar({ clinicData }: DashboardSidebarProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [autoCollapse, setAutoCollapse] = useState(true); // ✅ القيمة الافتراضية true
+
+  // ✅ 2. تحميل الإعدادات من localStorage
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('dashboard_settings');
+    if (savedSettings) {
+      try {
+        const settings = JSON.parse(savedSettings);
+        setAutoCollapse(settings.autoCollapse ?? true);
+      } catch (error) {
+        console.error('خطأ في قراءة الإعدادات:', error);
+      }
+    }
+  }, []);
+
+  // ✅ 3. الاستماع لتغييرات الإعدادات
+  useEffect(() => {
+    const handleSettingsChange = (event: CustomEvent) => {
+      setAutoCollapse(event.detail.autoCollapse);
+    };
+
+    window.addEventListener('settingsChanged', handleSettingsChange as EventListener);
+    return () => {
+      window.removeEventListener('settingsChanged', handleSettingsChange as EventListener);
+    };
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -128,11 +155,19 @@ export function DashboardSidebar({ clinicData }: DashboardSidebarProps) {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  useEffect(() => {
-    if (isMobile) {
-      setIsMobileOpen(false);
+// ✅ تعديل useEffect للإغلاق التلقائي - إغلاق دائم في حالة الهاتف
+useEffect(() => {
+  // في حالة الهاتف: نغلق القائمة دائماً عند التنقل
+  if (isMobile) {
+    setIsMobileOpen(false);
+  } 
+  // في حالة سطح المكتب: نطبق إعدادات autoCollapse
+  else if (autoCollapse) {
+    if (!isCollapsed) {
+      setIsCollapsed(true);
     }
-  }, [currentTab, isMobile]);
+  }
+}, [currentTab, autoCollapse, isMobile]); // ✅ إضافة isMobile للتبعيات
 
   if (!mounted) return null;
 
@@ -302,6 +337,7 @@ export function DashboardSidebar({ clinicData }: DashboardSidebarProps) {
         </AnimatePresence>
       </div>
 
+      {/* ✅ 5. استخدام menuItems مباشرة (بدون updatedMenuItems) */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {menuItems.map((item) => {
           const href = `/dashboard/${clinicId}?tab=${item.tab}`;
@@ -355,29 +391,8 @@ export function DashboardSidebar({ clinicData }: DashboardSidebarProps) {
         })}
       </nav>
 
-      <div className="p-3 border-t border-gray-100 space-y-1">
-        <motion.button
-          whileHover={{ x: -4 }}
-          className={`
-            flex items-center gap-3 px-4 py-3 w-full rounded-xl text-sm font-medium
-            text-gray-600 hover:bg-gray-50 transition-all
-            ${(isCollapsed && !isMobile) ? 'justify-center' : ''}
-          `}
-        >
-          <Settings size={20} />
-          <AnimatePresence mode="wait">
-            {(!isCollapsed || isMobile) && (
-              <motion.span
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-              >
-                الإعدادات
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </motion.button>
-
+      {/* ✅ 6. حذف أزرار الإعدادات وتسجيل الخروج من الأسفل (لأن الإعدادات أصبحت في القائمة) */}
+      <div className="p-3 border-t border-gray-100">
         <motion.button
           whileHover={{ x: -4 }}
           className={`

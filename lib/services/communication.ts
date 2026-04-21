@@ -87,13 +87,11 @@ export async function sendBulkReminders(
           messageType: 'reminder',
         });
         
-        openWhatsAppChat(session.patientSnapshot.phone, message);
         success++;
         
         // تأخير بسيط بين كل رسالة لتجنب الحظر
         await new Promise(resolve => setTimeout(resolve, 500));
       } catch (error) {
-        console.error(`Failed to send reminder to ${session.patientSnapshot.phone}`, error);
         failed++;
       }
     }
