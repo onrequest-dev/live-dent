@@ -31,6 +31,8 @@ import {
   openWhatsAppChat,
 } from '@/lib/services/communication';
 import { Clinic, Patient, PatientCase, Session } from '@/types';
+import { createPatient } from '@/client/helpers/patient';
+import { createSession, updateSession, updateSessionStatus } from '@/client/helpers/session';
 
 // ============================================================
 // خدمة API محاكية (لتحضير الربط مع الباك إند)
@@ -44,11 +46,11 @@ interface MainTabProps {
 const api = {
   // إضافة مريض جديد
   addPatient: async (clinicId: string, patientData: Omit<Patient, 'id' | 'clinicId' | 'createdAt'>): Promise<Patient> => {
-    // محاكاة تأخير الشبكة
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
+    const result = await createPatient(patientData);
+    console.log(result)
+    if(!result||!result.data||!result.data.id) return {} as Patient 
     const newPatient: Patient = {
-      id: `patient-${Date.now()}`,
+      id: result.data.id,
       clinicId,
       ...patientData,
       createdAt: new Date(),
@@ -61,11 +63,13 @@ const api = {
   },
   
   // إضافة موعد جديد
-  addSession: async (clinicId: string, sessionData: Omit<Session, 'id' | 'clinicId'>): Promise<Session> => {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
+  addSession: async (clinicId: string, sessionData: Omit<Session, 'id' | 'clinicId'|'patientSnapshot'>): Promise<Session> => {
+    console.log("adding session")
+    const result = await createSession(sessionData);
+    if(!result||!result.data||!result.data.id) return {} as Session // error;
+    console.log(result)
     const newSession: Session = {
-      id: `session-${Date.now()}`,
+      id: result.data.id,
       clinicId,
       ...sessionData,
     };
@@ -242,7 +246,8 @@ const handleEditSession = (session: Session) => {
 };
 
 // حفظ تعديلات الجلسة
-const handleSaveSessionEdit = (updatedSessionData: Partial<Session>) => {
+const handleSaveSessionEdit = async (updatedSessionData: Partial<Session>) => {
+  await updateSession(editingSession!.id, updatedSessionData);
   if (!editingSession) return;
   
   // تحديث في القائمة الرئيسية
@@ -302,10 +307,10 @@ const handleDeleteSession = (sessionId: string) => {
           plannedProcedure: patientData.appointment.procedure,
           sessionCost: patientData.appointment.cost || 0,
           isPaid: false,
-          patientSnapshot: {
-            name: newPatient.fullName,
-            phone: newPatient.phone,
-          },
+          // patientSnapshot: {
+          //   name: newPatient.fullName,
+          //   phone: newPatient.phone,
+          // },
           notes: patientData.appointment.notes,
         });
         
@@ -337,10 +342,10 @@ const handleDeleteSession = (sessionId: string) => {
         plannedProcedure: appointmentData.procedure,
         sessionCost: appointmentData.cost || 0,
         isPaid: false,
-        patientSnapshot: {
-          name: selectedPatient.fullName,
-          phone: selectedPatient.phone,
-        },
+        // patientSnapshot: {
+        //   name: selectedPatient.fullName,
+        //   phone: selectedPatient.phone,
+        // },
         caseId: appointmentData.caseId,
         notes: appointmentData.notes,
       });
@@ -1107,6 +1112,7 @@ function EditSessionModal({
     const endTime = new Date(startTime.getTime() + 30 * 60000); // إضافة 30 دقيقة
     
     onSave({
+      id: session.id,
       status: formData.status,
       plannedProcedure: formData.plannedProcedure,
       performedProcedure: formData.performedProcedure,
