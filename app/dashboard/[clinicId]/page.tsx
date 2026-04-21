@@ -9,6 +9,7 @@ import { PatientsTab } from '../../../components/dashboard/tabs/PatientsTab';
 import { ClinicInfoTab } from '../../../components/dashboard/tabs/ClinicInfoTab';
 import { DoctorCVTab } from '../../../components/dashboard/tabs/DoctorCVTab';
 import { MessagesTab } from '../../../components/dashboard/tabs/MessagesTab';
+import { SettingsTab } from '../../../components/dashboard/tabs/SettingsTab';
 import { getClinic, getClinicData } from '@/client/helpers/clinic';
 import { Clinic, Patient, PatientCase, Session } from '@/types';
 
@@ -141,6 +142,11 @@ export default function DashboardPage() {
         return (
           <MessagesTab />
         );
+
+      case 'settings': 
+        return (
+          <SettingsTab clinicData={clinicData} />
+      );
         
       default:
         return (
@@ -162,6 +168,7 @@ export default function DashboardPage() {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
         transition={{ duration: 0.2 }}
+        className='mt-8'
       >
         {renderTab()}
       </motion.div>

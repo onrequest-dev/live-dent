@@ -2,7 +2,17 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Download, Calendar, ChevronLeft, ChevronRight, List } from 'lucide-react';
+import { 
+  Download, Calendar, ChevronLeft, ChevronRight, List, 
+  Users, DollarSign, CreditCard, Clock,
+  Receipt,       
+  Wallet,        
+  Coins,          
+  Landmark,       
+  PiggyBank,      
+  Banknote,       
+  CircleDollarSign 
+} from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { Clinic, Patient, PatientCase, Session } from '@/types';
 
@@ -411,34 +421,64 @@ export function PatientsTab({
         </div>
       )}
 
-      {/* إحصائيات سريعة في وضع الكل */}
-      {viewMode === 'all' && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-            <p className="text-sm text-gray-500">إجمالي الجلسات</p>
-            <p className="text-2xl font-bold text-gray-800">{allSessionsSorted.length}</p>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-            <p className="text-sm text-gray-500">إجمالي التكلفة</p>
-            <p className="text-2xl font-bold text-gray-800">
-              {allSessionsSorted.reduce((sum, s) => sum + (s.sessionCost || 0), 0)} ل.س
-            </p>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-            <p className="text-sm text-gray-500">إجمالي المدفوع</p>
-            <p className="text-2xl font-bold text-green-600">
-              {allSessionsSorted.reduce((sum, s) => sum + (s.isPaid ? s.sessionCost || 0 : 0), 0)} ل.س 
-            </p>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-            <p className="text-sm text-gray-500">المتبقي</p>
-            <p className="text-2xl font-bold text-red-600">
-              {allSessionsSorted.reduce((sum, s) => sum + (s.sessionCost || 0), 0) - 
-               allSessionsSorted.reduce((sum, s) => sum + (s.isPaid ? s.sessionCost || 0 : 0), 0)} ل.س
-            </p>
-          </div>
-        </div>
-      )}
+{viewMode === 'all' && (
+  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    {/* الجلسات */}
+    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-50/80 to-white p-6 shadow-sm">
+      <div className="absolute -top-12 -right-12 w-32 h-32 bg-slate-100/50 rounded-full blur-2xl" />
+      <div className="absolute -bottom-4 -left-4 opacity-20">
+        <List size={64} strokeWidth={1} className="text-slate-400" />
+      </div>
+      <div className="relative">
+        <p className="text-sm text-gray-400 mb-2">إجمالي الجلسات</p>
+        <p className="text-3xl font-bold text-gray-800">{allSessionsSorted.length}</p>
+      </div>
+    </div>
+
+    {/* التكلفة - استخدام أيقونة Receipt أو Banknote */}
+    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-50/80 to-white p-6 shadow-sm">
+      <div className="absolute -top-12 -right-12 w-32 h-32 bg-amber-100/50 rounded-full blur-2xl" />
+      <div className="absolute -bottom-4 -left-4 opacity-20">
+        <Receipt size={64} strokeWidth={1} className="text-amber-500" />
+      </div>
+      <div className="relative">
+        <p className="text-sm text-gray-400 mb-2">إجمالي التكلفة</p>
+        <p className="text-3xl font-bold text-gray-800">
+          {allSessionsSorted.reduce((sum, s) => sum + (s.sessionCost || 0), 0).toLocaleString()}
+        </p>
+      </div>
+    </div>
+
+    {/* المدفوع - استخدام أيقونة Wallet أو Coins */}
+    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-50/80 to-white p-6 shadow-sm">
+      <div className="absolute -top-12 -right-12 w-32 h-32 bg-emerald-100/50 rounded-full blur-2xl" />
+      <div className="absolute -bottom-4 -left-4 opacity-20">
+        <Wallet size={64} strokeWidth={1} className="text-emerald-500" />
+      </div>
+      <div className="relative">
+        <p className="text-sm text-gray-400 mb-2">المدفوع</p>
+        <p className="text-3xl font-bold text-emerald-600">
+          {allSessionsSorted.reduce((sum, s) => sum + (s.isPaid ? s.sessionCost || 0 : 0), 0).toLocaleString()}
+        </p>
+      </div>
+    </div>
+
+    {/* المتبقي - استخدام أيقونة PiggyBank */}
+    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-rose-50/80 to-white p-6 shadow-sm">
+      <div className="absolute -top-12 -right-12 w-32 h-32 bg-rose-100/50 rounded-full blur-2xl" />
+      <div className="absolute -bottom-4 -left-4 opacity-20">
+        <PiggyBank size={64} strokeWidth={1} className="text-rose-500" />
+      </div>
+      <div className="relative">
+        <p className="text-sm text-gray-400 mb-2">المتبقي</p>
+        <p className="text-3xl font-bold text-rose-600">
+          {(allSessionsSorted.reduce((sum, s) => sum + (s.sessionCost || 0), 0) - 
+            allSessionsSorted.reduce((sum, s) => sum + (s.isPaid ? s.sessionCost || 0 : 0), 0)).toLocaleString()}
+        </p>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* جدول البيانات */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
