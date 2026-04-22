@@ -23,12 +23,12 @@ import {
 import { Clinic, Patient, Session } from '@/types';
 
 // تنسيق التاريخ مع اسم اليوم
-const formatDateWithDay = (date: Date) => {
+const formatDateWithDay = (date: Date | string) => {
+  const d = typeof date === 'string' ? new Date(date) : date;
   const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-  const dayName = days[new Date(date).getDay()];
+  const dayName = days[d.getDay()];
   
   // استخدام تنسيق موحد للسيرفر والعميل
-  const d = new Date(date);
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
@@ -38,8 +38,11 @@ const formatDateWithDay = (date: Date) => {
 };
 
 // تنسيق الوقت
-const formatTime = (date: Date) => {
-  return new Date(date).toLocaleTimeString('ar-SA', {
+const formatTime = (date: Date | string | null | undefined) => {
+  if (!date) return 'غير محدد';
+  const d = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(d.getTime())) return 'غير محدد';
+  return d.toLocaleTimeString('ar-SA', {
     hour: '2-digit',
     minute: '2-digit',
   });
@@ -121,13 +124,17 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
     (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
   );
   
-  // الجلسة القادمة
-  const upcomingSession = patientSessions
-    .filter(s => s.status === 'scheduled' && new Date(s.startTime) >= new Date())
-    .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())[0];
+  // فصل الجلسات المجدولة
+  const now = new Date();
+  const scheduledSessions = patientSessions
+    .filter(s => s.status === 'scheduled')
+    .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
   
-  // الجلسات السابقة (آخر 5)
-  const pastSessions = patientSessions
+  // الجلسات المجدولة المستقبلية
+  const upcomingSessions = scheduledSessions.filter(s => new Date(s.startTime) >= now);
+  
+  // الجلسات المكتملة أو التي لم يحضرها المريض (آخر 5)
+  const completedSessions = patientSessions
     .filter(s => s.status === 'completed' || s.status === 'no-show')
     .slice(0, 5);
   
@@ -162,9 +169,6 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
       setIsDownloading(false);
     }
   };
-
-  // بيانات الجلسة القادمة مع اليوم
-  const upcomingDate = upcomingSession ? formatDateWithDay(upcomingSession.startTime) : null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 py-6 px-4" dir="rtl">
@@ -272,95 +276,125 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
               </div>
             </div>
 
-            {/* الجلسة القادمة */}
-            <div className="px-6 pb-4">
-              <div className="flex items-center gap-2 mb-3">
-                <div 
-                  className="w-8 h-8 rounded-xl flex items-center justify-center"
-                  style={{ backgroundColor: `${primaryColor}15` }}
-                >
-                  <Calendar size={18} style={{ color: primaryColor }} />
-                </div>
-                <h4 className="text-base font-bold text-gray-800">الموعد القادم</h4>
-              </div>
-              
-              {upcomingSession && upcomingDate ? (
-                <div 
-                  className="relative p-5 rounded-2xl overflow-hidden transition-all"
-                  style={{ 
-                    background: `linear-gradient(135deg, ${primaryColor}10 0%, ${secondaryColor}05 100%)`,
-                    border: `1px solid ${primaryColor}20`
-                  }}
-                >
-                  <div className="relative">
-                    <div className="flex items-start justify-between mb-3">
-                      <p className="text-lg font-bold text-gray-900">{upcomingSession.plannedProcedure}</p>
-                      <StatusBadge status={upcomingSession.status} />
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-3 mb-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                          <Calendar size={14} style={{ color: primaryColor }} />
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">التاريخ</p>
-                          <p className="text-sm font-medium text-gray-900">
-                            {upcomingDate.dayName} {upcomingDate.formattedDate}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                          <Clock size={14} style={{ color: primaryColor }} />
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">الوقت</p>
-                          <p className="text-sm font-medium text-gray-900">
-                            {formatTime(upcomingSession.startTime)} - {formatTime(upcomingSession.endTime)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {upcomingSession.toothNumber && upcomingSession.toothNumber.length > 0 && (
-                      <div className="mb-3 p-3 bg-white/50 rounded-xl">
-                        <p className="text-xs text-gray-600 mb-1">الأسنان المعالجة:</p>
-                        <div className="flex gap-2">
-                          {upcomingSession.toothNumber.map((tooth) => (
-                            <span 
-                              key={tooth}
-                              className="px-3 py-1 rounded-lg text-sm font-medium"
-                              style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
-                            >
-                              {tooth}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="flex items-center justify-between pt-3 border-t border-gray-200/50">
-                      <div>
-                        <p className="text-xs text-gray-500 mb-0.5">تكلفة الجلسة</p>
-                        <p className="text-xl font-bold" style={{ color: primaryColor }}>
-                          {upcomingSession.sessionCost} <span className="text-sm font-normal text-gray-600">ل.س</span>
-                        </p>
-                      </div>
-                      <PaymentBadge isPaid={upcomingSession.isPaid} />
-                    </div>
+            {/* جميع المواعيد المجدولة */}
+            {scheduledSessions.length > 0 && (
+              <div className="px-6 pb-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <div 
+                    className="w-8 h-8 rounded-xl flex items-center justify-center"
+                    style={{ backgroundColor: `${primaryColor}15` }}
+                  >
+                    <Calendar size={18} style={{ color: primaryColor }} />
                   </div>
+                  <h4 className="text-base font-bold text-gray-800">
+                    المواعيد المجدولة ({scheduledSessions.length})
+                  </h4>
                 </div>
-              ) : (
-                <div className="p-6 rounded-2xl bg-gray-50/50 border border-gray-100 text-center">
-                  <Calendar size={32} className="mx-auto mb-2 text-gray-300" />
-                  <p className="text-gray-500">لا توجد مواعيد قادمة</p>
-                </div>
-              )}
-            </div>
+                
+                <div className="space-y-3">
+                  {scheduledSessions.map((session, index) => {
+                    const sessionDate = formatDateWithDay(session.startTime);
+                    const isPast = new Date(session.startTime) < now;
+                    
+                    return (
+                      <motion.div
+                        key={session.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className={`p-4 rounded-xl border transition-all ${
+                          isPast 
+                            ? 'bg-gray-50/50 border-gray-200 opacity-75' 
+                            : 'bg-white shadow-md border-gray-100'
+                        }`}
+                        style={{
+                          borderRight: `3px solid ${primaryColor}`
+                        }}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
+                              <span className="font-medium text-gray-900">
+                                {session.plannedProcedure}
+                              </span>
+                              <StatusBadge status={session.status} />
+                              {isPast && (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-red-50 text-red-600">
+                                  موعد فائت
+                                </span>
+                              )}
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-3 mt-2">
+                              <div className="flex items-center gap-2">
+                                <Calendar size={14} style={{ color: primaryColor }} />
+                                <div>
+                                  <p className="text-xs text-gray-500">التاريخ</p>
+                                  <p className="text-sm font-medium text-gray-900">
+                                    {sessionDate.dayName} {sessionDate.formattedDate}
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center gap-2">
+                                <Clock size={14} style={{ color: primaryColor }} />
+                                <div>
+                                  <p className="text-xs text-gray-500">الوقت</p>
+                                  <p className="text-sm font-medium text-gray-900">
+                                    {formatTime(session.startTime)} 
+                                    {session.endTime && ` - ${formatTime(session.endTime)}`}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {session.toothNumber && session.toothNumber.length > 0 && (
+                              <div className="mt-3 flex flex-wrap gap-1">
+                                {session.toothNumber.map((tooth) => (
+                                  <span 
+                                    key={tooth}
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs"
+                                    style={{ backgroundColor: `${primaryColor}10`, color: primaryColor }}
+                                  >
+                                    🦷 {tooth}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
 
-            {/* الجلسات السابقة */}
-            {pastSessions.length > 0 && (
+                            {session.notes && (
+                              <p className="mt-2 text-xs text-gray-500 line-clamp-2">
+                                📝 {session.notes}
+                              </p>
+                            )}
+                          </div>
+                          
+                          <div className="text-left mr-3">
+                            <p className="text-lg font-bold" style={{ color: primaryColor }}>
+                              {session.sessionCost.toLocaleString()} <span className="text-xs font-normal text-gray-600">ل.س</span>
+                            </p>
+                            <div className="mt-1">
+                              <PaymentBadge isPaid={session.isPaid} />
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+
+                {upcomingSessions.length === 0 && scheduledSessions.length > 0 && (
+                  <div className="mt-3 p-3 rounded-xl bg-amber-50/50 border border-amber-200 text-center">
+                    <p className="text-sm text-amber-700">
+                      ⚠️ جميع المواعيد المجدولة قد فاتت، يرجى التواصل مع العيادة لتحديد موعد جديد
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* الجلسات السابقة (المكتملة) */}
+            {completedSessions.length > 0 && (
               <div className="px-6 pb-4">
                 <div className="flex items-center gap-2 mb-3">
                   <div 
@@ -369,11 +403,13 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
                   >
                     <CheckCircle2 size={18} style={{ color: primaryColor }} />
                   </div>
-                  <h4 className="text-base font-bold text-gray-800">الجلسات السابقة</h4>
+                  <h4 className="text-base font-bold text-gray-800">
+                    الجلسات السابقة ({completedSessions.length})
+                  </h4>
                 </div>
                 
                 <div className="space-y-2">
-                  {pastSessions.map((session, index) => {
+                  {completedSessions.map((session, index) => {
                     const sessionDate = formatDateWithDay(session.startTime);
                     return (
                       <motion.div
@@ -385,11 +421,11 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
                       >
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
                               <span className="font-medium text-gray-900">{session.plannedProcedure}</span>
                               <StatusBadge status={session.status} />
                             </div>
-                            <div className="flex items-center gap-3 text-xs text-gray-600">
+                            <div className="flex items-center gap-3 text-xs text-gray-600 mt-1">
                               <span className="flex items-center gap-1">
                                 <Calendar size={12} />
                                 {sessionDate.dayName} {sessionDate.formattedDate}
@@ -401,10 +437,17 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
                                 </span>
                               )}
                             </div>
+                            {session.performedProcedure && (
+                              <p className="mt-2 text-xs text-gray-600">
+                                ✅ {session.performedProcedure}
+                              </p>
+                            )}
                           </div>
-                          <div className="text-left">
-                            <p className="text-base font-bold text-gray-900">{session.sessionCost} ل.س</p>
-                            <PaymentBadge isPaid={session.isPaid} />
+                          <div className="text-left mr-3">
+                            <p className="text-base font-bold text-gray-900">{session.sessionCost.toLocaleString()} ل.س</p>
+                            <div className="mt-1">
+                              <PaymentBadge isPaid={session.isPaid} />
+                            </div>
                           </div>
                         </div>
                       </motion.div>
@@ -431,11 +474,11 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
                 <div className="space-y-3">
                   <div className="flex items-center justify-between py-1">
                     <span className="text-gray-600">إجمالي التكاليف</span>
-                    <span className="font-bold text-gray-900 text-lg">{totalAmount} ل.س</span>
+                    <span className="font-bold text-gray-900 text-lg">{totalAmount.toLocaleString()} ل.س</span>
                   </div>
                   <div className="flex items-center justify-between py-1">
                     <span className="text-gray-600">المبلغ المدفوع</span>
-                    <span className="font-bold text-emerald-600 text-lg">{totalPaid} ل.س</span>
+                    <span className="font-bold text-emerald-600 text-lg">{totalPaid.toLocaleString()} ل.س</span>
                   </div>
                   <div className="relative my-2">
                     <div className="absolute inset-0 flex items-center">
@@ -445,7 +488,7 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
                   <div className="flex items-center justify-between py-1">
                     <span className="font-medium text-gray-800">المبلغ المتبقي</span>
                     <span className={`font-bold text-xl ${remainingAmount > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                      {remainingAmount} ل.س
+                      {remainingAmount.toLocaleString()} ل.س
                     </span>
                   </div>
                 </div>

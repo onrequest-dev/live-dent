@@ -25,6 +25,7 @@ import {
 import { Clinic } from '@/types';
 import { updateClinic } from '@/client/helpers/clinic';
 import { WorkingHours } from '@/types';
+import { handleUploadImage } from '@/client/helpers/upload_image';
 
 // ============================================================
 // أيام الأسبوع (0 = السبت, 1 = الأحد, ... , 6 = الجمعة)
@@ -271,8 +272,9 @@ export function ClinicInfoTab({ clinicData, onClinicUpdate }: ClinicInfoTabProps
       
       let finalLogo = formData.logo;
       if (tempLogo) {
-        const logoUrl = await uploadLogo(tempLogo);
+        const logoUrl = await handleUploadImage(tempLogo, 'logo', clinicData?.id);
         if (logoUrl) {
+          console.log('تم رفع الشعار بنجاح:', logoUrl);
           finalLogo = logoUrl;
           updatedClinic.logo = logoUrl;
         }
@@ -310,29 +312,7 @@ export function ClinicInfoTab({ clinicData, onClinicUpdate }: ClinicInfoTabProps
     }
   };
 
-  const uploadLogo = async (file: File): Promise<string | null> => {
-    try {
-      const formData = new FormData();
-      formData.append('logo', file);
-      
-      const response = await fetch('/api/v1/upload/logo', {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      });
-      
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'فشل رفع الشعار');
-      }
-      
-      return result.url;
-    } catch (error) {
-      console.error('خطأ في رفع الشعار:', error);
-      return null;
-    }
-  };
+
 
   const handleCancel = () => {
     // إعادة تحميل البيانات من displayData
