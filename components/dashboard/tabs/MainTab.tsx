@@ -5,6 +5,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useParams } from 'next/navigation';
+import { ExpandedSessionCard } from './ExpandedSessionCard';
 import {
   Search,
   UserPlus,
@@ -32,7 +33,7 @@ import {
 } from '@/lib/services/communication';
 import { Clinic, Patient, PatientCase, Session } from '@/types';
 import { createPatient } from '@/client/helpers/patient';
-import { createSession, updateSession, updateSessionStatus } from '@/client/helpers/session';
+import { createSession, deleteSession, updateSession, updateSessionStatus } from '@/client/helpers/session';
 
 // ============================================================
 // خدمة API محاكية (لتحضير الربط مع الباك إند)
@@ -47,7 +48,6 @@ const api = {
   // إضافة مريض جديد
   addPatient: async (clinicId: string, patientData: Omit<Patient, 'id' | 'clinicId' | 'createdAt'>): Promise<Patient> => {
     const result = await createPatient(patientData);
-    console.log(result)
     if(!result||!result.data||!result.data.id) return {} as Patient 
     const newPatient: Patient = {
       id: result.data.id,
@@ -267,10 +267,11 @@ const handleSaveSessionEdit = async (updatedSessionData: Partial<Session>) => {
 };
 
 // حذف الجلسة
-const handleDeleteSession = (sessionId: string) => {
+const handleDeleteSession = async (sessionId: string) => {
   if (!confirm('هل أنت متأكد من حذف هذه الجلسة؟')) return;
+  const result = await deleteSession(sessionId);
+  if(!result.success) return // error
   
-  // حذف من القائمة الرئيسية
   setSessions(prev => prev.filter(s => s.id !== sessionId));
   
   // حذف من جلسات المريض المحدد إذا كان مفتوحاً
@@ -387,8 +388,11 @@ const handleRequestDeleteSession = (sessionId: string) => {
 };
 
 // تأكيد الحذف
-const handleConfirmDeleteSession = () => {
+const handleConfirmDeleteSession = async () => {
   if (!sessionToDelete) return;
+  const result = await deleteSession(sessionToDelete);
+  if(!result.success) return // error
+
   
   // حذف من القائمة الرئيسية
   setSessions(prev => prev.filter(s => s.id !== sessionToDelete));
@@ -846,6 +850,8 @@ interface PatientDetailsCardProps {
   onRequestDeleteSession: (sessionId: string) => void;
 }
 
+
+
 function PatientDetailsCard({
   patient,
   cases,
@@ -870,6 +876,7 @@ function PatientDetailsCard({
 }: PatientDetailsCardProps) {
   const finance = calculateFinance();
   const pastSessions = sessions.filter(s => s.status === 'completed' || s.status === 'scheduled');
+  const [selectedSession, setSelectedSession] = useState<any>(null);
   
   // فرز الجلسات من الأحدث إلى الأقدم
   const sortedSessions = [...pastSessions].sort((a, b) => 
@@ -877,170 +884,178 @@ function PatientDetailsCard({
   );
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-      {/* Header - معلومات أساسية */}
-      <div className="p-6 border-b border-gray-100 relative">
-        {/* زر الإغلاق */}
-        <button
-          onClick={onClose}
-          className="absolute left-0 top-0 w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-gray-500 hover:bg-red-500 transition-colors"
-        >
-          <X size={18} />
-        </button>
+    <>
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+        {/* Header - معلومات أساسية */}
+        <div className="p-6 border-b border-gray-100 relative">
+          {/* زر الإغلاق */}
+          <button
+            onClick={onClose}
+            className="absolute left-0 top-0 w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-gray-500 hover:bg-red-500 transition-colors"
+          >
+            <X size={18} />
+          </button>
 
-        {/* الاسم ورقم الهاتف وعدد الجلسات */}
-        <div className="flex items-start justify-between mt-2">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-1">
-              {patient.fullName}
-            </h2>
-            <div className="flex items-center gap-4 text-gray-600">
-              <span className="flex items-center gap-1.5">
-                <Phone size={16} className="text-gray-400" />
-                <span dir="ltr">{patient.phone}</span>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Calendar size={16} className="text-gray-400" />
-                <span>{sessions.length} جلسة</span>
+          {/* الاسم ورقم الهاتف وعدد الجلسات */}
+          <div className="flex items-start justify-between mt-2">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                {patient.fullName}
+              </h2>
+              <div className="flex items-center gap-4 text-gray-600">
+                <span className="flex items-center gap-1.5">
+                  <Phone size={16} className="text-gray-400" />
+                  <span dir="ltr">{patient.phone}</span>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Calendar size={16} className="text-gray-400" />
+                  <span>{sessions.length} جلسة</span>
+                </span>
+              </div>
+            </div>
+
+            {/* زر إضافة موعد جديد */}
+            <button
+              onClick={onAddAppointment}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-medium text-sm
+                       transition-all hover:shadow-md active:scale-95"
+              style={{ background: primaryColor }}
+            >
+              <Plus size={18} />
+              <span>موعد جديد</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 space-y-6">
+          {/* العمر والجنس وسنة الميلاد */}
+          <div className="flex items-center gap-6">
+            {patient.age && (
+              <>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-500">العمر:</span>
+                  <span className="text-sm font-medium text-gray-900">{patient.age} سنة</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-500">سنة الميلاد:</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {calculateBirthYear(patient.age)} تقريباً
+                  </span>
+                </div>
+              </>
+            )}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500">الجنس:</span>
+              <span className={`text-sm font-medium px-3 py-1 rounded-full ${
+                patient.gender === 'male' 
+                  ? 'bg-blue-50 text-blue-700' 
+                  : 'bg-pink-50 text-pink-700'
+              }`}>
+                {patient.gender === 'male' ? 'ذكر' : 'أنثى'}
               </span>
             </div>
           </div>
 
-          {/* زر إضافة موعد جديد */}
-          <button
-            onClick={onAddAppointment}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-medium text-sm
-                     transition-all hover:shadow-md active:scale-95"
-            style={{ background: primaryColor }}
-          >
-            <Plus size={18} />
-            <span>موعد جديد</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="p-6 space-y-6">
-        {/* العمر والجنس وسنة الميلاد */}
-        <div className="flex items-center gap-6">
-          {patient.age && (
-            <>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">العمر:</span>
-                <span className="text-sm font-medium text-gray-900">{patient.age} سنة</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">سنة الميلاد:</span>
-                <span className="text-sm font-medium text-gray-900">
-                  {calculateBirthYear(patient.age)} تقريباً
-                </span>
-              </div>
-            </>
+          {/* ملاحظات إن وجدت */}
+          {patient.notes && (
+            <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+              <p className="text-sm text-gray-600">{patient.notes}</p>
+            </div>
           )}
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">الجنس:</span>
-            <span className={`text-sm font-medium px-3 py-1 rounded-full ${
-              patient.gender === 'male' 
-                ? 'bg-blue-50 text-blue-700' 
-                : 'bg-pink-50 text-pink-700'
-            }`}>
-              {patient.gender === 'male' ? 'ذكر' : 'أنثى'}
-            </span>
-          </div>
-        </div>
 
-        {/* ملاحظات إن وجدت */}
-        {patient.notes && (
-          <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-            <p className="text-sm text-gray-600">{patient.notes}</p>
-          </div>
-        )}
+          {/* جدول المواعيد */}
+          {sortedSessions.length > 0 ? (
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-3 text-base">
+                المواعيد
+              </h3>
+              
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                {/* رأس الجدول */}
+                <div className="grid grid-cols-7 bg-gray-50 px-4 py-3 border-b border-gray-200">
+                  <div className="text-sm font-medium text-gray-500 text-right">الحالة</div>
+                  <div className="text-sm font-medium text-gray-500 text-right">الإجراء</div>
+                  <div className="text-sm font-medium text-gray-500 text-right">التاريخ</div>
+                  <div className="text-sm font-medium text-gray-500 text-right">الوقت</div>
+                  <div className="text-sm font-medium text-gray-500 text-right">المدفوع</div>
+                  <div className="text-sm font-medium text-gray-500 text-right">الإجمالي</div>
+                  <div className="text-sm font-medium text-gray-500 text-right">إجراءات</div>
+                </div>
 
-        {/* جدول المواعيد */}
-        {sortedSessions.length > 0 ? (
-          <div>
-            <h3 className="font-semibold text-gray-900 mb-3 text-base">
-              المواعيد
-            </h3>
-            
-            <div className="border border-gray-200 rounded-xl overflow-hidden">
-              {/* رأس الجدول */}
-              <div className="grid grid-cols-7 bg-gray-50 px-4 py-3 border-b border-gray-200">
-                <div className="text-sm font-medium text-gray-500 text-right">الحالة</div>
-                <div className="text-sm font-medium text-gray-500 text-right">الإجراء</div>
-                <div className="text-sm font-medium text-gray-500 text-right">التاريخ</div>
-                <div className="text-sm font-medium text-gray-500 text-right">الوقت</div>
-                <div className="text-sm font-medium text-gray-500 text-right">المدفوع</div>
-                <div className="text-sm font-medium text-gray-500 text-right">الإجمالي</div>
-                <div className="text-sm font-medium text-gray-500 text-right">إجراءات</div>
-              </div>
+                {/* صفوف الجدول */}
+                <div className="divide-y divide-gray-100">
+                  {sortedSessions.map((session) => (
+                    <div 
+                      key={session.id} 
+                      className="grid grid-cols-7 px-4 py-3 items-center hover:bg-gray-50/50 cursor-pointer transition-colors"
+                      onClick={() => setSelectedSession(session)}
+                    >
+                      {/* حالة الجلسة */}
+                      <div className="flex items-center gap-2">
+                        {session.status === 'scheduled' ? (
+                          <>
+                            <div className="w-2 h-2 rounded-full bg-yellow-400" />
+                            <span className="text-sm text-yellow-700">مجدول</span>
+                          </>
+                        ) : session.status === 'completed' ? (
+                          <>
+                            <div className="w-2 h-2 rounded-full bg-green-500" />
+                            <span className="text-sm text-green-700">مكتملة</span>
+                          </>
+                        ) : session.status === 'in-progress' ? (
+                          <>
+                            <div className="w-2 h-2 rounded-full bg-blue-500" />
+                            <span className="text-sm text-blue-700">قيد التنفيذ</span>
+                          </>
+                        ) : session.status === 'cancelled' ? (
+                          <>
+                            <div className="w-2 h-2 rounded-full bg-red-500" />
+                            <span className="text-sm text-red-700">ملغية</span>
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-2 h-2 rounded-full bg-gray-400" />
+                            <span className="text-sm text-gray-700">لم يحضر</span>
+                          </>
+                        )}
+                      </div>
+                      
+                      <div className="text-sm text-gray-900 font-medium truncate">
+                        {session.performedProcedure || session.plannedProcedure || 'جلسة'}
+                      </div>
+                      
+                      <div className="text-sm text-gray-600">
+                        {formatDate(session.startTime)}
+                      </div>
+                      
+                      <div className="text-sm text-gray-600">
+                        {formatTime(session.startTime)}
+                      </div>
+                      
+                      <div className="text-sm">
+                        {session.isPaid ? (
+                          <span className="text-green-600 font-medium">
+                            {formatCurrency(session.sessionCost)}
+                          </span>
+                        ) : (
+                          <span className="text-orange-500 font-medium">
+                            {formatCurrency(0)}
+                          </span>
+                        )}
+                      </div>
+                      
+                      <div className="text-sm font-semibold text-gray-900">
+                        {formatCurrency(session.sessionCost)}
+                      </div>
 
-              {/* صفوف الجدول */}
-              <div className="divide-y divide-gray-100">
-                {sortedSessions.map((session) => (
-                  <div key={session.id} className="grid grid-cols-7 px-4 py-3 items-center hover:bg-gray-50/50">
-                    {/* حالة الجلسة */}
-                    <div className="flex items-center gap-2">
-                      {session.status === 'scheduled' ? (
-                        <>
-                          <div className="w-2 h-2 rounded-full bg-yellow-400" />
-                          <span className="text-sm text-yellow-700">مجدول</span>
-                        </>
-                      ) : session.status === 'completed' ? (
-                        <>
-                          <div className="w-2 h-2 rounded-full bg-green-500" />
-                          <span className="text-sm text-green-700">مكتملة</span>
-                        </>
-                      ) : session.status === 'in-progress' ? (
-                        <>
-                          <div className="w-2 h-2 rounded-full bg-blue-500" />
-                          <span className="text-sm text-blue-700">قيد التنفيذ</span>
-                        </>
-                      ) : session.status === 'cancelled' ? (
-                        <>
-                          <div className="w-2 h-2 rounded-full bg-red-500" />
-                          <span className="text-sm text-red-700">ملغية</span>
-                        </>
-                      ) : (
-                        <>
-                          <div className="w-2 h-2 rounded-full bg-gray-400" />
-                          <span className="text-sm text-gray-700">لم يحضر</span>
-                        </>
-                      )}
-                    </div>
-                    
-                    <div className="text-sm text-gray-900 font-medium truncate">
-                      {session.performedProcedure || session.plannedProcedure || 'جلسة'}
-                    </div>
-                    
-                    <div className="text-sm text-gray-600">
-                      {formatDate(session.startTime)}
-                    </div>
-                    
-                    <div className="text-sm text-gray-600">
-                      {formatTime(session.startTime)}
-                    </div>
-                    
-                    <div className="text-sm">
-                      {session.isPaid ? (
-                        <span className="text-green-600 font-medium">
-                          {formatCurrency(session.sessionCost)}
-                        </span>
-                      ) : (
-                        <span className="text-orange-500 font-medium">
-                          {formatCurrency(0)}
-                        </span>
-                      )}
-                    </div>
-                    
-                    <div className="text-sm font-semibold text-gray-900">
-                      {formatCurrency(session.sessionCost)}
-                    </div>
-
-                    {/* عمود الإجراءات */}
+                      {/* عمود الإجراءات - تم إيقاف انتشار الحدث لمنع فتح البطاقة عند الضغط على الأزرار */}
                       <div className="flex items-center justify-end gap-2">
                         <button
-                          onClick={() => onEditSession(session)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditSession(session);
+                          }}
                           className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
                           title="تعديل الجلسة"
                         >
@@ -1048,29 +1063,50 @@ function PatientDetailsCard({
                         </button>
                         
                         <button
-                          onClick={() => onRequestDeleteSession(session.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onRequestDeleteSession(session.id);
+                          }}
                           className="p-2 rounded-lg bg-red-50 hover:bg-red-100 transition-colors"
                           title="حذف الجلسة"
                         >
                           <Trash2 size={16} className="text-red-600" />
                         </button>
                       </div>
-                  </div>
-
-                ))}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gray-50 flex items-center justify-center">
-              <History size={20} className="text-gray-300" />
+          ) : (
+            <div className="text-center py-8">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gray-50 flex items-center justify-center">
+                <History size={20} className="text-gray-300" />
+              </div>
+              <p className="text-sm text-gray-500">لا توجد جلسات</p>
             </div>
-            <p className="text-sm text-gray-500">لا توجد جلسات</p>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* البطاقة الموسعة للجلسة */}
+      {selectedSession && (
+        <ExpandedSessionCard
+          session={selectedSession}
+          patient={patient}
+          onClose={() => setSelectedSession(null)}
+          formatDate={formatDate}
+          formatTime={formatTime}
+          formatCurrency={formatCurrency}
+          primaryColor={primaryColor}
+          onEditSession={onEditSession}
+          onDeleteSession={(sessionId) => {
+            onRequestDeleteSession(sessionId);
+            setSelectedSession(null);
+          }}
+        />
+      )}
+    </>
   );
 }
 

@@ -117,9 +117,9 @@ export async function PUT(
 // ============================================================
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { sessionId: string } }
 ) {
-  const sessionId = params.sessionId;
+  const { searchParams } = new URL(request.url);
+    const sessionId = searchParams.get('sessionId');
   
   if (!sessionId) {
     return NextResponse.json({ error: "Session ID is required" }, { status: 400 });

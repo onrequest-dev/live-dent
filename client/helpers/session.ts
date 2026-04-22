@@ -87,7 +87,7 @@ export async function deleteSession(
     sessionId: string
 ): Promise<ApiResponse<null>> {
     try {
-        const response = await fetch(`/api/v1/clinic/session/${sessionId}`, {
+        const response = await fetch(`/api/v1/clinic/session/?sessionId=${sessionId}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',

@@ -23,6 +23,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { Clinic } from '@/types';
+import { updateProfile } from '@/client/helpers/clinic';
 
 // ============================================================
 // الواجهات الداخلية للمكون فقط (للتعديل)
@@ -245,20 +246,11 @@ export function DoctorCVTab({ clinicData, onProfileUpdate }: DoctorCVTabProps) {
       }
       
       // ✅ إرسال البيانات إلى API
-      const response = await fetch('/api/v1/clinic/doctor-profile', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(updatedProfile),
-      });
-      
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'فشل حفظ التغييرات');
-      }
+      console.log(updatedProfile)
+      const result = await updateProfile(updatedProfile);
+      if(!result.success) return // error 
+      console.log(result)
+
       
       // ✅ تحديث العرض المباشر
       updateDisplayData(updatedProfile);

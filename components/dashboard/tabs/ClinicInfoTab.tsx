@@ -23,17 +23,65 @@ import {
   Store,
 } from 'lucide-react';
 import { Clinic } from '@/types';
+import { updateClinic } from '@/client/helpers/clinic';
+import { WorkingHours } from '@/types';
+
+// ============================================================
+// أيام الأسبوع (0 = السبت, 1 = الأحد, ... , 6 = الجمعة)
+// ============================================================
+
+const DAYS_OF_WEEK = [
+  { key: 0, label: 'السبت' },
+  { key: 1, label: 'الأحد' },
+  { key: 2, label: 'الإثنين' },
+  { key: 3, label: 'الثلاثاء' },
+  { key: 4, label: 'الأربعاء' },
+  { key: 5, label: 'الخميس' },
+  { key: 6, label: 'الجمعة' },
+] as const;
 
 // ============================================================
 // الواجهات الداخلية للمكون فقط (للتعديل)
 // ============================================================
 
 interface WorkingHourEditItem {
-  day: string;
+  day: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   start: string;
   end: string;
   isClosed: boolean;
 }
+
+// ============================================================
+// دالة مساعدة لتطبيع ساعات العمل (تتعامل مع الكائن والمصفوفة)
+// ============================================================
+
+const normalizeWorkingHours = (workingHours: any): WorkingHours[] => {
+  if (!workingHours) return [];
+  
+  // إذا كانت مصفوفة بالفعل
+  if (Array.isArray(workingHours)) {
+    return workingHours;
+  }
+  
+  // إذا كانت كائن (مثل القادم من Supabase)
+  if (typeof workingHours === 'object' && workingHours !== null) {
+    return Object.values(workingHours);
+  }
+  
+  return [];
+};
+
+// ============================================================
+// دالة مساعدة لتحويل ساعات العمل إلى كائن للتخزين
+// ============================================================
+
+const workingHoursToObject = (workingHours: WorkingHourEditItem[]): Record<string, WorkingHourEditItem> => {
+  const obj: Record<string, WorkingHourEditItem> = {};
+  workingHours.forEach(wh => {
+    obj[wh.day.toString()] = wh;
+  });
+  return obj;
+};
 
 // ============================================================
 // Props
@@ -41,22 +89,8 @@ interface WorkingHourEditItem {
 
 interface ClinicInfoTabProps {
   clinicData: Clinic | null;
-  onClinicUpdate?: (updatedClinic: any) => void; // دالة لتحديث البيانات في المكون الأب
+  onClinicUpdate?: (updatedClinic: any) => void;
 }
-
-// ============================================================
-// أيام الأسبوع بالعربية
-// ============================================================
-
-const DAYS_OF_WEEK = [
-  { key: 'saturday', label: 'السبت' },
-  { key: 'sunday', label: 'الأحد' },
-  { key: 'monday', label: 'الإثنين' },
-  { key: 'tuesday', label: 'الثلاثاء' },
-  { key: 'wednesday', label: 'الأربعاء' },
-  { key: 'thursday', label: 'الخميس' },
-  { key: 'friday', label: 'الجمعة' },
-];
 
 // ============================================================
 // المكون الرئيسي
@@ -105,13 +139,15 @@ export function ClinicInfoTab({ clinicData, onClinicUpdate }: ClinicInfoTabProps
       setFormData(initialData);
       setDisplayData(initialData);
       
-      // تحميل ساعات العمل
-      const hours = clinicData.settings?.workingHours || [];
-      const formattedHours = DAYS_OF_WEEK.map(day => {
-        const existing = hours.find((h: any) => h.day === day.key);
+      // تحميل ساعات العمل - تطبيع البيانات أولاً
+      const rawWorkingHours = clinicData.settings?.workingHours;
+      const normalizedHours = normalizeWorkingHours(rawWorkingHours);
+      
+      const formattedHours: WorkingHourEditItem[] = DAYS_OF_WEEK.map(day => {
+        const existing = normalizedHours.find((h: WorkingHours) => h.day === day.key);
         const isClosed = existing 
           ? (existing.start === '00:00' && existing.end === '00:00')
-          : (day.key === 'friday');
+          : (day.key === 6); // الجمعة (6) مغلق افتراضياً
         
         return {
           day: day.key,
@@ -135,23 +171,26 @@ export function ClinicInfoTab({ clinicData, onClinicUpdate }: ClinicInfoTabProps
   }, [saveMessage]);
 
   // ✅ دالة تحديث العرض المباشر
-  const updateDisplayData = (clinicData: any) => {
+  const updateDisplayData = (updatedClinic: any) => {
     setDisplayData({
-      name: clinicData.name || '',
-      logo: clinicData.logo || '',
-      address: clinicData.address || '',
-      subscriptionStatus: clinicData.subscriptionStatus || 'trial',
-      defaultAppointmentDuration: clinicData.settings?.defaultAppointmentDuration || 30,
-      primaryColor: clinicData.settings?.primaryColor || '#007bff',
-      secondaryColor: clinicData.settings?.secondaryColor || '#6c757d',
+      name: updatedClinic.name || '',
+      logo: updatedClinic.logo || '',
+      address: updatedClinic.address || '',
+      subscriptionStatus: updatedClinic.subscriptionStatus || 'trial',
+      defaultAppointmentDuration: updatedClinic.settings?.defaultAppointmentDuration || 30,
+      primaryColor: updatedClinic.settings?.primaryColor || '#007bff',
+      secondaryColor: updatedClinic.settings?.secondaryColor || '#6c757d',
     });
     
-    const hours = clinicData.settings?.workingHours || [];
-    const formattedHours = DAYS_OF_WEEK.map(day => {
-      const existing = hours.find((h: any) => h.day === day.key);
+    // تطبيع ساعات العمل من البيانات المحدثة
+    const rawWorkingHours = updatedClinic.settings?.workingHours;
+    const normalizedHours = normalizeWorkingHours(rawWorkingHours);
+    
+    const formattedHours: WorkingHourEditItem[] = DAYS_OF_WEEK.map(day => {
+      const existing = normalizedHours.find((h: WorkingHours) => h.day === day.key);
       const isClosed = existing 
         ? (existing.start === '00:00' && existing.end === '00:00')
-        : (day.key === 'friday');
+        : (day.key === 6);
       
       return {
         day: day.key,
@@ -162,8 +201,8 @@ export function ClinicInfoTab({ clinicData, onClinicUpdate }: ClinicInfoTabProps
     });
     
     setDisplayWorkingHours(formattedHours);
-    if (clinicData.logo) {
-      setLogoPreview(clinicData.logo);
+    if (updatedClinic.logo) {
+      setLogoPreview(updatedClinic.logo);
     }
   };
 
@@ -183,7 +222,7 @@ export function ClinicInfoTab({ clinicData, onClinicUpdate }: ClinicInfoTabProps
     }
   };
 
-  const handleWorkingHourChange = (dayKey: string, field: keyof WorkingHourEditItem, value: string | boolean) => {
+  const handleWorkingHourChange = (dayKey: number, field: keyof WorkingHourEditItem, value: string | boolean) => {
     setWorkingHours(prev => prev.map(wh => {
       if (wh.day !== dayKey) return wh;
       
@@ -209,6 +248,14 @@ export function ClinicInfoTab({ clinicData, onClinicUpdate }: ClinicInfoTabProps
     setSaveMessage(null);
     
     try {
+      // تحويل workingHours إلى المصفوفة للإرسال
+      const workingHoursToSend: WorkingHours[] = workingHours.map(wh => ({
+        day: wh.day,
+        start: wh.start,
+        end: wh.end,
+        isClosed: wh.isClosed,
+      }));
+
       const updatedClinic = {
         name: formData.name,
         logo: formData.logo,
@@ -218,11 +265,7 @@ export function ClinicInfoTab({ clinicData, onClinicUpdate }: ClinicInfoTabProps
           primaryColor: formData.primaryColor,
           secondaryColor: formData.secondaryColor,
           defaultAppointmentDuration: formData.defaultAppointmentDuration,
-          workingHours: workingHours.map(wh => ({
-            day: wh.day,
-            start: wh.start,
-            end: wh.end,
-          })),
+          workingHours: workingHoursToSend, // نرسل كمصفوفة
         },
       };
       
@@ -234,21 +277,9 @@ export function ClinicInfoTab({ clinicData, onClinicUpdate }: ClinicInfoTabProps
           updatedClinic.logo = logoUrl;
         }
       }
+      console.log('بيانات العيادة المحدثة:', updatedClinic);
       
-      const response = await fetch('/api/v1/clinic', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(updatedClinic),
-      });
-      
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'فشل حفظ التغييرات');
-      }
+      const result = await updateClinic(updatedClinic);
       
       // تحديث العرض المباشر
       const updatedFullClinic = {
