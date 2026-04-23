@@ -8,8 +8,8 @@ interface WhatsAppMessageOptions {
   clinicName: string;
   messageType: 'reminder' | 'confirmation' | 'followUp' | 'custom';
   customMessage?: string;
+  clinicId: string; // إضافة clinicId
 }
-
 /**
  * إنشاء رسالة واتساب مناسبة حسب الجنس ونوع الرسالة
  */
@@ -19,9 +19,13 @@ export function generateWhatsAppMessage({
   clinicName,
   messageType,
   customMessage,
+  clinicId, // إضافة clinicId
 }: WhatsAppMessageOptions): string {
   const title = patient.gender === 'male' ? 'الأستاذ' : 'الأستاذة';
   const patientName = patient.fullName;
+  
+  // إنشاء رابط بطاقة المريض
+  const patientCardUrl = `${window.location.origin}/public/${clinicId}/${patient.id}`;
   
   const messages: Record<typeof messageType, string> = {
     reminder: `السلام عليكم ورحمة الله وبركاته
@@ -29,6 +33,10 @@ ${title} ${patientName}،
 نذكركم بموعدكم اليوم في ${clinicName}
 ${session ? `الإجراء: ${session.plannedProcedure || 'كشف'}
 الوقت: ${formatTimeForMessage(session.startTime)}` : ''}
+
+📋 رابط بطاقة المريض الإلكترونية:
+${patientCardUrl}
+
 نتشرف بخدمتكم 🌹`,
 
     confirmation: `السلام عليكم ورحمة الله وبركاته
@@ -37,15 +45,27 @@ ${title} ${patientName}،
 ${session ? `التاريخ: ${formatDateForMessage(session.startTime)}
 الوقت: ${formatTimeForMessage(session.startTime)}
 الإجراء: ${session.plannedProcedure || 'كشف'}` : ''}
+
+📋 رابط بطاقة المريض الإلكترونية:
+${patientCardUrl}
+
 بإمكانكم التواصل معنا على هذا الرقم لأي استفسار 🌷`,
 
     followUp: `السلام عليكم ورحمة الله وبركاته
 ${title} ${patientName}،
 نتمنى أن تكونوا بخير بعد الجلسة العلاجية في ${clinicName}
+
+📋 رابط بطاقة المريض الإلكترونية:
+${patientCardUrl}
+
 نرجو إعلامنا عن أي أعراض أو استفسار لديكم
 دمتم بصحة وعافية 🌸`,
 
-    custom: customMessage || '',
+    custom: customMessage ? 
+      `${customMessage}
+
+📋 رابط بطاقة المريض الإلكترونية:
+${patientCardUrl}` : '',
   };
   
   return messages[messageType];
@@ -67,41 +87,41 @@ export function openWhatsAppChat(
 /**
  * إرسال تذكير جماعي لمرضى اليوم
  */
-export async function sendBulkReminders(
-  clinicId: string,
-  clinicName: string
-): Promise<{ success: number; failed: number }> {
-  try {
-    // جلب جلسات اليوم من API
-    const sessions = await fetchTodaySessions(clinicId);
+// export async function sendBulkReminders(
+//   clinicId: string,
+//   clinicName: string
+// ): Promise<{ success: number; failed: number }> {
+//   try {
+//     // جلب جلسات اليوم من API
+//     const sessions = await fetchTodaySessions(clinicId);
     
-    let success = 0;
-    let failed = 0;
+//     let success = 0;
+//     let failed = 0;
     
-    for (const session of sessions) {
-      try {
-        const message = generateWhatsAppMessage({
-          patient: session.patientSnapshot as any,
-          session,
-          clinicName,
-          messageType: 'reminder',
-        });
+//     for (const session of sessions) {
+//       try {
+//         const message = generateWhatsAppMessage({
+//           patient: session.patientSnapshot as any,
+//           session,
+//           clinicName,
+//           messageType: 'reminder',
+//         });
         
-        success++;
+//         success++;
         
-        // تأخير بسيط بين كل رسالة لتجنب الحظر
-        await new Promise(resolve => setTimeout(resolve, 500));
-      } catch (error) {
-        failed++;
-      }
-    }
+//         // تأخير بسيط بين كل رسالة لتجنب الحظر
+//         await new Promise(resolve => setTimeout(resolve, 500));
+//       } catch (error) {
+//         failed++;
+//       }
+//     }
     
-    return { success, failed };
-  } catch (error) {
-    console.error('Failed to fetch sessions for bulk reminders', error);
-    throw error;
-  }
-}
+//     return { success, failed };
+//   } catch (error) {
+//     console.error('Failed to fetch sessions for bulk reminders', error);
+//     throw error;
+//   }
+// }
 
 // دوال مساعدة للتنسيق
 function formatTimeForMessage(date: Date | string): string {

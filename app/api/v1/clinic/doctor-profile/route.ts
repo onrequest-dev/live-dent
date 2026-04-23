@@ -1,5 +1,5 @@
 import { decodeJWT } from "@/server/jwt";
-import { sanitizeInput } from "@/server/sanitize";
+// import { sanitizeInput } from "@/server/sanitize";
 import { supabase_server } from "@/server/supabase-server";
 import { ClinicEmployeeJwt,  DoctorProfile } from "@/types";
 import { NextRequest, NextResponse } from "next/server";
