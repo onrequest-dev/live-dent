@@ -1,83 +1,48 @@
-// app\public\[clinicId]\[patient]\page.tsx
-
+import { cache } from 'react';
 import PatientPage from '../../components/PatientPage';
 import { notFound } from 'next/navigation';
 import { getPatientData } from '@/server/helpers/get_patient_card';
 
+// ✅ استدعاء واحد لكل طلب (حتى لو استُخدم في generateMetadata والصفحة)
+const getCachedPatientData = cache(getPatientData);
 
+// 🕒 caching قصير المدة (مثلاً 60 ثانية) – يزول بعدها ويُجلب من المصدر
+export const revalidate = 60; // بدلاً من 0
 
-// needs attintion
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// ❌ نزيل force-dynamic لأنه يلغي أي caching
+// export const dynamic = 'force-dynamic';
 
-
-// ============================================================
-// بيانات وهمية لمريض واحد - لتوضيح هيكل البيانات لمطور الباك إند
-// ============================================================
-
-const getDate = (daysFromNow: number, hours: number = 9, minutes: number = 0): Date => {
-  const date = new Date();
-  date.setDate(date.getDate() + daysFromNow);
-  date.setHours(hours, minutes, 0, 0);
-  return date;
-};
-
-const today = new Date();
-const todayStr = today.toISOString().split('T')[0];
-
-
-
-
-
-
-
+// (اختياري) إذا أردت منع التخزين المؤقت على مستوى الـ router cache في Next.js
+// export const fetchCache = 'default-cache'; // هذا هو السلوك الافتراضي
 
 export async function generateMetadata({ params }: { params: { clinicId: string; patient: string } }) {
-  const result = await getPatientData(params.clinicId, params.patient);
-  
-  if (!result.success) {
+  const result = await getCachedPatientData(params.clinicId, params.patient);
+
+  if (!result?.success || !result.data) {
     return {
       title: 'المريض غير موجود',
-      description: 'عذراً، المريض المطلوب غير موجود'
+      description: 'عذراً، المريض المطلوب غير موجود',
     };
   }
-  const data = result.data;
-  if(!data){
-    return {
-      title: 'المريض غير موجود',
-      description: 'عذراً، المريض المطلوب غير موجود'
-    };
-  }
-  
+
+  const { patient, clinic } = result.data;
   return {
-    title: `${data.patient.fullName} - ${data.clinic.name}`,
-    description: `ملف المريض ${data.patient.fullName} في ${data.clinic.name}`,
+    title: `${patient.fullName} - ${clinic.name}`,
+    description: `ملف المريض ${patient.fullName} في ${clinic.name}`,
   };
 }
 
-// الصفحة الرئيسية - Server Component
-export default async function PatientServerPage({ 
-  params 
-}: { 
-  params: { clinicId: string; patient: string } 
+export default async function PatientServerPage({
+  params,
+}: {
+  params: { clinicId: string; patient: string };
 }) {
-  const result = await getPatientData(params.clinicId, params.patient);
-  
-  if (!result.success) {
-    notFound();
-  }
-  
-  const data = result.data;
-  if(!data){
-    notFound();
-  }
-  // تمرير البيانات للمكون
-  return (
-    <PatientPage 
-      clinic={data.clinic}
-      patient={data.patient}
-      sessions={data.sessions}
-    />
-  );
-}
+  const result = await getCachedPatientData(params.clinicId, params.patient);
 
+  if (!result?.success || !result.data) {
+    notFound();
+  }
+
+  const { clinic, patient, sessions } = result.data;
+  return <PatientPage clinic={clinic} patient={patient} sessions={sessions} />;
+}

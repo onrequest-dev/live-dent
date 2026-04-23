@@ -14,9 +14,42 @@ import {
   ArrowLeft,
   Globe
 } from 'lucide-react';
-import { Clinic } from '@/types';
+import { Clinic, WorkingHours } from '@/types';
 
+// ============================================================
+// دالة مساعدة لتطبيع ساعات العمل (تتعامل مع الكائن والمصفوفة)
+// ============================================================
+
+const normalizeWorkingHours = (workingHours: any): WorkingHours[] => {
+  if (!workingHours) return [];
+  
+  // إذا كانت مصفوفة بالفعل
+  if (Array.isArray(workingHours)) {
+    return workingHours;
+  }
+  
+  // إذا كانت كائن (مثل القادم من Supabase)
+  if (typeof workingHours === 'object' && workingHours !== null) {
+    return Object.values(workingHours);
+  }
+  
+  return [];
+};
+
+// ============================================================
+// تحويل رقم اليوم من نظام JS (0=الأحد) إلى نظامنا (0=السبت)
+// ============================================================
+
+const getCurrentDayNumber = (): number => {
+  const jsDay = new Date().getDay(); // 0=الأحد, 1=الإثنين, ..., 6=السبت
+  // تحويل: الأحد (1) -> الإثنين (2) -> ... -> السبت (0)
+  return jsDay === 0 ? 6 : jsDay - 1;
+};
+
+// ============================================================
 // مكون الظهور المتدرج
+// ============================================================
+
 const FadeInSection = ({ children, delay = 0, className = '' }: { 
   children: React.ReactNode; 
   delay?: number; 
@@ -38,16 +71,57 @@ const FadeInSection = ({ children, delay = 0, className = '' }: {
   );
 };
 
+// ============================================================
+// أسماء الأيام حسب نظامنا (0=السبت, 1=الأحد, ..., 6=الجمعة)
+// ============================================================
+
+const DAY_NAMES: Record<number, string> = {
+  0: 'السبت',
+  1: 'الأحد',
+  2: 'الإثنين',
+  3: 'الثلاثاء',
+  4: 'الأربعاء',
+  5: 'الخميس',
+  6: 'الجمعة',
+};
+
+// ============================================================
 // تعديل الـ props لاستقبال البيانات من السيرفر
+// ============================================================
+
 interface PublicClinicPageProps {
   clinic: Clinic;
 }
 
 export default function PublicClinicPage({ clinic }: PublicClinicPageProps) {
-  const primaryColor = clinic.settings.primaryColor;
+  const primaryColor = clinic.settings.primaryColor || '#007bff';
   const doctor = clinic.doctorProfile;
 
-  const weekDays = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+  // تطبيع ساعات العمل
+  const rawWorkingHours = clinic.settings.workingHours;
+  const workingHoursList = normalizeWorkingHours(rawWorkingHours);
+
+  // إنشاء خريطة للوصول السريع لساعات كل يوم
+  const workingHoursMap = new Map<number, WorkingHours>();
+  workingHoursList.forEach(wh => {
+    workingHoursMap.set(wh.day, wh);
+  });
+
+  // الأيام من 0 إلى 6 مع بياناتها
+  const daysData = [0, 1, 2, 3, 4, 5, 6].map(dayNum => {
+    const wh = workingHoursMap.get(dayNum);
+    return {
+      day: dayNum,
+      label: DAY_NAMES[dayNum],
+      isClosed: wh?.isClosed ?? (dayNum === 6), // الجمعة مغلق افتراضياً
+      start: wh?.start || (dayNum === 6 ? '00:00' : '09:00'),
+      end: wh?.end || (dayNum === 6 ? '00:00' : '17:00'),
+    };
+  });
+
+  // معلومات اليوم الحالي
+  const currentDayNum = getCurrentDayNumber();
+  const todayInfo = daysData.find(d => d.day === currentDayNum);
 
   return (
     <div 
@@ -76,7 +150,7 @@ export default function PublicClinicPage({ clinic }: PublicClinicPageProps) {
                     alt={clinic.name}
                     fill
                     className="object-contain p-6 bg-white"
-                    priority // تحسين الأداء للصورة الرئيسية
+                    priority
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-white">
@@ -98,10 +172,10 @@ export default function PublicClinicPage({ clinic }: PublicClinicPageProps) {
               {clinic.name}
             </h1>
             <p className="text-lg sm:text-xl text-white/90 mb-4 sm:mb-6">
-              {doctor.specialization}
+              {doctor?.specialization || 'عيادة عامة'}
             </p>
             <p className="text-base sm:text-lg text-white/80 max-w-2xl mx-auto leading-relaxed">
-              {doctor.about}
+              {doctor?.about || ''}
             </p>
           </motion.div>
 
@@ -123,7 +197,7 @@ export default function PublicClinicPage({ clinic }: PublicClinicPageProps) {
                   </div>
                   <div className="text-right flex-1 min-w-0">
                     <p className="text-sm text-gray-500 mb-1">موقع العيادة</p>
-                    <p className="text-sm text-gray-600 truncate">{clinic.address}</p>
+                    <p className="text-sm text-gray-600 truncate">{clinic.address || 'غير محدد'}</p>
                   </div>
                 </div>
               </motion.div>
@@ -144,7 +218,7 @@ export default function PublicClinicPage({ clinic }: PublicClinicPageProps) {
                   <div className="text-right flex-1 min-w-0">
                     <p className="text-sm text-gray-500 mb-1">اتصل بنا</p>
                     <p className="font-bold text-gray-800 truncate" dir="ltr">+966 11 234 5678</p>
-                    <p className="text-sm text-gray-600 truncate">{doctor.contactEmail}</p>
+                    <p className="text-sm text-gray-600 truncate">{doctor?.contactEmail || ''}</p>
                   </div>
                 </div>
               </motion.div>
@@ -189,26 +263,26 @@ export default function PublicClinicPage({ clinic }: PublicClinicPageProps) {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
-                {clinic.settings.workingHours.map((wh, index) => (
+                {daysData.map((day) => (
                   <motion.div 
-                    key={index}
+                    key={day.day}
                     initial={{ opacity: 0, y: 10 }}
                     whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.03 }}
+                    transition={{ delay: day.day * 0.03 }}
                     viewport={{ once: true }}
                     className="flex items-center justify-between p-3 sm:p-4 rounded-xl"
                     style={{ 
-                      backgroundColor: wh.isClosed ? '#f1f5f9' : `${primaryColor}50`,
+                      backgroundColor: day.isClosed ? '#f1f5f9' : `${primaryColor}50`,
                     }}
                   >
                     <span className="font-medium text-gray-900 text-sm sm:text-base">
-                      {weekDays[wh.day]}
+                      {day.label}
                     </span>
                     <span 
                       className="font-bold text-sm sm:text-base"
-                      style={{ color: wh.isClosed ? '#ef4444' : '#000000' }}
+                      style={{ color: day.isClosed ? '#ef4444' : '#000000' }}
                     >
-                      {wh.isClosed ? 'مغلق' : `${wh.start} - ${wh.end}`}
+                      {day.isClosed ? 'مغلق' : `${day.start} - ${day.end}`}
                     </span>
                   </motion.div>
                 ))}
@@ -223,11 +297,7 @@ export default function PublicClinicPage({ clinic }: PublicClinicPageProps) {
                   </span>
                   <p className="text-sm text-gray-600">
                     <span className="font-bold text-gray-900">اليوم: </span>
-                    {(() => {
-                      const today = new Date().getDay();
-                      const todayHours = clinic.settings.workingHours.find(wh => wh.day === today);
-                      return todayHours?.isClosed ? 'مغلق' : `مفتوح حتى ${todayHours?.end}`;
-                    })()}
+                    {todayInfo?.isClosed ? 'مغلق' : `مفتوح حتى ${todayInfo?.end}`}
                   </p>
                 </div>
               </div>

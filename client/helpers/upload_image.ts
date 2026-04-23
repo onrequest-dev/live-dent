@@ -28,7 +28,7 @@ export const handleUploadImage = async (file: File, type: 'logo' | 'pfp', clinic
   try {
     const { data, error } = await supabase_client.storage
       .from('images') 
-      .upload(filePath, file, {
+      .upload(filePath, compressed_file, {
         cacheControl: '0',
         upsert: true, 
       });
