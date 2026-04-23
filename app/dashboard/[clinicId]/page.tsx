@@ -88,19 +88,45 @@ export default function DashboardPage() {
 
   // ✅ عرض رسالة خطأ
   if (error && !clinicData) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <p className="text-red-500 mb-4">⚠️ {error}</p>
-          <button 
+return (
+  <div className="flex items-center justify-center min-h-[400px] p-6">
+    <div className="text-center space-y-4">
+      {/* SVG Illustration */}
+      <div className="flex justify-center">
+        <svg
+          className="w-68 h-18"
+          viewBox="0 0 100 100"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          
+          {/* Signal waves with slash */}
+          <g stroke="#4B5563" strokeWidth="1.8" fill="none">
+            <path d="M35,30 Q50,15 65,30" opacity="0.4" />
+            <path d="M40,38 Q50,28 60,38" opacity="0.6" />
+            <path d="M45,46 Q50,41 55,46" opacity="0.8" />
+          </g>
+        </svg>
+      </div>
+
+      {/* Text Content */}
+      <div className="space-y-4">
+        {/* <p className="text-gray-700 text-base font-medium">{error}</p> */}
+        <p className="text-gray-600 text-base">تحقق من الاتصال بالإنترنت ثم أعد المحاولة</p>
+        
+        {/* Retry Button */}
+        <div className="pt-4">
+          <button
             onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+            className="px-6 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors duration-200"
           >
             إعادة المحاولة
           </button>
         </div>
       </div>
-    );
+    </div>
+  </div>
+);
   }
 
   // ✅ عرض التبويب المناسب مع تمرير البيانات
