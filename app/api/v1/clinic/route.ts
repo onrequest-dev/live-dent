@@ -51,7 +51,6 @@ export async function PUT(request: NextRequest){
     }
     const clinicId = jwt_user.clinicId;
     const clinicData: Partial<Omit<Clinic, 'id' | 'createdAt'>> = sanitizeInput(await request.json());
-    console.log("Received clinic update request with data:", clinicData.settings?.workingHours);
     const { data, error } = await supabase_server.from("Clinic").update(clinicData).eq("id", clinicId).select("*").single();
     if (error || !data) {
         console.error("Error updating clinic data:", error);

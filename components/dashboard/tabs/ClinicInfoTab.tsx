@@ -276,12 +276,10 @@ export function ClinicInfoTab({ clinicData, onClinicUpdate }: ClinicInfoTabProps
       if (tempLogo) {
         const logoUrl = await handleUploadImage(tempLogo, 'logo', clinicData?.id);
         if (logoUrl) {
-          console.log('تم رفع الشعار بنجاح:', logoUrl);
           finalLogo = logoUrl;
           updatedClinic.logo = logoUrl;
         }
       }
-      console.log('بيانات العيادة المحدثة:', updatedClinic);
       
       const result = await updateClinic(updatedClinic);
       

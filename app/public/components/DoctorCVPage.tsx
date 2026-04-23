@@ -158,8 +158,6 @@ interface DoctorCVPageProps {
 }
 
 export default function DoctorCVPage({ clinic }: DoctorCVPageProps) {
-  console.log("here")
-  console.log(clinic)
   const primaryColor = clinic.settings.primaryColor;
   const secondaryColor = clinic.settings.secondaryColor;
   const doctor = clinic.doctorProfile;

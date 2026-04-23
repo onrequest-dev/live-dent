@@ -24,8 +24,6 @@ function LoginForm() {
         const result = await loginEmployee({ username, password });
 
         if (result.success) {
-            console.log(result.data || 'Login successful');
-            console.log('Clinic slug:', result.data?.slug);
             router.push(`/dashboard/${result.data?.slug}`);
             router.refresh();
         } else {

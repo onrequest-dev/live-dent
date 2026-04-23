@@ -247,10 +247,8 @@ export function DoctorCVTab({ clinicData, onProfileUpdate }: DoctorCVTabProps) {
       }
       
       // ✅ إرسال البيانات إلى API
-      console.log(updatedProfile)
       const result = await updateProfile(updatedProfile);
       if(!result.success) return // error 
-      console.log(result)
 
       
       // ✅ تحديث العرض المباشر
