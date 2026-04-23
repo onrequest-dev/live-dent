@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useSearchParams, useRouter } from 'next/navigation'; // ✅ إضافة useRouter
 import Image from 'next/image'; 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
@@ -107,6 +107,7 @@ const SidebarSkeleton = ({ isCollapsed, isMobile }: { isCollapsed: boolean; isMo
 export function DashboardSidebar({ clinicData }: DashboardSidebarProps) {
   const params = useParams();
   const searchParams = useSearchParams();
+  const router = useRouter(); // ✅ إضافة router هنا
   const clinicId = params?.clinicId as string;
   const currentTab = searchParams.get('tab') || 'main';
   
@@ -168,6 +169,14 @@ useEffect(() => {
     }
   }
 }, [currentTab, autoCollapse, isMobile]); // ✅ إضافة isMobile للتبعيات
+
+  // ✅ دالة معالجة النقر على تبويب المرضى
+  const handlePatientsClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    window.dispatchEvent(new CustomEvent("refreshPatientsData"));
+    router.push(`/dashboard/${clinicId}?tab=patients`);
+
+  };
 
   if (!mounted) return null;
 
@@ -337,13 +346,67 @@ useEffect(() => {
         </AnimatePresence>
       </div>
 
-      {/* ✅ 5. استخدام menuItems مباشرة (بدون updatedMenuItems) */}
+      {/* ✅ القائمة مع معالج خاص لزر المرضى */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {menuItems.map((item) => {
-          const href = `/dashboard/${clinicId}?tab=${item.tab}`;
           const isActive = currentTab === item.tab;
           const Icon = item.icon;
 
+          // ✅ معالجة خاصة لتبويب المرضى
+          if (item.tab === 'patients') {
+            return (
+              <a
+                key={item.tab}
+                href={`/dashboard/${clinicId}?tab=patients`}
+                onClick={handlePatientsClick}
+                style={{ textDecoration: 'none' }}
+              >
+                <motion.div
+                  whileHover={{ x: -4 }}
+                  whileTap={{ scale: 0.97 }}
+                  className={`
+                    flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium
+                    transition-all duration-200 relative
+                    ${(isCollapsed && !isMobile) ? 'justify-center' : ''}
+                  `}
+                  style={{
+                    color: isActive ? primaryColor : '#64748b',
+                    backgroundColor: isActive ? '#ffffff' : 'transparent',
+                    boxShadow: isActive ? `0 4px 12px ${primaryColor}20` : 'none',
+                  }}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeBackground"
+                      className="absolute inset-0 rounded-xl -z-0"
+                      style={{ backgroundColor: `${primaryColor}10` }}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.2 }}
+                    />
+                  )}
+                  
+                  <Icon size={(isCollapsed && !isMobile) ? 22 : 20} />
+                  
+                  <AnimatePresence mode="wait">
+                    {(!isCollapsed || isMobile) && (
+                      <motion.span
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -10 }}
+                        className="flex-1"
+                      >
+                        {item.label}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              </a>
+            );
+          }
+
+          // ✅ باقي التبويبات تستخدم Link العادي
+          const href = `/dashboard/${clinicId}?tab=${item.tab}`;
           return (
             <Link key={item.tab} href={href}>
               <motion.div
@@ -391,7 +454,7 @@ useEffect(() => {
         })}
       </nav>
 
-      {/* ✅ 6. حذف أزرار الإعدادات وتسجيل الخروج من الأسفل (لأن الإعدادات أصبحت في القائمة) */}
+      {/* ✅ زر تسجيل الخروج */}
       <div className="p-3 border-t border-gray-100">
         <motion.button
           whileHover={{ x: -4 }}
