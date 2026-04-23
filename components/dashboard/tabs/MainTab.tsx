@@ -168,6 +168,14 @@ export function MainTab({
     setCases(initialCases);
   }, [initialPatients, initialSessions, initialCases]);
 
+  // دالة لتطبيع النص لمراعاة التشابه بين الحروف العربية والأرقام
+  const normalizeText = (text: string) => {
+    return text
+      .replace(/[أإآ]/g, 'ا')
+      .replace(/[٠-٩]/g, (match) => String.fromCharCode(match.charCodeAt(0) - 0x0660 + 0x0030))
+      .toLowerCase();
+  };
+
   // تصفية المرضى
   const filteredPatients = useMemo(() => {
     let filtered = patients;
@@ -184,9 +192,9 @@ export function MainTab({
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(p =>
-        p.fullName.toLowerCase().includes(query) ||
-        p.phone.includes(query) ||
-        p.id.toLowerCase().includes(query)
+        normalizeText(p.fullName).includes(normalizeText(query)) ||
+        normalizeText(p.phone).includes(normalizeText(query)) ||
+        normalizeText(p.id).includes(normalizeText(query))
       );
     }
     return filtered;
