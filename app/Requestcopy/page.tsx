@@ -15,9 +15,10 @@ async function sendTelegramMessage(message: string): Promise<{ success: boolean;
     // استخدام متغيرات البيئة من Vercel أو المتغيرات المحلية
     const token = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN;
     const chatId = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID;
+    console.log(token,chatId)
 
     if (!token) {
-      throw new Error('Telegram token is not configured');
+      throw new Error('حدث خطأ ما');
     }
 
     if (!chatId) {
