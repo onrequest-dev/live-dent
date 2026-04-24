@@ -12,13 +12,16 @@ import {
   FileText,
   IdCard,
   Bell,
+  FileSpreadsheet,
   MessageSquare,
+  MessageCircle,
   BarChart3,
   Smartphone,
   CheckCircle2,
   Sparkles,
+  ArrowLeft,
 } from 'lucide-react';
-
+import Link from 'next/link';
 // ==========================================
 // مكون الجزيئات الذهبية المبسط
 // ==========================================
@@ -198,16 +201,37 @@ const AnimatedSection = ({ children, delay = 0 }: { children: React.ReactNode; d
 
 // بطاقة الميزة
 const FeatureCard = ({ icon: Icon, title, description }: any) => {
+  const [isHovered, setIsHovered] = useState(false);
+  
   return (
     <motion.div
-      whileHover={{ y: -5 }}
-      className="bg-[#0F1F35] backdrop-blur-sm rounded-xl p-6 border border-yellow-500/20 hover:border-yellow-500/40 transition-all duration-300"
+      whileHover={{ y: -8, scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      className="relative bg-[#0F1F35] backdrop-blur-sm rounded-xl p-6 border cursor-pointer transition-all duration-300 group"
+      style={{
+        borderColor: isHovered ? 'rgba(234, 179, 8, 0.6)' : 'rgba(234, 179, 8, 0.2)',
+        boxShadow: isHovered ? '0 0 30px rgba(234, 179, 8, 0.15), 0 10px 25px -5px rgba(0,0,0,0.3)' : '0 4px 6px -1px rgba(0,0,0,0.1)'
+      }}
     >
-      <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-4 bg-gradient-to-br from-yellow-500 to-yellow-400">
+      <motion.div
+        animate={{ rotate: isHovered ? 360 : 0 }}
+        transition={{ duration: 0.6, ease: "easeInOut" }}
+        className="w-12 h-12 rounded-lg flex items-center justify-center mb-4 bg-gradient-to-br from-yellow-500 to-yellow-400 relative z-10"
+      >
         <Icon className="text-[#0A1628]" size={24} />
-      </div>
-      <h3 className="text-lg font-bold text-white mb-2">{title}</h3>
-      <p className="text-gray-400 text-sm leading-relaxed">{description}</p>
+      </motion.div>
+      <h3 className="text-lg font-bold text-white mb-2 relative z-10">{title}</h3>
+      <p className="text-gray-400 text-sm leading-relaxed relative z-10">{description}</p>
+      
+      {/* تأثير التوهج عند التحويم */}
+      <motion.div
+        className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        style={{
+          background: 'radial-gradient(circle at center, rgba(234, 179, 8, 0.1) 0%, transparent 70%)'
+        }}
+      />
     </motion.div>
   );
 };
@@ -224,13 +248,20 @@ const Navigation = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const scrollToSection = (sectionId: string) => {
+    const section = document.getElementById(sectionId);
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <motion.nav
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5 }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? 'bg-[#0A1628]/95 backdrop-blur-md shadow-lg' : 'bg-transparent'
+        isScrolled ? 'bg-[#0A1628]/95 backdrop-blur-md shadow-lg shadow-yellow-500/5' : 'bg-transparent'
       }`}
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -238,7 +269,8 @@ const Navigation = () => {
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           >
             <div className="relative w-8 h-8">
               <Image
@@ -251,14 +283,16 @@ const Navigation = () => {
             <span className="text-xl font-bold text-white">LiveDent</span>
           </motion.div>
 
-          <motion.a
-            href='/Requestcopy'
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="bg-yellow-500 text-[#0A1628] px-5 py-2 rounded-lg font-medium text-sm hover:bg-yellow-400 transition-colors"
-          >
-            ابدأ الآن
-          </motion.a>
+          <div className="flex items-center gap-4">
+            <motion.a
+              href='/Requestcopy'
+              whileHover={{ scale: 1.05, boxShadow: "0 0 20px rgba(234, 179, 8, 0.4)" }}
+              whileTap={{ scale: 0.95 }}
+              className="bg-gradient-to-r from-yellow-500 to-yellow-400 text-[#0A1628] px-5 py-2 rounded-lg font-medium text-sm hover:from-yellow-400 hover:to-yellow-300 transition-all duration-300 shadow-lg shadow-yellow-500/20"
+            >
+              ابدأ الآن
+            </motion.a>
+          </div>
         </div>
       </div>
     </motion.nav>
@@ -266,17 +300,26 @@ const Navigation = () => {
 };
 
 export default function Home() {
-  const features = [
-    { icon: Users, title: "إدارة المرضى", description: "سجل طبي متكامل لكل مريض مع تاريخ العلاجات والصور" },
-    { icon: Calendar, title: "جدولة المواعيد", description: "نظام ذكي لحجز المواعيد مع إشعارات تلقائية" },
-    { icon: CreditCard, title: "إدارة المدفوعات", description: "تتبع المدفوعات والفواتير مع تقارير مالية دقيقة" },
-    { icon: Clock, title: "تنظيم الدوام", description: "إدارة أوقات العمل والإجازات بمرونة تامة" },
-    { icon: FileText, title: "صفحة تعريفية", description: "صفحة احترافية تعرض خدمات العيادة وأطباءها" },
-    { icon: IdCard, title: "كرت المريض", description: "بطاقة رقمية لكل مريض تحتوي على بياناته الكاملة" },
-    { icon: Bell, title: "نظام تذكير", description: "تذكيرات أوتوماتيكية لتقليل نسبة الغياب" },
-    { icon: MessageSquare, title: "دردشة مباشرة", description: "تواصل فوري مع المرضى للرد على استفساراتهم" },
-    { icon: BarChart3, title: "تقارير وتحليلات", description: "لوحة تحكم مع رسوم بيانية وإحصاءات" },
-    { icon: Smartphone, title: "تطبيق جوال", description: "تطبيق للمرضى لحجز المواعيد ومتابعة حالتهم" },
+  const [activeFeature, setActiveFeature] = useState<number | null>(null);
+  
+const features = [
+  { icon: Users, title: "إدارة المرضى", description: "سجل طبي إلكتروني متكامل لكل مريض" },
+  { icon: Calendar, title: "جدولة المواعيد", description: "نظام ذكي لجدولة مواعيد المرضى" },
+  { icon: CreditCard, title: "إدارة المدفوعات", description: "تتبع المدفوعات لكل موعد بشكل مخصص" },
+  { icon: Clock, title: "تنظيم الدوام", description: "إدارة أوقات العمل والإجازات بمرونة تامة" },
+  { icon: FileText, title: "صفحة تعريفية", description: "تعرض خدمات العيادة وتعزز من ظهورها الإلكتروني" },
+  { icon: IdCard, title: "كرت المريض", description: "بطاقة رقمية لكل مريض تحتوي على بياناته الكاملة" },
+  { icon: FileSpreadsheet, title: "تصدير البيانات", description: "تحويل بيانات المرضى لملف Excel بشكل مباشر وسهل" },
+  { icon: MessageCircle, title: "تقليل الاستفسارات", description: " تقليل استفسارات المرضى عبر معلومات واضحة ومتكاملة" },
+  { icon: BarChart3, title: "لوحة تحكم متكاملة", description: "لإدارة جميع بيانات المرضى وتسهيل البحث والتعديل" },
+  { icon: Smartphone, title: "CV مخصص للطبيب", description: "CV مخصص للطبيب ليعرض اختصاصه وخبراته ومهاراته" },
+];
+
+  const stats = [
+    { value: "+500", label: "عيادة تستخدم النظام" },
+    { value: "+50,000", label: "مريض مسجل" },
+    { value: "98%", label: "نسبة رضا العملاء" },
+    { value: "24/7", label: "دعم فني متواصل" },
   ];
 
   return (
@@ -330,7 +373,11 @@ export default function Home() {
                 transition={{ duration: 0.7 }}
                 className="flex-1 text-center lg:text-right"
               >
-                <div className="relative w-24 h-24 mx-auto lg:mx-0 mb-6">
+                <motion.div 
+                  whileHover={{ scale: 1.1, rotate: -5 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                  className="relative w-24 h-24 mx-auto lg:mx-0 mb-6 cursor-pointer"
+                >
                   <Image
                     src="/logo.png"
                     alt="LiveDent"
@@ -338,35 +385,71 @@ export default function Home() {
                     className="object-contain"
                     priority
                   />
-                </div>
+                </motion.div>
                 
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
+                <motion.h1 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
+                >
                   <span className="text-white">نظام </span>
-                  <span className="text-yellow-400">LiveDent</span>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-200">LiveDent</span>
                   <br />
                   <span className="text-white">لإدارة عيادات الأسنان</span>
-                </h1>
+                </motion.h1>
 
-                <p className="text-gray-300 text-base md:text-lg mb-6 leading-relaxed max-w-xl mx-auto lg:mx-0">
+                <motion.p 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-gray-300 text-base md:text-lg mb-8 leading-relaxed max-w-xl mx-auto lg:mx-0"
+                >
                   نظام رقمي متكامل يدير جميع جوانب عيادة الأسنان بكل سهولة واحترافية
-                </p>
+                </motion.p>
 
-                <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
+                  className="flex flex-wrap gap-4 justify-center lg:justify-start"
+                >
+                  <motion.a
+                    href="/Requestcopy"
+                    whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(234, 179, 8, 0.5)" }}
                     whileTap={{ scale: 0.95 }}
-                    className="bg-yellow-500 text-[#0A1628] px-6 py-3 rounded-lg font-bold shadow-lg hover:bg-yellow-400 transition-colors"
+                    className="group relative bg-gradient-to-r from-yellow-500 to-yellow-400 text-[#0A1628] px-8 py-4 rounded-xl font-bold shadow-lg hover:from-yellow-400 hover:to-yellow-300 transition-all duration-300 inline-flex items-center gap-3 overflow-hidden"
                   >
-                    ابدأ تجربتك المجانية
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="bg-[#1A2A44] text-white px-6 py-3 rounded-lg font-medium border border-yellow-500/30 hover:border-yellow-500/60 transition-colors"
-                  >
-                    تعرف على المميزات
-                  </motion.button>
-                </div>
+                    <span className="relative z-10">ابدأ تجربتك</span>
+                    <motion.div
+                      animate={{ x: [0, 5, 0] }}
+                      transition={{ repeat: Infinity, duration: 1.5 }}
+                      className="relative z-10"
+                    >
+                      <ArrowLeft size={20} />
+                    </motion.div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-yellow-300 to-yellow-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  </motion.a>
+                </motion.div>
+
+                {/* إحصائيات سريعة */}
+                {/* <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.8 }}
+                  className="mt-8 grid grid-cols-2 gap-3"
+                >
+                  {stats.map((stat, index) => (
+                    <motion.div
+                      key={index}
+                      whileHover={{ scale: 1.05 }}
+                      className="bg-[#0F1F35]/50 backdrop-blur-sm rounded-lg p-3 border border-yellow-500/10"
+                    >
+                      <div className="text-yellow-400 font-bold text-lg">{stat.value}</div>
+                      <div className="text-gray-400 text-xs">{stat.label}</div>
+                    </motion.div>
+                  ))}
+                </motion.div> */}
               </motion.div>
 
               <motion.div
@@ -375,30 +458,42 @@ export default function Home() {
                 transition={{ duration: 0.7, delay: 0.2 }}
                 className="flex-1"
               >
-                <div>
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                  className="relative group cursor-pointer"
+                >
                   <Image
                     src="/pn1.png"
                     alt="LiveDent Dashboard"
                     width={1000}
                     height={400}
-                    className="w-full h-auto"
+                    className="w-full h-auto rounded-lg"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0A1628] via-transparent to-transparent opacity-40" />
-                </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0A1628] via-transparent to-transparent opacity-40 rounded-lg" />
+                  <motion.div 
+                    className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"
+                    animate={{ opacity: [0, 0.1, 0] }}
+                    transition={{ repeat: Infinity, duration: 3 }}
+                  />
+                </motion.div>
               </motion.div>
             </div>
           </div>
         </section>
 
         {/* Features Section */}
-        <section className="py-16">
+        <section id="features" className="py-16">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <AnimatedSection>
               <div className="text-center mb-10">
-                <div className="inline-flex items-center gap-2 bg-yellow-500/10 rounded-full px-4 py-1.5 mb-4 border border-yellow-500/20">
+                <motion.div 
+                  whileHover={{ scale: 1.05 }}
+                  className="inline-flex items-center gap-2 bg-yellow-500/10 rounded-full px-4 py-1.5 mb-4 border border-yellow-500/20 cursor-pointer"
+                >
                   <Sparkles className="text-yellow-400" size={14} />
                   <span className="text-yellow-400 text-sm font-medium">مميزات متكاملة</span>
-                </div>
+                </motion.div>
                 <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
                   كل ما تحتاجه عيادتك في مكان واحد
                 </h2>
@@ -411,22 +506,26 @@ export default function Home() {
             <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
               {features.slice(0, 5).map((feature, index) => (
                 <AnimatedSection key={index} delay={index * 0.05}>
-                  <FeatureCard
-                    icon={feature.icon}
-                    title={feature.title}
-                    description={feature.description}
-                  />
+                  <div onClick={() => setActiveFeature(activeFeature === index ? null : index)}>
+                    <FeatureCard
+                      icon={feature.icon}
+                      title={feature.title}
+                      description={feature.description}
+                    />
+                  </div>
                 </AnimatedSection>
               ))}
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-4">
               {features.slice(5, 10).map((feature, index) => (
                 <AnimatedSection key={index + 5} delay={(index + 5) * 0.05}>
-                  <FeatureCard
-                    icon={feature.icon}
-                    title={feature.title}
-                    description={feature.description}
-                  />
+                  <div onClick={() => setActiveFeature(activeFeature === index + 5 ? null : index + 5)}>
+                    <FeatureCard
+                      icon={feature.icon}
+                      title={feature.title}
+                      description={feature.description}
+                    />
+                  </div>
                 </AnimatedSection>
               ))}
             </div>
@@ -450,8 +549,8 @@ export default function Home() {
                   <ul className="space-y-3 mb-6">
                     {[
                       "لوحة تحكم شاملة وسهلة الاستخدام",
-                      "تقارير يومية وأسبوعية وشهرية",
-                      "إشعارات فورية لجميع النشاطات",
+                      "جداول مرضى متكاملة بأدق التفاصيل",
+                      "تسهيل ادارة العيادة بشكل سهل وفعال",
                       "دعم فني متواصل على مدار الساعة",
                     ].map((item, index) => (
                       <motion.li
@@ -459,9 +558,15 @@ export default function Home() {
                         initial={{ opacity: 0, x: -20 }}
                         whileInView={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.1 }}
-                        className="flex items-center gap-3 text-gray-300"
+                        whileHover={{ x: -5 }}
+                        className="flex items-center gap-3 text-gray-300 cursor-pointer hover:text-white transition-colors"
                       >
-                        <CheckCircle2 className="text-yellow-400 flex-shrink-0" size={18} />
+                        <motion.div
+                          whileHover={{ rotate: 360 }}
+                          transition={{ duration: 0.6 }}
+                        >
+                          <CheckCircle2 className="text-yellow-400 flex-shrink-0" size={18} />
+                        </motion.div>
                         <span className="text-sm">{item}</span>
                       </motion.li>
                     ))}
@@ -470,41 +575,97 @@ export default function Home() {
               </AnimatedSection>
 
               <AnimatedSection delay={0.2}>
-                <div className="flex-1">
-                  <div>
+                <motion.div 
+                  whileHover={{ scale: 1.02, rotate: 1 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                  className="flex-1 cursor-pointer"
+                >
+                  <div className="relative group">
                     <Image
                       src="/pn2.png"
                       alt="LiveDent Features"
                       width={400}
                       height={550}
-                      className="w-full h-auto"
+                      className="w-full h-auto rounded-lg"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0A1628] via-transparent to-transparent opacity-40" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0A1628] via-transparent to-transparent opacity-40 rounded-lg" />
+                    <motion.div 
+                      className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"
+                      animate={{ opacity: [0, 0.1, 0] }}
+                      transition={{ repeat: Infinity, duration: 3 }}
+                    />
                   </div>
-                </div>
+                </motion.div>
               </AnimatedSection>
             </div>
           </div>
         </section>
 
+        {/* CTA Section */}
+        {/* <section className="py-16">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+            <AnimatedSection>
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                className="bg-gradient-to-br from-[#0F1F35] to-[#1A2A44] rounded-2xl p-8 border border-yellow-500/20 relative overflow-hidden group cursor-pointer"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
+                  هل أنت مستعد لنقل عيادتك للمستوى التالي؟
+                </h2>
+                <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
+                  إنضم الآن واجعل عيادتك مواكبة لتطور العالم
+                </p>
+                  <motion.div
+                    whileHover={{ scale: 1.05, boxShadow: "0 0 40px rgba(234, 179, 8, 0.6)" }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Link
+                      href="/Requestcopy"
+                      className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-500 to-yellow-400 text-[#0A1628] px-8 py-4 rounded-xl font-bold shadow-lg hover:shadow-yellow-500/20 transition-all duration-300"
+                    >
+                      ابدأ الآن 
+                      <ArrowLeft size={20} />
+                    </Link>
+                  </motion.div>
+              </motion.div>
+            </AnimatedSection>
+          </div>
+        </section> */}
+
         {/* Footer */}
         <footer className="border-t border-yellow-500/10 py-8">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
+              <motion.div 
+                whileHover={{ scale: 1.05 }}
+                className="flex items-center gap-2 cursor-pointer"
+              >
                 <div className="relative w-7 h-7">
                   <Image src="/logo.png" alt="LiveDent" fill className="object-contain" />
                 </div>
                 <span className="text-lg font-bold text-white">LiveDent</span>
-              </div>
+              </motion.div>
               
               <p className="text-gray-500 text-sm text-center">
                 © 2026 LiveDent. جميع الحقوق محفوظة
               </p>
               
               <div className="flex gap-6">
-                <a href="#" className="text-gray-400 hover:text-yellow-400 text-sm transition-colors">سياسة الخصوصية</a>
-                <a href="#" className="text-gray-400 hover:text-yellow-400 text-sm transition-colors">الشروط والأحكام</a>
+                <motion.a 
+                  href="#" 
+                  whileHover={{ scale: 1.1, color: '#FBBF24' }}
+                  className="text-gray-400 hover:text-yellow-400 text-sm transition-colors"
+                >
+                  سياسة الخصوصية
+                </motion.a>
+                <motion.a 
+                  href="#" 
+                  whileHover={{ scale: 1.1, color: '#FBBF24' }}
+                  className="text-gray-400 hover:text-yellow-400 text-sm transition-colors"
+                >
+                  الشروط والأحكام
+                </motion.a>
               </div>
             </div>
           </div>
