@@ -397,7 +397,10 @@ export function MainTab({
     updatedSessionData: Partial<Session>,
   ) => {
     if (!editingSession) return;
-    await updateSession(editingSession.id, updatedSessionData);
+    const result = await updateSession(editingSession.id, updatedSessionData);
+    if(!result.success){
+      throw new Error("حدث خطأ ما اثناء التعديل")
+    }
     setSessions((prev) =>
       prev.map((s) =>
         s.id === editingSession.id ? { ...s, ...updatedSessionData } : s,
