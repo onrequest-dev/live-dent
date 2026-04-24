@@ -25,7 +25,7 @@ export function generateWhatsAppMessage({
   const patientName = patient.fullName;
   
   // إنشاء رابط بطاقة المريض
-  const patientCardUrl = `${window.location.origin}/public/${clinicId}/${patient.id}`;
+  const patientCardUrl = `${window.location.origin}/public-clinic/${clinicId}/${patient.id}`;
   
   const messages: Record<typeof messageType, string> = {
     reminder: `السلام عليكم ورحمة الله وبركاته

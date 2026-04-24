@@ -28,7 +28,7 @@ export async function POST(request: NextRequest){
         console.error("Error updating doctor profile data:", error);
         return NextResponse.json({ error: "Failed to update doctor profile data" }, { status: 500 });
     }
-    revalidatePath(`/public/${clinicId}`);
-    revalidatePath(`/public/${clinicId}/doctor-cv`);
+    revalidatePath(`/public-clinic/${clinicId}`);
+    revalidatePath(`/public-clinic/${clinicId}/doctor-cv`);
     return NextResponse.json(data, { status: 200 });
 }

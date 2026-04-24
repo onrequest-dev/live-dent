@@ -56,8 +56,8 @@ export async function PUT(request: NextRequest){
         console.error("Error updating clinic data:", error);
         return NextResponse.json({ error: "Failed to update clinic data" }, { status: 500 });
     }
-    revalidatePath(`/public/${clinicId}`);
-    revalidatePath(`/public/${clinicId}/doctor-cv`);
+    revalidatePath(`/public-clinic/${clinicId}`);
+    revalidatePath(`/public-clinic/${clinicId}/doctor-cv`);
     const res = NextResponse.json(data, { status: 200 });
     const primary_color = clinicData.settings?.primaryColor || "#0284c7";
     const secondary_color = clinicData.settings?.secondaryColor || "#0ea5e9";

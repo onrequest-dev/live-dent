@@ -64,8 +64,8 @@ export function SettingsTab({ clinicData }: SettingsTabProps) {
   const primaryColor = clinicData?.settings?.primaryColor || '#3B82F6';
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
   
-  const clinicUrl = `${baseUrl}/public/${clinicId}`;
-  const doctorCVUrl = `${baseUrl}/public/${clinicId}/doctor-cv`;
+  const clinicUrl = `${baseUrl}/public-clinic/${clinicId}`;
+  const doctorCVUrl = `${baseUrl}/public-clinic/${clinicId}/doctor-cv`;
   const whatsappUrl = `https://wa.me/1234567890`;
 
   return (

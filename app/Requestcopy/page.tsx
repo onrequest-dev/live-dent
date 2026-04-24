@@ -532,13 +532,10 @@ ${whatsappLink}
   );
 }
 
-export default function LiveDentSubscriptionPage({ 
-  primaryColor = '#FFD700',
-  logo
-}: LiveDentSubscriptionFormProps) {
+export default function LiveDentSubscriptionPage() {
   return (
     <LiveDentSubscriptionForm 
-      primaryColor={primaryColor}
+      primaryColor="#FFD700"
       logo="/logo.png"
     />
   );

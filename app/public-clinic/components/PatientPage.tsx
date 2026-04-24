@@ -171,10 +171,13 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 py-6 px-4" dir="rtl">
+    <div
+      className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 py-6 px-4"
+      dir="rtl"
+    >
       <div className="max-w-md mx-auto">
         {/* أزرار التحكم */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center gap-3 mb-6"
@@ -183,21 +186,23 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
             onClick={downloadCard}
             disabled={isDownloading}
             className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-medium text-white shadow-lg transition-all disabled:opacity-50 hover:shadow-xl transform hover:-translate-y-0.5"
-            style={{ background: `linear-gradient(135deg, ${primaryColor} 0%)` }}
+            style={{
+              background: `linear-gradient(135deg, ${primaryColor} 0%)`,
+            }}
           >
             <Download size={20} className="animate-pulse" />
-            <span>{isDownloading ? 'جاري التحميل...' : 'تحميل الكرت'}</span>
+            <span>{isDownloading ? "جاري التحميل..." : "تحميل الكرت"}</span>
           </button>
-          
+
           <Link
-            href={`/public/${clinic.id}`}
+            href={`/public-clinic/${clinic.id}`}
             className="p-3.5 rounded-2xl bg-white shadow-md hover:shadow-lg transition-all border border-gray-100"
           >
             <Building2 size={20} style={{ color: primaryColor }} />
           </Link>
-          
+
           <Link
-            href={`/public/${clinic.id}/doctor-cv`}
+            href={`/public-clinic/${clinic.id}/doctor-cv`}
             className="p-3.5 rounded-2xl bg-white shadow-md hover:shadow-lg transition-all border border-gray-100"
           >
             <Stethoscope size={20} style={{ color: primaryColor }} />
@@ -205,15 +210,15 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
         </motion.div>
 
         {/* الكرت */}
-        <div 
+        <div
           ref={cardRef}
           className="relative bg-white rounded-3xl overflow-hidden shadow-2xl"
-          style={{ 
-            boxShadow: `0 25px 50px -12px ${primaryColor}20`
+          style={{
+            boxShadow: `0 25px 50px -12px ${primaryColor}20`,
           }}
         >
           <WaveBackground color={primaryColor} />
-          
+
           <div className="relative z-10">
             {/* Header - العيادة */}
             <div className="px-6 pt-6 pb-4">
@@ -228,46 +233,57 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
                     />
                   </div>
                 ) : (
-                  <div 
+                  <div
                     className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg"
-                    style={{ background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)` }}
+                    style={{
+                      background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`,
+                    }}
                   >
                     <Building2 size={32} className="text-white" />
                   </div>
                 )}
                 <div className="flex-1">
-                  <h2 className="text-xl font-bold text-gray-900 mb-1">{clinic.name}</h2>
+                  <h2 className="text-xl font-bold text-gray-900 mb-1">
+                    {clinic.name}
+                  </h2>
                 </div>
               </div>
             </div>
 
             {/* معلومات المريض */}
             <div className="px-6 pb-4">
-              <div 
+              <div
                 className="relative p-5 rounded-2xl overflow-hidden"
-                style={{ 
+                style={{
                   background: `linear-gradient(135deg, ${primaryColor}08 0%, ${secondaryColor}05 100%)`,
-                  border: `1px solid ${primaryColor}15`
+                  border: `1px solid ${primaryColor}15`,
                 }}
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{patient.fullName}</h3>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                      {patient.fullName}
+                    </h3>
                     <div className="space-y-1.5">
                       <div className="flex items-center gap-3 text-sm">
                         <span className="flex items-center gap-2 min-w-[120px]">
                           <Phone size={15} style={{ color: primaryColor }} />
                           <span className="text-gray-600">رقم الهاتف:</span>
                         </span>
-                        <span className="font-medium text-gray-900" dir="ltr">{patient.phone}</span>
+                        <span className="font-medium text-gray-900" dir="ltr">
+                          {patient.phone}
+                        </span>
                       </div>
                       <div className="flex items-center gap-3 text-sm">
                         <span className="flex items-center gap-2 min-w-[120px]">
                           <User size={15} style={{ color: primaryColor }} />
-                          <span className="text-gray-600">المعلومات الشخصية:</span>
+                          <span className="text-gray-600">
+                            المعلومات الشخصية:
+                          </span>
                         </span>
                         <span className="font-medium text-gray-900">
-                          {patient.gender === 'male' ? 'ذكر' : 'أنثى'} · {patient.age} سنة
+                          {patient.gender === "male" ? "ذكر" : "أنثى"} ·{" "}
+                          {patient.age} سنة
                         </span>
                       </div>
                     </div>
@@ -280,7 +296,7 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
             {scheduledSessions.length > 0 && (
               <div className="px-6 pb-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <div 
+                  <div
                     className="w-8 h-8 rounded-xl flex items-center justify-center"
                     style={{ backgroundColor: `${primaryColor}15` }}
                   >
@@ -290,12 +306,12 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
                     المواعيد المجدولة ({scheduledSessions.length})
                   </h4>
                 </div>
-                
+
                 <div className="space-y-3">
                   {scheduledSessions.map((session, index) => {
                     const sessionDate = formatDateWithDay(session.startTime);
                     const isPast = new Date(session.startTime) < now;
-                    
+
                     return (
                       <motion.div
                         key={session.id}
@@ -303,12 +319,12 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.1 }}
                         className={`p-4 rounded-xl border transition-all ${
-                          isPast 
-                            ? 'bg-gray-50/50 border-gray-200 opacity-75' 
-                            : 'bg-white shadow-md border-gray-100'
+                          isPast
+                            ? "bg-gray-50/50 border-gray-200 opacity-75"
+                            : "bg-white shadow-md border-gray-100"
                         }`}
                         style={{
-                          borderRight: `3px solid ${primaryColor}`
+                          borderRight: `3px solid ${primaryColor}`,
                         }}
                       >
                         <div className="flex items-start justify-between mb-2">
@@ -324,43 +340,57 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
                                 </span>
                               )}
                             </div>
-                            
+
                             <div className="grid grid-cols-2 gap-3 mt-2">
                               <div className="flex items-center gap-2">
-                                <Calendar size={14} style={{ color: primaryColor }} />
+                                <Calendar
+                                  size={14}
+                                  style={{ color: primaryColor }}
+                                />
                                 <div>
-                                  <p className="text-xs text-gray-500">التاريخ</p>
+                                  <p className="text-xs text-gray-500">
+                                    التاريخ
+                                  </p>
                                   <p className="text-sm font-medium text-gray-900">
-                                    {sessionDate.dayName} {sessionDate.formattedDate}
+                                    {sessionDate.dayName}{" "}
+                                    {sessionDate.formattedDate}
                                   </p>
                                 </div>
                               </div>
-                              
+
                               <div className="flex items-center gap-2">
-                                <Clock size={14} style={{ color: primaryColor }} />
+                                <Clock
+                                  size={14}
+                                  style={{ color: primaryColor }}
+                                />
                                 <div>
                                   <p className="text-xs text-gray-500">الوقت</p>
                                   <p className="text-sm font-medium text-gray-900">
-                                    {formatTime(session.startTime)} 
-                                    {session.endTime && ` - ${formatTime(session.endTime)}`}
+                                    {formatTime(session.startTime)}
+                                    {session.endTime &&
+                                      ` - ${formatTime(session.endTime)}`}
                                   </p>
                                 </div>
                               </div>
                             </div>
-                            
-                            {session.toothNumber && session.toothNumber.length > 0 && (
-                              <div className="mt-3 flex flex-wrap gap-1">
-                                {session.toothNumber.map((tooth) => (
-                                  <span 
-                                    key={tooth}
-                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs"
-                                    style={{ backgroundColor: `${primaryColor}10`, color: primaryColor }}
-                                  >
-                                    🦷 {tooth}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
+
+                            {session.toothNumber &&
+                              session.toothNumber.length > 0 && (
+                                <div className="mt-3 flex flex-wrap gap-1">
+                                  {session.toothNumber.map((tooth) => (
+                                    <span
+                                      key={tooth}
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs"
+                                      style={{
+                                        backgroundColor: `${primaryColor}10`,
+                                        color: primaryColor,
+                                      }}
+                                    >
+                                      🦷 {tooth}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
 
                             {session.notes && (
                               <p className="mt-2 text-xs text-gray-500 line-clamp-2">
@@ -368,10 +398,16 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
                               </p>
                             )}
                           </div>
-                          
+
                           <div className="text-left mr-3">
-                            <p className="text-lg font-bold" style={{ color: primaryColor }}>
-                              {session.sessionCost.toLocaleString()} <span className="text-xs font-normal text-gray-600">ل.س</span>
+                            <p
+                              className="text-lg font-bold"
+                              style={{ color: primaryColor }}
+                            >
+                              {session.sessionCost.toLocaleString()}{" "}
+                              <span className="text-xs font-normal text-gray-600">
+                                ل.س
+                              </span>
                             </p>
                             <div className="mt-1">
                               <PaymentBadge isPaid={session.isPaid} />
@@ -383,13 +419,15 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
                   })}
                 </div>
 
-                {upcomingSessions.length === 0 && scheduledSessions.length > 0 && (
-                  <div className="mt-3 p-3 rounded-xl bg-amber-50/50 border border-amber-200 text-center">
-                    <p className="text-sm text-amber-700">
-                      ⚠️ جميع المواعيد المجدولة قد فاتت، يرجى التواصل مع العيادة لتحديد موعد جديد
-                    </p>
-                  </div>
-                )}
+                {upcomingSessions.length === 0 &&
+                  scheduledSessions.length > 0 && (
+                    <div className="mt-3 p-3 rounded-xl bg-amber-50/50 border border-amber-200 text-center">
+                      <p className="text-sm text-amber-700">
+                        ⚠️ جميع المواعيد المجدولة قد فاتت، يرجى التواصل مع
+                        العيادة لتحديد موعد جديد
+                      </p>
+                    </div>
+                  )}
               </div>
             )}
 
@@ -397,7 +435,7 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
             {completedSessions.length > 0 && (
               <div className="px-6 pb-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <div 
+                  <div
                     className="w-8 h-8 rounded-xl flex items-center justify-center"
                     style={{ backgroundColor: `${primaryColor}15` }}
                   >
@@ -407,7 +445,7 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
                     الجلسات السابقة ({completedSessions.length})
                   </h4>
                 </div>
-                
+
                 <div className="space-y-2">
                   {completedSessions.map((session, index) => {
                     const sessionDate = formatDateWithDay(session.startTime);
@@ -422,20 +460,24 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1 flex-wrap">
-                              <span className="font-medium text-gray-900">{session.plannedProcedure}</span>
+                              <span className="font-medium text-gray-900">
+                                {session.plannedProcedure}
+                              </span>
                               <StatusBadge status={session.status} />
                             </div>
                             <div className="flex items-center gap-3 text-xs text-gray-600 mt-1">
                               <span className="flex items-center gap-1">
                                 <Calendar size={12} />
-                                {sessionDate.dayName} {sessionDate.formattedDate}
+                                {sessionDate.dayName}{" "}
+                                {sessionDate.formattedDate}
                               </span>
-                              {session.toothNumber && session.toothNumber.length > 0 && (
-                                <span className="flex items-center gap-1">
-                                  <span>🦷</span>
-                                  {session.toothNumber.join('، ')}
-                                </span>
-                              )}
+                              {session.toothNumber &&
+                                session.toothNumber.length > 0 && (
+                                  <span className="flex items-center gap-1">
+                                    <span>🦷</span>
+                                    {session.toothNumber.join("، ")}
+                                  </span>
+                                )}
                             </div>
                             {session.performedProcedure && (
                               <p className="mt-2 text-xs text-gray-600">
@@ -444,7 +486,9 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
                             )}
                           </div>
                           <div className="text-left mr-3">
-                            <p className="text-base font-bold text-gray-900">{session.sessionCost.toLocaleString()} ل.س</p>
+                            <p className="text-base font-bold text-gray-900">
+                              {session.sessionCost.toLocaleString()} ل.س
+                            </p>
                             <div className="mt-1">
                               <PaymentBadge isPaid={session.isPaid} />
                             </div>
@@ -459,26 +503,30 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
 
             {/* الملخص المالي */}
             <div className="px-6 pb-6">
-              <div 
+              <div
                 className="p-5 rounded-2xl"
-                style={{ 
+                style={{
                   background: `linear-gradient(135deg, ${primaryColor}10 0%, ${secondaryColor}05 100%)`,
-                  border: `1px solid ${primaryColor}20`
+                  border: `1px solid ${primaryColor}20`,
                 }}
               >
                 <div className="flex items-center gap-2 mb-4">
                   <CreditCard size={20} style={{ color: primaryColor }} />
                   <h4 className="font-bold text-gray-800">الملخص المالي</h4>
                 </div>
-                
+
                 <div className="space-y-3">
                   <div className="flex items-center justify-between py-1">
                     <span className="text-gray-600">إجمالي التكاليف</span>
-                    <span className="font-bold text-gray-900 text-lg">{totalAmount.toLocaleString()} ل.س</span>
+                    <span className="font-bold text-gray-900 text-lg">
+                      {totalAmount.toLocaleString()} ل.س
+                    </span>
                   </div>
                   <div className="flex items-center justify-between py-1">
                     <span className="text-gray-600">المبلغ المدفوع</span>
-                    <span className="font-bold text-emerald-600 text-lg">{totalPaid.toLocaleString()} ل.س</span>
+                    <span className="font-bold text-emerald-600 text-lg">
+                      {totalPaid.toLocaleString()} ل.س
+                    </span>
                   </div>
                   <div className="relative my-2">
                     <div className="absolute inset-0 flex items-center">
@@ -486,8 +534,12 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
                     </div>
                   </div>
                   <div className="flex items-center justify-between py-1">
-                    <span className="font-medium text-gray-800">المبلغ المتبقي</span>
-                    <span className={`font-bold text-xl ${remainingAmount > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                    <span className="font-medium text-gray-800">
+                      المبلغ المتبقي
+                    </span>
+                    <span
+                      className={`font-bold text-xl ${remainingAmount > 0 ? "text-amber-600" : "text-emerald-600"}`}
+                    >
                       {remainingAmount.toLocaleString()} ل.س
                     </span>
                   </div>
@@ -510,7 +562,7 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
         </div>
 
         {/* رسالة تلميح */}
-        <motion.p 
+        <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
