@@ -1135,7 +1135,7 @@ function PatientDetailsCard({
                 {/* جدول بعرض أدنى يضمن ظهور جميع الأعمدة على الشاشات الكبيرة، مع إمكانية التمرير على الصغيرة */}
                 <div className="min-w-[900px] lg:min-w-full">
                   {/* رأس الجدول */}
-                  <div className="grid grid-cols-[100px_1.5fr_1fr_100px_100px_100px] bg-gray-50 px-4 py-3 border-b border-gray-200">
+                  <div className="grid grid-cols-[100px_1.5fr_1fr_100px_100px_100px_100px] bg-gray-50 px-4 py-3 border-b border-gray-200">
                     <div className="text-sm font-medium text-gray-500 text-right">
                       الحالة
                     </div>
@@ -1153,6 +1153,9 @@ function PatientDetailsCard({
                       الإجمالي
                     </div>
                     <div className="text-sm font-medium text-gray-500 text-right">
+                      حالة الدفع
+                    </div>
+                    <div className="text-sm font-medium text-gray-500 text-right">
                       إجراءات
                     </div>
                   </div>
@@ -1162,7 +1165,7 @@ function PatientDetailsCard({
                     {sortedSessions.map((session) => (
                       <div
                         key={session.id}
-                        className="grid grid-cols-[100px_1.5fr_1fr_100px_100px_100px] px-4 py-3 items-center hover:bg-gray-50/50 cursor-pointer transition-colors"
+                        className="grid grid-cols-[100px_1.5fr_1fr_100px_100px_100px_100px] px-4 py-3 items-center hover:bg-gray-50/50 cursor-pointer transition-colors"
                         onClick={() => setSelectedSession(session)}
                       >
                         {/* حالة الجلسة */}
@@ -1230,7 +1233,20 @@ function PatientDetailsCard({
                         <div className="text-sm font-semibold text-gray-900 truncate">
                           {formatCurrency(session.sessionCost)}
                         </div>
-
+                        
+                        <div className="text-sm text-gray-600 truncate">
+                          {session.isPaid ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-50 text-green-700 text-xs font-medium">
+                              <CheckCircle size={12} />
+                              مدفوع
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-50 text-red-700 text-xs font-medium">
+                              <AlertCircle size={12} />
+                              غير مدفوع
+                            </span>
+                          )}
+                        </div>
                         {/* عمود الإجراءات */}
                         <div className="flex items-center justify-end gap-2">
                           <button
