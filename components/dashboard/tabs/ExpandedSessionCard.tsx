@@ -293,7 +293,7 @@ export function ExpandedSessionCard({
                   )}
                 </div>
 
-                <div className="flex items-center justify-between py-2">
+                {/* <div className="flex items-center justify-between py-2">
                   <span className="text-gray-600">المبلغ المدفوع</span>
                   <span 
                     className="text-lg font-bold"
@@ -301,7 +301,7 @@ export function ExpandedSessionCard({
                   >
                     {formatCurrency(session.isPaid ? session.sessionCost : 0)}
                   </span>
-                </div>
+                </div> */}
               </div>
             </div>
 

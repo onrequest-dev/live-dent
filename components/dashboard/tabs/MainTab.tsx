@@ -28,6 +28,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   GripVertical,
+  Loader2,      
+  AlertCircle 
 } from 'lucide-react';
 
 import {
@@ -129,6 +131,14 @@ export function MainTab({
   const [showEditSessionModal, setShowEditSessionModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
+
+  // حالات التحميل والأخطاء
+const [isAddingPatient, setIsAddingPatient] = useState(false);
+const [addPatientError, setAddPatientError] = useState<string | null>(null);
+
+const [isAddingAppointment, setIsAddingAppointment] = useState(false);
+const [addAppointmentError, setAddAppointmentError] = useState<string | null>(null);
+
 
   // إعدادات الواجهة
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
@@ -334,57 +344,80 @@ export function MainTab({
     setSessionToDelete(null);
   };
 
-  const handleAddPatient = async (patientData: any) => {
-    try {
-      const newPatient = await api.addPatient(clinicId, {
-        fullName: patientData.fullName,
-        phone: patientData.phone,
-        gender: patientData.gender,
-        age: patientData.age,
-        notes: patientData.notes,
-      });
-      setPatients(prev => [...prev, newPatient]);
-      if (patientData.addAppointment && patientData.appointment) {
-        const newSession = await api.addSession(clinicId, {
-          patientId: newPatient.id,
-          startTime: patientData.appointment.startTime,
-          endTime: patientData.appointment.endTime,
-          status: 'scheduled',
-          plannedProcedure: patientData.appointment.procedure,
-          sessionCost: patientData.appointment.cost || 0,
-          isPaid: false,
-          notes: patientData.appointment.notes,
-        });
-        setSessions(prev => [...prev, newSession]);
-      }
-      setShowNewPatientModal(false);
-      setTimeout(() => handlePatientSelect(newPatient), 100);
-    } catch (error) {
-      console.error('خطأ في إضافة المريض:', error);
-    }
-  };
-
-  const handleAddAppointment = async (appointmentData: any) => {
-    if (!selectedPatient) return;
-    try {
+const handleAddPatient = async (patientData: any) => {
+  // تفعيل حالة التحميل وإعادة تعيين الخطأ السابق
+  setIsAddingPatient(true);
+  setAddPatientError(null);
+  
+  try {
+    const newPatient = await api.addPatient(clinicId, {
+      fullName: patientData.fullName,
+      phone: patientData.phone,
+      gender: patientData.gender,
+      age: patientData.age,
+      notes: patientData.notes,
+    });
+    
+    setPatients(prev => [...prev, newPatient]);
+    
+    if (patientData.addAppointment && patientData.appointment) {
       const newSession = await api.addSession(clinicId, {
-        patientId: selectedPatient.id,
-        startTime: appointmentData.startTime,
-        endTime: appointmentData.endTime,
+        patientId: newPatient.id,
+        startTime: patientData.appointment.startTime,
+        endTime: patientData.appointment.endTime,
         status: 'scheduled',
-        plannedProcedure: appointmentData.procedure,
-        sessionCost: appointmentData.cost || 0,
+        plannedProcedure: patientData.appointment.procedure,
+        sessionCost: patientData.appointment.cost || 0,
         isPaid: false,
-        caseId: appointmentData.caseId,
-        notes: appointmentData.notes,
+        notes: patientData.appointment.notes,
       });
       setSessions(prev => [...prev, newSession]);
-      setSelectedPatientSessions(prev => [...prev, newSession]);
-      setShowNewAppointmentModal(false);
-    } catch (error) {
-      console.error('خطأ في إضافة الموعد:', error);
     }
-  };
+    
+    setShowNewPatientModal(false);
+    setTimeout(() => handlePatientSelect(newPatient), 100);
+  } catch (error: any) {
+    console.error('خطأ في إضافة المريض:', error);
+    // تعيين رسالة الخطأ المناسبة
+    setAddPatientError(
+      error?.message || 'حدث خطأ أثناء إضافة المريض. يرجى المحاولة مرة أخرى.'
+    );
+  } finally {
+    // إيقاف حالة التحميل في جميع الحالات
+    setIsAddingPatient(false);
+  }
+};
+
+const handleAddAppointment = async (appointmentData: any) => {
+  if (!selectedPatient) return;
+  
+  setIsAddingAppointment(true);
+  setAddAppointmentError(null);
+  
+  try {
+    const newSession = await api.addSession(clinicId, {
+      patientId: selectedPatient.id,
+      startTime: appointmentData.startTime,
+      endTime: appointmentData.endTime,
+      status: 'scheduled',
+      plannedProcedure: appointmentData.procedure,
+      sessionCost: appointmentData.cost || 0,
+      isPaid: false,
+      caseId: appointmentData.caseId,
+      notes: appointmentData.notes,
+    });
+    setSessions(prev => [...prev, newSession]);
+    setSelectedPatientSessions(prev => [...prev, newSession]);
+    setShowNewAppointmentModal(false);
+  } catch (error: any) {
+    console.error('خطأ في إضافة الموعد:', error);
+    setAddAppointmentError(
+      error?.message || 'حدث خطأ أثناء إضافة الموعد. يرجى المحاولة مرة أخرى.'
+    );
+  } finally {
+    setIsAddingAppointment(false);
+  }
+};
 
   const calculatePatientFinance = (patientId: string) => {
     const patientSessions = sessions.filter(s => s.patientId === patientId);
@@ -683,8 +716,14 @@ export function MainTab({
           <NewPatientModal
             primaryColor={primaryColor}
             secondaryColor={secondaryColor}
-            onClose={() => setShowNewPatientModal(false)}
+            onClose={() => {
+              setShowNewPatientModal(false);
+              setAddPatientError(null); // مسح الخطأ عند الإغلاق
+            }}
             onSubmit={handleAddPatient}
+            isLoading={isAddingPatient}
+            error={addPatientError}
+            onClearError={() => setAddPatientError(null)}
           />
         )}
       </AnimatePresence>
@@ -695,8 +734,14 @@ export function MainTab({
             patient={selectedPatient}
             primaryColor={primaryColor}
             secondaryColor={secondaryColor}
-            onClose={() => setShowNewAppointmentModal(false)}
+            onClose={() => {
+              setShowNewAppointmentModal(false);
+              setAddAppointmentError(null);
+            }}
             onSubmit={handleAddAppointment}
+            isLoading={isAddingAppointment}
+            error={addAppointmentError}
+            onClearError={() => setAddAppointmentError(null)}
           />
         )}
       </AnimatePresence>
@@ -943,12 +988,12 @@ function PatientDetailsCard({
                   {/* جدول بعرض أدنى يضمن ظهور جميع الأعمدة على الشاشات الكبيرة، مع إمكانية التمرير على الصغيرة */}
                   <div className="min-w-[900px] lg:min-w-full">
                     {/* رأس الجدول */}
-                    <div className="grid grid-cols-[100px_1.5fr_1fr_100px_100px_100px_100px] bg-gray-50 px-4 py-3 border-b border-gray-200">
+                    <div className="grid grid-cols-[100px_1.5fr_1fr_100px_100px_100px] bg-gray-50 px-4 py-3 border-b border-gray-200">
                       <div className="text-sm font-medium text-gray-500 text-right">الحالة</div>
                       <div className="text-sm font-medium text-gray-500 text-right">الإجراء</div>
                       <div className="text-sm font-medium text-gray-500 text-right">التاريخ</div>
                       <div className="text-sm font-medium text-gray-500 text-right">الوقت</div>
-                      <div className="text-sm font-medium text-gray-500 text-right">المدفوع</div>
+                      {/* <div className="text-sm font-medium text-gray-500 text-right">المدفوع</div> */}
                       <div className="text-sm font-medium text-gray-500 text-right">الإجمالي</div>
                       <div className="text-sm font-medium text-gray-500 text-right">إجراءات</div>
                     </div>
@@ -958,7 +1003,7 @@ function PatientDetailsCard({
                       {sortedSessions.map((session) => (
                         <div 
                           key={session.id} 
-                          className="grid grid-cols-[100px_1.5fr_1fr_100px_100px_100px_100px] px-4 py-3 items-center hover:bg-gray-50/50 cursor-pointer transition-colors"
+                          className="grid grid-cols-[100px_1.5fr_1fr_100px_100px_100px] px-4 py-3 items-center hover:bg-gray-50/50 cursor-pointer transition-colors"
                           onClick={() => setSelectedSession(session)}
                         >
                           {/* حالة الجلسة */}
@@ -1007,17 +1052,7 @@ function PatientDetailsCard({
                             {formatTime(session.startTime)}
                           </div>
                           
-                          <div className="text-sm truncate">
-                            {session.isPaid ? (
-                              <span className="text-green-600 font-medium">
-                                {formatCurrency(session.sessionCost)}
-                              </span>
-                            ) : (
-                              <span className="text-orange-500 font-medium">
-                                {formatCurrency(0)}
-                              </span>
-                            )}
-                          </div>
+
                           
                           <div className="text-sm font-semibold text-gray-900 truncate">
                             {formatCurrency(session.sessionCost)}
@@ -1178,23 +1213,44 @@ function EditSessionModal({
           
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             {/* حالة الجلسة */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                حالة الجلسة
-              </label>
-              <select
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value as Session['status'] })}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent"
-                style={{ '--tw-ring-color': primaryColor } as any}
-              >
-                <option value="scheduled">مجدولة</option>
-                <option value="completed">مكتملة</option>
-                <option value="in-progress">قيد التنفيذ</option>
-                <option value="cancelled">ملغية</option>
-                <option value="no-show">لم يحضر</option>
-              </select>
-            </div>
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-3">
+    حالة الجلسة
+  </label>
+  <div className="flex flex-wrap gap-2">
+    {[
+      { value: 'scheduled', label: 'مجدولة' },
+      { value: 'completed', label: 'مكتملة' },
+      { value: 'in-progress', label: 'قيد التنفيذ' },
+      { value: 'cancelled', label: 'ملغية' },
+      { value: 'no-show', label: 'لم يحضر' }
+    ].map((option) => (
+      <label
+        key={option.value}
+        className={`flex-1 min-w-fit px-4 py-2.5 rounded-xl text-sm font-medium text-center cursor-pointer transition-all border-2 ${
+          formData.status === option.value
+            ? 'border-transparent text-white'
+            : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300'
+        }`}
+        style={
+          formData.status === option.value
+            ? { backgroundColor: primaryColor }
+            : {}
+        }
+      >
+        <input
+          type="radio"
+          name="status"
+          value={option.value}
+          checked={formData.status === option.value}
+          onChange={(e) => setFormData({ ...formData, status: e.target.value as Session['status'] })}
+          className="sr-only"
+        />
+        {option.label}
+      </label>
+    ))}
+  </div>
+</div>
 
             {/* تاريخ ووقت الجلسة */}
             <div>
@@ -1217,6 +1273,7 @@ function EditSessionModal({
               </label>
               <input
                 type="text"
+                required
                 value={formData.plannedProcedure}
                 onChange={(e) => setFormData({ ...formData, plannedProcedure: e.target.value })}
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent"
@@ -1247,15 +1304,19 @@ function EditSessionModal({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 تكلفة الجلسة (ل.س)
               </label>
-              <input
-                type="number"
-                min="0"
-                step="50"
-                value={formData.sessionCost}
-                onChange={(e) => setFormData({ ...formData, sessionCost: Number(e.target.value) })}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent"
-                style={{ '--tw-ring-color': primaryColor } as any}
-              />
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  required
+                  value={formData.sessionCost || ''}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^0-9]/g, '');
+                    setFormData({ ...formData, sessionCost: value === '' ? 0 : Number(value) });
+                  }}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent invalid:border-red-500"
+                  style={{ '--tw-ring-color': primaryColor } as any}
+                  placeholder="0"
+                />
             </div>
 
             {/* حالة الدفع */}
@@ -1455,10 +1516,21 @@ interface NewPatientModalProps {
   primaryColor: string;
   secondaryColor: string;
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => Promise<void>;  
+  isLoading?: boolean;                       
+  error?: string | null; 
+  onClearError?: () => void;                   
 }
 
-function NewPatientModal({ primaryColor, secondaryColor, onClose, onSubmit }: NewPatientModalProps) {
+function NewPatientModal({ 
+  primaryColor, 
+  secondaryColor, 
+  onClose, 
+  onSubmit,
+  isLoading = false,
+  error = null,
+  onClearError,         
+}: NewPatientModalProps) {
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
@@ -1497,42 +1569,43 @@ function NewPatientModal({ primaryColor, secondaryColor, onClose, onSubmit }: Ne
     return currentYear - age;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const patientData = {
-      fullName: formData.fullName,
-      phone: formData.phone,
-      email: formData.email || undefined,
-      gender: formData.gender,
-      age: parseInt(formData.age) || undefined,
-      address: formData.address || undefined,
-      notes: formData.notes || undefined,
-      addAppointment: formData.addAppointment,
-    };
-    
-    let appointmentData = null;
-    if (formData.addAppointment) {
-      const appointmentDate = calculateAppointmentDate();
-      const [hours, minutes] = formData.appointment.time.split(':');
-      appointmentDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-      
-      const endTime = new Date(appointmentDate.getTime() + 30 * 60000);
-      
-      appointmentData = {
-        startTime: appointmentDate,
-        endTime: endTime,
-        procedure: formData.appointment.procedure,
-        cost: formData.appointment.cost,
-        notes: formData.appointment.notes || undefined,
-      };
-    }
-    
-    onSubmit({
-      ...patientData,
-      appointment: appointmentData,
-    });
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  const patientData = {
+    fullName: formData.fullName,
+    phone: formData.phone,
+    email: formData.email || undefined,
+    gender: formData.gender,
+    age: parseInt(formData.age) || undefined,
+    address: formData.address || undefined,
+    notes: formData.notes || undefined,
+    addAppointment: formData.addAppointment,
   };
+  
+  let appointmentData = null;
+  if (formData.addAppointment) {
+    const appointmentDate = calculateAppointmentDate();
+    const [hours, minutes] = formData.appointment.time.split(':');
+    appointmentDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    
+    const endTime = new Date(appointmentDate.getTime() + 30 * 60000);
+    
+    appointmentData = {
+      startTime: appointmentDate,
+      endTime: endTime,
+      procedure: formData.appointment.procedure,
+      cost: formData.appointment.cost,
+      notes: formData.appointment.notes || undefined,
+    };
+  }
+  
+  // استدعاء onSubmit بشكل غير متزامن
+  await onSubmit({
+    ...patientData,
+    appointment: appointmentData,
+  });
+};
 
   const appointmentDate = calculateAppointmentDate();
   const formattedAppointmentDate = appointmentDate.toLocaleDateString('ar-SA', {
@@ -1574,6 +1647,26 @@ function NewPatientModal({ primaryColor, secondaryColor, onClose, onSubmit }: Ne
           </div>
           
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3"
+                >
+                  <AlertCircle size={20} className="text-red-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-red-800 font-medium text-sm">حدث خطأ</p>
+                    <p className="text-red-600 text-sm mt-1">{error}</p>
+                  </div>
+                    <button
+                      type="button"
+                      onClick={onClearError}
+                      className="mr-auto text-red-400 hover:text-red-600"
+                    >
+                      <X size={16} />
+                    </button>
+                </motion.div>
+              )}
             {/* معلومات أساسية */}
             <div className="space-y-4">
               <h3 className="font-bold text-gray-900 text-lg">المعلومات الأساسية</h3>
@@ -1583,31 +1676,50 @@ function NewPatientModal({ primaryColor, secondaryColor, onClose, onSubmit }: Ne
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     الاسم الكامل <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.fullName}
-                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent transition-all"
-                    style={{ '--tw-ring-color': primaryColor } as any}
-                    placeholder="مثال: أحمد محمد العنزي"
-                  />
+                    <input
+                      type="text"
+                      required
+                      value={formData.fullName}
+                      onChange={(e) => {
+                        const valueWithoutNumbers = e.target.value.replace(/[0-9]/g, '');
+                        setFormData({ ...formData, fullName: valueWithoutNumbers });
+                      }}
+                      onKeyDown={(e) => {
+                        // منع إدخال الأرقام من لوحة المفاتيح
+                        if (e.key >= '0' && e.key <= '9') {
+                          e.preventDefault();
+                        }
+                      }}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent transition-all"
+                      style={{ '--tw-ring-color': primaryColor } as any}
+                      placeholder="مثال: أحمد محمد الكامل"
+                    />
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     رقم الجوال <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="tel"
-                    required
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent transition-all"
-                    style={{ '--tw-ring-color': primaryColor } as any}
-                    placeholder="05xxxxxxxx"
-                    dir="ltr"
-                  />
+                    <input
+                      type="tel"
+                      required
+                      value={formData.phone}
+                      onChange={(e) => {
+                        const phoneValue = e.target.value.replace(/[^\d+]/g, '');
+                        setFormData({ ...formData, phone: phoneValue });
+                      }}
+                      onKeyDown={(e) => {
+                        // السماح فقط بالأرقام وعلامة + ومفاتيح التحكم
+                        const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', '+'];
+                        if (!allowedKeys.includes(e.key) && !(e.key >= '0' && e.key <= '9')) {
+                          e.preventDefault();
+                        }
+                      }}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent transition-all"
+                      style={{ '--tw-ring-color': primaryColor } as any}
+                      placeholder="05xxxxxxxx"
+                      dir="ltr"
+                    />
                 </div>
                 
                 <div>
@@ -1796,6 +1908,7 @@ function NewPatientModal({ primaryColor, secondaryColor, onClose, onSubmit }: Ne
                     </label>
                     <input
                       type="text"
+                      required
                       value={formData.appointment.procedure}
                       onChange={(e) => setFormData({
                         ...formData,
@@ -1811,17 +1924,23 @@ function NewPatientModal({ primaryColor, secondaryColor, onClose, onSubmit }: Ne
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       التكلفة 
                     </label>
-                    <input
-                      type="number"
-                      value={formData.appointment.cost}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        appointment: { ...formData.appointment, cost: Number(e.target.value) }
-                      })}
-                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent transition-all"
-                      style={{ '--tw-ring-color': primaryColor } as any}
-                      min="0"
-                    />
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        required
+                        value={formData.appointment.cost}
+                        onChange={(e) => {
+                          // السماح بالأرقام فقط
+                          const value = e.target.value.replace(/[^0-9]/g, '');
+                          setFormData({
+                            ...formData,
+                            appointment: { ...formData.appointment, cost: value }
+                          });
+                        }}
+                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent transition-all"
+                        style={{ '--tw-ring-color': primaryColor } as any}
+                        placeholder="0"
+                      />
                   </div>
                 </div>
               )}
@@ -1836,13 +1955,23 @@ function NewPatientModal({ primaryColor, secondaryColor, onClose, onSubmit }: Ne
               >
                 إلغاء
               </button>
-              <button
-                type="submit"
-                className="flex-1 px-4 py-3 rounded-xl text-white font-medium transition-colors"
-                style={{ background: primaryColor }}
-              >
-                إضافة المريض
-              </button>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="flex-1 px-4 py-3 rounded-xl text-white font-medium transition-all
+                          disabled:opacity-70 disabled:cursor-not-allowed
+                          flex items-center justify-center gap-2"
+                  style={{ background: primaryColor }}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 size={20} className="animate-spin" />
+                      <span>جاري الإضافة...</span>
+                    </>
+                  ) : (
+                    <span>إضافة المريض</span>
+                  )}
+                </button>
             </div>
           </form>
         </motion.div>
@@ -1860,10 +1989,22 @@ interface NewAppointmentModalProps {
   primaryColor: string;
   secondaryColor: string;
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => Promise<void>;
+  isLoading?: boolean;
+  error?: string | null;
+  onClearError?: () => void;
 }
 
-function NewAppointmentModal({ patient, primaryColor, secondaryColor, onClose, onSubmit }: NewAppointmentModalProps) {
+function NewAppointmentModal({ 
+  patient, 
+  primaryColor, 
+  secondaryColor, 
+  onClose, 
+  onSubmit,
+  isLoading = false,
+  error = null,
+  onClearError,
+}: NewAppointmentModalProps) {
   const [formData, setFormData] = useState({
     appointmentMode: 'days' as 'days' | 'date',
     days: '1',
@@ -1887,24 +2028,24 @@ function NewAppointmentModal({ patient, primaryColor, secondaryColor, onClose, o
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const appointmentDate = calculateAppointmentDate();
-    const [hours, minutes] = formData.time.split(':');
-    appointmentDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-    
-    const endTime = new Date(appointmentDate.getTime() + 30 * 60000);
-    
-    onSubmit({
-      startTime: appointmentDate,
-      endTime,
-      procedure: formData.procedure || 'كشف',
-      cost: formData.cost,
-      caseId: formData.caseId || undefined,
-      notes: formData.notes || undefined,
-    });
-  };
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  const appointmentDate = calculateAppointmentDate();
+  const [hours, minutes] = formData.time.split(':');
+  appointmentDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+  
+  const endTime = new Date(appointmentDate.getTime() + 30 * 60000);
+  
+  await onSubmit({
+    startTime: appointmentDate,
+    endTime,
+    procedure: formData.procedure || 'كشف',
+    cost: formData.cost,
+    caseId: formData.caseId || undefined,
+    notes: formData.notes || undefined,
+  });
+};
 
   const appointmentDate = calculateAppointmentDate();
   const formattedAppointmentDate = appointmentDate.toLocaleDateString('ar-SA', {
@@ -1947,6 +2088,27 @@ function NewAppointmentModal({ patient, primaryColor, secondaryColor, onClose, o
           </div>
           
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
+
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3"
+                >
+                  <AlertCircle size={20} className="text-red-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-red-800 font-medium text-sm">حدث خطأ</p>
+                    <p className="text-red-600 text-sm mt-1">{error}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onClearError}
+                    className="mr-auto text-red-400 hover:text-red-600"
+                  >
+                    <X size={16} />
+                  </button>
+                </motion.div>
+              )}
             {/* طريقة تحديد الموعد */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -2038,14 +2200,15 @@ function NewAppointmentModal({ patient, primaryColor, secondaryColor, onClose, o
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 الإجراء
               </label>
-              <input
-                type="text"
-                value={formData.procedure}
-                onChange={(e) => setFormData({ ...formData, procedure: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent"
-                style={{ '--tw-ring-color': primaryColor } as any}
-                placeholder="مثال: تنظيف أسنان، حشوة..."
-              />
+                <input
+                  type="text"
+                  required
+                  value={formData.procedure}
+                  onChange={(e) => setFormData({ ...formData, procedure: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transition invalid:border-red-500"
+                  style={{ '--tw-ring-color': primaryColor } as any}
+                  placeholder="مثال: تنظيف أسنان، حشوة..."
+                />
             </div>
             
             <div>
@@ -2053,12 +2216,20 @@ function NewAppointmentModal({ patient, primaryColor, secondaryColor, onClose, o
                 التكلفة
               </label>
               <input
-                type="number"
-                value={formData.cost}
-                onChange={(e) => setFormData({ ...formData, cost: Number(e.target.value) })}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent"
+                type="text"
+                inputMode="numeric"
+                required
+                value={formData.cost || ''}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^0-9]/g, '');
+                  setFormData({ 
+                    ...formData, 
+                    cost: value === '' ? 0 : Number(value) 
+                  });
+                }}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transition invalid:border-red-500"
                 style={{ '--tw-ring-color': primaryColor } as any}
-                min="0"
+                placeholder="100"
               />
             </div>
             
@@ -2084,13 +2255,23 @@ function NewAppointmentModal({ patient, primaryColor, secondaryColor, onClose, o
               >
                 إلغاء
               </button>
-              <button
-                type="submit"
-                className="flex-1 px-4 py-3 rounded-xl text-white font-medium transition-colors"
-                style={{ background: primaryColor }}
-              >
-                إضافة الموعد
-              </button>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="flex-1 px-4 py-3 rounded-xl text-white font-medium transition-all
+                          disabled:opacity-70 disabled:cursor-not-allowed
+                          flex items-center justify-center gap-2"
+                  style={{ background: primaryColor }}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 size={20} className="animate-spin" />
+                      <span>جاري الإضافة...</span>
+                    </>
+                  ) : (
+                    <span>إضافة الموعد</span>
+                  )}
+                </button>
             </div>
           </form>
         </motion.div>
