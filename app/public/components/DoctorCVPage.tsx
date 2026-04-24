@@ -292,7 +292,7 @@ export default function DoctorCVPage({ clinic }: DoctorCVPageProps) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
               >
-                <p className="text-gray-600 leading-relaxed max-w-2xl text-lg">
+                <p className="text-gray-900 leading-relaxed max-w-2xl text-lg">
                   {doctor.about}
                 </p>
               </motion.div>
@@ -302,10 +302,10 @@ export default function DoctorCVPage({ clinic }: DoctorCVPageProps) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
               >
-                <p className="text-gray-600 leading-relaxed max-w-2xl text-lg">
+                <p className="text-gray-900 leading-relaxed max-w-2xl text-lg">
                    خريج جامعة : {doctor.university} 
                 </p>
-                <p className="text-gray-600 leading-relaxed max-w-2xl text-lg">
+                <p className="text-gray-900 leading-relaxed max-w-2xl text-lg">
                     عام : {doctor.graduationYear instanceof Date ? doctor.graduationYear.getFullYear() : doctor.graduationYear}
                 </p>
               </motion.div>

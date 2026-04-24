@@ -118,7 +118,28 @@ export default function PublicClinicPage({ clinic }: PublicClinicPageProps) {
       end: wh?.end || (dayNum === 6 ? '00:00' : '17:00'),
     };
   });
-
+  const formatTimeTo12Hour = (time24: string): string => {
+  if (!time24) return '';
+  
+  const [hoursStr, minutes] = time24.split(':');
+  let hours = parseInt(hoursStr, 10);
+  
+  if (isNaN(hours)) return time24;
+  
+  const period = hours >= 12 ? 'م' : 'ص';
+  
+  // تحويل إلى نظام 12 ساعة
+  if (hours === 0) {
+    hours = 12; // منتصف الليل
+  } else if (hours > 12) {
+    hours = hours - 12;
+  }
+  
+  // إضافة صفر قبل الرقم إذا كان أقل من 10
+  const hoursFormatted = hours < 10 ? `0${hours}` : `${hours}`;
+  
+  return `${hoursFormatted}:${minutes} ${period}`;
+};
   // معلومات اليوم الحالي
   const currentDayNum = getCurrentDayNumber();
   const todayInfo = daysData.find(d => d.day === currentDayNum);
@@ -282,7 +303,7 @@ export default function PublicClinicPage({ clinic }: PublicClinicPageProps) {
                       className="font-bold text-sm sm:text-base"
                       style={{ color: day.isClosed ? '#ef4444' : '#000000' }}
                     >
-                      {day.isClosed ? 'مغلق' : `${day.start} - ${day.end}`}
+                      {day.isClosed ? 'مغلق' : `${formatTimeTo12Hour(day.start)} - ${formatTimeTo12Hour(day.end)}`}
                     </span>
                   </motion.div>
                 ))}
@@ -297,7 +318,10 @@ export default function PublicClinicPage({ clinic }: PublicClinicPageProps) {
                   </span>
                   <p className="text-sm text-gray-600">
                     <span className="font-bold text-gray-900">اليوم: </span>
-                    {todayInfo?.isClosed ? 'مغلق' : `مفتوح حتى ${todayInfo?.end}`}
+                    {todayInfo?.isClosed 
+                      ? 'مغلق' 
+                      : `مفتوح حتى ${formatTimeTo12Hour(todayInfo?.end || '')}`
+                    }
                   </p>
                 </div>
               </div>

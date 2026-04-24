@@ -251,13 +251,14 @@ const Navigation = () => {
             <span className="text-xl font-bold text-white">LiveDent</span>
           </motion.div>
 
-          <motion.button
+          <motion.a
+            href='/Requestcopy'
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="bg-yellow-500 text-[#0A1628] px-5 py-2 rounded-lg font-medium text-sm hover:bg-yellow-400 transition-colors"
           >
             ابدأ الآن
-          </motion.button>
+          </motion.a>
         </div>
       </div>
     </motion.nav>
@@ -483,34 +484,6 @@ export default function Home() {
                 </div>
               </AnimatedSection>
             </div>
-          </div>
-        </section>
-
-        {/* CTA Section */}
-        <section className="py-16">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="bg-gradient-to-r from-[#0F1F35] to-[#1A2A44] rounded-2xl p-8 md:p-10 text-center border border-yellow-500/20"
-            >
-              <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
-                ابدأ رحلة التحول الرقمي لعيادتك اليوم
-              </h2>
-              <p className="text-gray-300 mb-6 max-w-lg mx-auto text-sm">
-                انضم إلى مئات العيادات التي تثق في LiveDent لإدارة عملياتها بكفاءة واحترافية
-              </p>
-              
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="bg-yellow-500 text-[#0A1628] px-8 py-3 rounded-lg font-bold shadow-lg hover:bg-yellow-400 transition-colors inline-flex items-center gap-2"
-              >
-                احصل على عرضك الآن
-                <Sparkles size={18} />
-              </motion.button>
-            </motion.div>
           </div>
         </section>
 
