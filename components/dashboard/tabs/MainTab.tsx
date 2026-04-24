@@ -61,7 +61,7 @@ const api = {
     patientData: Omit<Patient, "id" | "clinicId" | "createdAt">,
   ): Promise<Patient> => {
     const result = await createPatient(patientData);
-    if (!result || !result.data || !result.data.id) return {} as Patient;
+    if (!result || !result.data || !result.data.id) throw new Error("فشل إنشاء المريض");
     const newPatient: Patient = {
       id: result.data.id,
       clinicId,
@@ -80,7 +80,7 @@ const api = {
     sessionData: Omit<Session, "id" | "clinicId" | "patientSnapshot">,
   ): Promise<Session> => {
     const result = await createSession(sessionData);
-    if (!result || !result.data || !result.data.id) return {} as Session; // error;
+    if (!result || !result.data || !result.data.id) throw new Error("فشل إنشاء الموعد");
     const newSession: Session = {
       id: result.data.id,
       clinicId,
