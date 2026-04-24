@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { Clinic } from '@/types';
 import { updateProfile } from '@/client/helpers/clinic';
+import { handleUploadImage } from '@/client/helpers/upload_image';
 
 // ============================================================
 // الواجهات الداخلية للمكون فقط (للتعديل)
@@ -239,17 +240,15 @@ export function DoctorCVTab({ clinicData, onProfileUpdate }: DoctorCVTabProps) {
       
       // ✅ رفع الصورة إذا تم تغييرها
       if (tempPhoto) {
-        const photoUrl = await uploadPhoto(tempPhoto);
+        const photoUrl = await handleUploadImage(tempPhoto,"pfp",clinicData?.id);
         if (photoUrl) {
           updatedProfile.photo = photoUrl;
         }
       }
       
       // ✅ إرسال البيانات إلى API
-      console.log(updatedProfile)
       const result = await updateProfile(updatedProfile);
       if(!result.success) return // error 
-      console.log(result)
 
       
       // ✅ تحديث العرض المباشر

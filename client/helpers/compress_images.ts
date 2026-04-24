@@ -32,13 +32,11 @@ export const compressImageAdvanced = async (
       alwaysKeepResolution: false,
     };
 
-    console.log(`🔄 Compressing: ${(file.size / 1024).toFixed(1)}KB`);
     
     // ضغط الصورة
     const compressedFile = await imageCompression(file, compressOptions);
     
     const reduction = ((1 - compressedFile.size / file.size) * 100).toFixed(1);
-    console.log(`✅ Result: ${(compressedFile.size / 1024).toFixed(1)}KB (${reduction}% reduction)`);
     
     return compressedFile;
     

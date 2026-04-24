@@ -306,7 +306,7 @@ export default function DoctorCVPage({ clinic }: DoctorCVPageProps) {
                    خريج جامعة : {doctor.university} 
                 </p>
                 <p className="text-gray-600 leading-relaxed max-w-2xl text-lg">
-                    عام : {doctor.graduationYear}
+                    عام : {doctor.graduationYear instanceof Date ? doctor.graduationYear.getFullYear() : doctor.graduationYear}
                 </p>
               </motion.div>
             </motion.div>

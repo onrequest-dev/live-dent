@@ -2,6 +2,7 @@ import { decodeJWT } from "@/server/jwt";
 // import { sanitizeInput } from "@/server/sanitize";
 import { supabase_server } from "@/server/supabase-server";
 import { ClinicEmployeeJwt,  DoctorProfile } from "@/types";
+import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
 
@@ -27,5 +28,7 @@ export async function POST(request: NextRequest){
         console.error("Error updating doctor profile data:", error);
         return NextResponse.json({ error: "Failed to update doctor profile data" }, { status: 500 });
     }
+    revalidatePath(`/public/${clinicId}`);
+    revalidatePath(`/public/${clinicId}/doctor-cv`);
     return NextResponse.json(data, { status: 200 });
 }

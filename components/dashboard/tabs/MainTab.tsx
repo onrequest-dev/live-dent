@@ -62,24 +62,20 @@ const api = {
     };
     
     // في الإصدار الحقيقي: حفظ في قاعدة البيانات
-    console.log('✅ تم إضافة المريض:', newPatient);
     
     return newPatient;
   },
   
   // إضافة موعد جديد
   addSession: async (clinicId: string, sessionData: Omit<Session, 'id' | 'clinicId'|'patientSnapshot'>): Promise<Session> => {
-    console.log("adding session")
     const result = await createSession(sessionData);
     if(!result||!result.data||!result.data.id) return {} as Session // error;
-    console.log(result)
     const newSession: Session = {
       id: result.data.id,
       clinicId,
       ...sessionData,
     };
     
-    console.log('✅ تم إضافة الموعد:', newSession);
     
     return newSession;
   },
@@ -88,7 +84,6 @@ const api = {
   updateSessionStatus: async (sessionId: string, status: Session['status']): Promise<Session> => {
     await new Promise(resolve => setTimeout(resolve, 200));
     
-    console.log(`✅ تم تحديث حالة الجلسة ${sessionId} إلى ${status}`);
     
     // في الإصدار الحقيقي: تحديث في قاعدة البيانات
     return {} as Session;
@@ -178,6 +173,14 @@ const [addAppointmentError, setAddAppointmentError] = useState<string | null>(nu
     setCases(initialCases);
   }, [initialPatients, initialSessions, initialCases]);
 
+  // دالة لتطبيع النص لمراعاة التشابه بين الحروف العربية والأرقام
+  const normalizeText = (text: string) => {
+    return text
+      .replace(/[أإآ]/g, 'ا')
+      .replace(/[٠-٩]/g, (match) => String.fromCharCode(match.charCodeAt(0) - 0x0660 + 0x0030))
+      .toLowerCase();
+  };
+
   // تصفية المرضى
   const filteredPatients = useMemo(() => {
     let filtered = patients;
@@ -194,9 +197,9 @@ const [addAppointmentError, setAddAppointmentError] = useState<string | null>(nu
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(p =>
-        p.fullName.toLowerCase().includes(query) ||
-        p.phone.includes(query) ||
-        p.id.toLowerCase().includes(query)
+        normalizeText(p.fullName).includes(normalizeText(query)) ||
+        normalizeText(p.phone).includes(normalizeText(query)) ||
+        normalizeText(p.id).includes(normalizeText(query))
       );
     }
     return filtered;

@@ -2,13 +2,11 @@ import { supabase_client } from "@/lib/supabase-client";
 import { compressLogo, compressPfpImage } from "./compress_images";
 
 export const handleUploadImage = async (file: File, type: 'logo' | 'pfp', clinicId?: string, menuId?: string): Promise<string> => {
-  console.log("Uploading image:", file, "for type:", type);
   
   if (!file) {
     console.error("No file provided");
     throw new Error("No file provided");
   }
-  console.log("compriseing file");
   let compressed_file ;
   if(type === 'logo') compressed_file = await compressLogo(file);
   else if(type === 'pfp') compressed_file = await compressPfpImage(file);
@@ -28,7 +26,7 @@ export const handleUploadImage = async (file: File, type: 'logo' | 'pfp', clinic
   try {
     const { data, error } = await supabase_client.storage
       .from('images') 
-      .upload(filePath, file, {
+      .upload(filePath, compressed_file, {
         cacheControl: '0',
         upsert: true, 
       });

@@ -18,13 +18,11 @@ export async function POST(request: NextRequest) {
     }
     const {data,error} = await supabase_server.from("employees").select("hashed_password,id,clinicId,role").eq("user_name", username).single()
     if(error || !data) {
-        console.log(error)
         return new Response(JSON.stringify({ message: "Invalid username or password" }), { status: 401 });
     }
     const hashedPassword = data.hashed_password;
     const isPasswordValid = await bcrypt.compare(password, hashedPassword);
     if(!isPasswordValid) {
-        console.log("Invalid password for user:", username);
         return new Response(JSON.stringify({ message: "Invalid username or password" }), { status: 401 });
     }
     // const {data: clinicData, error: ClinicError} = await supabase_server

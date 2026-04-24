@@ -19,7 +19,6 @@ export async function getClinic(): Promise<ApiResponse<Clinic>> {
 }
 
 export async function updateClinic(clinicData: Partial<Clinic>): Promise<ApiResponse<Clinic>> {
-  console.log("Updating clinic with data:", clinicData.settings?.workingHours);
   try {
     const response = await fetch("/api/v1/clinic", {
       method: "PUT",

@@ -125,9 +125,9 @@ export function ClinicInfoTab({ clinicData, onClinicUpdate }: ClinicInfoTabProps
   const [displayWorkingHours, setDisplayWorkingHours] = useState<WorkingHourEditItem[]>([]);
 
   // ✅ تحميل البيانات الأولية
-  useEffect(() => {
+    useEffect(() => {
     if (clinicData) {
-      const initialData = {
+      const newFormData = {
         name: clinicData.name || '',
         logo: clinicData.logo || '',
         address: clinicData.address || '',
@@ -136,20 +136,19 @@ export function ClinicInfoTab({ clinicData, onClinicUpdate }: ClinicInfoTabProps
         primaryColor: clinicData.settings?.primaryColor || '#007bff',
         secondaryColor: clinicData.settings?.secondaryColor || '#6c757d',
       };
-      
-      setFormData(initialData);
-      setDisplayData(initialData);
-      
-      // تحميل ساعات العمل - تطبيع البيانات أولاً
+
+      // تحديث بيانات العرض المباشر (دائمًا)
+      setDisplayData(newFormData);
+      setLogoPreview(clinicData.logo || '');
+
+      // تطبيع ساعات العمل للعرض
       const rawWorkingHours = clinicData.settings?.workingHours;
       const normalizedHours = normalizeWorkingHours(rawWorkingHours);
-      
       const formattedHours: WorkingHourEditItem[] = DAYS_OF_WEEK.map(day => {
         const existing = normalizedHours.find((h: WorkingHours) => h.day === day.key);
-        const isClosed = existing 
+        const isClosed = existing
           ? (existing.start === '00:00' && existing.end === '00:00')
-          : (day.key === 6); // الجمعة (6) مغلق افتراضياً
-        
+          : (day.key === 6);
         return {
           day: day.key,
           start: existing?.start || (isClosed ? '00:00' : '09:00'),
@@ -157,12 +156,15 @@ export function ClinicInfoTab({ clinicData, onClinicUpdate }: ClinicInfoTabProps
           isClosed,
         };
       });
-      
-      setWorkingHours(formattedHours);
       setDisplayWorkingHours(formattedHours);
-      setLogoPreview(clinicData.logo || '');
+
+      // تحديث بيانات التعديل فقط إذا لم يكن في وضع التعديل
+      if (!isEditing) {
+        setFormData(newFormData);
+        setWorkingHours(formattedHours);
+      }
     }
-  }, [clinicData]);
+  }, [clinicData, isEditing]);
 
   useEffect(() => {
     if (saveMessage) {
@@ -274,12 +276,10 @@ export function ClinicInfoTab({ clinicData, onClinicUpdate }: ClinicInfoTabProps
       if (tempLogo) {
         const logoUrl = await handleUploadImage(tempLogo, 'logo', clinicData?.id);
         if (logoUrl) {
-          console.log('تم رفع الشعار بنجاح:', logoUrl);
           finalLogo = logoUrl;
           updatedClinic.logo = logoUrl;
         }
       }
-      console.log('بيانات العيادة المحدثة:', updatedClinic);
       
       const result = await updateClinic(updatedClinic);
       
