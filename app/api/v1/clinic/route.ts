@@ -58,6 +58,10 @@ export async function PUT(request: NextRequest){
     }
     revalidatePath(`/public/${clinicId}`);
     revalidatePath(`/public/${clinicId}/doctor-cv`);
-    
-    return NextResponse.json(data, { status: 200 });
+    const res = NextResponse.json(data, { status: 200 });
+    const primary_color = clinicData.settings?.primaryColor || "#0284c7";
+    const secondary_color = clinicData.settings?.secondaryColor || "#0ea5e9";
+    res.cookies.set("primary_color",primary_color , { path: "/", maxAge: 60 * 60 * 24 * 365 * 20, httpOnly: true });
+    res.cookies.set("secondary_color",secondary_color , { path: "/", maxAge: 60 * 60 * 24 * 365 * 20, httpOnly: true });
+    return res ;
 }

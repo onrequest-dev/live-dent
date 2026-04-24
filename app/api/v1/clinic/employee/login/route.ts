@@ -35,5 +35,6 @@ export async function POST(request: NextRequest) {
     const jwt = createJwt({id: data.id, clinicId: data.clinicId, role: data.role,subscriptionStatus:"active" , device_id:device_id });
     const res =  NextResponse.json({ slug: data.clinicId }, { status: 200 });
     res.cookies.set("jwt", jwt || "", { path: "/", maxAge: 60 * 60 * 24 * 365 * 20, httpOnly: true });
+    res.cookies.set("clinic_id", data.clinicId || "", { path: "/", maxAge: 60 * 60 * 24 * 365 * 20, httpOnly: true });
     return res;
 }
