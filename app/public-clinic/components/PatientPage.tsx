@@ -334,45 +334,29 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
                                 {session.plannedProcedure}
                               </span>
                               <StatusBadge status={session.status} />
-                              {isPast && (
+                              {/* {isPast && (
                                 <span className="text-xs px-2 py-0.5 rounded-full bg-red-50 text-red-600">
                                   موعد فائت
                                 </span>
-                              )}
+                              )} */}
                             </div>
 
-                            <div className="grid grid-cols-2 gap-3 mt-2">
-                              <div className="flex items-center gap-2">
-                                <Calendar
-                                  size={14}
-                                  style={{ color: primaryColor }}
-                                />
-                                <div>
-                                  <p className="text-xs text-gray-500">
-                                    التاريخ
-                                  </p>
-                                  <p className="text-sm font-medium text-gray-900">
-                                    {sessionDate.dayName}{" "}
-                                    {sessionDate.formattedDate}
-                                  </p>
-                                </div>
-                              </div>
+{/* ============ التاريخ والوقت - سطرين منفصلين ============ */}
+<div className="mt-3 space-y-2">
+  {/* سطر التاريخ */}
+  <div className="flex items-center gap-1.5 text-sm">
+    <Calendar size={14} style={{ color: primaryColor }} />
+    <span className="text-gray-500">{sessionDate.dayName}</span>
+    <span className="text-gray-300">•</span>
+    <span className="font-medium text-gray-700">{sessionDate.formattedDate}</span>
+  </div>
 
-                              <div className="flex items-center gap-2">
-                                <Clock
-                                  size={14}
-                                  style={{ color: primaryColor }}
-                                />
-                                <div>
-                                  <p className="text-xs text-gray-500">الوقت</p>
-                                  <p className="text-sm font-medium text-gray-900">
-                                    {formatTime(session.startTime)}
-                                    {session.endTime &&
-                                      ` - ${formatTime(session.endTime)}`}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
+  {/* سطر الوقت */}
+  <div className="flex items-center gap-1.5 text-sm">
+    <Clock size={14} style={{ color: primaryColor }} />
+    <span className="font-medium text-gray-700">{formatTime(session.startTime)}</span>
+  </div>
+</div>
 
                             {session.toothNumber &&
                               session.toothNumber.length > 0 && (

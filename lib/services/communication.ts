@@ -30,14 +30,10 @@ export function generateWhatsAppMessage({
   const messages: Record<typeof messageType, string> = {
     reminder: `السلام عليكم ورحمة الله وبركاته
 ${title} ${patientName}،
-نذكركم بموعدكم اليوم في ${clinicName}
-${session ? `الإجراء: ${session.plannedProcedure || 'كشف'}
-الوقت: ${formatTimeForMessage(session.startTime)}` : ''}
-
-📋 رابط بطاقة المريض الإلكترونية:
+نذكركم بموعدكم اليوم في ${clinicName}\n رابط بطاقة المريض الإلكترونية:
 ${patientCardUrl}
 
-نتشرف بخدمتكم 🌹`,
+نتشرف بخدمتكم `,
 
     confirmation: `السلام عليكم ورحمة الله وبركاته
 ${title} ${patientName}،

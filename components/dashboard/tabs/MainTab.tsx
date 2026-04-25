@@ -2783,7 +2783,7 @@ function NewAppointmentModal({
                   setFormData({ ...formData, procedure: e.target.value })
                 }
                 disabled={isLoading}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent invalid:border-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ "--tw-ring-color": primaryColor } as any}
                 placeholder="مثال: تنظيف أسنان، حشوة..."
               />
@@ -2806,7 +2806,7 @@ function NewAppointmentModal({
                   });
                 }}
                 disabled={isLoading}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent invalid:border-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ "--tw-ring-color": primaryColor } as any}
                 placeholder="100"
               />

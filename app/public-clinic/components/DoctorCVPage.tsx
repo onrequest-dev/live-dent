@@ -3,484 +3,524 @@
 'use client';
 
 import Image from 'next/image';
-import { motion, useInView, AnimatePresence } from 'framer-motion';
-import { useRef, useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useCallback } from 'react';
 import { 
-  MapPin, 
   Phone, 
   Mail, 
-  Briefcase, 
+  MapPin, 
   GraduationCap,
-  Stethoscope,
-  CheckCircle2,
-  Sparkles,
+  Briefcase,
   Share2,
+  Award,
+  Clock,
+  ChevronDown,
 } from 'lucide-react';
 import { Clinic } from '@/types';
 
-// مكون قسم متحرك
-const AnimatedSection = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-50px" });
-  
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 30 }}
-      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-      transition={{ duration: 0.6, delay, ease: [0.25, 0.1, 0.25, 1] }}
-    >
-      {children}
-    </motion.div>
-  );
+// ============ أيقونات محسنة للأداء ============
+const IconWrapper = ({ children, color }: { children: React.ReactNode; color: string }) => (
+  <span style={{ color }} className="flex-shrink-0">
+    {children}
+  </span>
+);
+
+// ============ الخطوط المثالية للهاتف ============
+const textStyles = {
+  heading: "font-bold tracking-tight text-white",
+  body: "text-gray-300/90 leading-relaxed",
+  label: "text-gray-400 text-sm tracking-wide",
 };
 
-// بطاقة متحركة
-const AnimatedCard = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true });
-  
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.5, delay, ease: [0.25, 0.1, 0.25, 1] }}
-      whileHover={{ y: -4, transition: { duration: 0.2 } }}
-    >
-      {children}
-    </motion.div>
-  );
+// ============ تأثيرات حركية خفيفة ============
+const fadeInUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }
 };
 
-// مكون زر المشاركة
-// مكون زر المشاركة
-const ShareButton = ({ clinicName, doctorName, primaryColor, secondaryColor }: { 
-  clinicName: string; 
-  doctorName: string;
-  primaryColor: string;
-  secondaryColor: string;
-}) => {
-  const [isVisible, setIsVisible] = useState(false);
-  const [showTooltip, setShowTooltip] = useState(false);
+const fadeInScale = {
+  initial: { opacity: 0, scale: 0.95 },
+  animate: { opacity: 1, scale: 1 },
+  transition: { duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }
+};
 
-  useEffect(() => {
-    const handleScroll = () => {
-      // يظهر الزر بعد تمرير 300px ويختفي عند العودة للأعلى
-      setIsVisible(window.scrollY < 100);
-    };
+// ============ مكون المثلث الزخرفي ============
+const DecorativeTriangle = ({ position, color }: { position: 'top-right' | 'bottom-left'; color: string }) => (
+  <motion.div
+    initial={{ opacity: 0, scale: 0 }}
+    animate={{ opacity: 0.15, scale: 1 }}
+    transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
+    className={`absolute ${position === 'top-right' ? 'top-0 right-0' : 'bottom-0 left-0'} pointer-events-none`}
+  >
+    <svg 
+      width={position === 'top-right' ? "120" : "100"} 
+      height={position === 'top-right' ? "120" : "100"} 
+      viewBox="0 0 120 120"
+      className="opacity-80"
+    >
+      {position === 'top-right' ? (
+        <polygon points="120,0 120,120 0,0" fill={color} />
+      ) : (
+        <polygon points="0,120 120,120 0,0" fill={color} />
+      )}
+    </svg>
+  </motion.div>
+);
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+// ============ زر المشاركة المحسن ============
+const ShareButton = ({ primaryColor }: { primaryColor: string }) => {
+  const [showCheck, setShowCheck] = useState(false);
 
-  const handleShare = async () => {
-    const shareData = {
-      title: `${doctorName} - طبيب في ${clinicName}`,
-      text: `تعرف على الدكتور ${doctorName} في عيادة ${clinicName}`,
-      url: window.location.href,
-    };
-
+  const handleShare = useCallback(async () => {
     try {
-      if (navigator.share && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        // للأجهزة المحمولة - استخدام Web Share API
-        await navigator.share(shareData);
+      if (navigator.share && /Mobi|Android/i.test(navigator.userAgent)) {
+        await navigator.share({
+          title: document.title,
+          url: window.location.href,
+        });
       } else {
-        // للحاسوب - نسخ الرابط
         await navigator.clipboard.writeText(window.location.href);
-        setShowTooltip(true);
-        setTimeout(() => setShowTooltip(false), 2000);
+        setShowCheck(true);
+        setTimeout(() => setShowCheck(false), 2000);
       }
     } catch (error) {
-      console.error('Error sharing:', error);
+      // تجاهل أخطاء المشاركة
+      console.debug('Share cancelled or failed');
     }
-  };
+  }, []);
 
   return (
-    <>
-      <motion.button
-        initial={{ opacity: 0, scale: 0.8, y: -20 }}
-        animate={{ 
-          opacity: isVisible ? 1 : 0, 
-          scale: isVisible ? 1 : 0.8,
-          y: isVisible ? 0 : -20,
-          pointerEvents: isVisible ? 'auto' : 'none'
-        }}
-        transition={{ duration: 0.3, ease: "easeOut" }}
-        onClick={handleShare}
-        className="fixed top-6 left-6 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center group"
-        style={{ 
-          background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`,
-          boxShadow: `0 4px 15px ${primaryColor}40`
-        }}
-        whileHover={{ scale: 1.1, rotate: 5 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        <Share2 size={24} className="text-white" />
-        
-        {/* تأثير تموج */}
-        <motion.span
-          className="absolute inset-0 rounded-full"
-          animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          style={{ 
-            border: `2px solid ${primaryColor}`,
-            boxShadow: `0 0 0 2px ${primaryColor}20`
-          }}
-        />
-      </motion.button>
-
-      {/* رسالة تأكيد النسخ */}
-      <AnimatePresence>
-        {showTooltip && (
+    <motion.button
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 1 }}
+      onClick={handleShare}
+      whileTap={{ scale: 0.95 }}
+      className="fixed top-4 right-4 z-50 w-11 h-11 rounded-full flex items-center justify-center backdrop-blur-md border border-white/20 shadow-lg active:scale-95 transition-colors"
+      style={{ backgroundColor: `${primaryColor}30` }}
+      aria-label="مشاركة"
+    >
+      <AnimatePresence mode="wait">
+        {showCheck ? (
           <motion.div
-            initial={{ opacity: 0, y: -10, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.9 }}
-            className="fixed top-20 left-6 z-50 bg-gray-900 text-white px-4 py-2 rounded-lg shadow-lg text-sm whitespace-nowrap"
+            key="check"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            exit={{ scale: 0 }}
+            className="text-white text-lg"
           >
-            <div className="flex items-center gap-2">
-              <CheckCircle2 size={16} />
-              تم نسخ الرابط بنجاح!
-            </div>
-            {/* سهم صغير */}
-            <div className="absolute -top-1 left-5 w-2 h-2 bg-gray-900 rotate-45"></div>
+            ✓
+          </motion.div>
+        ) : (
+          <motion.div
+            key="share"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            exit={{ scale: 0 }}
+          >
+            <Share2 size={20} className="text-white" />
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </motion.button>
   );
 };
 
-// تعديل الـ props لاستقبال البيانات من السيرفر
+// ============ المكون الرئيسي ============
 interface DoctorCVPageProps {
   clinic: Clinic;
 }
 
 export default function DoctorCVPage({ clinic }: DoctorCVPageProps) {
   const primaryColor = clinic.settings.primaryColor;
-  const secondaryColor = clinic.settings.secondaryColor;
   const doctor = clinic.doctorProfile;
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
+
+  // التحميل المسبق للصورة
+  useEffect(() => {
+    if (doctor.photo) {
+      const img = new window.Image();
+      img.src = doctor.photo;
+      img.onload = () => setIsImageLoaded(true);
+    } else {
+      setIsImageLoaded(true);
+    }
+  }, [doctor.photo]);
 
   return (
     <div 
-      className="min-h-screen relative" 
+      className="min-h-screen relative overflow-hidden"
       dir="rtl"
-      style={{ 
-        background: `linear-gradient(180deg, ${primaryColor} 0%, ${primaryColor}dd 50%, #ffffff 100%)` 
-      }}
+      style={{ background: '#0F172A' }} // لون كحلي داكن
     >
-      {/* إضاءات خلفية ناعمة */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+      {/* ============ الزخارف الهندسية ============ */}
+      <DecorativeTriangle position="top-right" color={primaryColor} />
+      <DecorativeTriangle position="bottom-left" color={primaryColor} />
+      
+      {/* ============ تأثير ضبابي خفيف ============ */}
+      <div className="fixed inset-0 pointer-events-none">
         <motion.div 
-          animate={{ 
-            scale: [1, 1.1, 1],
-            opacity: [0.04, 0.06, 0.04],
-          }}
+          animate={{ opacity: [0.05, 0.08, 0.05] }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -top-40 -right-40 w-96 h-96 rounded-full blur-3xl"
-          style={{ backgroundColor: primaryColor }}
-        />
-        <motion.div 
-          animate={{ 
-            scale: [1, 1.15, 1],
-            opacity: [0.03, 0.05, 0.03],
-          }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-          className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full blur-3xl"
-          style={{ backgroundColor: secondaryColor }}
-        />
-        <motion.div 
-          animate={{ 
-            scale: [1, 1.05, 1],
-            opacity: [0.02, 0.04, 0.02],
-          }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-3xl"
+          className="absolute top-1/4 right-1/4 w-64 h-64 rounded-full blur-3xl"
           style={{ backgroundColor: primaryColor }}
         />
       </div>
 
+      {/* ============ المحتوى الرئيسي ============ */}
       <div className="relative z-10">
-        <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-          {/* القسم العلوي */}
-          <div className="flex flex-col md:flex-row gap-8 md:gap-12 items-center md:items-start mb-14">
-            {/* صورة الطبيب مع إطار متحرك */}
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
-              className="relative"
-            >
-              {/* إطار خارجي يدور ببطء */}
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-                className="absolute -inset-3 rounded-full opacity-20"
-                style={{ 
-                  background: `conic-gradient(from 0deg, ${primaryColor}, ${secondaryColor}, ${primaryColor})` 
-                }}
-              />
-              
-              <div className="relative w-44 h-44 sm:w-52 sm:h-52 rounded-full overflow-hidden border-4 border-white shadow-xl">
-                {doctor.photo ? (
-                  <Image
-                    src={doctor.photo}
-                    alt={doctor.fullName}
-                    width={208}
-                    height={208}
-                    className="object-cover w-full h-full"
-                    priority
-                  />
-                ) : (
-                  <div 
-                    className="w-full h-full flex items-center justify-center"
-                    style={{ 
-                      background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)` 
-                    }}
-                  >
-                    <Stethoscope size={80} className="text-white" />
-                  </div>
-                )}
+        {/* ============ الحاوية المدورة ============ */}
+        <div className="relative">
+          {/* الحاوية العلوية مع التدوير السفلي */}
+<motion.div 
+  initial={{ y: -80, opacity: 0, borderRadius: '0 0 0 0' }}
+  animate={{ y: 0, opacity: 1, borderRadius: '0 0 40% 40%' }}
+  transition={{ 
+    duration: 0.8, 
+    ease: [0.34, 1.56, 0.64, 1],
+    borderRadius: { delay: 0.3, duration: 0.6 }
+  }}
+  className="relative mx-4 sm:mx-8 md:mx-12 lg:mx-20 xl:mx-28"
+  style={{ 
+    background: `linear-gradient(180deg, ${primaryColor} 0%, ${primaryColor}dd 100%)`,
+  }}
+>
+  <div className="px-4 sm:px-6 pt-6 sm:pt-8 md:pt-10 pb-16 sm:pb-20 md:pb-24">
+    {/* العنوان الرئيسي - محسن للشاشات المختلفة */}
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.4, duration: 0.5 }}
+      className="text-center mb-8 sm:mb-10 md:mb-12"
+    >
+      <h1 className={`
+        text-2xl sm:text-3xl md:text-4xl lg:text-5xl
+        ${textStyles.heading} 
+        px-2 sm:px-4
+        mb-2 sm:mb-3
+      `}>
+        {doctor.fullName}
+      </h1>
+    </motion.div>
+
+    {/* صورة الطبيب - متجاوبة مع جميع الأحجام */}
+    <motion.div 
+      initial={{ scale: 0, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ 
+        delay: 0.6, 
+        type: "spring",
+        stiffness: 150,
+        damping: 15
+      }}
+      className="relative mx-auto 
+        w-28 h-28 
+        sm:w-32 sm:h-32 
+        md:w-40 md:h-40 
+        lg:w-48 lg:h-48 
+        xl:w-52 xl:h-52"
+    >
+      {/* حلقة خارجية محسنة */}
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+        className="absolute 
+          -inset-1.5 sm:-inset-2 md:-inset-3
+          rounded-full opacity-40"
+        style={{ 
+          background: `conic-gradient(from 0deg, transparent 0%, ${primaryColor}50 50%, transparent 100%)` 
+        }}
+      />
+      
+      {/* حلقة داخلية زخرفية */}
+      <motion.div
+        animate={{ rotate: -360 }}
+        transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+        className="absolute 
+          -inset-0.5 sm:-inset-1
+          rounded-full opacity-30"
+        style={{ 
+          background: `conic-gradient(from 180deg, transparent, ${primaryColor}30, transparent)` 
+        }}
+      />
+
+      {/* الصورة مع تحميل كسول */}
+      <div className="relative w-full h-full rounded-full overflow-hidden ring-2 sm:ring-3 md:ring-4 ring-white/20 shadow-xl sm:shadow-2xl">
+        {doctor.photo ? (
+          <>
+            {/* مؤشر التحميل */}
+            {!isImageLoaded && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-800/50 backdrop-blur-sm">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  className="w-8 h-8 sm:w-10 sm:h-10 border-2 sm:border-3 border-white/30 border-t-white rounded-full"
+                />
               </div>
-              
-              {/* نجمة صغيرة متحركة */}
-              <motion.div
-                animate={{ 
-                  y: [0, -8, 0],
-                  rotate: [0, 10, 0, -10, 0],
-                }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute -bottom-2 -left-2 w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center"
-                style={{ boxShadow: `0 4px 12px ${primaryColor}20` }}
-              >
-                <Sparkles size={20} style={{ color: primaryColor }} />
-              </motion.div>
-            </motion.div>
+            )}
+            
+            {/* الصورة الفعلية مع lazy loading */}
+            <Image
+              src={doctor.photo}
+              alt={doctor.fullName}
+              width={208}
+              height={208}
+              className={`
+                object-cover w-full h-full
+                transition-all duration-700
+                ${isImageLoaded 
+                  ? 'opacity-100 scale-100' 
+                  : 'opacity-0 scale-105'
+                }
+              `}
+              priority={false}
+              loading="lazy"
+              sizes="
+                (max-width: 640px) 112px,
+                (max-width: 768px) 128px,
+                (max-width: 1024px) 160px,
+                (max-width: 1280px) 192px,
+                208px
+              "
+              quality={90}
+              placeholder="blur"
+              blurDataURL={`data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100%" height="100%"><animate attributeName="fill" values="#1e293b;#334155;#1e293b" dur="2s" repeatCount="indefinite"/></rect></svg>')}`}
+              onLoad={() => setIsImageLoaded(true)}
+              onError={() => setIsImageLoaded(false)}
+            />
+          </>
+        ) : (
+          /* Avatar افتراضي محسن */
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="w-full h-full flex items-center justify-center text-white font-bold"
+            style={{ background: `linear-gradient(135deg, ${primaryColor}, ${primaryColor}dd)` }}
+          >
+            <span className="
+              text-3xl sm:text-4xl md:text-5xl lg:text-6xl
+              drop-shadow-lg
+            ">
+              {doctor.fullName.charAt(0)}
+            </span>
+          </motion.div>
+        )}
 
-            {/* المعلومات الأساسية */}
-            <motion.div 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
-              className="flex-1 text-center md:text-right"
-            >
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-              >
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-3">
-                  {doctor.fullName}
-                </h1>
-              </motion.div>
-              
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-              >
-                <p 
-                  className="text-xl mb-4 font-medium text-gray-900"
-                >
-                  {doctor.specialization}
-                </p>
-              </motion.div>
-              
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-              >
-                <p className="text-gray-900 leading-relaxed max-w-2xl text-lg">
-                  {doctor.about}
-                </p>
-              </motion.div>
+        {/* تأثير توهج حول الصورة */}
+        <motion.div
+          animate={{ opacity: [0.2, 0.4, 0.2] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute inset-0 rounded-full"
+          style={{ 
+            boxShadow: `0 0 20px 5px ${primaryColor}40, inset 0 0 20px 5px ${primaryColor}20` 
+          }}
+        />
+      </div>
+    </motion.div>
 
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-              >
-                <p className="text-gray-900 leading-relaxed max-w-2xl text-lg">
-                   خريج جامعة : {doctor.university} 
-                </p>
-                <p className="text-gray-900 leading-relaxed max-w-2xl text-lg">
-                    عام : {doctor.graduationYear instanceof Date ? doctor.graduationYear.getFullYear() : doctor.graduationYear}
-                </p>
-              </motion.div>
-            </motion.div>
-          </div>
+    {/* شارة أسفل الصورة */}
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.8, duration: 0.5 }}
+      className="text-center mt-4 sm:mt-6"
+    >
+      <span className="
+        inline-block
+        px-3 sm:px-4 py-1.5 sm:py-2
+        rounded-full
+        text-xs sm:text-sm
+        bg-white/10 backdrop-blur-sm
+        text-white/90
+        border border-white/20
+      ">
+        {doctor.specialization}
+      </span>
+    </motion.div>
+  </div>
 
-          {/* بطاقات التواصل */}
-          <AnimatedSection delay={0.2}>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-14">
-              <AnimatedCard delay={0.1}>
-                <div 
-                  className="group p-5 rounded-2xl bg-white shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100"
-                  style={{ borderTop: `3px solid ${primaryColor}` }}
-                >
-                  <div className="flex items-center gap-4">
-                    <motion.div 
-                      whileHover={{ scale: 1.1 }}
-                      className="w-12 h-12 rounded-xl flex items-center justify-center"
-                      style={{ backgroundColor: `${primaryColor}10` }}
-                    >
-                      <Phone size={22} style={{ color: primaryColor }} />
-                    </motion.div>
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">اتصل بنا</p>
-                      <p className="font-medium text-gray-800" dir="ltr">+966 11 234 5678</p>
-                    </div>
-                  </div>
-                </div>
-              </AnimatedCard>
+  {/* تدرج سفلي للانتقال السلس */}
+  <div 
+    className="absolute bottom-0 left-0 right-0 h-16 sm:h-20 md:h-24"
+    style={{
+      background: `linear-gradient(to bottom, transparent, #0f172a2c)`
+    }}
+  />
+</motion.div>
 
-              <AnimatedCard delay={0.2}>
-                <div 
-                  className="group p-5 rounded-2xl bg-white shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100"
-                  style={{ borderTop: `3px solid ${secondaryColor}` }}
-                >
-                  <div className="flex items-center gap-4">
-                    <motion.div 
-                      whileHover={{ scale: 1.1 }}
-                      className="w-12 h-12 rounded-xl flex items-center justify-center"
-                      style={{ backgroundColor: `${secondaryColor}10` }}
-                    >
-                      <Mail size={22} style={{ color: secondaryColor }} />
-                    </motion.div>
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">البريد الإلكتروني</p>
-                      <p className="font-medium text-gray-800">{doctor.contactEmail}</p>
-                    </div>
-                  </div>
-                </div>
-              </AnimatedCard>
-
-              <AnimatedCard delay={0.3}>
-                <div 
-                  className="group p-5 rounded-2xl bg-white shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100"
-                  style={{ borderTop: `3px solid ${primaryColor}` }}
-                >
-                  <div className="flex items-center gap-4">
-                    <motion.div 
-                      whileHover={{ scale: 1.1 }}
-                      className="w-12 h-12 rounded-xl flex items-center justify-center"
-                      style={{ backgroundColor: `${primaryColor}10` }}
-                    >
-                      <MapPin size={22} style={{ color: primaryColor }} />
-                    </motion.div>
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">يعمل حاليا في :{clinic.name}</p>
-                      <p className="font-medium text-gray-800">{clinic.address}</p>
-                    </div>
-                  </div>
-                </div>
-              </AnimatedCard>
-            </div>
-          </AnimatedSection>
-
-          {/* المؤهلات والخبرات */}
-          <div className="grid md:grid-cols-2 gap-8 mb-14">
-            {/* التعليم */}
-            <AnimatedSection delay={0.3}>
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <div className="flex items-center gap-3 mb-6">
-                  <motion.div 
-                    whileHover={{ rotate: 5 }}
-                    className="w-10 h-10 rounded-xl flex items-center justify-center"
-                    style={{ backgroundColor: `${primaryColor}15` }}
-                  >
-                    <GraduationCap size={22} style={{ color: primaryColor }} />
-                  </motion.div>
-                  <h2 className="text-xl font-bold text-gray-800">التعليم والمؤهلات</h2>
-                </div>
-                
-                <ul className="space-y-4">
-                  {doctor.education.map((edu, index) => (
-                    <motion.li 
-                      key={index}
-                      initial={{ opacity: 0, x: -10 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      viewport={{ once: true }}
-                      className="flex items-start gap-3 group"
-                    >
-                      <motion.div
-                        whileHover={{ scale: 1.2 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <CheckCircle2 size={20} style={{ color: secondaryColor }} className="mt-0.5 flex-shrink-0" />
-                      </motion.div>
-                      <span className="text-gray-700 group-hover:text-gray-900 transition-colors">{edu}</span>
-                    </motion.li>
-                  ))}
-                </ul>
-              </div>
-            </AnimatedSection>
-
-            {/* الخبرات */}
-            <AnimatedSection delay={0.4}>
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <div className="flex items-center gap-3 mb-6">
-                  <motion.div 
-                    whileHover={{ rotate: 5 }}
-                    className="w-10 h-10 rounded-xl flex items-center justify-center"
-                    style={{ backgroundColor: `${secondaryColor}15` }}
-                  >
-                    <Briefcase size={22} style={{ color: secondaryColor }} />
-                  </motion.div>
-                  <h2 className="text-xl font-bold text-gray-800">الخبرات العملية</h2>
-                </div>
-                
-                <ul className="space-y-4">
-                  {doctor.experience.map((exp, index) => (
-                    <motion.li 
-                      key={index}
-                      initial={{ opacity: 0, x: -10 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      viewport={{ once: true }}
-                      className="flex items-start gap-3 group"
-                    >
-                      <motion.div
-                        whileHover={{ scale: 1.2 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <CheckCircle2 size={20} style={{ color: primaryColor }} className="mt-0.5 flex-shrink-0" />
-                      </motion.div>
-                      <span className="text-gray-700 group-hover:text-gray-900 transition-colors">{exp}</span>
-                    </motion.li>
-                  ))}
-                </ul>
-              </div>
-            </AnimatedSection>
-          </div>
-        </main>
-
-        {/* Footer */}
-        <footer className="border-t border-gray-100 mt-8">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {/* ============ المحتوى النصي - نص فقط بدون حاويات ============ */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8, duration: 0.6 }}
+            className="px-6 sm:px-8 max-w-2xl mx-auto mt-20"
+          >
+            {/* نبذة عن الطبيب */}
             <motion.p 
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              viewport={{ once: true }}
-              className="text-center text-sm text-gray-500"
+              {...fadeInUp}
+              transition={{ delay: 0.9, duration: 0.5 }}
+              className={`${textStyles.body} text-center text-base sm:text-lg mb-12 leading-loose`}
             >
-              © {new Date().getFullYear()} {clinic.name}. جميع الحقوق محفوظة.
+              {doctor.about}
             </motion.p>
-          </div>
-        </footer>
+
+            {/* معلومات الجامعة */}
+            <motion.div
+              {...fadeInUp}
+              transition={{ delay: 1.0, duration: 0.5 }}
+              className="text-center mb-12"
+            >
+              <div className="flex items-center justify-center gap-3 mb-2">
+                <IconWrapper color={primaryColor}>
+                  <GraduationCap size={20} />
+                </IconWrapper>
+                <span className={textStyles.body}>
+                  خريج جامعة {doctor.university}  عام {doctor.graduationYear instanceof Date ? doctor.graduationYear.getFullYear() : doctor.graduationYear}
+                </span>
+              </div>
+            </motion.div>
+
+            {/* ============ قسم المؤهلات - قائمة بسيطة ============ */}
+            <motion.div
+              {...fadeInUp}
+              transition={{ delay: 1.1, duration: 0.5 }}
+              className="mb-12"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" 
+                      style={{ backgroundColor: `${primaryColor}20` }}>
+                  <IconWrapper color={primaryColor}>
+                    <Award size={18} />
+                  </IconWrapper>
+                </span>
+                <h2 className={`text-xl sm:text-2xl ${textStyles.heading}`}>المؤهلات العلمية</h2>
+              </div>
+              
+              <div className="space-y-3 pr-4">
+                {doctor.education.map((edu, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 1.2 + index * 0.1, duration: 0.4 }}
+                    className="flex items-start gap-3"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0" 
+                          style={{ backgroundColor: primaryColor }} />
+                    <span className={textStyles.body}>{edu}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* ============ قسم الخبرات ============ */}
+            <motion.div
+              {...fadeInUp}
+              transition={{ delay: 1.3, duration: 0.5 }}
+              className="mb-12"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" 
+                      style={{ backgroundColor: `${primaryColor}20` }}>
+                  <IconWrapper color={primaryColor}>
+                    <Briefcase size={18} />
+                  </IconWrapper>
+                </span>
+                <h2 className={`text-xl sm:text-2xl ${textStyles.heading}`}>الخبرات العملية</h2>
+              </div>
+              
+              <div className="space-y-3 pr-4">
+                {doctor.experience.map((exp, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 1.4 + index * 0.1, duration: 0.4 }}
+                    className="flex items-start gap-3"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0" 
+                          style={{ backgroundColor: primaryColor }} />
+                    <span className={textStyles.body}>{exp}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* ============ معلومات التواصل - تصميم بسيط ============ */}
+            <motion.div
+              {...fadeInUp}
+              transition={{ delay: 1.5, duration: 0.5 }}
+              className="border-t border-white/10 pt-8 mb-12"
+            >
+              
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* الهاتف */}
+                {/* <motion.a
+                  href={`tel:+966112345678`}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
+                >
+                  <IconWrapper color={primaryColor}>
+                    <Phone size={18} />
+                  </IconWrapper>
+                  <div>
+                    <p className={textStyles.label}>اتصل بنا</p>
+                    <p className="text-white/80 text-sm" dir="ltr">011 234 5678</p>
+                  </div>
+                </motion.a> */}
+
+                {/* البريد الإلكتروني */}
+                <motion.a
+                  href={`mailto:${doctor.contactEmail}`}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
+                >
+                  <IconWrapper color={primaryColor}>
+                    <Mail size={18} />
+                  </IconWrapper>
+                  <div className="min-w-0">
+                    <p className={textStyles.label}>البريد الإلكتروني</p>
+                    <p className="text-white/80 text-sm truncate">{doctor.contactEmail}</p>
+                  </div>
+                </motion.a>
+
+                {/* العنوان */}
+                <motion.div
+                  whileTap={{ scale: 0.98 }}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
+                >
+                  <IconWrapper color={primaryColor}>
+                    <MapPin size={18} />
+                  </IconWrapper>
+                  <div className="min-w-0">
+                    <p className={textStyles.label}>{clinic.name}</p>
+                    <p className="text-white/80 text-sm truncate">{clinic.address}</p>
+                  </div>
+                </motion.div>
+              </div>
+            </motion.div>
+
+            {/* ============ Footer ============ */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 2, duration: 0.5 }}
+              className="text-center pb-10"
+            >
+              <p className="text-gray-600 text-xs">
+                جميع الحقوق محفوظة © {new Date().getFullYear()}
+              </p>
+              <p className="text-gray-600 text-xs">
+                BY LiveDent
+              </p>
+            </motion.div>
+          </motion.div>
+        </div>
       </div>
 
-      {/* زر المشاركة */}
-      <ShareButton 
-        clinicName={clinic.name}
-        doctorName={doctor.fullName}
-        primaryColor={primaryColor}
-        secondaryColor={secondaryColor}
-      />
+      {/* ============ زر المشاركة ============ */}
+      <ShareButton primaryColor={primaryColor} />
     </div>
   );
 }
