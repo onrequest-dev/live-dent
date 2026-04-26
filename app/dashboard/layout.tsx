@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const { clinicData, isLoading, secondaryColor, refetch } = useClinic();
   const [isRefetching, setIsRefetching] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const handleRefreshRequest = async () => {
@@ -29,6 +30,18 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     return () =>
       window.removeEventListener("refreshPatientsData", handleRefreshRequest);
   }, [refetch, isRefetching]);
+
+  // ✅ كشف الهاتف
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   if (isLoading || isRefetching) {
     return (
@@ -65,7 +78,27 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
           className="p-3"
+          style={
+            isMobile
+              ? {
+                  transform: 'scale(0.5)',
+                  transformOrigin: 'top right',
+                  width: '200%',
+                  height: '200%',
+                }
+              : {}
+          }
         >
+          {isMobile && (
+            <div className="mb-3 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
+              <p className="text-xl text-blue-700 font-medium text-center">
+                 الواجهة محسّنة للشاشات الكبيرة. يُنصح باستخدام كمبيوتر أو تابلت
+              </p>
+              <p className="text-xl text-blue-700 font-medium text-center">
+                يمكنك من هنا العمل في الحالات الضرورية
+              </p>
+            </div>
+          )}
           {children}
         </motion.div>
       </main>
