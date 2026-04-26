@@ -5,7 +5,8 @@ import { useState, useMemo } from 'react';
 import { 
   Download, Calendar, ChevronLeft, ChevronRight, List, 
   Users, Search, X, CheckCircle, XCircle, Clock, AlertCircle,
-  Receipt, Banknote, CreditCard, Landmark, Wallet, ArrowUpDown
+  Receipt, Banknote, CreditCard, Landmark, Wallet, ArrowUpDown,
+  RefreshCcw
 } from 'lucide-react';
 import * as XLSX from 'xlsx-js-style';
 import { Clinic, Patient, PatientCase, Session } from '@/types';
@@ -650,48 +651,53 @@ const exportToExcel = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">جدول المرضى</h1>
-          <p className="text-gray-500 text-sm mt-0.5">
-            {getPeriodTitle()}
-          </p>
+          <p className="text-gray-500 text-sm mt-0.5">{getPeriodTitle()}</p>
         </div>
-        
         <div className="flex items-center gap-2">
+          <button
+            onClick={()=>{window.dispatchEvent(new CustomEvent("refreshPatientsData"));}}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-white transition-all hover:opacity-90 shadow-sm"
+            style={{ backgroundColor: clinicColor }}
+          >
+            <RefreshCcw size={16} />
+            <span className="font-medium text-sm">تحديث البيانات</span>
+          </button>
           <div className="flex items-center bg-gray-100 rounded-lg p-1">
             <button
-              onClick={() => setViewMode('all')}
+              onClick={() => setViewMode("all")}
               className={`px-3 py-2 rounded-md text-sm font-medium transition-all ${
-                viewMode === 'all'
-                  ? 'bg-white text-gray-800 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-800'
+                viewMode === "all"
+                  ? "bg-white text-gray-800 shadow-sm"
+                  : "text-gray-600 hover:text-gray-800"
               }`}
             >
               <List size={15} className="inline ml-1.5" />
               عرض الكل
             </button>
             <button
-              onClick={() => setViewMode('month')}
+              onClick={() => setViewMode("month")}
               className={`px-3 py-2 rounded-md text-sm font-medium transition-all ${
-                viewMode === 'month'
-                  ? 'bg-white text-gray-800 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-800'
+                viewMode === "month"
+                  ? "bg-white text-gray-800 shadow-sm"
+                  : "text-gray-600 hover:text-gray-800"
               }`}
             >
               <Calendar size={15} className="inline ml-1.5" />
               الشهر الحالي
             </button>
             <button
-              onClick={() => setViewMode('day')}
+              onClick={() => setViewMode("day")}
               className={`px-3 py-2 rounded-md text-sm font-medium transition-all ${
-                viewMode === 'day'
-                  ? 'bg-white text-gray-800 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-800'
+                viewMode === "day"
+                  ? "bg-white text-gray-800 shadow-sm"
+                  : "text-gray-600 hover:text-gray-800"
               }`}
             >
               <Calendar size={15} className="inline ml-1.5" />
               يوم محدد
             </button>
           </div>
-          
+
           <button
             onClick={exportToExcel}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-white transition-all hover:opacity-90 shadow-sm"
@@ -703,219 +709,302 @@ const exportToExcel = () => {
         </div>
       </div>
 
-{/* ✅ كروت إحصائية - تصميم متجاوب */}
-<div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-  {/* كرت إجمالي الجلسات */}
-  <div className="flex items-center gap-2 sm:gap-3 bg-white rounded-xl shadow-sm border border-gray-100 p-3 sm:px-5 sm:py-3"  style={{ backgroundColor: `${clinicColor}10` }}>
-    <div 
-      className="p-1.5 sm:p-2 rounded-lg flex-shrink-0"
-    >
-      <List size={16} className="sm:size-[18px]" style={{ color: clinicColor }} />
-    </div>
-    <div className="min-w-0">
-      <p className="text-[10px] sm:text-xs text-gray-900 mb-0.5 truncate">إجمالي الجلسات</p>
-      <p className="text-base sm:text-xl font-bold text-gray-800">{displayedSessions.length}</p>
-    </div>
-  </div>
-
-  {/* كرت إجمالي التكلفة */}
-  <div className="flex items-center gap-2 sm:gap-3 bg-white rounded-xl shadow-sm border border-gray-100 p-3 sm:px-5 sm:py-3 " style={{ backgroundColor: `${clinicColor}10` }}>
-    <div 
-      className="p-1.5 sm:p-2 rounded-lg flex-shrink-0"
-      style={{ backgroundColor: `${clinicColor}15` }}
-    >
-      <Receipt size={16} className="sm:size-[18px]" style={{ color: clinicColor }} />
-    </div>
-    <div className="min-w-0">
-      <p className="text-[10px] sm:text-xs text-gray-900 mb-0.5 truncate">إجمالي التكلفة</p>
-      <p className="text-base sm:text-xl font-bold text-gray-800 truncate">
-        {displayedSessions.reduce((sum, s) => sum + (s.sessionCost || 0), 0).toLocaleString()}
-        <span className="text-[10px] sm:text-sm font-normal text-gray-900 mr-0.5 sm:mr-1"> ل.س</span>
-      </p>
-    </div>
-  </div>
-
-  {/* كرت القيمة المدفوعة */}
-  <div className="flex items-center gap-2 sm:gap-3 bg-white rounded-xl shadow-sm border border-green-100 p-3 sm:px-5 sm:py-3" style={{ backgroundColor: `${clinicColor}10` }}>
-    <div 
-      className="p-1.5 sm:p-2 rounded-lg flex-shrink-0"
-      style={{ backgroundColor: '#D1FAE5' }}
-    >
-      <CheckCircle size={16} className="sm:size-[18px]" style={{ color: '#059669' }} />
-    </div>
-    <div className="min-w-0">
-      <p className="text-[10px] sm:text-xs text-gray-900 mb-0.5 truncate">القيمة المدفوعة</p>
-      <p className="text-base sm:text-xl font-bold text-gray-900 truncate">
-        {displayedSessions
-          .filter(s => s.isPaid)
-          .reduce((sum, s) => sum + (s.sessionCost || 0), 0)
-          .toLocaleString()}
-        <span className="text-[10px] sm:text-sm font-normal text-gray-900 mr-0.5 sm:mr-1"> ل.س</span>
-      </p>
-    </div>
-  </div>
-
-  {/* كرت القيمة غير المدفوعة */}
-  <div className="flex items-center gap-2 sm:gap-3 bg-white rounded-xl shadow-sm border border-red-100 p-3 sm:px-5 sm:py-3" style={{ backgroundColor: `${clinicColor}10` }}>
-    <div 
-      className="p-1.5 sm:p-2 rounded-lg flex-shrink-0"
-      style={{ backgroundColor: '#FEE2E2' }}
-    >
-      <XCircle size={16} className="sm:size-[18px]" style={{ color: '#DC2626' }} />
-    </div>
-    <div className="min-w-0">
-      <p className="text-[10px] sm:text-xs text-gray-900 mb-0.5 truncate">القيمة غير المدفوعة</p>
-      <p className="text-base sm:text-xl font-bold text-gray-900 truncate">
-        {displayedSessions
-          .filter(s => !s.isPaid)
-          .reduce((sum, s) => sum + (s.sessionCost || 0), 0)
-          .toLocaleString()}
-        <span className="text-[10px] sm:text-sm font-normal text-gray-900 mr-0.5 sm:mr-1"> ل.س</span>
-      </p>
-    </div>
-  </div>
-</div>
-
-
-{/* شريط الأدوات - سطر واحد يجمع كل العناصر */}
-<div className="flex items-center gap-3">
-  {/* متصفح التاريخ - يظهر فقط في وضع اليوم */}
-  {viewMode === 'day' && (
-    <div className="flex items-center gap-1">
-      <button
-        onClick={goToPreviousDay}
-        disabled={availableDates.indexOf(selectedDate) === availableDates.length - 1}
-        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-        style={{ color: clinicColor }}
-      >
-        <ChevronRight size={16} />
-      </button>
-      
-      <div className="relative min-w-[180px]">
-        <select
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-          className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 pr-7 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:border-transparent cursor-pointer transition-all"
-          style={{ 
-            '--tw-ring-color': clinicColor,
-            direction: 'rtl'
-          } as React.CSSProperties}
+      {/* ✅ كروت إحصائية - تصميم متجاوب */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* كرت إجمالي الجلسات */}
+        <div
+          className="flex items-center gap-2 sm:gap-3 bg-white rounded-xl shadow-sm border border-gray-100 p-3 sm:px-5 sm:py-3"
+          style={{ backgroundColor: `${clinicColor}10` }}
         >
-          {availableDates.map(date => (
-            <option key={date} value={date}>
-              {getDayName(date)} - {formatDisplayDate(date)}
-            </option>
-          ))}
-        </select>
-        <Calendar 
-          size={13} 
-          className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" 
-        />
+          <div className="p-1.5 sm:p-2 rounded-lg flex-shrink-0">
+            <List
+              size={16}
+              className="sm:size-[18px]"
+              style={{ color: clinicColor }}
+            />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] sm:text-xs text-gray-900 mb-0.5 truncate">
+              إجمالي الجلسات
+            </p>
+            <p className="text-base sm:text-xl font-bold text-gray-800">
+              {displayedSessions.length}
+            </p>
+          </div>
+        </div>
+
+        {/* كرت إجمالي التكلفة */}
+        <div
+          className="flex items-center gap-2 sm:gap-3 bg-white rounded-xl shadow-sm border border-gray-100 p-3 sm:px-5 sm:py-3 "
+          style={{ backgroundColor: `${clinicColor}10` }}
+        >
+          <div
+            className="p-1.5 sm:p-2 rounded-lg flex-shrink-0"
+            style={{ backgroundColor: `${clinicColor}15` }}
+          >
+            <Receipt
+              size={16}
+              className="sm:size-[18px]"
+              style={{ color: clinicColor }}
+            />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] sm:text-xs text-gray-900 mb-0.5 truncate">
+              إجمالي التكلفة
+            </p>
+            <p className="text-base sm:text-xl font-bold text-gray-800 truncate">
+              {displayedSessions
+                .reduce((sum, s) => sum + (s.sessionCost || 0), 0)
+                .toLocaleString()}
+              <span className="text-[10px] sm:text-sm font-normal text-gray-900 mr-0.5 sm:mr-1">
+                {" "}
+                ل.س
+              </span>
+            </p>
+          </div>
+        </div>
+
+        {/* كرت القيمة المدفوعة */}
+        <div
+          className="flex items-center gap-2 sm:gap-3 bg-white rounded-xl shadow-sm border border-green-100 p-3 sm:px-5 sm:py-3"
+          style={{ backgroundColor: `${clinicColor}10` }}
+        >
+          <div
+            className="p-1.5 sm:p-2 rounded-lg flex-shrink-0"
+            style={{ backgroundColor: "#D1FAE5" }}
+          >
+            <CheckCircle
+              size={16}
+              className="sm:size-[18px]"
+              style={{ color: "#059669" }}
+            />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] sm:text-xs text-gray-900 mb-0.5 truncate">
+              القيمة المدفوعة
+            </p>
+            <p className="text-base sm:text-xl font-bold text-gray-900 truncate">
+              {displayedSessions
+                .filter((s) => s.isPaid)
+                .reduce((sum, s) => sum + (s.sessionCost || 0), 0)
+                .toLocaleString()}
+              <span className="text-[10px] sm:text-sm font-normal text-gray-900 mr-0.5 sm:mr-1">
+                {" "}
+                ل.س
+              </span>
+            </p>
+          </div>
+        </div>
+
+        {/* كرت القيمة غير المدفوعة */}
+        <div
+          className="flex items-center gap-2 sm:gap-3 bg-white rounded-xl shadow-sm border border-red-100 p-3 sm:px-5 sm:py-3"
+          style={{ backgroundColor: `${clinicColor}10` }}
+        >
+          <div
+            className="p-1.5 sm:p-2 rounded-lg flex-shrink-0"
+            style={{ backgroundColor: "#FEE2E2" }}
+          >
+            <XCircle
+              size={16}
+              className="sm:size-[18px]"
+              style={{ color: "#DC2626" }}
+            />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] sm:text-xs text-gray-900 mb-0.5 truncate">
+              القيمة غير المدفوعة
+            </p>
+            <p className="text-base sm:text-xl font-bold text-gray-900 truncate">
+              {displayedSessions
+                .filter((s) => !s.isPaid)
+                .reduce((sum, s) => sum + (s.sessionCost || 0), 0)
+                .toLocaleString()}
+              <span className="text-[10px] sm:text-sm font-normal text-gray-900 mr-0.5 sm:mr-1">
+                {" "}
+                ل.س
+              </span>
+            </p>
+          </div>
+        </div>
       </div>
-      
-      <button
-        onClick={goToNextDay}
-        disabled={availableDates.indexOf(selectedDate) === 0}
-        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-        style={{ color: clinicColor }}
-      >
-        <ChevronLeft size={16} />
-      </button>
-    </div>
-  )}
 
-  {/* Checkbox للترتيب */}
-  <div className="flex items-center gap-2 bg-white rounded-lg border border-gray-200 px-3 py-2">
-    <ArrowUpDown size={14} className="text-gray-400" />
-    <label className="flex items-center gap-2 cursor-pointer">
-      <span className="text-sm text-gray-600 whitespace-nowrap">
-        الأقدم أولاً
-      </span>
-      <input
-        type="checkbox"
-        checked={sortOrder === 'asc'}
-        onChange={(e) => setSortOrder(e.target.checked ? 'asc' : 'desc')}
-        className="w-4 h-4 rounded border-gray-300 cursor-pointer"
-        style={{ accentColor: clinicColor }}
-      />
-    </label>
-  </div>
+      {/* شريط الأدوات - سطر واحد يجمع كل العناصر */}
+      <div className="flex items-center gap-3">
+        {/* متصفح التاريخ - يظهر فقط في وضع اليوم */}
+        {viewMode === "day" && (
+          <div className="flex items-center gap-1">
+            <button
+              onClick={goToPreviousDay}
+              disabled={
+                availableDates.indexOf(selectedDate) ===
+                availableDates.length - 1
+              }
+              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              style={{ color: clinicColor }}
+            >
+              <ChevronRight size={16} />
+            </button>
 
-  {/* شريط البحث - يتمدد ليملأ المساحة المتبقية */}
-  <div className="relative flex-1">
-    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-      <Search size={16} className="text-gray-400" />
-    </div>
-    <input
-      type="text"
-      value={searchTerm}
-      onChange={(e) => setSearchTerm(e.target.value)}
-      placeholder="البحث عن اسم المريض..."
-      className="w-full pr-9 pl-9 py-2 bg-white border border-gray-200 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all text-sm"
-      style={{ 
-        '--tw-ring-color': clinicColor,
-        boxShadow: 'none'
-      } as React.CSSProperties}
-    />
-    {searchTerm && (
-      <button
-        onClick={() => setSearchTerm('')}
-        className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 hover:text-gray-600 transition-colors"
-      >
-        <X size={16} />
-      </button>
-    )}
-  </div>
-</div>
+            <div className="relative min-w-[180px]">
+              <select
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 pr-7 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:border-transparent cursor-pointer transition-all"
+                style={
+                  {
+                    "--tw-ring-color": clinicColor,
+                    direction: "rtl",
+                  } as React.CSSProperties
+                }
+              >
+                {availableDates.map((date) => (
+                  <option key={date} value={date}>
+                    {getDayName(date)} - {formatDisplayDate(date)}
+                  </option>
+                ))}
+              </select>
+              <Calendar
+                size={13}
+                className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400"
+              />
+            </div>
+
+            <button
+              onClick={goToNextDay}
+              disabled={availableDates.indexOf(selectedDate) === 0}
+              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              style={{ color: clinicColor }}
+            >
+              <ChevronLeft size={16} />
+            </button>
+          </div>
+        )}
+
+        {/* Checkbox للترتيب */}
+        <div className="flex items-center gap-2 bg-white rounded-lg border border-gray-200 px-3 py-2">
+          <ArrowUpDown size={14} className="text-gray-400" />
+          <label className="flex items-center gap-2 cursor-pointer">
+            <span className="text-sm text-gray-600 whitespace-nowrap">
+              الأقدم أولاً
+            </span>
+            <input
+              type="checkbox"
+              checked={sortOrder === "asc"}
+              onChange={(e) => setSortOrder(e.target.checked ? "asc" : "desc")}
+              className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+              style={{ accentColor: clinicColor }}
+            />
+          </label>
+        </div>
+
+        {/* شريط البحث - يتمدد ليملأ المساحة المتبقية */}
+        <div className="relative flex-1">
+          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+            <Search size={16} className="text-gray-400" />
+          </div>
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="البحث عن اسم المريض..."
+            className="w-full pr-9 pl-9 py-2 bg-white border border-gray-200 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all text-sm"
+            style={
+              {
+                "--tw-ring-color": clinicColor,
+                boxShadow: "none",
+              } as React.CSSProperties
+            }
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm("")}
+              className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+      </div>
 
       {/* جدول البيانات */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         {/* عنوان العيادة */}
-        <div 
+        <div
           className="py-3 px-6 text-center"
-          style={{ 
-            background: `linear-gradient(135deg, ${clinicColor} 0%, ${clinicColor}dd 100%)` 
+          style={{
+            background: `linear-gradient(135deg, ${clinicColor} 0%, ${clinicColor}dd 100%)`,
           }}
         >
-         <h2 className="text-xl font-bold text-white">{clinicData?.name || 'عيادة الأسنان'}</h2>
+          <h2 className="text-xl font-bold text-white">
+            {clinicData?.name || "عيادة الأسنان"}
+          </h2>
           <p className="text-white/80 text-xs mt-1">
-            {getPeriodTitle()} {searchTerm && `- نتائج البحث: ${displayedSessions.length} جلسة`}
+            {getPeriodTitle()}{" "}
+            {searchTerm && `- نتائج البحث: ${displayedSessions.length} جلسة`}
           </p>
         </div>
-        
+
         {displayedSessions.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50/80">
-                  <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700">اليوم</th>
-                  <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700">التاريخ</th>
-                  <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700">الاسم</th>
-                  <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700">الرقم</th>
-                  <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700">العمر</th>
-                  <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700">الجنس</th>
-                  <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700">الجلسة</th>
-                  <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700">الوقت</th>
-                  <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700">التكلفة</th>
-                  <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700">الدفع</th>
-                  <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700">الحالة</th>
+                  <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700">
+                    اليوم
+                  </th>
+                  <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700">
+                    التاريخ
+                  </th>
+                  <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700">
+                    الاسم
+                  </th>
+                  <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700">
+                    الرقم
+                  </th>
+                  <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700">
+                    العمر
+                  </th>
+                  <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700">
+                    الجنس
+                  </th>
+                  <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700">
+                    الجلسة
+                  </th>
+                  <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700">
+                    الوقت
+                  </th>
+                  <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700">
+                    التكلفة
+                  </th>
+                  <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700">
+                    الدفع
+                  </th>
+                  <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700">
+                    الحالة
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {displayedSessions.map((session, index) => {
                   const dateStr = getDateString(session.startTime);
                   const patient = getPatientData(session.patientId);
-                  const genderArabic = patient?.gender === 'male' ? 'ذكر' : patient?.gender === 'female' ? 'أنثى' : '-';
+                  const genderArabic =
+                    patient?.gender === "male"
+                      ? "ذكر"
+                      : patient?.gender === "female"
+                        ? "أنثى"
+                        : "-";
                   const paymentDisplay = getPaymentMethodDisplay(session);
                   const statusDisplay = getSessionStatusDisplay(session.status);
                   const PaymentIcon = paymentDisplay.icon;
                   const StatusIcon = statusDisplay.icon;
-                  
+
                   return (
-                    <tr 
-                      key={session.id} 
+                    <tr
+                      key={session.id}
                       className={`border-b border-gray-100 hover:bg-gray-50/80 transition-all ${
-                        index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'
+                        index % 2 === 0 ? "bg-white" : "bg-gray-50/30"
                       }`}
                     >
                       <td className="py-3 px-3 text-sm text-gray-700">
@@ -931,13 +1020,15 @@ const exportToExcel = () => {
                         {patient?.phone || session.patientSnapshot?.phone}
                       </td>
                       <td className="py-3 px-3 text-sm text-gray-700">
-                        {patient?.age || '-'}
+                        {patient?.age || "-"}
                       </td>
                       <td className="py-3 px-3 text-sm text-gray-700">
                         {genderArabic}
                       </td>
                       <td className="py-3 px-3 text-sm text-gray-700 max-w-xs truncate">
-                        {session.plannedProcedure || session.performedProcedure || '-'}
+                        {session.plannedProcedure ||
+                          session.performedProcedure ||
+                          "-"}
                       </td>
                       <td className="py-3 px-3 text-sm text-gray-600">
                         {formatTime(session.startTime)}
@@ -946,24 +1037,34 @@ const exportToExcel = () => {
                         {session.sessionCost} ل.س
                       </td>
                       <td className="py-3 px-3">
-                        <div 
+                        <div
                           className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border"
                           style={{
                             backgroundColor: paymentDisplay.bgColor,
-                            borderColor: paymentDisplay.borderColor
+                            borderColor: paymentDisplay.borderColor,
                           }}
                         >
-                          <PaymentIcon size={13} style={{ color: paymentDisplay.color }} />
-                          <span style={{ color: paymentDisplay.color }}>{paymentDisplay.text}</span>
+                          <PaymentIcon
+                            size={13}
+                            style={{ color: paymentDisplay.color }}
+                          />
+                          <span style={{ color: paymentDisplay.color }}>
+                            {paymentDisplay.text}
+                          </span>
                         </div>
                       </td>
                       <td className="py-3 px-3">
-                        <div 
+                        <div
                           className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium"
                           style={{ backgroundColor: statusDisplay.bgColor }}
                         >
-                          <StatusIcon size={13} style={{ color: statusDisplay.color }} />
-                          <span style={{ color: statusDisplay.color }}>{statusDisplay.text}</span>
+                          <StatusIcon
+                            size={13}
+                            style={{ color: statusDisplay.color }}
+                          />
+                          <span style={{ color: statusDisplay.color }}>
+                            {statusDisplay.text}
+                          </span>
                         </div>
                       </td>
                     </tr>
@@ -971,21 +1072,28 @@ const exportToExcel = () => {
                 })}
               </tbody>
             </table>
-            
+
             {/* ملخص */}
             <div className="border-t border-gray-200 bg-gray-50/50 px-6 py-2.5">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <Users size={16} className="text-gray-400" />
                   <span className="text-xs text-gray-600">
-                    عدد الجلسات: <span className="font-bold text-gray-800">{displayedSessions.length}</span>
+                    عدد الجلسات:{" "}
+                    <span className="font-bold text-gray-800">
+                      {displayedSessions.length}
+                    </span>
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Receipt size={16} className="text-gray-400" />
                   <span className="text-xs text-gray-600">
-                    إجمالي التكلفة: <span className="font-bold text-gray-800">
-                      {displayedSessions.reduce((sum, s) => sum + (s.sessionCost || 0), 0).toLocaleString()} ل.س
+                    إجمالي التكلفة:{" "}
+                    <span className="font-bold text-gray-800">
+                      {displayedSessions
+                        .reduce((sum, s) => sum + (s.sessionCost || 0), 0)
+                        .toLocaleString()}{" "}
+                      ل.س
                     </span>
                   </span>
                 </div>
@@ -1002,16 +1110,15 @@ const exportToExcel = () => {
               )}
             </div>
             <p className="text-gray-500">
-              {searchTerm 
-                ? 'لا توجد نتائج للبحث' 
-                : viewMode === 'month'
-                  ? 'لا توجد جلسات في هذا الشهر'
-                  : 'لا توجد جلسات مجدولة'
-              }
+              {searchTerm
+                ? "لا توجد نتائج للبحث"
+                : viewMode === "month"
+                  ? "لا توجد جلسات في هذا الشهر"
+                  : "لا توجد جلسات مجدولة"}
             </p>
             {searchTerm && (
               <button
-                onClick={() => setSearchTerm('')}
+                onClick={() => setSearchTerm("")}
                 className="mt-3 text-sm font-medium hover:underline"
                 style={{ color: clinicColor }}
               >
