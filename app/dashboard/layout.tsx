@@ -181,9 +181,10 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="p-3 md:p-6"
+          className="p-3"
+          // ✅ نفس التنسيق القديم تماماً
           style={
-            isMobile && !isPortrait
+            isMobile
               ? {
                   transform: 'scale(0.5)',
                   transformOrigin: 'top right',

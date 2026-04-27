@@ -64,23 +64,26 @@ export function RotateDevicePrompt({ onTryAutoRotate }: RotateDevicePromptProps)
         </div>
 
         <h2 className="text-xl font-bold text-gray-800 mb-2">
-          يرجى تدوير الجهاز
+          يرجى تدوير الجهاز للوضع الافقي
         </h2>
         
         <p className="text-gray-600 text-sm mb-5">
-          قم بتدوير هاتفك إلى الوضع الأفقي للحصول على أفضل تجربة
+          هذه الواجهة مصممة لتعمل مع الشاشات العريضة
+        </p>
+        <p className="text-gray-600 text-sm mb-5">
+          وذلك لضمان عرض البيانات بأوضح شكل ممكن
         </p>
 
-        <button
+        {/* <button
           onClick={handleRotate}
           disabled={isLoading}
           className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg text-sm font-medium transition-all shadow-sm"
         >
           {isLoading ? "جاري المحاولة..." : "🔄 محاولة التدوير التلقائي"}
-        </button>
+        </button> */}
 
         <p className="text-xs text-gray-400 mt-4">
-          يمكنك أيضاً تدوير الهاتف يدوياً
+          قم بتفعل تدوير الشاشة واقلب الهاتف للوضع الافقي
         </p>
       </motion.div>
     </div>
