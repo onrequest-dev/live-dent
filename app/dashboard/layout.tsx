@@ -3,10 +3,14 @@
 
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { ClinicProvider, useClinic } from "@/contexts/ClinicContext";
-import { RotateDevicePrompt } from "@/components/dashboard/RotateDevicePrompt";
 import { useParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, lazy } from "react";
 import { motion } from "framer-motion";
+
+// استيراد ديناميكي للمكون الذي يستخدم screen API
+const RotateDevicePrompt = lazy(() => 
+  import("@/components/dashboard/RotateDevicePrompt").then(mod => ({ default: mod.RotateDevicePrompt }))
+);
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const { clinicData, isLoading, secondaryColor, refetch } = useClinic();
@@ -14,9 +18,18 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const [isMobile, setIsMobile] = useState(false);
   const [isPortrait, setIsPortrait] = useState(false);
   const [orientationLocked, setOrientationLocked] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+  const [hasShownPrompt, setHasShownPrompt] = useState(false);
 
-  // كشف الهاتف
+  // تأكد من أننا في جانب العميل
   useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // كشف الهاتف - آمن لـ SSR
+  useEffect(() => {
+    if (!isClient) return;
+    
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
     };
@@ -25,25 +38,39 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     window.addEventListener('resize', checkMobile);
     
     return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  }, [isClient]);
 
-  // التعامل مع اتجاه الشاشة
+  // التعامل مع اتجاه الشاشة - آمن لـ SSR
   useEffect(() => {
-    if (!isMobile) return;
+    if (!isMobile || !isClient) return;
 
     const handleOrientation = async () => {
       const isCurrentlyPortrait = window.innerHeight > window.innerWidth;
       setIsPortrait(isCurrentlyPortrait);
+      
+      if (!isCurrentlyPortrait) {
+        setHasShownPrompt(false);
+      }
 
-      if (isCurrentlyPortrait && !orientationLocked) {
+      if (isCurrentlyPortrait && !orientationLocked && !hasShownPrompt) {
         try {
-          if (screen.orientation && screen.orientation.lock) {
-            await screen.orientation.lock('landscape');
-            setOrientationLocked(true);
-            setIsPortrait(false);
+          // التحقق الآمن من وجود screen
+          if (typeof window !== 'undefined' && screen && 'orientation' in screen) {
+            const screenOrientation = screen.orientation;
+            if (screenOrientation && typeof screenOrientation.lock === 'function') {
+              await screenOrientation.lock('landscape');
+              setOrientationLocked(true);
+              setIsPortrait(false);
+              setHasShownPrompt(true);
+            } else {
+              setHasShownPrompt(true);
+            }
+          } else {
+            setHasShownPrompt(true);
           }
         } catch (error) {
           console.log("لا يمكن قفل الاتجاه تلقائياً:", error);
+          setHasShownPrompt(true);
         }
       }
     };
@@ -57,11 +84,11 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       window.removeEventListener('resize', handleOrientation);
       window.removeEventListener('orientationchange', handleOrientation);
       
-      if (screen.orientation && screen.orientation.unlock) {
+      if (typeof window !== 'undefined' && screen && 'orientation' in screen && screen.orientation.unlock) {
         screen.orientation.unlock();
       }
     };
-  }, [isMobile, orientationLocked]);
+  }, [isMobile, orientationLocked, isClient, hasShownPrompt]);
 
   // مستمع تحديث البيانات
   useEffect(() => {
@@ -85,17 +112,36 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
   const tryLockOrientation = async () => {
     try {
-      if (screen.orientation && screen.orientation.lock) {
-        await screen.orientation.lock('landscape');
-        setOrientationLocked(true);
-        setIsPortrait(false);
+      if (typeof window !== 'undefined' && screen && 'orientation' in screen) {
+        const screenOrientation = screen.orientation;
+        if (screenOrientation && typeof screenOrientation.lock === 'function') {
+          await screenOrientation.lock('landscape');
+          setOrientationLocked(true);
+          setIsPortrait(false);
+          setHasShownPrompt(true);
+        }
       }
     } catch (error) {
       console.error("فشل قفل الاتجاه:", error);
     }
   };
 
-  // شاشة تحميل
+  // شاشة تحميل للـ SSR
+  if (!isClient) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div
+            className="w-16 h-16 rounded-full border-4 border-t-transparent animate-spin mx-auto mb-4"
+            style={{ borderColor: "#007bff", borderTopColor: "transparent" }}
+          />
+          <p className="text-gray-600">جاري التحميل...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // شاشة تحميل البيانات
   if (isLoading || isRefetching) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
@@ -114,7 +160,11 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
   // تنبيه تدوير الشاشة
   if (isMobile && isPortrait && !orientationLocked) {
-    return <RotateDevicePrompt onTryAutoRotate={tryLockOrientation} />;
+    return (
+      <Suspense fallback={<div className="fixed inset-0 bg-white" />}>
+        <RotateDevicePrompt onTryAutoRotate={tryLockOrientation} />
+      </Suspense>
+    );
   }
 
   // الواجهة الرئيسية
@@ -137,14 +187,26 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
           className="p-3 md:p-6"
+          style={
+            isMobile && !isPortrait
+              ? {
+                  transform: 'scale(0.5)',
+                  transformOrigin: 'top right',
+                  width: '200%',
+                  height: '200%',
+                  zoom: '50%'
+                }
+              : {}
+          }
         >
-          {isMobile && (
+          {isMobile && !isPortrait && (
             <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
               <p className="text-blue-700 font-medium text-center text-sm md:text-base">
-                📱 للاستخدام على الهاتف، يُنصح بالوضع الأفقي لعرض أفضل
+                📱 تم التدوير بنجاح | للاستخدام الأمثل، حافظ على الوضع الأفقي
               </p>
             </div>
           )}
+          
           {children}
         </motion.div>
       </main>
@@ -159,6 +221,15 @@ export default function DashboardLayout({
 }) {
   const params = useParams();
   const clinicId = params?.clinicId as string;
+
+  // إذا لم يوجد clinicId نعرض رسالة خطأ
+  if (!clinicId) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p className="text-red-500">خطأ: لم يتم العثور على معرف العيادة</p>
+      </div>
+    );
+  }
 
   return (
     <ClinicProvider clinicId={clinicId}>
