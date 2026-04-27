@@ -50,3 +50,23 @@ body {
   -ms-user-select: none;
   user-select: none;
 }
+
+
+/* globals.css */
+@media (max-width: 768px) {
+  .dashboard-mobile-zoom {
+    /* محاكاة zoom بنفس طريقة المتصفح */
+    zoom: 50% !important;
+    -moz-transform: scale(0.5) !important;
+    -moz-transform-origin: top right !important;
+    -webkit-transform: scale(0.5) !important;
+    -webkit-transform-origin: top right !important;
+    transform: scale(0.5) !important;
+    transform-origin: top right !important;
+    width: 200% !important;
+    height: 200% !important;
+    
+    /* منع التمرير الزائد */
+    overflow-x: hidden !important;
+  }
+}
