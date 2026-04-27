@@ -154,7 +154,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   }
 
   // تنبيه تدوير الشاشة
-  if (isMobile && isPortrait && !orientationLocked) {
+  if (isMobile && isPortrait && orientationLocked) {
     return (
       <Suspense fallback={<div className="fixed inset-0 bg-white" />}>
         <RotateDevicePrompt onTryAutoRotate={tryLockOrientation} />
@@ -190,7 +190,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                   transformOrigin: 'top right',
                   width: '200%',
                   height: '200%',
-                  zoom: '50%'
+                  zoom:'25%'
                 }
               : {}
           }
