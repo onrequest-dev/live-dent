@@ -3,6 +3,7 @@
 
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { ClinicProvider, useClinic } from "@/contexts/ClinicContext";
+import { RotateDevicePrompt } from "@/components/dashboard/RotateDevicePrompt";
 import { useParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { motion } from "framer-motion";
@@ -11,7 +12,58 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const { clinicData, isLoading, secondaryColor, refetch } = useClinic();
   const [isRefetching, setIsRefetching] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isPortrait, setIsPortrait] = useState(false);
+  const [orientationLocked, setOrientationLocked] = useState(false);
 
+  // كشف الهاتف
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // التعامل مع اتجاه الشاشة
+  useEffect(() => {
+    if (!isMobile) return;
+
+    const handleOrientation = async () => {
+      const isCurrentlyPortrait = window.innerHeight > window.innerWidth;
+      setIsPortrait(isCurrentlyPortrait);
+
+      if (isCurrentlyPortrait && !orientationLocked) {
+        try {
+          if (screen.orientation && screen.orientation.lock) {
+            await screen.orientation.lock('landscape');
+            setOrientationLocked(true);
+            setIsPortrait(false);
+          }
+        } catch (error) {
+          console.log("لا يمكن قفل الاتجاه تلقائياً:", error);
+        }
+      }
+    };
+
+    handleOrientation();
+
+    window.addEventListener('resize', handleOrientation);
+    window.addEventListener('orientationchange', handleOrientation);
+
+    return () => {
+      window.removeEventListener('resize', handleOrientation);
+      window.removeEventListener('orientationchange', handleOrientation);
+      
+      if (screen.orientation && screen.orientation.unlock) {
+        screen.orientation.unlock();
+      }
+    };
+  }, [isMobile, orientationLocked]);
+
+  // مستمع تحديث البيانات
   useEffect(() => {
     const handleRefreshRequest = async () => {
       if (refetch && !isRefetching) {
@@ -31,18 +83,19 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       window.removeEventListener("refreshPatientsData", handleRefreshRequest);
   }, [refetch, isRefetching]);
 
-  // ✅ كشف الهاتف
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
+  const tryLockOrientation = async () => {
+    try {
+      if (screen.orientation && screen.orientation.lock) {
+        await screen.orientation.lock('landscape');
+        setOrientationLocked(true);
+        setIsPortrait(false);
+      }
+    } catch (error) {
+      console.error("فشل قفل الاتجاه:", error);
+    }
+  };
 
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
+  // شاشة تحميل
   if (isLoading || isRefetching) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
@@ -59,6 +112,12 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // تنبيه تدوير الشاشة
+  if (isMobile && isPortrait && !orientationLocked) {
+    return <RotateDevicePrompt onTryAutoRotate={tryLockOrientation} />;
+  }
+
+  // الواجهة الرئيسية
   return (
     <div className="flex h-screen overflow-hidden" dir="rtl">
       <Suspense
@@ -77,25 +136,12 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="p-3"
-          style={
-            isMobile
-              ? {
-                  transform: 'scale(0.5)',
-                  transformOrigin: 'top right',
-                  width: '200%',
-                  height: '200%',
-                }
-              : {}
-          }
+          className="p-3 md:p-6"
         >
           {isMobile && (
-            <div className="mb-3 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
-              <p className="text-xl text-blue-700 font-medium text-center">
-                 الواجهة محسّنة للشاشات الكبيرة. يُنصح باستخدام كمبيوتر أو تابلت
-              </p>
-              <p className="text-xl text-blue-700 font-medium text-center">
-                يمكنك من هنا العمل في الحالات الضرورية
+            <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
+              <p className="text-blue-700 font-medium text-center text-sm md:text-base">
+                📱 للاستخدام على الهاتف، يُنصح بالوضع الأفقي لعرض أفضل
               </p>
             </div>
           )}
