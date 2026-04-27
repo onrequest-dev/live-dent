@@ -1423,7 +1423,7 @@ function EditSessionModal({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-        onClick={isLoading ? undefined : onClose}
+        // onClick={isLoading ? undefined : onClose}
       >
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
@@ -1757,7 +1757,7 @@ function ConfirmDeleteModal({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-        onClick={isLoading ? undefined : onClose}
+        // onClick={isLoading ? undefined : onClose}
       >
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
@@ -2023,7 +2023,7 @@ function NewPatientModal({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-hidden"
-        onClick={isLoading ? undefined : onClose}
+        // onClick={isLoading ? undefined : onClose}
       >
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
@@ -2113,38 +2113,44 @@ function NewPatientModal({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    رقم الجوال <span className="text-red-500">*</span>
+                    رقم الجوال (واتساب) <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="tel"
-                    required
-                    value={formData.phone}
-                    onChange={(e) => {
-                      const phoneValue = e.target.value.replace(/[^\d+]/g, "");
-                      setFormData({ ...formData, phone: phoneValue });
-                    }}
-                    onKeyDown={(e) => {
-                      const allowedKeys = [
-                        "Backspace",
-                        "Delete",
-                        "ArrowLeft",
-                        "ArrowRight",
-                        "Tab",
-                        "+",
-                      ];
-                      if (
-                        !allowedKeys.includes(e.key) &&
-                        !(e.key >= "0" && e.key <= "9")
-                      ) {
-                        e.preventDefault();
-                      }
-                    }}
-                    disabled={isLoading}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{ "--tw-ring-color": primaryColor } as any}
-                    placeholder="05xxxxxxxx"
-                    dir="ltr"
-                  />
+<input
+  type="tel"
+  required
+  value={formData.phone}
+  onChange={(e) => {
+    let phoneValue = e.target.value.replace(/[^\d+]/g, "");
+    
+    // تحويل 00 في البداية إلى +
+    if (phoneValue.startsWith("00")) {
+      phoneValue = "+" + phoneValue.slice(2);
+    }
+    
+    setFormData({ ...formData, phone: phoneValue });
+  }}
+  onKeyDown={(e) => {
+    const allowedKeys = [
+      "Backspace",
+      "Delete",
+      "ArrowLeft",
+      "ArrowRight",
+      "Tab",
+      "+",
+    ];
+    if (
+      !allowedKeys.includes(e.key) &&
+      !(e.key >= "0" && e.key <= "9")
+    ) {
+      e.preventDefault();
+    }
+  }}
+  disabled={isLoading}
+  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+  style={{ "--tw-ring-color": primaryColor } as any}
+  placeholder="+963........"
+  dir="ltr"
+/>
                 </div>
 
                 <div>
@@ -2610,7 +2616,7 @@ function NewAppointmentModal({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-        onClick={isLoading ? undefined : onClose}
+        // onClick={isLoading ? undefined : onClose}
       >
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
