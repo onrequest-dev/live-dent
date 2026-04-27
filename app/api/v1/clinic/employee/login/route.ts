@@ -12,10 +12,11 @@ export interface EmployeeLoginRequestBody {
 
 export async function POST(request: NextRequest) {
     const requestbody : EmployeeLoginRequestBody = await request.json();
-    const { username, password } = sanitizeInput(requestbody);
+    let { username, password } = sanitizeInput(requestbody);
     if(!username || !password) {
         return new Response(JSON.stringify({ message: "Username and password are required" }), { status: 400 });
     }
+    username = username.toLocaleLowerCase();
     const {data,error} = await supabase_server.from("employees").select("hashed_password,id,clinicId,role").eq("user_name", username).single()
     if(error || !data) {
         return new Response(JSON.stringify({ message: "Invalid username or password" }), { status: 401 });

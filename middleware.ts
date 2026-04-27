@@ -9,6 +9,8 @@ export function middleware(request: NextRequest) {
 //   console.log(jwt)
 
   // السماح بالوصول للمسارات المفتوحة للجميع
+  if(pathname === '/landing-page') return NextResponse.rewrite(new URL('/', request.url))
+    
   if (pathname === '/' && jwt) {
     const clinicId = request.cookies.get('clinic_id')?.value
     if(!clinicId) return NextResponse.redirect(new URL('/log-in', request.url))

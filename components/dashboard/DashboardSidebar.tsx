@@ -173,7 +173,7 @@ useEffect(() => {
   // ✅ دالة معالجة النقر على تبويب المرضى
   const handlePatientsClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    window.dispatchEvent(new CustomEvent("refreshPatientsData"));
+    // window.dispatchEvent(new CustomEvent("refreshPatientsData"));
     router.push(`/dashboard/${clinicId}?tab=patients`);
 
   };
