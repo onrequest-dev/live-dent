@@ -174,27 +174,15 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       <main
         className="flex-1 overflow-y-auto scrollbar-hide"
         style={{
-          background: `linear-gradient(135deg, ${secondaryColor} 0%, ${secondaryColor}90 0%, #ffffff 100%)`,
+          background: `linear-gradient(135deg, ${secondaryColor} 0%, ${secondaryColor}90 0%, #ffffff 100%)` ,
         }}
       >
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="p-3"
-          // ✅ نفس التنسيق القديم تماماً
-          style={
-            isMobile
-              ? {
-                  transform: 'scale(0.5)',
-                  transformOrigin: 'top right',
-                  width: '200%',
-                  height: '200%',
-                  zoom:'0.1'
-                }
-              : {}
-          }
-        >
+<motion.div
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  transition={{ duration: 0.5 }}
+  className={`p-3 ${isMobile ? 'dashboard-mobile-zoom' : ''}`}
+>
           {isMobile && !isPortrait && (
             <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
               <p className="text-blue-700 font-medium text-center text-sm md:text-base">
