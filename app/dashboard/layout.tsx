@@ -54,17 +54,13 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
       if (isCurrentlyPortrait && !orientationLocked && !hasShownPrompt) {
         try {
-          // التحقق الآمن من وجود screen
-          if (typeof window !== 'undefined' && screen && 'orientation' in screen) {
-            const screenOrientation = screen.orientation;
-            if (screenOrientation && typeof screenOrientation.lock === 'function') {
-              await screenOrientation.lock('landscape');
-              setOrientationLocked(true);
-              setIsPortrait(false);
-              setHasShownPrompt(true);
-            } else {
-              setHasShownPrompt(true);
-            }
+          // استخدام 'as any' لتجاوز مشكلة TypeScript
+          const screenOrientation = (screen as any).orientation;
+          if (screenOrientation && typeof screenOrientation.lock === 'function') {
+            await screenOrientation.lock('landscape');
+            setOrientationLocked(true);
+            setIsPortrait(false);
+            setHasShownPrompt(true);
           } else {
             setHasShownPrompt(true);
           }
@@ -84,8 +80,9 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       window.removeEventListener('resize', handleOrientation);
       window.removeEventListener('orientationchange', handleOrientation);
       
-      if (typeof window !== 'undefined' && screen && 'orientation' in screen && screen.orientation.unlock) {
-        screen.orientation.unlock();
+      const screenOrientation = (screen as any).orientation;
+      if (screenOrientation && typeof screenOrientation.unlock === 'function') {
+        screenOrientation.unlock();
       }
     };
   }, [isMobile, orientationLocked, isClient, hasShownPrompt]);
@@ -112,14 +109,12 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
   const tryLockOrientation = async () => {
     try {
-      if (typeof window !== 'undefined' && screen && 'orientation' in screen) {
-        const screenOrientation = screen.orientation;
-        if (screenOrientation && typeof screenOrientation.lock === 'function') {
-          await screenOrientation.lock('landscape');
-          setOrientationLocked(true);
-          setIsPortrait(false);
-          setHasShownPrompt(true);
-        }
+      const screenOrientation = (screen as any).orientation;
+      if (screenOrientation && typeof screenOrientation.lock === 'function') {
+        await screenOrientation.lock('landscape');
+        setOrientationLocked(true);
+        setIsPortrait(false);
+        setHasShownPrompt(true);
       }
     } catch (error) {
       console.error("فشل قفل الاتجاه:", error);

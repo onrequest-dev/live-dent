@@ -26,22 +26,40 @@ export function RotateDevicePrompt({ onTryAutoRotate }: RotateDevicePromptProps)
         transition={{ duration: 0.3 }}
         className="max-w-sm w-full"
       >
-        <div className="flex justify-center mb-6">
+        {/* أيقونة الهاتف */}
+        <div className="flex justify-center mb-8">
           <motion.div
-            animate={{ rotate: [0, 90] }}
+            animate={{ rotate: 90 }}
             transition={{
-              duration: 1.2,
+              duration: 1.5,
               repeat: Infinity,
-              repeatDelay: 0.8,
-              ease: "easeInOut"
+              repeatDelay: 1,
+              ease: "easeInOut",
             }}
+            className="relative"
+            style={{ width: 80, height: 140 }}
           >
-            <svg className="w-28 h-28 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
-                d="M12 3v18M3 12h18M9 3v2m6-2v2M9 19v2m6-2v2M5 7h14M5 11h14M5 15h14" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
-                d="M15 9l-3-3-3 3m3-3v6" />
-            </svg>
+            {/* الإطار الخارجي */}
+            <div className="absolute inset-0 bg-gray-800 rounded-2xl border-2 border-gray-600">
+              {/* الكاميرا/النوتش */}
+              <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-8 h-1.5 bg-gray-600 rounded-full" />
+              {/* زر الصفحة الرئيسية */}
+              <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-6 h-6 border-2 border-gray-600 rounded-full" />
+            </div>
+            
+            {/* الشاشة الداخلية */}
+            <div className="absolute inset-1.5 bg-blue-50 rounded-xl overflow-hidden">
+              {/* أيقونات الشاشة */}
+              <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-6 h-1 bg-blue-200 rounded-full" />
+              <div className="absolute inset-x-3 top-6 space-y-1.5">
+                <div className="h-1.5 bg-blue-200 rounded w-3/4" />
+                <div className="h-1.5 bg-blue-200 rounded w-1/2" />
+                <div className="h-1.5 bg-blue-200 rounded w-2/3" />
+              </div>
+              <div className="absolute bottom-3 inset-x-3">
+                <div className="h-1.5 bg-blue-200 rounded w-full" />
+              </div>
+            </div>
           </motion.div>
         </div>
 
