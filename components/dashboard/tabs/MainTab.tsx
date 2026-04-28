@@ -1325,6 +1325,14 @@ interface EditSessionModalProps {
   }) => void;
 }
 
+const formatToLocalDatetimeLocal = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
 function EditSessionModal({
   session,
   primaryColor,
@@ -1343,9 +1351,10 @@ function EditSessionModal({
     isPaid: session.isPaid,
     paymentMethod: session.paymentMethod || ("cash" as "cash" | "transfer"),
     notes: session.notes || "",
-    startTime: new Date(session.startTime).toISOString().slice(0, 16),
+    startTime: formatToLocalDatetimeLocal(new Date(session.startTime)),
   });
 
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
