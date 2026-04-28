@@ -66,6 +66,27 @@ export default function Error({
       >
         حاول مرة أخرى
       </button>
+
+                  {/* زر الرجوع للصفحة الرئيسية */}
+<a 
+  href="/" 
+  className="bg-gradient-to-r from-yellow-500 to-yellow-400 text-[#0A1628] px-6 py-3 rounded-lg font-medium text-sm hover:from-yellow-400 hover:to-yellow-300 transition-all duration-300 shadow-lg shadow-yellow-500/20 inline-flex items-center gap-2 hover:scale-105 mt-10"
+>
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    width="16" 
+    height="16" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2.5" 
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+  >
+    <path d="M19 12H5M12 19l-7-7 7-7"/>
+  </svg>
+  العودة للصفحة الرئيسية
+</a>
     </div>
   );
 }

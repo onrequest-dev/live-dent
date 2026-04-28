@@ -66,7 +66,7 @@ export function SettingsTab({ clinicData }: SettingsTabProps) {
   
   const clinicUrl = `${baseUrl}/public-clinic/${clinicId}`;
   const doctorCVUrl = `${baseUrl}/public-clinic/${clinicId}/doctor-cv`;
-  const whatsappUrl = `https://wa.me/1234567890`;
+  const whatsappUrl = `https://wa.me/79610195064`;
 
   return (
     <motion.div
@@ -82,7 +82,6 @@ export function SettingsTab({ clinicData }: SettingsTabProps) {
           </div>
           <h1 className="text-3xl font-bold text-gray-800">الإعدادات</h1>
         </div>
-        <p className="text-gray-500 mr-14">تخصيص لوحة التحكم وإدارة الحساب</p>
       </div>
 
       <div className="space-y-6">
@@ -205,7 +204,7 @@ export function SettingsTab({ clinicData }: SettingsTabProps) {
               </a>
 
               {/* تجديد الاشتراك */}
-              <Link
+              {/* <Link
                 href="/pricing"
                 className="p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all"
               >
@@ -221,7 +220,7 @@ export function SettingsTab({ clinicData }: SettingsTabProps) {
                     <p className="text-xs text-gray-500">اطلب تجديد الاشتراك للشهر المقبل</p>
                   </div>
                 </div>
-              </Link>
+              </Link> */}
 
               {/* تسجيل الخروج */}
               <button

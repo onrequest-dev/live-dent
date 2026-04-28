@@ -21,6 +21,7 @@ import {
   Sparkles,
   ArrowLeft,
 } from 'lucide-react';
+import { FaTelegramPlane, FaWhatsapp, FaYoutube, FaInstagram } from 'react-icons/fa';
 import Link from 'next/link';
 // ==========================================
 // مكون الجزيئات الذهبية المبسط
@@ -299,6 +300,131 @@ const Navigation = () => {
   );
 };
 
+// ==========================================
+// مكون التواصل الاجتماعي
+// ==========================================
+const SocialContact = () => {
+  const socialLinks = [
+    {
+      icon: FaTelegramPlane,
+      href: 'https://t.me/OnRequest_dev',
+      color: '#0088cc',
+      hoverColor: '#00a8f0',
+      label: 'تلغرام'
+    },
+    {
+      icon: FaWhatsapp,
+      href: 'https://wa.me/79610195064',
+      color: '#25D366',
+      hoverColor: '#2fe673',
+      label: 'واتساب'
+    },
+    {
+      icon: FaYoutube,
+      href: 'https://youtube.com/@OnRequest_dev',
+      color: '#FF0000',
+      hoverColor: '#ff3333',
+      label: 'يوتيوب'
+    },
+    {
+      icon: FaInstagram,
+      href: 'https://instagram.com/onrRquest.dev',
+      color: '#E4405F',
+      hoverColor: '#e95a75',
+      label: 'انستغرام'
+    }
+  ];
+
+  return (
+    <div className="py-8" dir="ltr">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-6"
+        >
+          <h3 className="text-white text-lg font-semibold mb-2">تواصل معنا</h3>
+          <div className="w-12 h-0.5 bg-gradient-to-r from-yellow-500 to-yellow-400 mx-auto rounded-full" />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="flex justify-center items-center gap-4 sm:gap-6"
+        >
+          {socialLinks.map((social, index) => (
+            <motion.a
+              key={index}
+              href={social.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              whileHover={{ y: -5, scale: 1.15 }}
+              whileTap={{ scale: 0.9 }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ 
+                duration: 0.3, 
+                delay: index * 0.1,
+                type: "spring",
+                stiffness: 200 
+              }}
+              className="relative group"
+              title={social.label}
+            >
+              {/* توهج خارجي */}
+              <motion.div
+                className="absolute -inset-3 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 blur-xl"
+                style={{
+                  background: social.color,
+                  opacity: 0
+                }}
+                animate={{ opacity: [0, 0.15, 0] }}
+                transition={{ repeat: Infinity, duration: 2, delay: index * 0.3 }}
+              />
+              
+              {/* الدائرة الخارجية */}
+              <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#0F1F35]/80 backdrop-blur-sm border border-yellow-500/20 flex items-center justify-center overflow-hidden transition-all duration-300 group-hover:border-yellow-500/40">
+                {/* تأثير التدرج عند التحويم */}
+                <div 
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-300"
+                  style={{
+                    background: `radial-gradient(circle at center, ${social.color}20, transparent 70%)`
+                  }}
+                />
+                
+                {/* الأيقونة */}
+                <social.icon 
+                  className="relative z-10 text-lg sm:text-xl transition-all duration-300 group-hover:scale-110"
+                  style={{ 
+                    color: social.color,
+                    filter: 'drop-shadow(0 0 4px rgba(212, 175, 55, 0.3))'
+                  }}
+                />
+                
+                {/* إطار ذهبي دقيق */}
+                <div className="absolute inset-0 rounded-full border border-yellow-500/10 group-hover:border-yellow-500/30 transition-all duration-300" />
+              </div>
+            </motion.a>
+          ))}
+        </motion.div>
+
+        {/* خط فاصل جميل */}
+        <motion.div
+          initial={{ scaleX: 0 }}
+          whileInView={{ scaleX: 1 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+          className="mt-6 mx-auto max-w-xs"
+        >
+          <div className="h-px bg-gradient-to-r from-transparent via-yellow-500/30 to-transparent" />
+        </motion.div>
+      </div>
+    </div>
+  );
+};
+
+
 export default function Home() {
   const [activeFeature, setActiveFeature] = useState<number | null>(null);
   
@@ -432,24 +558,6 @@ const features = [
                   </motion.a>
                 </motion.div>
 
-                {/* إحصائيات سريعة */}
-                {/* <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.8 }}
-                  className="mt-8 grid grid-cols-2 gap-3"
-                >
-                  {stats.map((stat, index) => (
-                    <motion.div
-                      key={index}
-                      whileHover={{ scale: 1.05 }}
-                      className="bg-[#0F1F35]/50 backdrop-blur-sm rounded-lg p-3 border border-yellow-500/10"
-                    >
-                      <div className="text-yellow-400 font-bold text-lg">{stat.value}</div>
-                      <div className="text-gray-400 text-xs">{stat.label}</div>
-                    </motion.div>
-                  ))}
-                </motion.div> */}
               </motion.div>
 
               <motion.div
@@ -600,39 +708,7 @@ const features = [
             </div>
           </div>
         </section>
-
-        {/* CTA Section */}
-        {/* <section className="py-16">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
-            <AnimatedSection>
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                className="bg-gradient-to-br from-[#0F1F35] to-[#1A2A44] rounded-2xl p-8 border border-yellow-500/20 relative overflow-hidden group cursor-pointer"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
-                  هل أنت مستعد لنقل عيادتك للمستوى التالي؟
-                </h2>
-                <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
-                  إنضم الآن واجعل عيادتك مواكبة لتطور العالم
-                </p>
-                  <motion.div
-                    whileHover={{ scale: 1.05, boxShadow: "0 0 40px rgba(234, 179, 8, 0.6)" }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Link
-                      href="/Requestcopy"
-                      className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-500 to-yellow-400 text-[#0A1628] px-8 py-4 rounded-xl font-bold shadow-lg hover:shadow-yellow-500/20 transition-all duration-300"
-                    >
-                      ابدأ الآن 
-                      <ArrowLeft size={20} />
-                    </Link>
-                  </motion.div>
-              </motion.div>
-            </AnimatedSection>
-          </div>
-        </section> */}
-
+                    
         {/* Footer */}
         <footer className="border-t border-yellow-500/10 py-8">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -670,6 +746,7 @@ const features = [
             </div>
           </div>
         </footer>
+        <SocialContact />
       </div>
     </div>
   );

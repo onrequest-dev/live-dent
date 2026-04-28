@@ -349,7 +349,6 @@ export function DoctorCVTab({ clinicData, onProfileUpdate }: DoctorCVTabProps) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">السيرة الذاتية للطبيب</h1>
-          <p className="text-gray-600 mt-1">المعلومات المهنية والخبرات</p>
         </div>
         
         <div className="flex items-center gap-3">
