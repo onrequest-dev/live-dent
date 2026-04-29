@@ -9,8 +9,10 @@ import { motion } from "framer-motion";
 import { PWAInstallPrompt } from "@/components/dashboard/PWAInstallPrompt";
 
 // استيراد ديناميكي للمكون الذي يستخدم screen API
-const RotateDevicePrompt = lazy(() => 
-  import("@/components/dashboard/RotateDevicePrompt").then(mod => ({ default: mod.RotateDevicePrompt }))
+const RotateDevicePrompt = lazy(() =>
+  import("@/components/dashboard/RotateDevicePrompt").then((mod) => ({
+    default: mod.RotateDevicePrompt,
+  })),
 );
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
@@ -30,15 +32,15 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   // كشف الهاتف - آمن لـ SSR
   useEffect(() => {
     if (!isClient) return;
-    
+
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
     };
 
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
   }, [isClient]);
 
   // التعامل مع اتجاه الشاشة - آمن لـ SSR
@@ -48,7 +50,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     const handleOrientation = async () => {
       const isCurrentlyPortrait = window.innerHeight > window.innerWidth;
       setIsPortrait(isCurrentlyPortrait);
-      
+
       if (!isCurrentlyPortrait) {
         setHasShownPrompt(false);
       }
@@ -57,8 +59,11 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         try {
           // استخدام 'as any' لتجاوز مشكلة TypeScript
           const screenOrientation = (screen as any).orientation;
-          if (screenOrientation && typeof screenOrientation.lock === 'function') {
-            await screenOrientation.lock('landscape');
+          if (
+            screenOrientation &&
+            typeof screenOrientation.lock === "function"
+          ) {
+            await screenOrientation.lock("landscape");
             setOrientationLocked(true);
             setIsPortrait(false);
             setHasShownPrompt(true);
@@ -74,15 +79,15 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
     handleOrientation();
 
-    window.addEventListener('resize', handleOrientation);
-    window.addEventListener('orientationchange', handleOrientation);
+    window.addEventListener("resize", handleOrientation);
+    window.addEventListener("orientationchange", handleOrientation);
 
     return () => {
-      window.removeEventListener('resize', handleOrientation);
-      window.removeEventListener('orientationchange', handleOrientation);
-      
+      window.removeEventListener("resize", handleOrientation);
+      window.removeEventListener("orientationchange", handleOrientation);
+
       const screenOrientation = (screen as any).orientation;
-      if (screenOrientation && typeof screenOrientation.unlock === 'function') {
+      if (screenOrientation && typeof screenOrientation.unlock === "function") {
         screenOrientation.unlock();
       }
     };
@@ -111,8 +116,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const tryLockOrientation = async () => {
     try {
       const screenOrientation = (screen as any).orientation;
-      if (screenOrientation && typeof screenOrientation.lock === 'function') {
-        await screenOrientation.lock('landscape');
+      if (screenOrientation && typeof screenOrientation.lock === "function") {
+        await screenOrientation.lock("landscape");
         setOrientationLocked(true);
         setIsPortrait(false);
         setHasShownPrompt(true);
