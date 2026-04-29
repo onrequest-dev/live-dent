@@ -290,10 +290,13 @@ export function MainTab({
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("ar-SA", {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
-    }).format(amount);
+      currencyDisplay: "code",
+    })
+      .format(amount)
+      .replace("USD", "$");
   };
 
   const calculateBirthYear = (age: number) => new Date().getFullYear() - age;
@@ -1576,14 +1579,17 @@ function EditSessionModal({
               </label>
               <input
                 type="text"
-                inputMode="numeric"
+                inputMode="decimal"
                 required
                 value={formData.sessionCost || ""}
                 onChange={(e) => {
-                  const value = e.target.value.replace(/[^0-9]/g, "");
+                  // السماح بالأرقام والفاصلة العشرية مع منع التكرار
+                  const value = e.target.value
+                    .replace(/[^0-9.]/g, "")
+                    .replace(/(\..*)\./g, "$1");
                   setFormData({
                     ...formData,
-                    sessionCost: value === "" ? 0 : Number(value),
+                    sessionCost: parseFloat(value) ,
                   });
                 }}
                 disabled={isLoading}
@@ -1984,7 +1990,7 @@ function NewPatientModal({
           startTime: appointmentDate,
           endTime: endTime,
           procedure: formData.appointment.procedure,
-          cost: parseInt(formData.appointment.cost) || 0,
+          cost: parseFloat(formData.appointment.cost) || 0,
           notes: formData.appointment.notes || undefined,
         };
       }
@@ -2434,11 +2440,14 @@ function NewPatientModal({
                     </label>
                     <input
                       type="text"
-                      inputMode="numeric"
+                      inputMode="decimal"
                       required
                       value={formData.appointment.cost}
                       onChange={(e) => {
-                        const value = e.target.value.replace(/[^0-9]/g, "");
+                        const value = e.target.value
+                          .replace(/[^0-9.]/g, "")
+                          .replace(/(\..*)\./g, "$1");
+
                         setFormData({
                           ...formData,
                           appointment: { ...formData.appointment, cost: value },
@@ -2526,7 +2535,7 @@ function NewAppointmentModal({
     date: new Date().toISOString().split("T")[0],
     time: "10:00",
     procedure: "",
-    cost: 0,
+    cost: "",
     caseId: "",
     notes: "",
   });
@@ -2559,7 +2568,7 @@ function NewAppointmentModal({
       return;
     }
 
-    if (!formData.cost || formData.cost <= 0) {
+    if (!formData.cost || parseFloat(formData.cost) <= 0) {
       const errorMsg = "الرجاء إدخال التكلفة";
       setLocalError(errorMsg);
       if (addToast) {
@@ -2811,14 +2820,17 @@ function NewAppointmentModal({
               </label>
               <input
                 type="text"
-                inputMode="numeric"
+                inputMode="decimal"
                 required
                 value={formData.cost || ""}
                 onChange={(e) => {
-                  const value = e.target.value.replace(/[^0-9]/g, "");
+                  // السماح بالأرقام والفاصلة العشرية مع منع التكرار
+                  const value = e.target.value
+                    .replace(/[^0-9.]/g, "")
+                    .replace(/(\..*)\./g, "$1");
                   setFormData({
                     ...formData,
-                    cost: value === "" ? 0 : Number(value),
+                    cost: value,
                   });
                 }}
                 disabled={isLoading}
