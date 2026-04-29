@@ -8,14 +8,12 @@ interface DentalSVGLoaderProps {
   size?: number;
   primaryColor?: string;
   backgroundColor?: string;
-  text?: string;
 }
 
 export default function DentalSVGLoader({
   size = 100,
   primaryColor = '#FFD700',
-  backgroundColor = '#1A2A44',
-  text = 'جاري التحميل...'
+  backgroundColor = '#1A2A44'
 }: DentalSVGLoaderProps) {
   const [pathLength, setPathLength] = useState(0);
 
