@@ -239,9 +239,9 @@ export default function PublicClinicPage({ clinic }: PublicClinicPageProps) {
                   </div>
                   <div className="text-right flex-1 min-w-0">
                     <p className="text-sm text-gray-500 mb-1">اتصل بنا</p>
-                    <p className="font-bold text-gray-800 truncate" dir="ltr">
+                    {/* <p className="font-bold text-gray-800 truncate" dir="ltr">
                       +966 11 234 5678
-                    </p>
+                    </p> */}
                     <p className="text-sm text-gray-600 truncate">
                       {doctor?.contactEmail || ""}
                     </p>
