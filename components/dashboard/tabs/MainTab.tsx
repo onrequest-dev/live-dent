@@ -61,7 +61,8 @@ const api = {
     patientData: Omit<Patient, "id" | "clinicId" | "createdAt">,
   ): Promise<Patient> => {
     const result = await createPatient(patientData);
-    if (!result || !result.data || !result.data.id) throw new Error("فشل إنشاء المريض");
+    if (!result || !result.data || !result.data.id)
+      throw new Error("فشل إنشاء المريض");
     const newPatient: Patient = {
       id: result.data.id,
       clinicId,
@@ -80,7 +81,8 @@ const api = {
     sessionData: Omit<Session, "id" | "clinicId" | "patientSnapshot">,
   ): Promise<Session> => {
     const result = await createSession(sessionData);
-    if (!result || !result.data || !result.data.id) throw new Error("فشل إنشاء الموعد");
+    if (!result || !result.data || !result.data.id)
+      throw new Error("فشل إنشاء الموعد");
     const newSession: Session = {
       id: result.data.id,
       clinicId,
@@ -290,7 +292,7 @@ export function MainTab({
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("ar-SA", {
       style: "currency",
-      currency: "SYP",
+      currency: "USD",
     }).format(amount);
   };
 
@@ -398,8 +400,8 @@ export function MainTab({
   ) => {
     if (!editingSession) return;
     const result = await updateSession(editingSession.id, updatedSessionData);
-    if(!result.success){
-      throw new Error("حدث خطأ ما اثناء التعديل")
+    if (!result.success) {
+      throw new Error("حدث خطأ ما اثناء التعديل");
     }
     setSessions((prev) =>
       prev.map((s) =>
@@ -1030,7 +1032,7 @@ function PatientDetailsCard({
   onRequestDeleteSession,
 }: PatientDetailsCardProps) {
   const finance = calculateFinance();
-  const pastSessions = sessions
+  const pastSessions = sessions;
   const [selectedSession, setSelectedSession] = useState<any>(null);
 
   // فرز الجلسات من الأحدث إلى الأقدم
@@ -1233,7 +1235,7 @@ function PatientDetailsCard({
                         <div className="text-sm font-semibold text-gray-900 truncate">
                           {formatCurrency(session.sessionCost)}
                         </div>
-                        
+
                         <div className="text-sm text-gray-600 truncate">
                           {session.isPaid ? (
                             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-50 text-green-700 text-xs font-medium">
@@ -1326,13 +1328,13 @@ interface EditSessionModalProps {
 }
 
 const formatToLocalDatetimeLocal = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-  };
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
 function EditSessionModal({
   session,
   primaryColor,
@@ -1354,7 +1356,6 @@ function EditSessionModal({
     startTime: formatToLocalDatetimeLocal(new Date(session.startTime)),
   });
 
-  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -1571,7 +1572,7 @@ function EditSessionModal({
             {/* تكلفة الجلسة */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                تكلفة الجلسة (ل.س)
+                تكلفة الجلسة ($)
               </label>
               <input
                 type="text"
@@ -2124,42 +2125,42 @@ function NewPatientModal({
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     رقم الجوال (واتساب) <span className="text-red-500">*</span>
                   </label>
-<input
-  type="tel"
-  required
-  value={formData.phone}
-  onChange={(e) => {
-    let phoneValue = e.target.value.replace(/[^\d+]/g, "");
-    
-    // تحويل 00 في البداية إلى +
-    if (phoneValue.startsWith("00")) {
-      phoneValue = "+" + phoneValue.slice(2);
-    }
-    
-    setFormData({ ...formData, phone: phoneValue });
-  }}
-  onKeyDown={(e) => {
-    const allowedKeys = [
-      "Backspace",
-      "Delete",
-      "ArrowLeft",
-      "ArrowRight",
-      "Tab",
-      "+",
-    ];
-    if (
-      !allowedKeys.includes(e.key) &&
-      !(e.key >= "0" && e.key <= "9")
-    ) {
-      e.preventDefault();
-    }
-  }}
-  disabled={isLoading}
-  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-  style={{ "--tw-ring-color": primaryColor } as any}
-  placeholder="+963........"
-  dir="ltr"
-/>
+                  <input
+                    type="tel"
+                    required
+                    value={formData.phone}
+                    onChange={(e) => {
+                      let phoneValue = e.target.value.replace(/[^\d+]/g, "");
+
+                      // تحويل 00 في البداية إلى +
+                      if (phoneValue.startsWith("00")) {
+                        phoneValue = "+" + phoneValue.slice(2);
+                      }
+
+                      setFormData({ ...formData, phone: phoneValue });
+                    }}
+                    onKeyDown={(e) => {
+                      const allowedKeys = [
+                        "Backspace",
+                        "Delete",
+                        "ArrowLeft",
+                        "ArrowRight",
+                        "Tab",
+                        "+",
+                      ];
+                      if (
+                        !allowedKeys.includes(e.key) &&
+                        !(e.key >= "0" && e.key <= "9")
+                      ) {
+                        e.preventDefault();
+                      }
+                    }}
+                    disabled={isLoading}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ "--tw-ring-color": primaryColor } as any}
+                    placeholder="+963........"
+                    dir="ltr"
+                  />
                 </div>
 
                 <div>

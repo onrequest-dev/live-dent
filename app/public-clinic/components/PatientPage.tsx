@@ -1,14 +1,14 @@
 // app\public\components\PatientPage.tsx
 
-'use client';
+"use client";
 
-import Image from 'next/image';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { useRef, useState } from 'react';
-import { toPng } from 'html-to-image';
-import { 
-  Phone, 
+import Image from "next/image";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { useRef, useState } from "react";
+import { toPng } from "html-to-image";
+import {
+  Phone,
   Calendar,
   Clock,
   CheckCircle2,
@@ -19,48 +19,76 @@ import {
   Building2,
   Stethoscope,
   CreditCard,
-} from 'lucide-react';
-import { Clinic, Patient, Session } from '@/types';
+} from "lucide-react";
+import { Clinic, Patient, Session } from "@/types";
 
 // تنسيق التاريخ مع اسم اليوم
 const formatDateWithDay = (date: Date | string) => {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+  const d = typeof date === "string" ? new Date(date) : date;
+  const days = [
+    "الأحد",
+    "الإثنين",
+    "الثلاثاء",
+    "الأربعاء",
+    "الخميس",
+    "الجمعة",
+    "السبت",
+  ];
   const dayName = days[d.getDay()];
-  
+
   // استخدام تنسيق موحد للسيرفر والعميل
   const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
   const formattedDate = `${year}/${month}/${day}`;
-  
+
   return { dayName, formattedDate };
 };
 
 // تنسيق الوقت
 const formatTime = (date: Date | string | null | undefined) => {
-  if (!date) return 'غير محدد';
-  const d = typeof date === 'string' ? new Date(date) : date;
-  if (isNaN(d.getTime())) return 'غير محدد';
-  return d.toLocaleTimeString('ar-SA', {
-    hour: '2-digit',
-    minute: '2-digit',
+  if (!date) return "غير محدد";
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (isNaN(d.getTime())) return "غير محدد";
+  return d.toLocaleTimeString("ar-SA", {
+    hour: "2-digit",
+    minute: "2-digit",
   });
 };
 
 // بطاقة الحالة
 const StatusBadge = ({ status }: { status: string }) => {
   const config = {
-    completed: { icon: CheckCircle2, text: 'مكتمل', color: '#10b981', bg: '#d1fae5' },
-    scheduled: { icon: Calendar, text: 'مجدول', color: '#3b82f6', bg: '#dbeafe' },
-    'no-show': { icon: XCircle, text: 'لم يحضر', color: '#ef4444', bg: '#fee2e2' },
-    cancelled: { icon: XCircle, text: 'ملغي', color: '#ef4444', bg: '#fee2e2' },
+    completed: {
+      icon: CheckCircle2,
+      text: "مكتمل",
+      color: "#10b981",
+      bg: "#d1fae5",
+    },
+    scheduled: {
+      icon: Calendar,
+      text: "مجدول",
+      color: "#3b82f6",
+      bg: "#dbeafe",
+    },
+    "no-show": {
+      icon: XCircle,
+      text: "لم يحضر",
+      color: "#ef4444",
+      bg: "#fee2e2",
+    },
+    cancelled: { icon: XCircle, text: "ملغي", color: "#ef4444", bg: "#fee2e2" },
   };
-  
-  const { icon: Icon, text, color, bg } = config[status as keyof typeof config] || config.scheduled;
-  
+
+  const {
+    icon: Icon,
+    text,
+    color,
+    bg,
+  } = config[status as keyof typeof config] || config.scheduled;
+
   return (
-    <div 
+    <div
       className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium"
       style={{ backgroundColor: bg, color }}
     >
@@ -80,7 +108,7 @@ const PaymentBadge = ({ isPaid }: { isPaid: boolean }) => {
       </div>
     );
   }
-  
+
   return (
     <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-medium bg-amber-50 text-amber-600 border border-amber-200">
       <AlertCircle size={12} />
@@ -91,15 +119,19 @@ const PaymentBadge = ({ isPaid }: { isPaid: boolean }) => {
 
 // SVG تموجات للخلفية
 const WaveBackground = ({ color }: { color: string }) => (
-  <svg className="absolute bottom-0 left-0 w-full" viewBox="0 0 400 120" preserveAspectRatio="none">
-    <path 
-      d="M0,64 C80,96 160,32 240,64 C320,96 360,48 400,64 L400,120 L0,120 Z" 
-      fill={color} 
+  <svg
+    className="absolute bottom-0 left-0 w-full"
+    viewBox="0 0 400 120"
+    preserveAspectRatio="none"
+  >
+    <path
+      d="M0,64 C80,96 160,32 240,64 C320,96 360,48 400,64 L400,120 L0,120 Z"
+      fill={color}
       fillOpacity="0.05"
     />
-    <path 
-      d="M0,80 C100,104 200,56 300,80 C350,92 380,72 400,80 L400,120 L0,120 Z" 
-      fill={color} 
+    <path
+      d="M0,80 C100,104 200,56 300,80 C350,92 380,72 400,80 L400,120 L0,120 Z"
+      fill={color}
       fillOpacity="0.08"
     />
   </svg>
@@ -112,59 +144,68 @@ interface PatientPageProps {
   sessions: Session[];
 }
 
-export default function PatientPage({ clinic, patient, sessions }: PatientPageProps) {
+export default function PatientPage({
+  clinic,
+  patient,
+  sessions,
+}: PatientPageProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
-  
+
   const primaryColor = clinic.settings.primaryColor;
   const secondaryColor = clinic.settings.secondaryColor;
-  
+
   // ترتيب الجلسات من الأحدث إلى الأقدم
   const patientSessions = [...sessions].sort(
-    (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
+    (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime(),
   );
-  
+
   // فصل الجلسات المجدولة
   const now = new Date();
   const scheduledSessions = patientSessions
-    .filter(s => s.status === 'scheduled')
-    .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
-  
+    .filter((s) => s.status === "scheduled")
+    .sort(
+      (a, b) =>
+        new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+    );
+
   // الجلسات المجدولة المستقبلية
-  const upcomingSessions = scheduledSessions.filter(s => new Date(s.startTime) >= now);
-  
+  const upcomingSessions = scheduledSessions.filter(
+    (s) => new Date(s.startTime) >= now,
+  );
+
   // الجلسات المكتملة أو التي لم يحضرها المريض (آخر 5)
   const completedSessions = patientSessions
-    .filter(s => s.status === 'completed' || s.status === 'no-show')
+    .filter((s) => s.status === "completed" || s.status === "no-show")
     .slice(0, 5);
-  
+
   // الملخص المالي
   const totalAmount = patientSessions
-    .filter(s => s.status !== 'cancelled')
+    .filter((s) => s.status !== "cancelled")
     .reduce((sum, s) => sum + (s.sessionCost || 0), 0);
   const totalPaid = patientSessions
-    .filter(s => s.isPaid)
+    .filter((s) => s.isPaid)
     .reduce((sum, s) => sum + (s.sessionCost || 0), 0);
   const remainingAmount = totalAmount - totalPaid;
 
   // تحميل الكرت كصورة
   const downloadCard = async () => {
     if (!cardRef.current) return;
-    
+
     setIsDownloading(true);
     try {
       const dataUrl = await toPng(cardRef.current, {
         quality: 1,
         pixelRatio: 3,
-        backgroundColor: '#ffffff',
+        backgroundColor: "#ffffff",
       });
-      
-      const link = document.createElement('a');
+
+      const link = document.createElement("a");
       link.download = `${patient.fullName}-card.png`;
       link.href = dataUrl;
       link.click();
     } catch (error) {
-      console.error('Error downloading card:', error);
+      console.error("Error downloading card:", error);
     } finally {
       setIsDownloading(false);
     }
@@ -341,22 +382,34 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
                               )} */}
                             </div>
 
-{/* ============ التاريخ والوقت - سطرين منفصلين ============ */}
-<div className="mt-3 space-y-2">
-  {/* سطر التاريخ */}
-  <div className="flex items-center gap-1.5 text-sm">
-    <Calendar size={14} style={{ color: primaryColor }} />
-    <span className="text-gray-500">{sessionDate.dayName}</span>
-    <span className="text-gray-300">•</span>
-    <span className="font-medium text-gray-700">{sessionDate.formattedDate}</span>
-  </div>
+                            {/* ============ التاريخ والوقت - سطرين منفصلين ============ */}
+                            <div className="mt-3 space-y-2">
+                              {/* سطر التاريخ */}
+                              <div className="flex items-center gap-1.5 text-sm">
+                                <Calendar
+                                  size={14}
+                                  style={{ color: primaryColor }}
+                                />
+                                <span className="text-gray-500">
+                                  {sessionDate.dayName}
+                                </span>
+                                <span className="text-gray-300">•</span>
+                                <span className="font-medium text-gray-700">
+                                  {sessionDate.formattedDate}
+                                </span>
+                              </div>
 
-  {/* سطر الوقت */}
-  <div className="flex items-center gap-1.5 text-sm">
-    <Clock size={14} style={{ color: primaryColor }} />
-    <span className="font-medium text-gray-700">{formatTime(session.startTime)}</span>
-  </div>
-</div>
+                              {/* سطر الوقت */}
+                              <div className="flex items-center gap-1.5 text-sm">
+                                <Clock
+                                  size={14}
+                                  style={{ color: primaryColor }}
+                                />
+                                <span className="font-medium text-gray-700">
+                                  {formatTime(session.startTime)}
+                                </span>
+                              </div>
+                            </div>
 
                             {session.toothNumber &&
                               session.toothNumber.length > 0 && (
@@ -390,7 +443,7 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
                             >
                               {session.sessionCost.toLocaleString()}{" "}
                               <span className="text-xs font-normal text-gray-600">
-                                ل.س
+                                $
                               </span>
                             </p>
                             <div className="mt-1">
@@ -471,7 +524,7 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
                           </div>
                           <div className="text-left mr-3">
                             <p className="text-base font-bold text-gray-900">
-                              {session.sessionCost.toLocaleString()} ل.س
+                              {session.sessionCost.toLocaleString()} $
                             </p>
                             <div className="mt-1">
                               <PaymentBadge isPaid={session.isPaid} />
@@ -503,13 +556,13 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
                   <div className="flex items-center justify-between py-1">
                     <span className="text-gray-600">إجمالي التكاليف</span>
                     <span className="font-bold text-gray-900 text-lg">
-                      {totalAmount.toLocaleString()} ل.س
+                      {totalAmount.toLocaleString()} $
                     </span>
                   </div>
                   <div className="flex items-center justify-between py-1">
                     <span className="text-gray-600">المبلغ المدفوع</span>
                     <span className="font-bold text-emerald-600 text-lg">
-                      {totalPaid.toLocaleString()} ل.س
+                      {totalPaid.toLocaleString()} $
                     </span>
                   </div>
                   <div className="relative my-2">
@@ -524,7 +577,7 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
                     <span
                       className={`font-bold text-xl ${remainingAmount > 0 ? "text-amber-600" : "text-emerald-600"}`}
                     >
-                      {remainingAmount.toLocaleString()} ل.س
+                      {remainingAmount.toLocaleString()} $
                     </span>
                   </div>
                 </div>
