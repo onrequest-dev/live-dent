@@ -6,6 +6,7 @@ import { ClinicProvider, useClinic } from "@/contexts/ClinicContext";
 import { useParams } from "next/navigation";
 import { Suspense, useEffect, useState, lazy } from "react";
 import { motion } from "framer-motion";
+import { PWAInstallPrompt } from "@/components/dashboard/PWAInstallPrompt";
 
 // استيراد ديناميكي للمكون الذي يستخدم screen API
 const RotateDevicePrompt = lazy(() => 
@@ -174,15 +175,15 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       <main
         className="flex-1 overflow-y-auto scrollbar-hide"
         style={{
-          background: `linear-gradient(135deg, ${secondaryColor} 0%, ${secondaryColor}90 0%, #ffffff 100%)` ,
+          background: `linear-gradient(135deg, ${secondaryColor} 0%, ${secondaryColor}90 0%, #ffffff 100%)`,
         }}
       >
-<motion.div
-  initial={{ opacity: 0 }}
-  animate={{ opacity: 1 }}
-  transition={{ duration: 0.5 }}
-  className={`p-3 ${isMobile ? 'dashboard-mobile-zoom' : ''}`}
->
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className={`p-3 ${isMobile ? "dashboard-mobile-zoom" : ""}`}
+        >
           {isMobile && !isPortrait && (
             <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
               <p className="text-blue-700 font-medium text-center text-sm md:text-base">
@@ -190,10 +191,11 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               </p>
             </div>
           )}
-          
+
           {children}
         </motion.div>
       </main>
+      <PWAInstallPrompt />
     </div>
   );
 }

@@ -307,32 +307,32 @@ const SocialContact = () => {
   const socialLinks = [
     {
       icon: FaTelegramPlane,
-      href: 'https://t.me/OnRequest_dev',
-      color: '#0088cc',
-      hoverColor: '#00a8f0',
-      label: 'تلغرام'
+      href: "https://t.me/OnRequest_dev",
+      color: "#0088cc",
+      hoverColor: "#00a8f0",
+      label: "تلغرام",
     },
     {
       icon: FaWhatsapp,
-      href: 'https://wa.me/79610195064',
-      color: '#25D366',
-      hoverColor: '#2fe673',
-      label: 'واتساب'
+      href: "https://wa.me/79610195064",
+      color: "#25D366",
+      hoverColor: "#2fe673",
+      label: "واتساب",
     },
     {
       icon: FaYoutube,
-      href: 'https://youtube.com/@OnRequest_dev',
-      color: '#FF0000',
-      hoverColor: '#ff3333',
-      label: 'يوتيوب'
+      href: "https://youtube.com/@OnRequest_dev",
+      color: "#FF0000",
+      hoverColor: "#ff3333",
+      label: "يوتيوب",
     },
     {
       icon: FaInstagram,
-      href: 'https://instagram.com/onrRquest.dev',
-      color: '#E4405F',
-      hoverColor: '#e95a75',
-      label: 'انستغرام'
-    }
+      href: "https://www.instagram.com/onrequest.dev",
+      color: "#E4405F",
+      hoverColor: "#e95a75",
+      label: "انستغرام",
+    },
   ];
 
   return (

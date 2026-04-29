@@ -28,9 +28,10 @@ function LoginForm() {
             router.refresh();
         } else {
             setError(result.error || 'خطأ في اسم المستخدم أو كلمة المرور');
+            setLoading(false)
         }
 
-        setLoading(false);
+        // setLoading(false);
     };
 
     // Animation variants with proper types

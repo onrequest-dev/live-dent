@@ -1655,7 +1655,7 @@ function EditSessionModal({
 
             {/* أزرار التحكم */}
             <div className="flex gap-3 pt-4 border-t border-gray-200">
-              <button
+              {/* <button
                 type="button"
                 onClick={handleDelete}
                 disabled={isLoading}
@@ -1667,7 +1667,7 @@ function EditSessionModal({
                   <Trash2 size={18} />
                 )}
                 {isDeleting ? "جاري الحذف..." : "حذف الجلسة"}
-              </button>
+              </button> */}
 
               <div className="flex-1" />
 
