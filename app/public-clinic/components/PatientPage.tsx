@@ -74,7 +74,7 @@ const StatusBadge = ({ status }: { status: string }) => {
 const PaymentBadge = ({ isPaid }: { isPaid: boolean }) => {
   if (isPaid) {
     return (
-      <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-600 border border-emerald-200">
+      <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-medium bg-emerald-50 text-emerald-600 border border-emerald-200">
         <CheckCircle2 size={12} />
         <span>مدفوع</span>
       </div>
@@ -82,7 +82,7 @@ const PaymentBadge = ({ isPaid }: { isPaid: boolean }) => {
   }
   
   return (
-    <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-amber-50 text-amber-600 border border-amber-200">
+    <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-medium bg-amber-50 text-amber-600 border border-amber-200">
       <AlertCircle size={12} />
       <span>غير مدفوع</span>
     </div>
@@ -243,7 +243,7 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
                   </div>
                 )}
                 <div className="flex-1">
-                  <h2 className="text-xl font-bold text-gray-900 mb-1">
+                  <h2 className="text-xl font-bold text-gray-900 mt-4">
                     {clinic.name}
                   </h2>
                 </div>
@@ -406,7 +406,7 @@ export default function PatientPage({ clinic, patient, sessions }: PatientPagePr
                 {upcomingSessions.length === 0 &&
                   scheduledSessions.length > 0 && (
                     <div className="mt-3 p-3 rounded-xl bg-amber-50/50 border border-amber-200 text-center">
-                      <p className="text-sm text-amber-700">
+                      <p className="text-xs text-amber-700">
                         ⚠️ جميع المواعيد المجدولة قد فاتت، يرجى التواصل مع
                         العيادة لتحديد موعد جديد
                       </p>

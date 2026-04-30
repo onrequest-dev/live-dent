@@ -78,10 +78,62 @@ function LiveDentSubscriptionForm({
   const [focusedField, setFocusedField] = useState<'doctorName' | 'clinicName' | 'whatsapp' | null>(null);
 
   // تنظيف رقم الواتساب
-  const cleanPhoneNumber = (phone: string): string => {
-    return phone.replace(/\D/g, '');
-  };
+ const handleWhatsappChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  let value = e.target.value;
+  
+  // إزالة المسافات
+  value = value.replace(/\s/g, '');
+  
+  // إذا بدأ الرقم بـ 0، استبدله بـ +963
+  if (value.startsWith('0')) {
+    value = '+963' + value.substring(1);
+  }
+  
+  // إذا كان الرقم فارغاً وبدأ المستخدم بكتابة 0، اكتب +963 تلقائياً
+  if (value === '0') {
+    value = '+963';
+  }
+  
+  // منع تكرار +963
+  if (value.startsWith('+963+963')) {
+    value = value.replace('+963+963', '+963');
+  }
+  
+  // السماح فقط بالأرقام وعلامة + في البداية
+  value = value.replace(/[^\d+]/g, '');
+  
+  // التأكد من وجود + فقط في البداية
+  if (value.includes('+') && value.indexOf('+') !== 0) {
+    value = value.replace(/\+/g, '');
+    value = '+' + value;
+  }
+  
+  setWhatsapp(value);
+};
 
+// 2. تحسين دالة cleanPhoneNumber (اختياري لكن مفيد)
+const cleanPhoneNumber = (phone: string): string => {
+  // إزالة كل شيء ما عدا الأرقام وعلامة +
+  let cleaned = phone.replace(/[^\d+]/g, '');
+  
+  // إذا كان هناك +963، نحتفظ به
+  if (cleaned.startsWith('+963')) {
+    return cleaned;
+  }
+  
+  // إذا كان هناك + فقط، نضيف 963
+  if (cleaned.startsWith('+')) {
+    return '+963' + cleaned.substring(1);
+  }
+  
+  // إذا بدأ بـ 963 بدون +
+  if (cleaned.startsWith('963')) {
+    return '+' + cleaned;
+  }
+  
+  // أي حالة أخرى نضيف +963
+  return '+963' + cleaned;
+};
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -448,9 +500,9 @@ ${whatsappLink}
                     />
                     <input
                       type="tel"
-                      placeholder="05xxxxxxxx"
+                      placeholder="+963........."
                       value={whatsapp}
-                      onChange={(e) => setWhatsapp(e.target.value)}
+                      onChange={handleWhatsappChange}
                       onFocus={() => setFocusedField('whatsapp')}
                       onBlur={() => setFocusedField(null)}
                       className="w-full px-4 py-3 pr-12 bg-[#1A2A44] border border-yellow-500/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-200"

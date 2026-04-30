@@ -643,7 +643,7 @@ export function DoctorCVTab({ clinicData, onProfileUpdate }: DoctorCVTabProps) {
                         type="text"
                         value={edu.value}
                         onChange={(e) => updateEducation(edu.id, e.target.value)}
-                        placeholder="مثال: بكالوريوس طب وجراحة الفم والأسنان - جامعة الملك سعود"
+                        placeholder="مثال : حائز على درجة الماجستير من جامعة ......"
                         className={inputClassName}
                       />
                     </div>
@@ -709,7 +709,7 @@ export function DoctorCVTab({ clinicData, onProfileUpdate }: DoctorCVTabProps) {
                         type="text"
                         value={exp.value}
                         onChange={(e) => updateExperience(exp.id, e.target.value)}
-                        placeholder="مثال: استشاري تركيبات الأسنان - مستشفى الملك فيصل التخصصي (2010-2015)"
+                        placeholder="مثال: استشاري تركيبات اسنان لمدة 5 اعوام"
                         className={inputClassName}
                       />
                     </div>
