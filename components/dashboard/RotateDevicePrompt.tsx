@@ -73,7 +73,9 @@ export function RotateDevicePrompt({ onTryAutoRotate }: RotateDevicePromptProps)
         <p className="text-gray-600 text-sm mb-5">
           وذلك لضمان عرض البيانات بأوضح شكل ممكن
         </p>
-
+        <p className="text-red-600 text-sm mb-5">
+          الواجهة مازالت قيد التطوير، شكراً لتفهمكم!
+        </p>
         {/* <button
           onClick={handleRotate}
           disabled={isLoading}

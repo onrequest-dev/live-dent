@@ -1428,7 +1428,9 @@ function EditSessionModal({
   };
 
   const isLoading = isSaving || isDeleting;
-
+  const [sessionCostDisplay, setSessionCostDisplay] = useState(
+  formData.sessionCost?.toString() || ""
+  );
   return (
     <>
       <motion.div
@@ -1577,26 +1579,43 @@ function EditSessionModal({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 تكلفة الجلسة ($)
               </label>
-              <input
-                type="text"
-                inputMode="decimal"
-                required
-                value={formData.sessionCost || ""}
-                onChange={(e) => {
-                  // السماح بالأرقام والفاصلة العشرية مع منع التكرار
-                  const value = e.target.value
-                    .replace(/[^0-9.]/g, "")
-                    .replace(/(\..*)\./g, "$1");
-                  setFormData({
-                    ...formData,
-                    sessionCost: parseFloat(value) ,
-                  });
-                }}
-                disabled={isLoading}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent invalid:border-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ "--tw-ring-color": primaryColor } as any}
-                placeholder="0"
-              />
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  required
+                  value={sessionCostDisplay}
+                  onChange={(e) => {
+                    let value = e.target.value
+                      .replace(/[^0-9.,]/g, "")
+                      .replace(",", ".")
+                      .replace(/(\..*)\./g, "$1");
+                    
+                    // تحديث العرض دائماً
+                    setSessionCostDisplay(value);
+                    
+                    // تحديث الرقم فقط إذا اكتمل
+                    if (!value.endsWith(".")) {
+                      const numValue = parseFloat(value);
+                      setFormData({
+                        ...formData,
+                        sessionCost: isNaN(numValue) ? 0 : numValue,
+                      });
+                    }
+                  }}
+                  onBlur={(e) => {
+                    const finalValue = parseFloat(e.target.value) || 0;
+                    setFormData({
+                      ...formData,
+                      sessionCost: finalValue,
+                    });
+                    setSessionCostDisplay(finalValue.toString());
+                  }}
+                  disabled={isLoading}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent invalid:border-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ "--tw-ring-color": primaryColor } as any}
+                  placeholder="0"
+                  dir="rtl"
+                />
             </div>
 
             {/* حالة الدفع */}
@@ -2139,8 +2158,8 @@ function NewPatientModal({
                       let phoneValue = e.target.value.replace(/[^\d+]/g, "");
 
                       // تحويل 00 في البداية إلى +
-                      if (phoneValue.startsWith("00")) {
-                        phoneValue = "+" + phoneValue.slice(2);
+                      if (phoneValue.startsWith("0")) {
+                        phoneValue = "+963" + phoneValue.slice(2);
                       }
 
                       setFormData({ ...formData, phone: phoneValue });
