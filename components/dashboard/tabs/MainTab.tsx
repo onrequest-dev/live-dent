@@ -2455,7 +2455,7 @@ function NewPatientModal({
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      التكلفة
+                      التكلفة ($)
                     </label>
                     <input
                       type="text"
@@ -2835,7 +2835,7 @@ function NewAppointmentModal({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                التكلفة
+                التكلفة ($)
               </label>
               <input
                 type="text"
@@ -2855,7 +2855,7 @@ function NewAppointmentModal({
                 disabled={isLoading}
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ "--tw-ring-color": primaryColor } as any}
-                placeholder="100"
+                placeholder="5"
               />
             </div>
 
