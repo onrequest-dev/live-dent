@@ -1911,13 +1911,13 @@ function NewPatientModal({
     address: "",
     notes: "",
     addAppointment: true,
-    appointmentMode: "days" as "days" | "date",
+    appointmentMode: "date" as "date" | "days",
     appointment: {
       days: "1",
       date: new Date().toISOString().split("T")[0],
       time: "10:00",
       procedure: "كشف أولي",
-      cost: "200",
+      cost: "5",
       notes: "",
     },
   });
