@@ -9,7 +9,15 @@ export function middleware(request: NextRequest) {
 //   console.log(jwt)
 
   // السماح بالوصول للمسارات المفتوحة للجميع
-  if(pathname === '/landing-page') return NextResponse.rewrite(new URL('/', request.url))
+  if(pathname === '/landing-page') {
+    // إنشاء URL جديد مع الحفاظ على query parameters
+    const newUrl = new URL('/', request.url)
+    // نسخ جميع query parameters من الرابط الأصلي
+    request.nextUrl.searchParams.forEach((value, key) => {
+      newUrl.searchParams.set(key, value)
+    })
+    return NextResponse.rewrite(newUrl)
+  }
     
   if (pathname === '/' && jwt) {
     const clinicId = request.cookies.get('clinic_id')?.value

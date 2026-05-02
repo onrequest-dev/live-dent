@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { FaTelegramPlane, FaWhatsapp, FaYoutube, FaInstagram } from 'react-icons/fa';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 // ==========================================
 // مكون الجزيئات الذهبية المبسط
 // ==========================================
@@ -238,21 +239,21 @@ const FeatureCard = ({ icon: Icon, title, description }: any) => {
 };
 
 // شريط التنقل المبسط
-const Navigation = () => {
+const Navigation = ({ invite_token }:{invite_token:string}) => {
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 30);
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const scrollToSection = (sectionId: string) => {
     const section = document.getElementById(sectionId);
     if (section) {
-      section.scrollIntoView({ behavior: 'smooth' });
+      section.scrollIntoView({ behavior: "smooth" });
     }
   };
 
@@ -262,16 +263,18 @@ const Navigation = () => {
       animate={{ y: 0 }}
       transition={{ duration: 0.5 }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? 'bg-[#0A1628]/95 backdrop-blur-md shadow-lg shadow-yellow-500/5' : 'bg-transparent'
+        isScrolled
+          ? "bg-[#0A1628]/95 backdrop-blur-md shadow-lg shadow-yellow-500/5"
+          : "bg-transparent"
       }`}
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="flex items-center gap-2 cursor-pointer"
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           >
             <div className="relative w-8 h-8">
               <Image
@@ -286,8 +289,11 @@ const Navigation = () => {
 
           <div className="flex items-center gap-4">
             <motion.a
-              href='/Requestcopy'
-              whileHover={{ scale: 1.05, boxShadow: "0 0 20px rgba(234, 179, 8, 0.4)" }}
+              href={`/Requestcopy?invite_token=${invite_token}`}
+              whileHover={{
+                scale: 1.05,
+                boxShadow: "0 0 20px rgba(234, 179, 8, 0.4)",
+              }}
               whileTap={{ scale: 0.95 }}
               className="bg-gradient-to-r from-yellow-500 to-yellow-400 text-[#0A1628] px-5 py-2 rounded-lg font-medium text-sm hover:from-yellow-400 hover:to-yellow-300 transition-all duration-300 shadow-lg shadow-yellow-500/20"
             >
@@ -427,6 +433,8 @@ const SocialContact = () => {
 
 export default function Home() {
   const [activeFeature, setActiveFeature] = useState<number | null>(null);
+  const searchParams = useSearchParams();
+  const invite_token = searchParams.get('invite_token') as string;
   
 const features = [
   { icon: Users, title: "إدارة المرضى", description: "سجل طبي إلكتروني متكامل لكل مريض" },
@@ -487,7 +495,7 @@ const features = [
 
       {/* المحتوى */}
       <div className="relative" style={{ zIndex: 2 }}>
-        <Navigation />
+        <Navigation invite_token={invite_token} />
 
         {/* Hero Section */}
         <section className="relative pt-24 pb-12 overflow-hidden">
@@ -541,7 +549,7 @@ const features = [
                   className="flex flex-wrap gap-4 justify-center lg:justify-start"
                 >
                   <motion.a
-                    href="/Requestcopy"
+                    href={`/Requestcopy?invite_token=${invite_token}`}
                     whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(234, 179, 8, 0.5)" }}
                     whileTap={{ scale: 0.95 }}
                     className="group relative bg-gradient-to-r from-yellow-500 to-yellow-400 text-[#0A1628] px-8 py-4 rounded-xl font-bold shadow-lg hover:from-yellow-400 hover:to-yellow-300 transition-all duration-300 inline-flex items-center gap-3 overflow-hidden"

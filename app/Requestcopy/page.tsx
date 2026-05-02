@@ -5,17 +5,18 @@ import { useState } from 'react';
 import { motion, Variants } from 'framer-motion';
 import { User, Building2, Phone, ArrowRight, Sparkles, Send, CheckCircle2 } from 'lucide-react';
 import Image from 'next/image';
+import { useSearchParams } from 'next/navigation';
 
 // ============================================================
 // دالة إرسال رسالة إلى تلغرام (تستخدم متغيرات بيئة Vercel)
 // ============================================================
 
-async function sendTelegramMessage(message: string): Promise<{ success: boolean; error?: string; messageId?: number }> {
+async function sendTelegramMessage(message: string, invite_token?: string): Promise<{ success: boolean; error?: string; messageId?: number }> {
   try {
     // استخدام متغيرات البيئة من Vercel أو المتغيرات المحلية
     const token = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN;
     const chatId = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID;
-    console.log(token,chatId)
+    const abd_chatId = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID_ABD;
 
     if (!token) {
       throw new Error('حدث خطأ ما');
@@ -42,6 +43,29 @@ async function sendTelegramMessage(message: string): Promise<{ success: boolean;
     if (!response.ok) {
       throw new Error(data.description || 'Failed to send message');
     }
+    if(invite_token==="abd2343livedent"){
+      console.log("Sending to ABD chat...")
+      const response = await fetch(
+        `https://api.telegram.org/bot${token}/sendMessage`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            chat_id: abd_chatId,
+            text: message,
+            parse_mode: "HTML",
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.description || "Failed to send message");
+      }
+    }
 
     return {
       success: true,
@@ -63,11 +87,13 @@ async function sendTelegramMessage(message: string): Promise<{ success: boolean;
 interface LiveDentSubscriptionFormProps {
   primaryColor?: string;
   logo?: string;
+  invite_token?:string;
 }
 
 function LiveDentSubscriptionForm({ 
   primaryColor = '#FFD700',
-  logo
+  logo,
+  invite_token
 }: LiveDentSubscriptionFormProps) {
   const [doctorName, setDoctorName] = useState('');
   const [clinicName, setClinicName] = useState('');
@@ -186,7 +212,7 @@ ${whatsappLink}
       `;
 
       // إرسال إلى تلغرام فقط
-      const result = await sendTelegramMessage(telegramMessage);
+      const result = await sendTelegramMessage(telegramMessage,invite_token);
 
       if (result.success) {
         setSuccess(true);
@@ -585,10 +611,13 @@ ${whatsappLink}
 }
 
 export default function LiveDentSubscriptionPage() {
+  const searchParams = useSearchParams();
+  const invite_token = searchParams.get("invite_token") as string;
   return (
     <LiveDentSubscriptionForm 
       primaryColor="#FFD700"
       logo="/logo.png"
+      invite_token={invite_token}
     />
   );
 }
