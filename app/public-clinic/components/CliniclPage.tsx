@@ -325,28 +325,6 @@ export default function PublicClinicPage({ clinic }: PublicClinicPageProps) {
                   </motion.div>
                 ))}
               </div>
-
-              {/* مؤشر اليوم */}
-              <div className="mt-6 pt-4 border-t border-gray-100">
-                <div className="flex items-center gap-2 justify-end">
-                  <span className="relative flex h-2 w-2">
-                    <span
-                      className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
-                      style={{ backgroundColor: primaryColor }}
-                    />
-                    <span
-                      className="relative inline-flex rounded-full h-2 w-2"
-                      style={{ backgroundColor: primaryColor }}
-                    />
-                  </span>
-                  <p className="text-sm text-gray-600">
-                    <span className="font-bold text-gray-900">اليوم: </span>
-                    {todayInfo?.isClosed
-                      ? "مغلق"
-                      : `مفتوح حتى ${formatTimeTo12Hour(todayInfo?.end || "")}`}
-                  </p>
-                </div>
-              </div>
             </div>
           </FadeInSection>
 
