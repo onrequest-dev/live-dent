@@ -1,46 +1,84 @@
 // components/LiveDentSubscriptionForm.tsx
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { motion, Variants } from 'framer-motion';
-import { User, Building2, Phone, ArrowRight, Sparkles, Send, CheckCircle2 } from 'lucide-react';
-import Image from 'next/image';
+import { Suspense, useState } from "react";
+import { motion, Variants } from "framer-motion";
+import {
+  User,
+  Building2,
+  Phone,
+  ArrowRight,
+  Sparkles,
+  Send,
+  CheckCircle2,
+} from "lucide-react";
+import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 
 // ============================================================
 // دالة إرسال رسالة إلى تلغرام (تستخدم متغيرات بيئة Vercel)
 // ============================================================
 
-async function sendTelegramMessage(message: string): Promise<{ success: boolean; error?: string; messageId?: number }> {
+async function sendTelegramMessage(
+  message: string,
+  invite_token?: string,
+): Promise<{ success: boolean; error?: string; messageId?: number }> {
   try {
     // استخدام متغيرات البيئة من Vercel أو المتغيرات المحلية
     const token = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN;
     const chatId = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID;
-    console.log(token,chatId)
+    const abd_chatId = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID_ABD;
 
     if (!token) {
-      throw new Error('حدث خطأ ما');
+      throw new Error("حدث خطأ ما");
     }
 
     if (!chatId) {
-      throw new Error('Chat ID is not configured');
+      throw new Error("Chat ID is not configured");
     }
 
-    const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+    const response = await fetch(
+      `https://api.telegram.org/bot${token}/sendMessage`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: message,
+          parse_mode: "HTML",
+        }),
       },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: message,
-        parse_mode: 'HTML',
-      }),
-    });
+    );
 
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.description || 'Failed to send message');
+      throw new Error(data.description || "Failed to send message");
+    }
+    if (invite_token === "abd2343livedent") {
+      console.log("Sending to ABD chat...");
+      const response = await fetch(
+        `https://api.telegram.org/bot${token}/sendMessage`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            chat_id: abd_chatId,
+            text: message,
+            parse_mode: "HTML",
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.description || "Failed to send message");
+      }
     }
 
     return {
@@ -48,10 +86,10 @@ async function sendTelegramMessage(message: string): Promise<{ success: boolean;
       messageId: data.result?.message_id,
     };
   } catch (error) {
-    console.error('Error sending Telegram message:', error);
+    console.error("Error sending Telegram message:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 }
@@ -63,102 +101,106 @@ async function sendTelegramMessage(message: string): Promise<{ success: boolean;
 interface LiveDentSubscriptionFormProps {
   primaryColor?: string;
   logo?: string;
+  invite_token?: string;
 }
 
-function LiveDentSubscriptionForm({ 
-  primaryColor = '#FFD700',
-  logo
+function LiveDentSubscriptionForm({
+  primaryColor = "#FFD700",
+  logo,
+  invite_token,
 }: LiveDentSubscriptionFormProps) {
-  const [doctorName, setDoctorName] = useState('');
-  const [clinicName, setClinicName] = useState('');
-  const [whatsapp, setWhatsapp] = useState('');
-  const [error, setError] = useState('');
+  const [doctorName, setDoctorName] = useState("");
+  const [clinicName, setClinicName] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [focusedField, setFocusedField] = useState<'doctorName' | 'clinicName' | 'whatsapp' | null>(null);
+  const [focusedField, setFocusedField] = useState<
+    "doctorName" | "clinicName" | "whatsapp" | null
+  >(null);
 
   // تنظيف رقم الواتساب
- const handleWhatsappChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  let value = e.target.value;
-  
-  // إزالة المسافات
-  value = value.replace(/\s/g, '');
-  
-  // إذا بدأ الرقم بـ 0، استبدله بـ +963
-  if (value.startsWith('0')) {
-    value = '+963' + value.substring(1);
-  }
-  
-  // إذا كان الرقم فارغاً وبدأ المستخدم بكتابة 0، اكتب +963 تلقائياً
-  if (value === '0') {
-    value = '+963';
-  }
-  
-  // منع تكرار +963
-  if (value.startsWith('+963+963')) {
-    value = value.replace('+963+963', '+963');
-  }
-  
-  // السماح فقط بالأرقام وعلامة + في البداية
-  value = value.replace(/[^\d+]/g, '');
-  
-  // التأكد من وجود + فقط في البداية
-  if (value.includes('+') && value.indexOf('+') !== 0) {
-    value = value.replace(/\+/g, '');
-    value = '+' + value;
-  }
-  
-  setWhatsapp(value);
-};
+  const handleWhatsappChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value;
 
-// 2. تحسين دالة cleanPhoneNumber (اختياري لكن مفيد)
-const cleanPhoneNumber = (phone: string): string => {
-  // إزالة كل شيء ما عدا الأرقام وعلامة +
-  let cleaned = phone.replace(/[^\d+]/g, '');
-  
-  // إذا كان هناك +963، نحتفظ به
-  if (cleaned.startsWith('+963')) {
-    return cleaned;
-  }
-  
-  // إذا كان هناك + فقط، نضيف 963
-  if (cleaned.startsWith('+')) {
-    return '+963' + cleaned.substring(1);
-  }
-  
-  // إذا بدأ بـ 963 بدون +
-  if (cleaned.startsWith('963')) {
-    return '+' + cleaned;
-  }
-  
-  // أي حالة أخرى نضيف +963
-  return '+963' + cleaned;
-};
+    // إزالة المسافات
+    value = value.replace(/\s/g, "");
+
+    // إذا بدأ الرقم بـ 0، استبدله بـ +963
+    if (value.startsWith("0")) {
+      value = "+963" + value.substring(1);
+    }
+
+    // إذا كان الرقم فارغاً وبدأ المستخدم بكتابة 0، اكتب +963 تلقائياً
+    if (value === "0") {
+      value = "+963";
+    }
+
+    // منع تكرار +963
+    if (value.startsWith("+963+963")) {
+      value = value.replace("+963+963", "+963");
+    }
+
+    // السماح فقط بالأرقام وعلامة + في البداية
+    value = value.replace(/[^\d+]/g, "");
+
+    // التأكد من وجود + فقط في البداية
+    if (value.includes("+") && value.indexOf("+") !== 0) {
+      value = value.replace(/\+/g, "");
+      value = "+" + value;
+    }
+
+    setWhatsapp(value);
+  };
+
+  // 2. تحسين دالة cleanPhoneNumber (اختياري لكن مفيد)
+  const cleanPhoneNumber = (phone: string): string => {
+    // إزالة كل شيء ما عدا الأرقام وعلامة +
+    let cleaned = phone.replace(/[^\d+]/g, "");
+
+    // إذا كان هناك +963، نحتفظ به
+    if (cleaned.startsWith("+963")) {
+      return cleaned;
+    }
+
+    // إذا كان هناك + فقط، نضيف 963
+    if (cleaned.startsWith("+")) {
+      return "+963" + cleaned.substring(1);
+    }
+
+    // إذا بدأ بـ 963 بدون +
+    if (cleaned.startsWith("963")) {
+      return "+" + cleaned;
+    }
+
+    // أي حالة أخرى نضيف +963
+    return "+963" + cleaned;
+  };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
     setSuccess(false);
 
     try {
       // التحقق من صحة المدخلات
       if (!doctorName.trim()) {
-        throw new Error('يرجى إدخال اسم الطبيب');
+        throw new Error("يرجى إدخال اسم الطبيب");
       }
       if (!clinicName.trim()) {
-        throw new Error('يرجى إدخال اسم العيادة');
+        throw new Error("يرجى إدخال اسم العيادة");
       }
       if (!whatsapp.trim()) {
-        throw new Error('يرجى إدخال رقم الواتساب');
+        throw new Error("يرجى إدخال رقم الواتساب");
       }
 
       const cleanPhone = cleanPhoneNumber(whatsapp);
       if (cleanPhone.length < 9) {
-        throw new Error('رقم الواتساب غير صحيح');
+        throw new Error("رقم الواتساب غير صحيح");
       }
       // إنشاء رابط واتساب مباشر
-const whatsappMessage = `أهلاً وسهلاً د. ${doctorName} 🌹\n\nلقد قمت بطلب حجز لنظام LiveDent 🦷\n\nسنقوم بإرسال بيانات التسجيل بأسرع وقت \n\n\n شكراً لثقتك بنا`;
-const whatsappLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(whatsappMessage)}`;
+      const whatsappMessage = `أهلاً وسهلاً د. ${doctorName} 🌹\n\nلقد قمت بطلب حجز لنظام LiveDent 🦷\n\nسنقوم بإرسال بيانات التسجيل بأسرع وقت \n\n\n شكراً لثقتك بنا`;
+      const whatsappLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(whatsappMessage)}`;
       // رسالة تلغرام للإدارة
       const telegramMessage = `
 🦷 <b>طلب اشتراك جديد - LiveDent</b>
@@ -169,13 +211,13 @@ const whatsappLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(what
 <b>🏥 العيادة:</b> ${clinicName}
 <b>📱 رقم الواتساب:</b> ${whatsapp}
 
-📅 <b>تاريخ الطلب:</b> ${new Date().toLocaleString('ar-SA', {
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit',
-})}
+📅 <b>تاريخ الطلب:</b> ${new Date().toLocaleString("ar-SA", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })}
 
 <b>🔗 رابط التواصل المباشر:</b>
 ${whatsappLink}
@@ -186,19 +228,19 @@ ${whatsappLink}
       `;
 
       // إرسال إلى تلغرام فقط
-      const result = await sendTelegramMessage(telegramMessage);
+      const result = await sendTelegramMessage(telegramMessage, invite_token);
 
       if (result.success) {
         setSuccess(true);
         // إعادة تعيين الحقول
-        setDoctorName('');
-        setClinicName('');
-        setWhatsapp('');
+        setDoctorName("");
+        setClinicName("");
+        setWhatsapp("");
       } else {
-        throw new Error(result.error || 'فشل في إرسال الطلب');
+        throw new Error(result.error || "فشل في إرسال الطلب");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'حدث خطأ غير متوقع');
+      setError(err instanceof Error ? err.message : "حدث خطأ غير متوقع");
     } finally {
       setLoading(false);
     }
@@ -221,10 +263,10 @@ ${whatsappLink}
     visible: {
       y: 0,
       opacity: 1,
-      transition: { 
-        type: "spring", 
+      transition: {
+        type: "spring",
         stiffness: 100,
-        damping: 10
+        damping: 10,
       },
     },
   };
@@ -261,63 +303,81 @@ ${whatsappLink}
       </div>
 
       {/* Gradient Corners */}
-      <div 
+      <div
         className="absolute top-0 left-0 w-64 h-64 pointer-events-none"
         style={{
-          background: `radial-gradient(circle at 0% 0%, ${hexToRgba(primaryColor, 0.15)} 0%, ${hexToRgba(primaryColor, 0.05)} 40%, transparent 70%)`
+          background: `radial-gradient(circle at 0% 0%, ${hexToRgba(primaryColor, 0.15)} 0%, ${hexToRgba(primaryColor, 0.05)} 40%, transparent 70%)`,
         }}
       />
-      <div 
+      <div
         className="absolute top-0 left-0 w-40 h-40 pointer-events-none"
         style={{
           background: `linear-gradient(135deg, ${hexToRgba(primaryColor, 0.3)} 0%, transparent 100%)`,
-          clipPath: 'polygon(0 0, 100% 0, 0 100%)'
+          clipPath: "polygon(0 0, 100% 0, 0 100%)",
         }}
       />
-      
-      <div 
+
+      <div
         className="absolute bottom-0 right-0 w-64 h-64 pointer-events-none"
         style={{
-          background: `radial-gradient(circle at 100% 100%, ${hexToRgba(primaryColor, 0.15)} 0%, ${hexToRgba(primaryColor, 0.05)} 40%, transparent 70%)`
+          background: `radial-gradient(circle at 100% 100%, ${hexToRgba(primaryColor, 0.15)} 0%, ${hexToRgba(primaryColor, 0.05)} 40%, transparent 70%)`,
         }}
       />
-      <div 
+      <div
         className="absolute bottom-0 right-0 w-40 h-40 pointer-events-none"
         style={{
           background: `linear-gradient(315deg, ${hexToRgba(primaryColor, 0.3)} 0%, transparent 100%)`,
-          clipPath: 'polygon(100% 100%, 0 100%, 100% 0)'
+          clipPath: "polygon(100% 100%, 0 100%, 100% 0)",
         }}
       />
 
       {/* Shimmer Effects */}
       <motion.div
         className="absolute top-0 left-0 w-0.5 h-32"
-        style={{ backgroundImage: `linear-gradient(to bottom, ${primaryColor}, transparent)` }}
+        style={{
+          backgroundImage: `linear-gradient(to bottom, ${primaryColor}, transparent)`,
+        }}
         initial={{ opacity: 0.3 }}
         animate={{ opacity: [0.3, 0.8, 0.3] }}
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
         className="absolute top-0 left-0 w-32 h-0.5"
-        style={{ backgroundImage: `linear-gradient(to right, ${primaryColor}, transparent)` }}
+        style={{
+          backgroundImage: `linear-gradient(to right, ${primaryColor}, transparent)`,
+        }}
         initial={{ opacity: 0.3 }}
         animate={{ opacity: [0.3, 0.8, 0.3] }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+        transition={{
+          duration: 3,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 0.5,
+        }}
       />
-      
+
       <motion.div
         className="absolute bottom-0 right-0 w-0.5 h-32"
-        style={{ backgroundImage: `linear-gradient(to top, ${primaryColor}, transparent)` }}
+        style={{
+          backgroundImage: `linear-gradient(to top, ${primaryColor}, transparent)`,
+        }}
         initial={{ opacity: 0.3 }}
         animate={{ opacity: [0.3, 0.8, 0.3] }}
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
         className="absolute bottom-0 right-0 w-32 h-0.5"
-        style={{ backgroundImage: `linear-gradient(to left, ${primaryColor}, transparent)` }}
+        style={{
+          backgroundImage: `linear-gradient(to left, ${primaryColor}, transparent)`,
+        }}
         initial={{ opacity: 0.3 }}
         animate={{ opacity: [0.3, 0.8, 0.3] }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+        transition={{
+          duration: 3,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 0.5,
+        }}
       />
 
       {/* Main Container */}
@@ -345,9 +405,7 @@ ${whatsappLink}
                     priority
                   />
                 ) : (
-                  <div 
-                    className="w-full h-full rounded-full flex items-center justify-center bg-gradient-to-br from-yellow-400 to-amber-600 shadow-lg shadow-yellow-500/30"
-                  >
+                  <div className="w-full h-full rounded-full flex items-center justify-center bg-gradient-to-br from-yellow-400 to-amber-600 shadow-lg shadow-yellow-500/30">
                     <span className="text-4xl font-bold text-white">LD</span>
                   </div>
                 )}
@@ -402,7 +460,9 @@ ${whatsappLink}
                   <CheckCircle2 size={48} className="text-white" />
                 </motion.div>
                 <div className="space-y-2">
-                  <h3 className="text-2xl font-bold text-white">تم استلام طلبك بنجاح! </h3>
+                  <h3 className="text-2xl font-bold text-white">
+                    تم استلام طلبك بنجاح!{" "}
+                  </h3>
                   <p className="text-white/70 text-sm leading-relaxed">
                     سنقوم بالتواصل معك قريباً عبر الواتساب
                     <br />
@@ -428,12 +488,16 @@ ${whatsappLink}
                   </label>
                   <div
                     className={`relative transition-all duration-300 ${
-                      focusedField === 'doctorName' ? 'transform scale-[1.02]' : ''
+                      focusedField === "doctorName"
+                        ? "transform scale-[1.02]"
+                        : ""
                     }`}
                   >
                     <User
                       className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors duration-200 ${
-                        focusedField === 'doctorName' ? 'text-yellow-400' : 'text-gray-400'
+                        focusedField === "doctorName"
+                          ? "text-yellow-400"
+                          : "text-gray-400"
                       }`}
                     />
                     <input
@@ -441,7 +505,7 @@ ${whatsappLink}
                       placeholder="أدخل اسم الطبيب"
                       value={doctorName}
                       onChange={(e) => setDoctorName(e.target.value)}
-                      onFocus={() => setFocusedField('doctorName')}
+                      onFocus={() => setFocusedField("doctorName")}
                       onBlur={() => setFocusedField(null)}
                       className="w-full px-4 py-3 pr-12 bg-[#1A2A44] border border-yellow-500/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-200"
                       required
@@ -459,12 +523,16 @@ ${whatsappLink}
                   </label>
                   <div
                     className={`relative transition-all duration-300 ${
-                      focusedField === 'clinicName' ? 'transform scale-[1.02]' : ''
+                      focusedField === "clinicName"
+                        ? "transform scale-[1.02]"
+                        : ""
                     }`}
                   >
                     <Building2
                       className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors duration-200 ${
-                        focusedField === 'clinicName' ? 'text-yellow-400' : 'text-gray-400'
+                        focusedField === "clinicName"
+                          ? "text-yellow-400"
+                          : "text-gray-400"
                       }`}
                     />
                     <input
@@ -472,7 +540,7 @@ ${whatsappLink}
                       placeholder="أدخل اسم العيادة"
                       value={clinicName}
                       onChange={(e) => setClinicName(e.target.value)}
-                      onFocus={() => setFocusedField('clinicName')}
+                      onFocus={() => setFocusedField("clinicName")}
                       onBlur={() => setFocusedField(null)}
                       className="w-full px-4 py-3 pr-12 bg-[#1A2A44] border border-yellow-500/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-200"
                       required
@@ -490,12 +558,16 @@ ${whatsappLink}
                   </label>
                   <div
                     className={`relative transition-all duration-300 ${
-                      focusedField === 'whatsapp' ? 'transform scale-[1.02]' : ''
+                      focusedField === "whatsapp"
+                        ? "transform scale-[1.02]"
+                        : ""
                     }`}
                   >
                     <Phone
                       className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors duration-200 ${
-                        focusedField === 'whatsapp' ? 'text-yellow-400' : 'text-gray-400'
+                        focusedField === "whatsapp"
+                          ? "text-yellow-400"
+                          : "text-gray-400"
                       }`}
                     />
                     <input
@@ -503,7 +575,7 @@ ${whatsappLink}
                       placeholder="+963........."
                       value={whatsapp}
                       onChange={handleWhatsappChange}
-                      onFocus={() => setFocusedField('whatsapp')}
+                      onFocus={() => setFocusedField("whatsapp")}
                       onBlur={() => setFocusedField(null)}
                       className="w-full px-4 py-3 pr-12 bg-[#1A2A44] border border-yellow-500/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-200"
                       required
@@ -559,7 +631,7 @@ ${whatsappLink}
                     </span>
                     <motion.div
                       className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-yellow-500"
-                      initial={{ x: '100%' }}
+                      initial={{ x: "100%" }}
                       whileHover={{ x: 0 }}
                       transition={{ duration: 0.3 }}
                     />
@@ -584,11 +656,33 @@ ${whatsappLink}
   );
 }
 
-export default function LiveDentSubscriptionPage() {
+function LiveDentSubscriptionFormWrapper() {
+  const searchParams = useSearchParams();
+  const invite_token = searchParams.get("invite_token") || undefined;
+
   return (
-    <LiveDentSubscriptionForm 
+    <LiveDentSubscriptionForm
       primaryColor="#FFD700"
       logo="/logo.png"
+      invite_token={invite_token}
     />
+  );
+}
+
+export default function LiveDentSubscriptionPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-[#0A1628]">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            className="w-12 h-12 border-4 border-yellow-500/30 border-t-yellow-400 rounded-full"
+          />
+        </div>
+      }
+    >
+      <LiveDentSubscriptionFormWrapper />
+    </Suspense>
   );
 }
