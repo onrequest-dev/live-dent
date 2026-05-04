@@ -357,15 +357,18 @@ export default function DoctorCVPage({ clinic }: DoctorCVPageProps) {
             className="px-6 sm:px-8 max-w-2xl mx-auto mt-20"
           >
             {/* نبذة عن الطبيب */}
-            <motion.p 
-              {...fadeInUp}
-              transition={{ delay: 0.9, duration: 0.5 }}
-              className={`${textStyles.body} text-center text-base sm:text-lg mb-12 leading-loose`}
-            >
-              {doctor.about}
-            </motion.p>
+            {doctor.about && (
+              <motion.p 
+                {...fadeInUp}
+                transition={{ delay: 0.9, duration: 0.5 }}
+                className={`${textStyles.body} text-center text-base sm:text-lg mb-12 leading-loose`}
+              >
+                {doctor.about}
+              </motion.p>
+            )}
 
             {/* معلومات الجامعة */}
+            {(doctor.university || doctor.graduationYear) && (
             <motion.div
               {...fadeInUp}
               transition={{ delay: 1.0, duration: 0.5 }}
@@ -380,72 +383,77 @@ export default function DoctorCVPage({ clinic }: DoctorCVPageProps) {
                 </span>
               </div>
             </motion.div>
+            )}
 
             {/* ============ قسم المؤهلات - قائمة بسيطة ============ */}
-            <motion.div
-              {...fadeInUp}
-              transition={{ delay: 1.1, duration: 0.5 }}
-              className="mb-12"
-            >
-              <div className="flex items-center gap-3 mb-6">
-                <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" 
-                      style={{ backgroundColor: `${primaryColor}20` }}>
-                  <IconWrapper color={primaryColor}>
-                    <Award size={18} />
-                  </IconWrapper>
-                </span>
-                <h2 className={`text-xl sm:text-2xl ${textStyles.heading}`}>المؤهلات العلمية</h2>
-              </div>
-              
-              <div className="space-y-3 pr-4">
-                {doctor.education.map((edu, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 1.2 + index * 0.1, duration: 0.4 }}
-                    className="flex items-start gap-3"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0" 
-                          style={{ backgroundColor: primaryColor }} />
-                    <span className={textStyles.body}>{edu}</span>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
+{doctor.education && doctor.education.length > 0 && (
+  <motion.div
+    {...fadeInUp}
+    transition={{ delay: 1.1, duration: 0.5 }}
+    className="mb-12"
+  >
+    <div className="flex items-center gap-3 mb-6">
+      <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" 
+            style={{ backgroundColor: `${primaryColor}20` }}>
+        <IconWrapper color={primaryColor}>
+          <Award size={18} />
+        </IconWrapper>
+      </span>
+      <h2 className={`text-xl sm:text-2xl ${textStyles.heading}`}>المؤهلات العلمية</h2>
+    </div>
+    
+    <div className="space-y-3 pr-4">
+      {doctor.education.map((edu, index) => (
+        <motion.div
+          key={index}
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 1.2 + index * 0.1, duration: 0.4 }}
+          className="flex items-start gap-3"
+        >
+          <span className="w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0" 
+                style={{ backgroundColor: primaryColor }} />
+          <span className={textStyles.body}>{edu}</span>
+        </motion.div>
+      ))}
+    </div>
+  </motion.div>
+)}
 
-            {/* ============ قسم الخبرات ============ */}
-            <motion.div
-              {...fadeInUp}
-              transition={{ delay: 1.3, duration: 0.5 }}
-              className="mb-12"
-            >
-              <div className="flex items-center gap-3 mb-6">
-                <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" 
-                      style={{ backgroundColor: `${primaryColor}20` }}>
-                  <IconWrapper color={primaryColor}>
-                    <Briefcase size={18} />
-                  </IconWrapper>
-                </span>
-                <h2 className={`text-xl sm:text-2xl ${textStyles.heading}`}>الخبرات العملية</h2>
-              </div>
-              
-              <div className="space-y-3 pr-4">
-                {doctor.experience.map((exp, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 1.4 + index * 0.1, duration: 0.4 }}
-                    className="flex items-start gap-3"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0" 
-                          style={{ backgroundColor: primaryColor }} />
-                    <span className={textStyles.body}>{exp}</span>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
+{/* ============ قسم الخبرات - يظهر فقط إذا وجدت بيانات ============ */}
+{doctor.experience && doctor.experience.length > 0 && (
+  <motion.div
+    {...fadeInUp}
+    transition={{ delay: 1.3, duration: 0.5 }}
+    className="mb-12"
+  >
+    <div className="flex items-center gap-3 mb-6">
+      <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" 
+            style={{ backgroundColor: `${primaryColor}20` }}>
+        <IconWrapper color={primaryColor}>
+          <Briefcase size={18} />
+        </IconWrapper>
+      </span>
+      <h2 className={`text-xl sm:text-2xl ${textStyles.heading}`}>الخبرات العملية</h2>
+    </div>
+    
+    <div className="space-y-3 pr-4">
+      {doctor.experience.map((exp, index) => (
+        <motion.div
+          key={index}
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 1.4 + index * 0.1, duration: 0.4 }}
+          className="flex items-start gap-3"
+        >
+          <span className="w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0" 
+                style={{ backgroundColor: primaryColor }} />
+          <span className={textStyles.body}>{exp}</span>
+        </motion.div>
+      ))}
+    </div>
+  </motion.div>
+)}
 
             {/* ============ معلومات التواصل - تصميم بسيط ============ */}
             <motion.div
