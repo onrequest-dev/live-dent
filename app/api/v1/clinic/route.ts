@@ -23,12 +23,12 @@ export async function GET(request: NextRequest) {
     const clinicId = jwt_user.clinicId;
     const {data,error} = await supabase_server.from("Clinic").select("*").eq("id", clinicId).maybeSingle();
     if(error){
-        console.error("Supabase error:", error);
+        // console.error("Supabase error:", error);
         return NextResponse.json({ error: "Failed to fetch clinic data" }, { status: 500 });
     }
     const {data:doctorProfile,error:doctorProfileError} = await supabase_server.from("DoctorProfile").select("*").eq("clinicId", clinicId).single();
     if(doctorProfileError){
-        console.error("Supabase error fetching doctor profile:", doctorProfileError);
+        // console.error("Supabase error fetching doctor profile:", doctorProfileError);
     }
         return NextResponse.json({data:{ ...data, doctorProfile }});
 }

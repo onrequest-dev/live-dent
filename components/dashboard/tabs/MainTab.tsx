@@ -1955,40 +1955,36 @@ function NewPatientModal({
       return;
     }
 
-    if (!formData.phone.trim()) {
-      const errorMsg = "الرجاء إدخال رقم الجوال";
-      setLocalError(errorMsg);
-      if (addToast) {
-        addToast({
-          message: errorMsg,
-          type: "error",
-        });
-      }
-      return;
-    }
+    // if (!formData.phone.trim()) {
+    //   const errorMsg = "الرجاء إدخال رقم الجوال";
+    //   setLocalError(errorMsg);
+    //   if (addToast) {
+    //     addToast({
+    //       message: errorMsg,
+    //       type: "error",
+    //     });
+    //   }
+    //   return;
+    // }
 
-    if (
-      !formData.age ||
-      parseInt(formData.age) < 5 ||
-      parseInt(formData.age) > 100
-    ) {
-      const errorMsg = "الرجاء إدخال عمر صحيح بين 5 و 100";
-      setLocalError(errorMsg);
-      if (addToast) {
-        addToast({
-          message: errorMsg,
-          type: "error",
-        });
-      }
-      return;
+    if (formData.age && (parseInt(formData.age) < 5 || parseInt(formData.age) > 100)) {
+    const errorMsg = "الرجاء إدخال عمر صحيح بين 5 و 100";
+    setLocalError(errorMsg);
+    if (addToast) {
+      addToast({
+        message: errorMsg,
+        type: "error",
+      });
     }
+    return;
+  }
 
     setInternalLoading(true);
 
     try {
       const patientData = {
         fullName: formData.fullName,
-        phone: formData.phone,
+        phone: formData.phone || "",
         email: formData.email || undefined,
         gender: formData.gender,
         age: parseInt(formData.age) || undefined,
@@ -2152,7 +2148,7 @@ function NewPatientModal({
                   </label>
                   <input
                     type="tel"
-                    required
+                    // required
                     value={formData.phone}
                     onChange={(e) => {
                       let phoneValue = e.target.value.replace(/[^\d+]/g, "");
@@ -2194,7 +2190,7 @@ function NewPatientModal({
                   </label>
                   <input
                     type="number"
-                    required
+                    // required
                     min="5"
                     max="100"
                     value={formData.age}
@@ -2587,7 +2583,7 @@ function NewAppointmentModal({
       return;
     }
 
-    if (!formData.cost || parseFloat(formData.cost) <= 0) {
+    if (!formData.cost || parseFloat(formData.cost) < 0) {
       const errorMsg = "الرجاء إدخال التكلفة";
       setLocalError(errorMsg);
       if (addToast) {
