@@ -398,7 +398,13 @@ export default function CreateClinicPage() {
                   </p>
                 </div>
                 <motion.button
-                  onClick={() => {
+                type="submit"
+                disabled={loading}
+                  onClick={(e) => {
+                    if (loading) {
+                      e.preventDefault();
+                      return;
+                    }
                     setSuccess(false);
                     setFormData({
                       clinic: { name: "", address: "" },
