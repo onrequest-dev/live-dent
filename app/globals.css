@@ -70,3 +70,82 @@ body {
     overflow-x: hidden !important;
   }
 }
+
+@layer utilities {
+  /* منع السكرول الأفقي على جميع العناصر */
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+  
+  html {
+    overflow-x: hidden;
+    width: 100%;
+  }
+  
+  body {
+    overflow-x: hidden;
+    width: 100%;
+    position: relative;
+  }
+  
+  @media (max-width: 767px) {
+    .dashboard-mobile-scale {
+      transform: scale(0.75);
+      transform-origin: top right;
+      width: 133.33% !important;
+      height: 133.33% !important;
+      margin-left: -16.665% !important;
+      margin-bottom: -16.665% !important;
+    }
+    
+    /* إخفاء السكرول الأفقي */
+    .flex-1.overflow-y-auto {
+      overflow-x: hidden !important;
+    }
+  }
+  
+  @media (max-width: 380px) {
+    .dashboard-mobile-scale {
+      transform: scale(0.65);
+      transform-origin: top right;
+      width: 153.85% !important;
+      height: 153.85% !important;
+      margin-left: -26.925% !important;
+      margin-bottom: -26.925% !important;
+    }
+  }
+  
+  @media (min-width: 381px) and (max-width: 480px) {
+    .dashboard-mobile-scale {
+      transform: scale(0.7);
+      transform-origin: top right;
+      width: 142.86% !important;
+      height: 142.86% !important;
+      margin-left: -21.43% !important;
+      margin-bottom: -21.43% !important;
+    }
+  }
+  
+  @media (min-width: 481px) and (max-width: 640px) {
+    .dashboard-mobile-scale {
+      transform: scale(0.75);
+      transform-origin: top right;
+      width: 133.33% !important;
+      height: 133.33% !important;
+      margin-left: -16.665% !important;
+      margin-bottom: -16.665% !important;
+    }
+  }
+  
+  @media (min-width: 641px) and (max-width: 767px) {
+    .dashboard-mobile-scale {
+      transform: scale(0.8);
+      transform-origin: top right;
+      width: 117.65% !important;
+      height: 117.65% !important;
+      margin-left: -8.825% !important;
+      margin-bottom: -8.825% !important;
+    }
+  }
+}
+

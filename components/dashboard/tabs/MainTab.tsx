@@ -2144,7 +2144,7 @@ function NewPatientModal({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    رقم الجوال (واتساب) <span className="text-red-500">*</span>
+                    رقم الجوال (واتساب)
                   </label>
                   <input
                     type="tel"
@@ -2186,7 +2186,7 @@ function NewPatientModal({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    العمر <span className="text-red-500">*</span>
+                    العمر
                   </label>
                   <input
                     type="number"
