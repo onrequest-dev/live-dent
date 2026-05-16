@@ -76,6 +76,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         }
       }
     };
+    
 
     handleOrientation();
 
@@ -221,10 +222,17 @@ export default function DashboardLayout({
       </div>
     );
   }
+ 
+
 
   return (
     <ClinicProvider clinicId={clinicId}>
-      <DashboardContent>{children}</DashboardContent>
+      <DashboardContent>{children}
+      </DashboardContent>
     </ClinicProvider>
   );
 }
+
+
+
+
