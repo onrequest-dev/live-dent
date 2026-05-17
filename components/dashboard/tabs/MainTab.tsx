@@ -1170,7 +1170,7 @@ function PatientDetailsCard({
                     {sortedSessions.map((session) => (
                       <div
                         key={session.id}
-                        className="grid grid-cols-[100px_1.5fr_1fr_100px_100px_100px_100px] px-4 py-3 items-center hover:bg-gray-50/50 cursor-pointer transition-colors"
+                        className="grid grid-cols-[100px_1.5fr_1fr_100px_100px_100px_100px] px-4 py-2 items-center hover:bg-gray-50/50 cursor-pointer transition-colors"
                         onClick={() => setSelectedSession(session)}
                       >
                         {/* حالة الجلسة */}

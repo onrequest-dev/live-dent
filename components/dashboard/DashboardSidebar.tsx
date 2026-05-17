@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams, useSearchParams, useRouter } from 'next/navigation'; // ✅ إضافة useRouter
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image'; 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
@@ -21,13 +21,20 @@ import {
 } from 'lucide-react';
 import { Clinic } from '@/types';
 
-// ✅ 1. إضافة الإعدادات إلى القائمة مباشرة (بدون تكرار)
+// ✅ ترتيب الأيقونات للقائمة السفلية (من اليمين لليسار)
+const bottomNavItems = [
+  { tab: 'cv', label: 'CV الطبيب', icon: UserCircle },
+  { tab: 'clinic', label: 'العيادة', icon: Building2 },
+  { tab: 'main', label: 'الرئيسية', icon: LayoutDashboard, featured: true },
+  { tab: 'patients', label: 'المرضى', icon: Users },
+  { tab: 'settings', label: 'الإعدادات', icon: Settings },
+];
+
 const menuItems = [
   { tab: 'main', label: 'الرئيسية', icon: LayoutDashboard },
   { tab: 'patients', label: 'جدول المرضى', icon: Users },
   { tab: 'clinic', label: 'معلومات العيادة', icon: Building2 },
   { tab: 'cv', label: 'CV الطبيب', icon: UserCircle },
-  // { tab: 'messages', label: 'إعدادات المراسلة', icon: MessageSquareText },
   { tab: 'settings', label: 'الإعدادات', icon: Settings }, 
 ];
 
@@ -35,7 +42,7 @@ interface DashboardSidebarProps {
   clinicData: Clinic | null;
 }
 
-// مكون Skeleton للتحميل (لحالة عدم وجود بيانات)
+// مكون Skeleton للتحميل
 const SidebarSkeleton = ({ isCollapsed, isMobile }: { isCollapsed: boolean; isMobile: boolean }) => {
   return (
     <motion.div
@@ -107,7 +114,7 @@ const SidebarSkeleton = ({ isCollapsed, isMobile }: { isCollapsed: boolean; isMo
 export function DashboardSidebar({ clinicData }: DashboardSidebarProps) {
   const params = useParams();
   const searchParams = useSearchParams();
-  const router = useRouter(); // ✅ إضافة router هنا
+  const router = useRouter();
   const clinicId = params?.clinicId as string;
   const currentTab = searchParams.get('tab') || 'main';
   
@@ -115,9 +122,8 @@ export function DashboardSidebar({ clinicData }: DashboardSidebarProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [autoCollapse, setAutoCollapse] = useState(true); // ✅ القيمة الافتراضية true
+  const [autoCollapse, setAutoCollapse] = useState(true);
 
-  // ✅ 2. تحميل الإعدادات من localStorage
   useEffect(() => {
     const savedSettings = localStorage.getItem('dashboard_settings');
     if (savedSettings) {
@@ -130,7 +136,6 @@ export function DashboardSidebar({ clinicData }: DashboardSidebarProps) {
     }
   }, []);
 
-  // ✅ 3. الاستماع لتغييرات الإعدادات
   useEffect(() => {
     const handleSettingsChange = (event: CustomEvent) => {
       setAutoCollapse(event.detail.autoCollapse);
@@ -156,31 +161,23 @@ export function DashboardSidebar({ clinicData }: DashboardSidebarProps) {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-// ✅ تعديل useEffect للإغلاق التلقائي - إغلاق دائم في حالة الهاتف
-useEffect(() => {
-  // في حالة الهاتف: نغلق القائمة دائماً عند التنقل
-  if (isMobile) {
-    setIsMobileOpen(false);
-  } 
-  // في حالة سطح المكتب: نطبق إعدادات autoCollapse
-  else if (autoCollapse) {
-    if (!isCollapsed) {
-      setIsCollapsed(true);
+  useEffect(() => {
+    if (isMobile) {
+      setIsMobileOpen(false);
+    } else if (autoCollapse) {
+      if (!isCollapsed) {
+        setIsCollapsed(true);
+      }
     }
-  }
-}, [currentTab, autoCollapse, isMobile]); // ✅ إضافة isMobile للتبعيات
+  }, [currentTab, autoCollapse, isMobile]);
 
-  // ✅ دالة معالجة النقر على تبويب المرضى
   const handlePatientsClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    // window.dispatchEvent(new CustomEvent("refreshPatientsData"));
     router.push(`/dashboard/${clinicId}?tab=patients`);
-
   };
 
   if (!mounted) return null;
 
-  // ✅ عرض Skeleton إذا لم تصل البيانات بعد
   if (!clinicData) {
     if (isMobile && !isMobileOpen) {
       return (
@@ -220,23 +217,154 @@ useEffect(() => {
   const primaryColor = clinicData.settings.primaryColor;
   const secondaryColor = clinicData.settings.secondaryColor;
 
-  // حالة الهاتف: عرض زر الفتح فقط
-  if (isMobile && !isMobileOpen) {
-    return (
-      <motion.button
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.3 }}
-        onClick={() => setIsMobileOpen(true)}
-        className="fixed top-2 left-4 z-50 w-10 h-10 bg-white rounded-xl shadow-lg flex items-center justify-center hover:shadow-xl transition-all border border-gray-200 md:hidden"
-        style={{ color: primaryColor }}
-      >
-        <Menu size={16} />
-      </motion.button>
-    );
-  }
+// ✨ شريط التنقل السفلي للهاتف - تصميم أنيق وناعم
+const MobileBottomNav = () => (
+  <motion.nav
+    initial={{ y: 100, opacity: 0 }}
+    animate={{ y: 0, opacity: 1 }}
+    transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+    className="fixed bottom-4 left-4 right-4 z-50 md:hidden"
+  >
+    <div className="relative">
+<div 
+  className="
+    rounded-[32px] 
+    shadow-[0_8px_32px_-8px_rgba(0,0,0,0.12)]
+    border border-white/50
+    p-1.5
+  "
+  style={{
+    background: `linear-gradient(180deg, rgba(255, 255, 255, 0.27) 0%, ${primaryColor}08 50%, rgba(255, 255, 255, 0.34) 100%)`,
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+  }}
+>
+        <div className="absolute -top-[2px] left-1/2 -translate-x-1/2 w-2/3 h-[3px] rounded-full"
+          style={{ 
+            background: `linear-gradient(90deg, transparent 0%, ${primaryColor}90 10%, ${primaryColor} 50%, ${primaryColor}90 90%, transparent 100%)` 
+          }}
+        />
+        
+        <div className="flex items-center justify-around px-1">
+          {bottomNavItems.map((item) => {
+            const isActive = currentTab === item.tab;
+            const Icon = item.icon;
+            const isFeatured = item.featured;
 
-  // عرض القائمة الجانبية
+            const IconWrapper = ({ children }: { children: React.ReactNode }) => (
+              <div className="relative flex flex-col items-center justify-center">
+                {children}
+              </div>
+            );
+
+            const content = (
+              <>
+                {!isFeatured ? (
+                  <motion.div
+                    whileTap={{ scale: 0.9 }}
+                    whileHover={{ scale: 1.05 }}
+                    className="relative flex items-center justify-center w-12 h-12"
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="mobileActiveBg"
+                        className="absolute inset-0 rounded-2xl"
+                        style={{ 
+                          background: `linear-gradient(135deg, ${primaryColor}15, ${primaryColor}08)` 
+                        }}
+                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                      />
+                    )}
+                    
+                    <Icon 
+                      size={21} 
+                      className="relative z-10 transition-all duration-300"
+                      style={{ 
+                        color: isActive ? primaryColor : '#475569', // ✅ لون داكن للأيقونات غير النشطة
+                      }}
+                      strokeWidth={isActive ? 2.2 : 1.8}
+                    />
+                    
+                    {isActive && (
+                      <motion.div
+                        layoutId="mobileActiveDot"
+                        className="absolute -bottom-0.5 w-1 h-1 rounded-full"
+                        style={{ backgroundColor: primaryColor }}
+                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                      />
+                    )}
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    whileTap={{ scale: 0.92 }}
+                    className="relative flex items-center justify-center -mt-6"
+                  >
+                    <motion.div
+                      whileHover={{ 
+                        scale: 1.08,
+                        boxShadow: `0 12px 28px ${primaryColor}35`
+                      }}
+                      className="
+                        w-[52px] h-[52px] rounded-[20px] flex items-center justify-center
+                        shadow-[0_8px_24px_-6px_rgba(0,0,0,0.15)]
+                        transition-all duration-300
+                        border-[3px] border-white
+                      "
+                      style={{
+                        background: isActive 
+                          ? `linear-gradient(135deg, ${primaryColor}, ${primaryColor}dd)` 
+                          : `linear-gradient(135deg, #ffffff, #f8fafc)`,
+                        boxShadow: isActive 
+                          ? `0 12px 28px ${primaryColor}40, 0 0 0 4px ${primaryColor}20`
+                          : `0 8px 24px -6px rgba(0,0,0,0.12), 0 0 0 2px ${primaryColor}15`,
+                      }}
+                    >
+                      <Icon 
+                        size={23} 
+                        className="transition-all duration-300"
+                        style={{ 
+                          color: isActive ? '#ffffff' : primaryColor,
+                        }}
+                        strokeWidth={2.2}
+                      />
+                    </motion.div>
+                  </motion.div>
+                )}
+              </>
+            );
+
+            if (item.tab === 'patients') {
+              return (
+                <a
+                  key={item.tab}
+                  href={`/dashboard/${clinicId}?tab=patients`}
+                  onClick={handlePatientsClick}
+                  className="flex-1 flex justify-center"
+                >
+                  <IconWrapper>{content}</IconWrapper>
+                </a>
+              );
+            }
+
+            return (
+              <Link
+                key={item.tab}
+                href={`/dashboard/${clinicId}?tab=${item.tab}`}
+                className="flex-1 flex justify-center"
+              >
+                <IconWrapper>{content}</IconWrapper>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+      
+      <div className="h-[env(safe-area-inset-bottom,8px)]" />
+    </div>
+  </motion.nav>
+);
+
+  // عرض القائمة الجانبية للشاشات الكبيرة
   const sidebarContent = (
     <motion.div
       initial={false}
@@ -346,13 +474,11 @@ useEffect(() => {
         </AnimatePresence>
       </div>
 
-      {/* ✅ القائمة مع معالج خاص لزر المرضى */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {menuItems.map((item) => {
           const isActive = currentTab === item.tab;
           const Icon = item.icon;
 
-          // ✅ معالجة خاصة لتبويب المرضى
           if (item.tab === 'patients') {
             return (
               <a
@@ -405,7 +531,6 @@ useEffect(() => {
             );
           }
 
-          // ✅ باقي التبويبات تستخدم Link العادي
           const href = `/dashboard/${clinicId}?tab=${item.tab}`;
           return (
             <Link key={item.tab} href={href}>
@@ -454,7 +579,6 @@ useEffect(() => {
         })}
       </nav>
 
-      {/* ✅ زر تسجيل الخروج */}
       <div className="p-3 border-t border-gray-100">
         <motion.button
           whileHover={{ x: -4 }}
@@ -481,21 +605,31 @@ useEffect(() => {
     </motion.div>
   );
 
-  if (isMobile && isMobileOpen) {
-    return (
-      <>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
-          className="fixed inset-0 bg-black/50 z-30 md:hidden"
-          onClick={() => setIsMobileOpen(false)}
-        />
-        {sidebarContent}
-      </>
-    );
-  }
-
-  return sidebarContent;
+  // ✨ الريندر النهائي
+  return (
+    <>
+      {/* الشاشات الكبيرة: القائمة الجانبية */}
+      {!isMobile && sidebarContent}
+      
+      {/* الهاتف: شريط سفلي + القائمة الجانبية عند الفتح */}
+      {isMobile && (
+        <>
+          <MobileBottomNav />
+          {isMobileOpen && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="fixed inset-0 bg-black/50 z-30 md:hidden"
+                onClick={() => setIsMobileOpen(false)}
+              />
+              {sidebarContent}
+            </>
+          )}
+        </>
+      )}
+    </>
+  );
 }

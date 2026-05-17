@@ -89,13 +89,57 @@ body {
   }
   
   @media (max-width: 767px) {
+    /* إلغاء الـ scale واستخدام تصميم مرن */
     .dashboard-mobile-scale {
-      transform: scale(0.75);
-      transform-origin: top right;
-      width: 133.33% !important;
-      height: 133.33% !important;
-      margin-left: -16.665% !important;
-      margin-bottom: -16.665% !important;
+      transform: none !important;
+      width: 100% !important;
+      height: auto !important;
+      margin: 0 !important;
+      padding: 8px !important;
+      
+      /* أحجام نصوص متجاوبة - أصغر قليلاً */
+      font-size: clamp(12px, 3vw, 14px);
+    }
+    
+    /* تكبير العناوين بشكل متناسب */
+    .dashboard-mobile-scale h1 {
+      font-size: clamp(18px, 5vw, 28px) !important;
+      line-height: 1.2 !important;
+    }
+    
+    .dashboard-mobile-scale h2 {
+      font-size: clamp(15px, 4vw, 22px) !important;
+      line-height: 1.3 !important;
+    }
+    
+    .dashboard-mobile-scale h3 {
+      font-size: clamp(13px, 3.5vw, 18px) !important;
+    }
+    
+    /* الجداول قابلة للتمرير */
+    .dashboard-mobile-scale table {
+      font-size: clamp(10px, 2.5vw, 12px) !important;
+    }
+    
+    .dashboard-mobile-scale .table-container {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      max-width: calc(100vw - 16px);
+    }
+    
+    /* البطاقات والتقسيمات */
+    .dashboard-mobile-scale .card,
+    .dashboard-mobile-scale .grid > * {
+      padding: 2px !important;
+      margin-bottom: 8px !important;
+    }
+    
+    /* أزرار أكبر للمس */
+    .dashboard-mobile-scale button,
+    .dashboard-mobile-scale .btn {
+      min-height: 38px !important;
+      padding: 6px 14px !important;
+      font-size: clamp(12px, 3vw, 14px) !important;
     }
     
     /* إخفاء السكرول الأفقي */
@@ -104,47 +148,77 @@ body {
     }
   }
   
+  /* شاشات صغيرة جداً */
   @media (max-width: 380px) {
     .dashboard-mobile-scale {
-      transform: scale(0.65);
-      transform-origin: top right;
-      width: 153.85% !important;
-      height: 153.85% !important;
-      margin-left: -26.925% !important;
-      margin-bottom: -26.925% !important;
+      font-size: clamp(11px, 3.5vw, 13px);
+      padding: 5px !important;
+    }
+    
+    .dashboard-mobile-scale h1 {
+      font-size: clamp(16px, 5.5vw, 22px) !important;
+    }
+    
+    .dashboard-mobile-scale h2 {
+      font-size: clamp(14px, 4.5vw, 18px) !important;
+    }
+    
+    .dashboard-mobile-scale .card,
+    .dashboard-mobile-scale .grid > * {
+      padding: 8px !important;
+    }
+    
+    .dashboard-mobile-scale button,
+    .dashboard-mobile-scale .btn {
+      min-height: 34px !important;
+      padding: 5px 10px !important;
     }
   }
   
+  /* شاشات صغيرة */
   @media (min-width: 381px) and (max-width: 480px) {
     .dashboard-mobile-scale {
-      transform: scale(0.7);
-      transform-origin: top right;
-      width: 142.86% !important;
-      height: 142.86% !important;
-      margin-left: -21.43% !important;
-      margin-bottom: -21.43% !important;
+      font-size: clamp(11px, 3.3vw, 13px);
+      padding: 6px !important;
+    }
+    
+    .dashboard-mobile-scale h1 {
+      font-size: clamp(17px, 5vw, 24px) !important;
+    }
+    
+    .dashboard-mobile-scale h2 {
+      font-size: clamp(14px, 4vw, 20px) !important;
     }
   }
   
+  /* شاشات متوسطة */
   @media (min-width: 481px) and (max-width: 640px) {
     .dashboard-mobile-scale {
-      transform: scale(0.75);
-      transform-origin: top right;
-      width: 133.33% !important;
-      height: 133.33% !important;
-      margin-left: -16.665% !important;
-      margin-bottom: -16.665% !important;
+      font-size: clamp(12px, 3vw, 14px);
+    }
+    
+    .dashboard-mobile-scale h1 {
+      font-size: clamp(18px, 4.5vw, 26px) !important;
+    }
+    
+    .dashboard-mobile-scale h2 {
+      font-size: clamp(15px, 3.5vw, 22px) !important;
     }
   }
   
+  /* شاشات متوسطة-كبيرة */
   @media (min-width: 641px) and (max-width: 767px) {
     .dashboard-mobile-scale {
-      transform: scale(0.8);
-      transform-origin: top right;
-      width: 117.65% !important;
-      height: 117.65% !important;
-      margin-left: -8.825% !important;
-      margin-bottom: -8.825% !important;
+      font-size: clamp(13px, 2.5vw, 15px);
+      padding: 8px !important;
+    }
+    
+    .dashboard-mobile-scale h1 {
+      font-size: clamp(20px, 4vw, 28px) !important;
+    }
+    
+    .dashboard-mobile-scale h2 {
+      font-size: clamp(16px, 3vw, 22px) !important;
     }
   }
 }

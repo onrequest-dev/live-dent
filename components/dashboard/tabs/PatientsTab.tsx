@@ -799,7 +799,7 @@ export function PatientsTab({
   };
 
   return (
-    <div className="space-y-5" dir="rtl">
+    <div className="space-y-5 pb-20" dir="rtl">
       {/* الهيدر */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

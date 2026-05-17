@@ -365,7 +365,7 @@ export function ClinicInfoTab({ clinicData, onClinicUpdate }: ClinicInfoTabProps
   const displayWorkingHours = isEditing ? workingHours : createWorkingHoursFromClinic(clinicData);
 
   return (
-    <div className="p-6 space-y-6" dir="rtl">
+    <div className="pt-3 pb-20 px-2 space-y-6" dir="rtl">
       {/* الهيدر */}
       <div className="flex items-center justify-between">
         <div>
@@ -684,72 +684,75 @@ export function ClinicInfoTab({ clinicData, onClinicUpdate }: ClinicInfoTabProps
         
         {/* العمود الأيسر */}
         <div className="space-y-6">
-          {/* ساعات العمل */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 rounded-xl" style={{ backgroundColor: `${primaryColor}15` }}>
-                <Clock size={22} style={{ color: primaryColor }} />
-              </div>
-              <h2 className="text-xl font-semibold text-gray-900">ساعات العمل</h2>
+{/* ساعات العمل */}
+<div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 md:p-6">
+  <div className="flex items-center gap-3 mb-4 md:mb-6">
+    <div className="p-2 rounded-xl" style={{ backgroundColor: `${primaryColor}15` }}>
+      <Clock size={22} style={{ color: primaryColor }} />
+    </div>
+    <h2 className="text-lg md:text-xl font-semibold text-gray-900">ساعات العمل</h2>
+  </div>
+  
+  <div className="space-y-2">
+    {displayWorkingHours.map((wh) => {
+      const dayInfo = DAYS_OF_WEEK.find(d => d.key === wh.day);
+      return (
+        <div 
+          key={wh.day} 
+          className={`flex items-center gap-2 md:gap-3 p-3 md:p-4 rounded-xl transition-colors ${
+            !wh.isClosed ? 'bg-gray-50 hover:bg-gray-100' : 'bg-red-50/50'
+          }`}
+        >
+          {isEditing ? (
+            <div className="flex items-center gap-2 md:gap-3 w-full flex-wrap md:flex-nowrap">
+              {/* checkbox */}
+              <input
+                type="checkbox"
+                checked={!wh.isClosed}
+                onChange={(e) => handleWorkingHourChange(wh.day, 'isClosed', !e.target.checked)}
+                className="w-4 h-4 md:w-5 md:h-5 rounded border-gray-300 cursor-pointer flex-shrink-0"
+                style={{ accentColor: primaryColor }}
+              />
+              
+              {/* اسم اليوم */}
+              <span className="w-16 md:w-20 text-sm md:text-base text-gray-900 font-medium flex-shrink-0">
+                {dayInfo?.label}
+              </span>
+              
+              {!wh.isClosed ? (
+                <div className="flex items-center gap-1.5 md:gap-3 flex-1 min-w-0">
+                  <input
+                    type="time"
+                    value={wh.start}
+                    onChange={(e) => handleWorkingHourChange(wh.day, 'start', e.target.value)}
+                    className="flex-1 min-w-0 px-2 md:px-3 py-1.5 md:py-2 border border-gray-300 rounded-lg md:rounded-xl text-xs md:text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <span className="text-gray-600 font-medium flex-shrink-0 text-xs md:text-sm">-</span>
+                  <input
+                    type="time"
+                    value={wh.end}
+                    onChange={(e) => handleWorkingHourChange(wh.day, 'end', e.target.value)}
+                    className="flex-1 min-w-0 px-2 md:px-3 py-1.5 md:py-2 border border-gray-300 rounded-lg md:rounded-xl text-xs md:text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              ) : (
+                <span className="text-red-600 text-xs md:text-sm font-medium flex-1">مغلق</span>
+              )}
             </div>
-            
-            <div className="space-y-2">
-  {displayWorkingHours.map((wh) => {
-    const dayInfo = DAYS_OF_WEEK.find(d => d.key === wh.day);
-    return (
-      <div 
-        key={wh.day} 
-        className={`flex items-center gap-3 p-4 rounded-xl transition-colors ${
-          !wh.isClosed ? 'bg-gray-50 hover:bg-gray-100' : 'bg-red-50/50'
-        }`}
-      >
-        {isEditing ? (
-          <>
-            <input
-              type="checkbox"
-              checked={!wh.isClosed}
-              onChange={(e) => handleWorkingHourChange(wh.day, 'isClosed', !e.target.checked)}
-              className="w-5 h-5 rounded border-gray-300 cursor-pointer"
-              style={{ accentColor: primaryColor }}
-            />
-            <span className="w-20 text-gray-900 font-medium">{dayInfo?.label}</span>
-            
-            {!wh.isClosed && (
-              <div className="flex items-center gap-3 flex-1">
-                <input
-                  type="time"
-                  value={wh.start}
-                  onChange={(e) => handleWorkingHourChange(wh.day, 'start', e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                <span className="text-gray-600 font-medium">-</span>
-                <input
-                  type="time"
-                  value={wh.end}
-                  onChange={(e) => handleWorkingHourChange(wh.day, 'end', e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            )}
-            
-            {wh.isClosed && (
-              <span className="text-red-600 text-sm font-medium flex-1">مغلق</span>
-            )}
-          </>
-        ) : (
-          <>
-            <div className={`w-3 h-3 rounded-full ${!wh.isClosed ? 'bg-green-500' : 'bg-red-500'}`} />
-            <span className="w-20 text-gray-900 font-medium">{dayInfo?.label}</span>
-            <span className={`flex-1 font-medium ${!wh.isClosed ? 'text-gray-900' : 'text-red-600'}`}>
-              {!wh.isClosed ? `${formatTimeTo12Hour(wh.start)} - ${formatTimeTo12Hour(wh.end)}` : 'مغلق'}
-            </span>
-          </>
-        )}
-      </div>
-    );
-  })}
+          ) : (
+            <>
+              <div className={`w-2.5 h-2.5 md:w-3 md:h-3 rounded-full flex-shrink-0 ${!wh.isClosed ? 'bg-green-500' : 'bg-red-500'}`} />
+              <span className="w-16 md:w-20 text-sm md:text-base text-gray-900 font-medium flex-shrink-0">{dayInfo?.label}</span>
+              <span className={`flex-1 font-medium text-sm md:text-base ${!wh.isClosed ? 'text-gray-900' : 'text-red-600'}`}>
+                {!wh.isClosed ? `${formatTimeTo12Hour(wh.start)} - ${formatTimeTo12Hour(wh.end)}` : 'مغلق'}
+              </span>
+            </>
+          )}
+        </div>
+      );
+    })}
+  </div>
 </div>
-          </div>
           
           {/* معلومات إضافية */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
