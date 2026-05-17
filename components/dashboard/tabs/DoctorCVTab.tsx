@@ -344,7 +344,7 @@ export function DoctorCVTab({ clinicData, onProfileUpdate }: DoctorCVTabProps) {
   const labelClassName = "flex items-center gap-2 text-sm font-medium text-gray-900";
 
   return (
-    <div className="p-6 space-y-6" dir="rtl">
+    <div className="pt-3 pb-20 px-2 space-y-6" dir="rtl">
       {/* الهيدر مع أزرار التحكم */}
       <div className="flex items-center justify-between">
         <div>
