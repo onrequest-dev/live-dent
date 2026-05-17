@@ -37,7 +37,7 @@ import {
   openWhatsAppChat,
 } from "@/lib/services/communication";
 import { Clinic, Patient, PatientCase, Session } from "@/types";
-import { createPatient } from "@/client/helpers/patient";
+import { createPatient, updatePatient } from "@/client/helpers/patient";
 import {
   createSession,
   deleteSession,
@@ -139,6 +139,10 @@ export function MainTab({
 
   const [isAddingPatient, setIsAddingPatient] = useState(false);
   const [isAddingAppointment, setIsAddingAppointment] = useState(false);
+
+  const [showEditPatientModal, setShowEditPatientModal] = useState(false);
+  const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
+  const [isUpdatingPatient, setIsUpdatingPatient] = useState(false);
 
   const { toasts, addToast, removeToast } = useToast();
 
@@ -341,6 +345,44 @@ export function MainTab({
     [isCollapsed, selectedPatient, listWidth],
   );
 
+  const handleUpdatePatient = async (patientId: string, patientData: any) => {
+    setIsUpdatingPatient(true);
+
+    try {
+      const result = await updatePatient(patientId, patientData);
+
+      if (!result.success) {
+        throw new Error(result.error || "فشل في تعديل المريض");
+      }
+
+      // تحديث المريض في القائمة
+      setPatients((prev) =>
+        prev.map((p) => (p.id === patientId ? { ...p, ...result.data } : p)),
+      );
+
+      // إذا كان المريض المحدث هو المريض المحدد حالياً، حدثه أيضاً
+      if (selectedPatient?.id === patientId) {
+        setSelectedPatient({ ...selectedPatient, ...result.data });
+      }
+
+      addToast({
+        message: "تم تعديل بيانات المريض بنجاح",
+        type: "success",
+      });
+
+      setShowEditPatientModal(false);
+      setEditingPatient(null);
+    } catch (error: any) {
+      addToast({
+        message: error?.message || "حدث خطأ أثناء تعديل المريض",
+        type: "error",
+      });
+      throw error;
+    } finally {
+      setIsUpdatingPatient(false);
+    }
+  };
+
   const handlePatientSelect = (patient: Patient) => {
     setSelectedPatient(patient);
     // لم نعد بحاجة لتحديث selectedPatientCases و selectedPatientSessions يدوياً
@@ -460,6 +502,8 @@ export function MainTab({
         gender: patientData.gender,
         age: patientData.age,
         notes: patientData.notes,
+        totalPrice: patientData.totalPrice || "0",
+        plannedProcedure: patientData.plannedProcedure || undefined,
       });
 
       setPatients((prev) => [...prev, newPatient]);
@@ -662,6 +706,21 @@ export function MainTab({
                               <h4 className="font-medium text-gray-900 text-base">
                                 {patient.fullName}
                               </h4>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingPatient(patient);
+                                  setShowEditPatientModal(true);
+                                }}
+                                className="p-1 rounded-lg hover:bg-gray-200 transition-colors"
+                                title="تعديل بيانات المريض"
+                              >
+                                <Edit
+                                  size={14}
+                                  className="text-gray-400 hover:text-gray-600"
+                                />
+                              </button>
+
                               <span
                                 className={`text-xs px-2.5 py-1 rounded-full font-medium ${patient.gender === "male" ? "bg-blue-100 text-blue-700" : "bg-pink-100 text-pink-700"}`}
                               >
@@ -843,6 +902,10 @@ export function MainTab({
                 onEditSession={handleEditSession}
                 onDeleteSession={handleDeleteSession}
                 onRequestDeleteSession={handleRequestDeleteSession}
+                onEditPatient={() => {
+                  setEditingPatient(selectedPatient);
+                  setShowEditPatientModal(true);
+                }}
               />
             </motion.div>
           )}
@@ -881,6 +944,23 @@ export function MainTab({
       </AnimatePresence>
 
       <AnimatePresence>
+        {showEditPatientModal && editingPatient && (
+          <EditPatientModal
+            patient={editingPatient}
+            primaryColor={primaryColor}
+            secondaryColor={secondaryColor}
+            onClose={() => {
+              setShowEditPatientModal(false);
+              setEditingPatient(null);
+            }}
+            onSubmit={handleUpdatePatient}
+            isLoading={isUpdatingPatient}
+            addToast={addToast}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {isMobile && isMobileDrawerOpen && selectedPatient && (
           <>
             <motion.div
@@ -901,6 +981,10 @@ export function MainTab({
               className="fixed inset-x-0 bottom-0 z-50 max-h-[90vh] overflow-y-auto rounded-t-3xl"
             >
               <PatientDetailsCard
+                onEditPatient={() => {
+                  setEditingPatient(selectedPatient);
+                  setShowEditPatientModal(true);
+                }}
                 patient={selectedPatient}
                 cases={selectedPatientCases}
                 sessions={selectedPatientSessions}
@@ -1010,6 +1094,7 @@ interface PatientDetailsCardProps {
   onEditSession: (session: Session) => void;
   onDeleteSession: (sessionId: string) => void;
   onRequestDeleteSession: (sessionId: string) => void;
+  onEditPatient: () => void; 
 }
 
 function PatientDetailsCard({
@@ -1032,6 +1117,7 @@ function PatientDetailsCard({
   isMobile = false,
   onEditSession,
   onDeleteSession,
+  onEditPatient,
   onRequestDeleteSession,
 }: PatientDetailsCardProps) {
   const finance = calculateFinance();
@@ -1062,6 +1148,14 @@ function PatientDetailsCard({
               <h2 className="text-2xl font-bold text-gray-900 mb-1">
                 {patient.fullName}
               </h2>
+
+              <button
+                onClick={onEditPatient}
+                className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+                title="تعديل بيانات المريض"
+              >
+                <Edit size={18} className="text-gray-600" />
+              </button>
               <div className="flex items-center gap-4 text-gray-600">
                 <span className="flex items-center gap-1.5">
                   <Phone size={16} className="text-gray-400" />
@@ -1429,7 +1523,7 @@ function EditSessionModal({
 
   const isLoading = isSaving || isDeleting;
   const [sessionCostDisplay, setSessionCostDisplay] = useState(
-  formData.sessionCost?.toString() || ""
+    formData.sessionCost?.toString() || "",
   );
   return (
     <>
@@ -1579,43 +1673,43 @@ function EditSessionModal({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 تكلفة الجلسة ($)
               </label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  required
-                  value={sessionCostDisplay}
-                  onChange={(e) => {
-                    let value = e.target.value
-                      .replace(/[^0-9.,]/g, "")
-                      .replace(",", ".")
-                      .replace(/(\..*)\./g, "$1");
-                    
-                    // تحديث العرض دائماً
-                    setSessionCostDisplay(value);
-                    
-                    // تحديث الرقم فقط إذا اكتمل
-                    if (!value.endsWith(".")) {
-                      const numValue = parseFloat(value);
-                      setFormData({
-                        ...formData,
-                        sessionCost: isNaN(numValue) ? 0 : numValue,
-                      });
-                    }
-                  }}
-                  onBlur={(e) => {
-                    const finalValue = parseFloat(e.target.value) || 0;
+              <input
+                type="text"
+                inputMode="decimal"
+                required
+                value={sessionCostDisplay}
+                onChange={(e) => {
+                  let value = e.target.value
+                    .replace(/[^0-9.,]/g, "")
+                    .replace(",", ".")
+                    .replace(/(\..*)\./g, "$1");
+
+                  // تحديث العرض دائماً
+                  setSessionCostDisplay(value);
+
+                  // تحديث الرقم فقط إذا اكتمل
+                  if (!value.endsWith(".")) {
+                    const numValue = parseFloat(value);
                     setFormData({
                       ...formData,
-                      sessionCost: finalValue,
+                      sessionCost: isNaN(numValue) ? 0 : numValue,
                     });
-                    setSessionCostDisplay(finalValue.toString());
-                  }}
-                  disabled={isLoading}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent invalid:border-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ "--tw-ring-color": primaryColor } as any}
-                  placeholder="0"
-                  dir="rtl"
-                />
+                  }
+                }}
+                onBlur={(e) => {
+                  const finalValue = parseFloat(e.target.value) || 0;
+                  setFormData({
+                    ...formData,
+                    sessionCost: finalValue,
+                  });
+                  setSessionCostDisplay(finalValue.toString());
+                }}
+                disabled={isLoading}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent invalid:border-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ "--tw-ring-color": primaryColor } as any}
+                placeholder="0"
+                dir="rtl"
+              />
             </div>
 
             {/* حالة الدفع */}
@@ -1910,6 +2004,8 @@ function NewPatientModal({
     age: "",
     address: "",
     notes: "",
+    plannedProcedure: "",
+    totalPrice: "",
     addAppointment: true,
     appointmentMode: "date" as "date" | "days",
     appointment: {
@@ -1955,29 +2051,20 @@ function NewPatientModal({
       return;
     }
 
-    // if (!formData.phone.trim()) {
-    //   const errorMsg = "الرجاء إدخال رقم الجوال";
-    //   setLocalError(errorMsg);
-    //   if (addToast) {
-    //     addToast({
-    //       message: errorMsg,
-    //       type: "error",
-    //     });
-    //   }
-    //   return;
-    // }
-
-    if (formData.age && (parseInt(formData.age) < 5 || parseInt(formData.age) > 100)) {
-    const errorMsg = "الرجاء إدخال عمر صحيح بين 5 و 100";
-    setLocalError(errorMsg);
-    if (addToast) {
-      addToast({
-        message: errorMsg,
-        type: "error",
-      });
+    if (
+      formData.age &&
+      (parseInt(formData.age) < 5 || parseInt(formData.age) > 100)
+    ) {
+      const errorMsg = "الرجاء إدخال عمر صحيح بين 5 و 100";
+      setLocalError(errorMsg);
+      if (addToast) {
+        addToast({
+          message: errorMsg,
+          type: "error",
+        });
+      }
+      return;
     }
-    return;
-  }
 
     setInternalLoading(true);
 
@@ -1990,6 +2077,8 @@ function NewPatientModal({
         age: parseInt(formData.age) || undefined,
         address: formData.address || undefined,
         notes: formData.notes || undefined,
+        plannedProcedure: formData.plannedProcedure || undefined,
+        totalPrice: formData.totalPrice || undefined,
         addAppointment: formData.addAppointment,
       };
 
@@ -2009,7 +2098,6 @@ function NewPatientModal({
           notes: formData.appointment.notes || undefined,
         };
       }
-
       await onSubmit({
         ...patientData,
         appointment: appointmentData,
@@ -2054,7 +2142,6 @@ function NewPatientModal({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-hidden"
-        // onClick={isLoading ? undefined : onClose}
       >
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
@@ -2148,12 +2235,10 @@ function NewPatientModal({
                   </label>
                   <input
                     type="tel"
-                    // required
                     value={formData.phone}
                     onChange={(e) => {
                       let phoneValue = e.target.value.replace(/[^\d+]/g, "");
 
-                      // تحويل 00 في البداية إلى +
                       if (phoneValue.startsWith("0")) {
                         phoneValue = "+963" + phoneValue.slice(2);
                       }
@@ -2190,7 +2275,6 @@ function NewPatientModal({
                   </label>
                   <input
                     type="number"
-                    // required
                     min="5"
                     max="100"
                     value={formData.age}
@@ -2250,6 +2334,54 @@ function NewPatientModal({
                       <span className="text-gray-700">أنثى</span>
                     </label>
                   </div>
+                </div>
+
+                {/* حقل الإجراء المخطط */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    الإجراء المخطط
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.plannedProcedure}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        plannedProcedure: e.target.value,
+                      })
+                    }
+                    disabled={isLoading}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ "--tw-ring-color": primaryColor } as any}
+                    placeholder="مثال: زراعة أسنان، تقويم..."
+                  />
+                </div>
+
+                {/* حقل السعر الإجمالي */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    السعر الإجمالي
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={formData.totalPrice}
+                    onChange={(e) => {
+                      const value = e.target.value
+                        .replace(/[^0-9.]/g, "")
+                        .replace(/(\..*)\./g, "$1");
+
+                      setFormData({
+                        ...formData,
+                        totalPrice: value,
+                      });
+                    }}
+                    disabled={isLoading}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ "--tw-ring-color": primaryColor } as any}
+                    placeholder="0"
+                    dir="ltr"
+                  />
                 </div>
               </div>
 
@@ -2896,6 +3028,395 @@ function NewAppointmentModal({
                   </>
                 ) : (
                   <span>إضافة الموعد</span>
+                )}
+              </button>
+            </div>
+          </form>
+        </motion.div>
+      </motion.div>
+    </>
+  );
+}
+
+interface EditPatientModalProps {
+  patient: Patient;
+  primaryColor: string;
+  secondaryColor: string;
+  onClose: () => void;
+  onSubmit: (patientId: string, data: any) => Promise<void>;
+  isLoading?: boolean;
+  addToast?: (toast: {
+    message: string;
+    type: "success" | "error" | "info";
+  }) => void;
+}
+
+function EditPatientModal({
+  patient,
+  primaryColor,
+  secondaryColor,
+  onClose,
+  onSubmit,
+  isLoading: externalLoading = false,
+  addToast,
+}: EditPatientModalProps) {
+  const [internalLoading, setInternalLoading] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  const isLoading = externalLoading || internalLoading;
+
+  const [formData, setFormData] = useState({
+    fullName: patient.fullName || "",
+    phone: patient.phone || "",
+    gender: patient.gender || "male",
+    age: patient.age?.toString() || "",
+    notes: patient.notes || "",
+    plannedProcedure: patient.plannedProcedure || "",
+    totalPrice: patient.totalPrice || "",
+  });
+
+  const calculateBirthYear = (age: number): number => {
+    const currentYear = new Date().getFullYear();
+    return currentYear - age;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLocalError(null);
+
+    if (!formData.fullName.trim()) {
+      const errorMsg = "الرجاء إدخال اسم المريض";
+      setLocalError(errorMsg);
+      if (addToast) {
+        addToast({ message: errorMsg, type: "error" });
+      }
+      return;
+    }
+
+    if (
+      formData.age &&
+      (parseInt(formData.age) < 5 || parseInt(formData.age) > 100)
+    ) {
+      const errorMsg = "الرجاء إدخال عمر صحيح بين 5 و 100";
+      setLocalError(errorMsg);
+      if (addToast) {
+        addToast({ message: errorMsg, type: "error" });
+      }
+      return;
+    }
+
+    setInternalLoading(true);
+
+    try {
+      await onSubmit(patient.id, {
+        fullName: formData.fullName,
+        phone: formData.phone || "",
+        gender: formData.gender,
+        age: parseInt(formData.age) || undefined,
+        notes: formData.notes || undefined,
+        plannedProcedure: formData.plannedProcedure || undefined,
+        totalPrice: formData.totalPrice || undefined,
+      });
+
+      if (addToast) {
+        addToast({
+          message: "تم تعديل بيانات المريض بنجاح",
+          type: "success",
+        });
+      }
+
+      onClose();
+    } catch (error: any) {
+      const errorMessage = error?.message || "حدث خطأ أثناء تعديل المريض";
+      setLocalError(errorMessage);
+      if (addToast) {
+        addToast({ message: errorMessage, type: "error" });
+      }
+    } finally {
+      setInternalLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-hidden"
+      >
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="p-6" style={{ background: primaryColor }}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                <Edit size={24} />
+                تعديل بيانات المريض
+              </h2>
+              <button
+                onClick={onClose}
+                disabled={isLoading}
+                className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <p className="text-white/90 mt-1">المريض: {patient.fullName}</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            {localError && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3"
+              >
+                <AlertCircle
+                  size={20}
+                  className="text-red-500 flex-shrink-0 mt-0.5"
+                />
+                <div className="flex-1">
+                  <p className="text-red-800 font-medium text-sm">حدث خطأ</p>
+                  <p className="text-red-600 text-sm mt-1">{localError}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setLocalError(null)}
+                  className="text-red-400 hover:text-red-600 transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </motion.div>
+            )}
+
+            <div className="space-y-4">
+              <h3 className="font-bold text-gray-900 text-lg">
+                المعلومات الأساسية
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    الاسم الكامل <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.fullName}
+                    onChange={(e) => {
+                      const valueWithoutNumbers = e.target.value.replace(
+                        /[0-9]/g,
+                        "",
+                      );
+                      setFormData({
+                        ...formData,
+                        fullName: valueWithoutNumbers,
+                      });
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key >= "0" && e.key <= "9") {
+                        e.preventDefault();
+                      }
+                    }}
+                    disabled={isLoading}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ "--tw-ring-color": primaryColor } as any}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    رقم الجوال (واتساب)
+                  </label>
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => {
+                      let phoneValue = e.target.value.replace(/[^\d+]/g, "");
+                      if (phoneValue.startsWith("0")) {
+                        phoneValue = "+963" + phoneValue.slice(2);
+                      }
+                      setFormData({ ...formData, phone: phoneValue });
+                    }}
+                    onKeyDown={(e) => {
+                      const allowedKeys = [
+                        "Backspace",
+                        "Delete",
+                        "ArrowLeft",
+                        "ArrowRight",
+                        "Tab",
+                        "+",
+                      ];
+                      if (
+                        !allowedKeys.includes(e.key) &&
+                        !(e.key >= "0" && e.key <= "9")
+                      ) {
+                        e.preventDefault();
+                      }
+                    }}
+                    disabled={isLoading}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ "--tw-ring-color": primaryColor } as any}
+                    placeholder="+963........"
+                    dir="ltr"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    العمر
+                  </label>
+                  <input
+                    type="number"
+                    min="5"
+                    max="100"
+                    value={formData.age}
+                    onChange={(e) =>
+                      setFormData({ ...formData, age: e.target.value })
+                    }
+                    disabled={isLoading}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ "--tw-ring-color": primaryColor } as any}
+                    placeholder="بين 5 و 100"
+                  />
+                  {formData.age &&
+                    parseInt(formData.age) >= 5 &&
+                    parseInt(formData.age) <= 100 && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        سنة الميلاد تقريباً:{" "}
+                        {calculateBirthYear(parseInt(formData.age))}
+                      </p>
+                    )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    الجنس
+                  </label>
+                  <div className="flex gap-4">
+                    <label
+                      className={`flex items-center gap-2 ${isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
+                    >
+                      <input
+                        type="radio"
+                        value="male"
+                        checked={formData.gender === "male"}
+                        onChange={() =>
+                          setFormData({ ...formData, gender: "male" })
+                        }
+                        disabled={isLoading}
+                        className="w-4 h-4"
+                        style={{ accentColor: primaryColor }}
+                      />
+                      <span className="text-gray-700">ذكر</span>
+                    </label>
+                    <label
+                      className={`flex items-center gap-2 ${isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
+                    >
+                      <input
+                        type="radio"
+                        value="female"
+                        checked={formData.gender === "female"}
+                        onChange={() =>
+                          setFormData({ ...formData, gender: "female" })
+                        }
+                        disabled={isLoading}
+                        className="w-4 h-4"
+                        style={{ accentColor: primaryColor }}
+                      />
+                      <span className="text-gray-700">أنثى</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    الإجراء المخطط
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.plannedProcedure}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        plannedProcedure: e.target.value,
+                      })
+                    }
+                    disabled={isLoading}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ "--tw-ring-color": primaryColor } as any}
+                    placeholder="مثال: زراعة أسنان، تقويم..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    السعر الإجمالي
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={formData.totalPrice}
+                    onChange={(e) => {
+                      const value = e.target.value
+                        .replace(/[^0-9.]/g, "")
+                        .replace(/(\..*)\./g, "$1");
+                      setFormData({ ...formData, totalPrice: value });
+                    }}
+                    disabled={isLoading}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ "--tw-ring-color": primaryColor } as any}
+                    placeholder="0"
+                    dir="ltr"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  ملاحظات
+                </label>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) =>
+                    setFormData({ ...formData, notes: e.target.value })
+                  }
+                  disabled={isLoading}
+                  rows={2}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent transition-all resize-none disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ "--tw-ring-color": primaryColor } as any}
+                  placeholder="أي ملاحظات إضافية..."
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isLoading}
+                className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-700 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                إلغاء
+              </button>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="flex-1 px-4 py-3 rounded-xl text-white font-medium transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 hover:opacity-90"
+                style={{ background: primaryColor }}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 size={20} className="animate-spin" />
+                    <span>جاري الحفظ...</span>
+                  </>
+                ) : (
+                  <span>حفظ التعديلات</span>
                 )}
               </button>
             </div>

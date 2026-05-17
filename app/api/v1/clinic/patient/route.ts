@@ -28,3 +28,45 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json(data, { status: 201 });
 } 
+
+
+
+
+export async function PUT(request: NextRequest) {
+    const jwt = request.cookies.get("jwt")?.value;
+    if (!jwt) {
+        return NextResponse.json({ error: "Unauthorized - No token provided" }, { status: 401 });
+    }
+    
+    const jwt_user = decodeJWT(jwt) as ClinicEmployeeJwt | null;
+    if (!jwt_user || typeof jwt_user === "string" ) {
+        return NextResponse.json({ error: "Unauthorized - Invalid token" }, { status: 401 });
+    }
+    
+    if (jwt_user.role !== 'admin' && jwt_user.role !== 'manager') {
+        return NextResponse.json({ error: "Forbidden - Insufficient permissions" }, { status: 403 });
+    }
+
+    const { id, ...patientData }: Partial<Patient> & { id: string } = sanitizeInput(await request.json());
+    
+    if (!id) {
+        return NextResponse.json({ error: "Patient ID is required" }, { status: 400 });
+    }
+
+    const clinicId = jwt_user.clinicId;
+    
+    const { data, error } = await supabase_server
+        .from("Patient")
+        .update({ ...patientData })
+        .eq("id", id)
+        .eq("clinicId", clinicId)
+        .select("*")
+        .single();
+
+    if (error || !data) {
+        console.error("Error updating patient:", error);
+        return NextResponse.json({ error: "Failed to update patient" }, { status: 500 });
+    }
+
+    return NextResponse.json(data, { status: 200 });
+}
