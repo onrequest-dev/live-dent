@@ -284,14 +284,13 @@ export function MainTab({
     });
   };
 
-  const formatDate = (date: Date | string) => {
-    const d = new Date(date);
-    return d.toLocaleDateString("ar-SA", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
+const formatDate = (date: Date | string) => {
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${day}/${month}/${year}`;
+};
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -579,12 +578,12 @@ export function MainTab({
     <>
       <ToastContainer toasts={toasts} removeToast={removeToast} />
 
-      <div
-        className="min-h-screen p-4 lg:p-6"
-        style={{
-          background: `linear-gradient(145deg, ${primaryColor}08 0%, ${primaryColor}03 100%)`,
-        }}
-      >
+        <div
+          className="min-h-screen p-4 lg:p-6"
+          style={{
+            background: `linear-gradient(145deg, rgba(59, 131, 246, 0) 0%, rgba(59, 131, 246, 0) 100%)`,
+          }}
+        >
         {/* شريط العمليات العلوي */}
         <div className="mb-6 lg:mb-8">
           <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
@@ -631,7 +630,7 @@ export function MainTab({
           {/* عمود قائمة المرضى */}
           <div
             ref={listRef}
-            className={`relative flex-shrink-0 transition-all duration-200 ${
+            className={`relative flex-shrink-0 transition-all duration-200 rounded-2xl ${
               !selectedPatient ? "flex-1" : ""
             } ${isCollapsed ? "w-20" : ""}`}
             style={
@@ -645,7 +644,7 @@ export function MainTab({
             >
               {/* Header مع زر الطي/الفرد */}
               <div
-                className={`flex items-center ${isCollapsed ? "justify-center py-4" : "px-5 py-4 border-b border-gray-200 bg-gray-50/50"}`}
+                className={`flex items-center rounded-2xl ${isCollapsed ? "justify-center py-4" : "px-5 py-4 border-b border-gray-200 bg-gray-50/50"}`}
               >
                 {!isCollapsed ? (
                   <>
@@ -703,7 +702,7 @@ export function MainTab({
                         >
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
-                              <h4 className="font-medium text-gray-900 text-base">
+                              <h4 className="font-medium text-gray-900 text-base text-sm">
                                 {patient.fullName}
                               </h4>
                               <button
@@ -717,7 +716,7 @@ export function MainTab({
                               >
                                 <Edit
                                   size={14}
-                                  className="text-gray-400 hover:text-gray-600"
+                                  className="text-red-600 hover:text-red-800"
                                 />
                               </button>
 
@@ -1145,17 +1144,19 @@ function PatientDetailsCard({
           {/* الاسم ورقم الهاتف وعدد الجلسات */}
           <div className="flex items-start justify-between mt-2">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-1">
-                {patient.fullName}
-              </h2>
-
-              <button
-                onClick={onEditPatient}
-                className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
-                title="تعديل بيانات المريض"
-              >
-                <Edit size={18} className="text-gray-600" />
-              </button>
+              <div className="flex items-center gap-2 mb-1">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {patient.fullName}
+                </h2>
+                <button
+                  onClick={onEditPatient}
+                  className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                  title="تعديل بيانات المريض"
+                >
+                  <Edit size={16} className="text-red-600 hover:text-red-800" />
+                </button>
+              </div>
+              
               <div className="flex items-center gap-4 text-gray-600">
                 <span className="flex items-center gap-1.5">
                   <Phone size={16} className="text-gray-400" />
@@ -1184,36 +1185,80 @@ function PatientDetailsCard({
         {/* Content */}
         <div className="p-6 space-y-6">
           {/* العمر والجنس وسنة الميلاد */}
-          <div className="flex items-center gap-6">
-            {patient.age && (
-              <>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-500">العمر:</span>
-                  <span className="text-sm font-medium text-gray-900">
-                    {patient.age} سنة
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-500">سنة الميلاد:</span>
-                  <span className="text-sm font-medium text-gray-900">
-                    {calculateBirthYear(patient.age)} تقريباً
-                  </span>
-                </div>
-              </>
-            )}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500">الجنس:</span>
-              <span
-                className={`text-sm font-medium px-3 py-1 rounded-full ${
-                  patient.gender === "male"
-                    ? "bg-blue-50 text-blue-700"
-                    : "bg-pink-50 text-pink-700"
-                }`}
-              >
-                {patient.gender === "male" ? "ذكر" : "أنثى"}
-              </span>
-            </div>
-          </div>
+<div className="space-y-4">
+  {/* العمر والجنس وسنة الميلاد */}
+  <div className="flex items-center gap-6">
+    {patient.age && (
+      <>
+        <div className="flex items-center gap-1">
+          <span className="text-xs text-gray-500">العمر:</span>
+          <span className="text-xs font-medium text-gray-900">
+            {patient.age} سنة
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="text-xs text-gray-500">سنة الميلاد:</span>
+          <span className="text-xs font-medium text-gray-900">
+            {calculateBirthYear(patient.age)} تقريباً
+          </span>
+        </div>
+      </>
+    )}
+    <div className="flex items-center gap-1">
+      <span className="text-xs text-gray-500">الجنس:</span>
+      <span
+        className={`text-xs font-medium px-1 py-1 rounded-full ${
+          patient.gender === "male"
+            ? "bg-blue-50 text-blue-700"
+            : "bg-pink-50 text-pink-700"
+        }`}
+      >
+        {patient.gender === "male" ? "ذكر" : "أنثى"}
+      </span>
+    </div>
+  </div>
+
+  <div className="space-y-3">
+
+  {/* معلومات إضافية */}
+  <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2 border-t border-gray-100">
+    {/* الإجراء المخطط */}
+    <div className="flex items-center gap-2">
+      <Stethoscope size={14} className="text-gray-400" />
+      <span className="text-xs text-gray-500">الإجراء المخطط:</span>
+      <span className="text-sm font-medium text-gray-900">
+        {patient.plannedProcedure || "غير محدد"}
+      </span>
+    </div>
+
+    {/* السعر الإجمالي */}
+    <div className="flex items-center gap-2">
+      <span className="text-xs text-gray-500">السعر الإجمالي:</span>
+      <span className="text-sm font-semibold text-gray-900">
+        {patient.totalPrice
+          ? `${formatCurrency(parseFloat(patient.totalPrice))}`
+          : formatCurrency(finance.totalCost)}
+      </span>
+    </div>
+
+    {/* المبلغ المتبقي */}
+    {/* <div className="flex items-center gap-2">
+      <span className="text-xs text-gray-500">المتبقي:</span>
+      <span
+        className={`text-sm font-bold px-2 py-0.5 rounded-full ${
+          finance.totalDue > 0
+            ? "text-red-600 bg-red-50"
+            : "text-green-600 bg-green-50"
+        }`}
+      >
+        {finance.totalDue > 0
+          ? formatCurrency(finance.totalDue)
+          : "مكتمل ✓"}
+      </span>
+    </div> */}
+  </div>
+</div>
+</div>
 
           {/* ملاحظات إن وجدت */}
           {patient.notes && (
@@ -3118,13 +3163,6 @@ function EditPatientModal({
         totalPrice: formData.totalPrice || undefined,
       });
 
-      if (addToast) {
-        addToast({
-          message: "تم تعديل بيانات المريض بنجاح",
-          type: "success",
-        });
-      }
-
       onClose();
     } catch (error: any) {
       const errorMessage = error?.message || "حدث خطأ أثناء تعديل المريض";
@@ -3143,7 +3181,7 @@ function EditPatientModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-hidden"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 overflow-hidden"
       >
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
