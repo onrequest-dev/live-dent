@@ -16,7 +16,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setIsClient(true);
   }, []);
-  
 
   // مستمع تحديث البيانات
   useEffect(() => {
@@ -106,13 +105,15 @@ export default function DashboardLayout({
 }) {
   const params = useParams();
   const clinicId = params?.clinicId as string;
-  useEffect(()=>{
-    const refreshpage = sessionStorage.getItem("refresh_from_switch_account")
-    if(refreshpage&&refreshpage==="true"){
-      sessionStorage.removeItem("refresh_from_switch_account")
-      window.location.reload();
+  useEffect(() => {
+    const refreshpage = sessionStorage.getItem("refresh_from_switch_account");
+    if (refreshpage && refreshpage === "true") {
+      setTimeout(() => {
+        sessionStorage.removeItem("refresh_from_switch_account");
+        window.location.reload();
+      }, 600);
     }
-  },[])
+  }, []);
 
   if (!clinicId) {
     return (
@@ -121,13 +122,10 @@ export default function DashboardLayout({
       </div>
     );
   }
- 
-
 
   return (
-      <ClinicProvider clinicId={clinicId}>
-        <DashboardContent>{children}</DashboardContent>
-      </ClinicProvider>
-
+    <ClinicProvider clinicId={clinicId}>
+      <DashboardContent>{children}</DashboardContent>
+    </ClinicProvider>
   );
 }
