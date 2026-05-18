@@ -112,12 +112,8 @@ export function AccountSwitcher() {
         );
         setAccounts(updatedAccounts);
         localStorage.setItem("clinics", JSON.stringify(updatedAccounts));
-
         // إظهار نجاح التبديل لمدة قصيرة ثم تحديث الصفحة
-        setTimeout(() => {
-          
-          window.dispatchEvent(new CustomEvent("refreshPatientsData"));
-        }, 2000);
+        window.location.href = "/";
       } else {
         console.error("فشل تبديل الحساب:", result.error);
         // إعادة تعيين حالة التحميل في حالة الفشل
