@@ -29,6 +29,7 @@ import { Clinic } from '@/types';
 import { updateClinic } from '@/client/helpers/clinic';
 import { WorkingHours } from '@/types';
 import { handleUploadImage } from '@/client/helpers/upload_image';
+import { HexColorPicker } from 'react-colorful';
 
 // ============================================================
 // أيام الأسبوع
@@ -620,11 +621,9 @@ export function ClinicInfoTab({ clinicData, onClinicUpdate }: ClinicInfoTabProps
                     <label className="block text-sm text-gray-700 mb-2">اللون الأساسي</label>
                     {isEditing ? (
                       <div className="flex items-center gap-2">
-                        <input
-                          type="color"
-                          value={formData.primaryColor}
-                          onChange={(e) => handleInputChange('primaryColor', e.target.value)}
-                          className="w-12 h-11 rounded-xl border border-gray-300 cursor-pointer"
+                        <HexColorPicker
+                          color={formData.primaryColor}
+                          onChange={(newColor) => handleInputChange('primaryColor', newColor)}
                         />
                         {/* <input
                           type="text"
@@ -651,12 +650,10 @@ export function ClinicInfoTab({ clinicData, onClinicUpdate }: ClinicInfoTabProps
                     <label className="block text-sm text-gray-700 mb-2">اللون الثانوي</label>
                     {isEditing ? (
                       <div className="flex items-center gap-2">
-                        <input
-                          type="color"
-                          value={formData.secondaryColor}
-                          onChange={(e) => handleInputChange('secondaryColor', e.target.value)}
-                          className="w-12 h-11 rounded-xl border border-gray-300 cursor-pointer"
-                        />
+                          <HexColorPicker
+                            color={formData.secondaryColor}
+                            onChange={(newColor) => handleInputChange('secondaryColor', newColor)}
+                          />
                         {/* <input
                           type="text"
                           value={formData.secondaryColor}
