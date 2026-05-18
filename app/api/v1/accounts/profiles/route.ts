@@ -69,7 +69,8 @@ export async function POST(request: NextRequest) {
             },
             { status: 200 }
         );
-
+        response.cookies.delete("jwt");
+        response.cookies.delete("clinic_id");
         // 7. تعيين الكوكيز
         response.cookies.set("jwt", newJwt || "", {
             path: "/",
