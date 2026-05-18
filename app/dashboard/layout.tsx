@@ -16,6 +16,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setIsClient(true);
   }, []);
+  
 
   // مستمع تحديث البيانات
   useEffect(() => {
@@ -105,6 +106,13 @@ export default function DashboardLayout({
 }) {
   const params = useParams();
   const clinicId = params?.clinicId as string;
+  useEffect(()=>{
+    const refreshpage = sessionStorage.getItem("refresh_from_switch_account")
+    if(refreshpage&&refreshpage==="true"){
+      sessionStorage.removeItem("refresh_from_switch_account")
+      window.location.reload();
+    }
+  },[])
 
   if (!clinicId) {
     return (
