@@ -114,7 +114,7 @@ export function AccountSwitcher() {
         localStorage.setItem("clinics", JSON.stringify(updatedAccounts));
         // إظهار نجاح التبديل لمدة قصيرة ثم تحديث الصفحة
         await new Promise((resolve) => setTimeout(resolve, 500));
-        window.location.href = `/dashboard/${accountId}?t=${Date.now()}`; // إعادة تحميل الصفحة لتحديث البيانات
+        window.location.href = `/dashboard/${accountId}?time=${Date.now()}`; // إعادة تحميل الصفحة لتحديث البيانات
       } else {
         console.error("فشل تبديل الحساب:", result.error);
         // إعادة تعيين حالة التحميل في حالة الفشل
