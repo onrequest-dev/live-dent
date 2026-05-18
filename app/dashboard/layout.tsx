@@ -7,7 +7,6 @@ import { useParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { PWAInstallPrompt } from "@/components/dashboard/PWAInstallPrompt";
-
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const { clinicData, isLoading, secondaryColor, refetch } = useClinic();
   const [isRefetching, setIsRefetching] = useState(false);
@@ -118,9 +117,9 @@ export default function DashboardLayout({
 
 
   return (
-    <ClinicProvider clinicId={clinicId}>
-      <DashboardContent>{children}
-      </DashboardContent>
-    </ClinicProvider>
+      <ClinicProvider clinicId={clinicId}>
+        <DashboardContent>{children}</DashboardContent>
+      </ClinicProvider>
+
   );
 }
