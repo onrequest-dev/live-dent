@@ -116,7 +116,7 @@ export function AccountSwitcher() {
         // إظهار نجاح التبديل لمدة قصيرة ثم تحديث الصفحة
         setTimeout(() => {
           
-          window.location.href = "/"
+          window.dispatchEvent(new CustomEvent("refreshPatientsData"));
         }, 2000);
       } else {
         console.error("فشل تبديل الحساب:", result.error);
