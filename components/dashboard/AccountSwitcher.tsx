@@ -18,7 +18,6 @@ import {
   Loader2,
 } from "lucide-react";
 import { switchClinic } from "@/client/helpers/switch_accounts";
-import { useRouter } from "next/navigation";
 
 interface ClinicAccount {
   id: string;
@@ -29,7 +28,6 @@ interface ClinicAccount {
 }
 
 export function AccountSwitcher() {
-  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [accounts, setAccounts] = useState<ClinicAccount[]>([]);
   const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
@@ -117,8 +115,9 @@ export function AccountSwitcher() {
 
         // إظهار نجاح التبديل لمدة قصيرة ثم تحديث الصفحة
         setTimeout(() => {
-          router.push("/");
-          router.refresh(); // تحديث بيانات السيرفر
+          
+          window.location.reload();
+
         }, 800);
       } else {
         console.error("فشل تبديل الحساب:", result.error);
