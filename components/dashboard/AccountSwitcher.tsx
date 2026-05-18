@@ -116,9 +116,8 @@ export function AccountSwitcher() {
         // إظهار نجاح التبديل لمدة قصيرة ثم تحديث الصفحة
         setTimeout(() => {
           
-          window.location.reload();
-
-        }, 800);
+          window.location.href = "/"
+        }, 2000);
       } else {
         console.error("فشل تبديل الحساب:", result.error);
         // إعادة تعيين حالة التحميل في حالة الفشل
