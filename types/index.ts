@@ -136,7 +136,19 @@ export type ClinicEmployeeRole = 'admin'|'manager'|'employee';
 export interface ClinicEmployeeJwt extends JwtPayload {
   id: string;
   clinicId: string;
+  clinicIds?: string[]; // في حالة وجود موظف يعمل في عدة عيادات
   role : ClinicEmployeeRole;
   subscriptionStatus : 'active' | 'expired' | 'trial';
   device_id:string
+}
+
+export interface StoredAccount {
+  id: string;              // معرف فريد للحساب المخزن (UUID)
+  clinicId: string;        // معرف العيادة
+  clinicName: string;      // اسم العيادة
+  clinicLogo?: string;     // شعار العيادة (اختياري)
+  doctorName?: string;     // اسم الطبيب (اختياري)
+  username: string;        // اسم المستخدم الذي سجل الدخول
+  jwt: string;             // JWT token الخاص بهذا الحساب
+  lastUsed: Date;          // تاريخ آخر استخدام للحساب
 }

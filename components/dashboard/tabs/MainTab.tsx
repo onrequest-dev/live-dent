@@ -715,8 +715,8 @@ const formatDate = (date: Date | string) => {
                                 title="تعديل بيانات المريض"
                               >
                                 <Edit
-                                  size={14}
-                                  className="text-red-600 hover:text-red-800"
+                                  size={18}
+                                  className="text-gray-600 hover:text-gray-800"
                                 />
                               </button>
 
@@ -1153,10 +1153,13 @@ function PatientDetailsCard({
                   className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
                   title="تعديل بيانات المريض"
                 >
-                  <Edit size={16} className="text-red-600 hover:text-red-800" />
+                  <Edit
+                    size={isMobile?22:16}
+                    className="text-gray-600 hover:text-gray-800"
+                  />
                 </button>
               </div>
-              
+
               <div className="flex items-center gap-4 text-gray-600">
                 <span className="flex items-center gap-1.5">
                   <Phone size={16} className="text-gray-400" />
@@ -1185,64 +1188,63 @@ function PatientDetailsCard({
         {/* Content */}
         <div className="p-6 space-y-6">
           {/* العمر والجنس وسنة الميلاد */}
-<div className="space-y-4">
-  {/* العمر والجنس وسنة الميلاد */}
-  <div className="flex items-center gap-6">
-    {patient.age && (
-      <>
-        <div className="flex items-center gap-1">
-          <span className="text-xs text-gray-500">العمر:</span>
-          <span className="text-xs font-medium text-gray-900">
-            {patient.age} سنة
-          </span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="text-xs text-gray-500">سنة الميلاد:</span>
-          <span className="text-xs font-medium text-gray-900">
-            {calculateBirthYear(patient.age)} تقريباً
-          </span>
-        </div>
-      </>
-    )}
-    <div className="flex items-center gap-1">
-      <span className="text-xs text-gray-500">الجنس:</span>
-      <span
-        className={`text-xs font-medium px-1 py-1 rounded-full ${
-          patient.gender === "male"
-            ? "bg-blue-50 text-blue-700"
-            : "bg-pink-50 text-pink-700"
-        }`}
-      >
-        {patient.gender === "male" ? "ذكر" : "أنثى"}
-      </span>
-    </div>
-  </div>
+          <div className="space-y-4">
+            {/* العمر والجنس وسنة الميلاد */}
+            <div className="flex items-center gap-6">
+              {patient.age && (
+                <>
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-500">العمر:</span>
+                    <span className="text-xs font-medium text-gray-900">
+                      {patient.age} سنة
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-500">سنة الميلاد:</span>
+                    <span className="text-xs font-medium text-gray-900">
+                      {calculateBirthYear(patient.age)} تقريباً
+                    </span>
+                  </div>
+                </>
+              )}
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-gray-500">الجنس:</span>
+                <span
+                  className={`text-xs font-medium px-1 py-1 rounded-full ${
+                    patient.gender === "male"
+                      ? "bg-blue-50 text-blue-700"
+                      : "bg-pink-50 text-pink-700"
+                  }`}
+                >
+                  {patient.gender === "male" ? "ذكر" : "أنثى"}
+                </span>
+              </div>
+            </div>
 
-  <div className="space-y-3">
+            <div className="space-y-3">
+              {/* معلومات إضافية */}
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2 border-t border-gray-100">
+                {/* الإجراء المخطط */}
+                <div className="flex items-center gap-2">
+                  <Stethoscope size={14} className="text-gray-400" />
+                  <span className="text-xs text-gray-500">الإجراء المخطط:</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {patient.plannedProcedure || "غير محدد"}
+                  </span>
+                </div>
 
-  {/* معلومات إضافية */}
-  <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2 border-t border-gray-100">
-    {/* الإجراء المخطط */}
-    <div className="flex items-center gap-2">
-      <Stethoscope size={14} className="text-gray-400" />
-      <span className="text-xs text-gray-500">الإجراء المخطط:</span>
-      <span className="text-sm font-medium text-gray-900">
-        {patient.plannedProcedure || "غير محدد"}
-      </span>
-    </div>
+                {/* السعر الإجمالي */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500">السعر الإجمالي:</span>
+                  <span className="text-sm font-semibold text-gray-900">
+                    {patient.totalPrice
+                      ? `${formatCurrency(parseFloat(patient.totalPrice))}`
+                      : formatCurrency(finance.totalCost)}
+                  </span>
+                </div>
 
-    {/* السعر الإجمالي */}
-    <div className="flex items-center gap-2">
-      <span className="text-xs text-gray-500">السعر الإجمالي:</span>
-      <span className="text-sm font-semibold text-gray-900">
-        {patient.totalPrice
-          ? `${formatCurrency(parseFloat(patient.totalPrice))}`
-          : formatCurrency(finance.totalCost)}
-      </span>
-    </div>
-
-    {/* المبلغ المتبقي */}
-    {/* <div className="flex items-center gap-2">
+                {/* المبلغ المتبقي */}
+                {/* <div className="flex items-center gap-2">
       <span className="text-xs text-gray-500">المتبقي:</span>
       <span
         className={`text-sm font-bold px-2 py-0.5 rounded-full ${
@@ -1256,9 +1258,9 @@ function PatientDetailsCard({
           : "مكتمل ✓"}
       </span>
     </div> */}
-  </div>
-</div>
-</div>
+              </div>
+            </div>
+          </div>
 
           {/* ملاحظات إن وجدت */}
           {patient.notes && (
