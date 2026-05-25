@@ -20,6 +20,7 @@ import {
   X,
 } from 'lucide-react';
 import { Clinic } from '@/types';
+import { AccountSwitcher } from './AccountSwitcher';
 
 // ✅ ترتيب الأيقونات للقائمة السفلية (من اليمين لليسار)
 const bottomNavItems = [
@@ -428,7 +429,8 @@ const MobileBottomNav = () => (
                         className="object-contain"
                         sizes="48px"
                         priority
-                      />
+                      /> 
+                      
                     </div>
                   ) : (
                     <span className="text-3xl">{clinicData.logo || '🦷'}</span>
@@ -579,7 +581,7 @@ const MobileBottomNav = () => (
         })}
       </nav>
 
-      <div className="p-3 border-t border-gray-100">
+      {/* <div className="p-3 border-t border-gray-100">
         <motion.button
           whileHover={{ x: -4 }}
           className={`
@@ -601,7 +603,7 @@ const MobileBottomNav = () => (
             )}
           </AnimatePresence>
         </motion.button>
-      </div>
+      </div> */}
     </motion.div>
   );
 

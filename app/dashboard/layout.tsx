@@ -7,7 +7,6 @@ import { useParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { PWAInstallPrompt } from "@/components/dashboard/PWAInstallPrompt";
-
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const { clinicData, isLoading, secondaryColor, refetch } = useClinic();
   const [isRefetching, setIsRefetching] = useState(false);
@@ -106,6 +105,15 @@ export default function DashboardLayout({
 }) {
   const params = useParams();
   const clinicId = params?.clinicId as string;
+  useEffect(() => {
+    const refreshpage = sessionStorage.getItem("refresh_from_switch_account");
+    if (refreshpage && refreshpage === "true") {
+      setTimeout(() => {
+        sessionStorage.removeItem("refresh_from_switch_account");
+        window.location.reload();
+      }, 600);
+    }
+  }, []);
 
   if (!clinicId) {
     return (
@@ -114,13 +122,10 @@ export default function DashboardLayout({
       </div>
     );
   }
- 
-
 
   return (
     <ClinicProvider clinicId={clinicId}>
-      <DashboardContent>{children}
-      </DashboardContent>
+      <DashboardContent>{children}</DashboardContent>
     </ClinicProvider>
   );
 }

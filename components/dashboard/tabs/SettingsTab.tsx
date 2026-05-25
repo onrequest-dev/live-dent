@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
+import { AccountSwitcher } from "../AccountSwitcher";
 
 interface SettingsTabProps {
   clinicData: any;
@@ -116,46 +117,47 @@ export function SettingsTab({ clinicData }: SettingsTabProps) {
       </div>
 
       <div className="space-y-6">
+       <AccountSwitcher/>
         {/* إعدادات السلوك */}
-{/* إعدادات السلوك - يظهر فقط في الشاشات الكبيرة */}
-<div className="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-  <div className="p-6 border-b border-gray-100">
-    <h2 className="text-xl font-semibold text-gray-800">السلوك</h2>
-  </div>
+        {/* إعدادات السلوك - يظهر فقط في الشاشات الكبيرة */}
+        <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-6 border-b border-gray-100">
+            <h2 className="text-xl font-semibold text-gray-800">السلوك</h2>
+          </div>
 
-  <div className="p-6">
-    <div className="flex items-center justify-between">
-      <div>
-        <label className="text-lg font-medium text-gray-700">
-          إغلاق تلقائي للقائمة
-        </label>
-        <p className="text-sm text-gray-500 mt-1">
-          إغلاق القائمة عند التنقل بين التبويبات
-        </p>
-      </div>
+          <div className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-lg font-medium text-gray-700">
+                  إغلاق تلقائي للقائمة
+                </label>
+                <p className="text-sm text-gray-500 mt-1">
+                  إغلاق القائمة عند التنقل بين التبويبات
+                </p>
+              </div>
 
-      <button
-        onClick={() => handleAutoCollapseChange(!autoCollapse)}
-        className="relative"
-      >
-        <div
-          className={`w-14 h-7 rounded-full transition-all ${
-            autoCollapse ? "" : "bg-gray-300"
-          }`}
-          style={{
-            backgroundColor: autoCollapse ? primaryColor : undefined,
-          }}
-        >
-          <div
-            className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all ${
-              autoCollapse ? "right-1" : "left-1"
-            }`}
-          />
+              <button
+                onClick={() => handleAutoCollapseChange(!autoCollapse)}
+                className="relative"
+              >
+                <div
+                  className={`w-14 h-7 rounded-full transition-all ${
+                    autoCollapse ? "" : "bg-gray-300"
+                  }`}
+                  style={{
+                    backgroundColor: autoCollapse ? primaryColor : undefined,
+                  }}
+                >
+                  <div
+                    className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all ${
+                      autoCollapse ? "right-1" : "left-1"
+                    }`}
+                  />
+                </div>
+              </button>
+            </div>
+          </div>
         </div>
-      </button>
-    </div>
-  </div>
-</div>
 
         {/* إضافة إلى الشاشة الرئيسية - القسم المعدل */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">

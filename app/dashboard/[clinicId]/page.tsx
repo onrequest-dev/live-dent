@@ -194,7 +194,7 @@ return (
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
         transition={{ duration: 0.2 }}
-        className='mt-8'
+        className='mt-4'
       >
         {renderTab()}
       </motion.div>

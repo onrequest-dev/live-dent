@@ -47,6 +47,25 @@ export async function loginEmployee(
                 status: response.status,
             };
         }
+        // ✅ حفظ البيانات في localStorage بعد نجاح تسجيل الدخول
+        if (data.clinics && Array.isArray(data.clinics)) {
+            localStorage.setItem('clinics', JSON.stringify(data.clinics));
+        }
+        
+        if (data.clinicIds && Array.isArray(data.clinicIds)) {
+            localStorage.setItem('clinicIds', JSON.stringify(data.clinicIds));
+        }
+        
+        // حفظ العيادة الحالية (النشيطة)
+        if (data.slug) {
+            localStorage.setItem('currentClinicId', data.slug);
+            // البحث عن اسم العيادة الحالية من مصفوفة clinics
+            const currentClinic = data.clinics?.find((c:any) => c.id === data.slug);
+            if (currentClinic) {
+                localStorage.setItem('currentClinicName', currentClinic.name);
+                localStorage.setItem('currentClinicLogo', currentClinic.logo);
+            }
+        }
 
         return {
             success: true,
