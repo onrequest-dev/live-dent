@@ -14,6 +14,7 @@
     "bcryptjs": "^3.0.3",
     "browser-image-compression": "^2.0.2",
     "date-fns": "^4.1.0",
+    "dexie": "^4.4.3",
     "framer-motion": "^12.38.0",
     "html-to-image": "^1.11.13",
     "jsonwebtoken": "^9.0.3",
