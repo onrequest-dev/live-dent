@@ -68,6 +68,6 @@ class TelegramMediaManager {
 }
 
 // إنشاء نسخة واحدة (ضع التوكن في env متغير عام NEXT_PUBLIC_*)
-const botToken = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN!;
-const chatId = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID!;
+const botToken = process.env.NEXT_PUBLIC_XRAY_TELEGRAM_BOT_TOKEN!;
+const chatId = process.env.NEXT_PUBLIC_XRAY_TELEGRAM_CHAT_ID!;
 export const telegramClient = new TelegramMediaManager({ botToken, chatId });
