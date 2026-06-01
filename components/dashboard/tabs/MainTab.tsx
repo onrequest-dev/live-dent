@@ -597,31 +597,55 @@ const formatDate = (date: Date | string) => {
                 style={{ "--tw-ring-color": primaryColor } as any}
               />
             </div>
-            <div className="flex items-center gap-3 w-full lg:w-auto">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setShowTodayOnly(!showTodayOnly)}
-                className="flex items-center gap-2 px-5 py-3.5 rounded-2xl font-medium text-base shadow-lg transition-all"
-                style={{
-                  background: showTodayOnly ? primaryColor : "white",
-                  color: showTodayOnly ? "white" : "#374151",
-                }}
-              >
-                <Users size={18} />
-                <span>{showTodayOnly ? "جميع المرضى" : "مرضى اليوم"}</span>
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setShowNewPatientModal(true)}
-                className="flex items-center gap-2 px-5 py-3.5 rounded-2xl font-medium text-base text-white shadow-lg transition-all"
-                style={{ background: primaryColor }}
-              >
-                <UserPlus size={18} />
-                <span className="hidden lg:inline">مريض جديد</span>
-              </motion.button>
-            </div>
+<div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+  {/* زر تبديل عرض المرضى */}
+  <motion.button
+    whileHover={{ scale: 1.02 }}
+    whileTap={{ scale: 0.98 }}
+    onClick={() => setShowTodayOnly(!showTodayOnly)}
+    className={`
+      flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl
+      font-medium text-sm sm:text-base transition-all duration-200
+      shadow-md hover:shadow-lg flex-1 sm:flex-none justify-center
+      ${showTodayOnly 
+        ? "text-white shadow-lg" 
+        : "text-gray-700 bg-white border border-gray-200 hover:border-gray-300"
+      }
+    `}
+    style={{
+      background: showTodayOnly ? primaryColor : undefined,
+      color: showTodayOnly ? "white" : undefined,
+    }}
+  >
+    <Users size={16} className="sm:w-[18px] sm:h-[18px]" />
+    <span className="whitespace-nowrap">
+      {showTodayOnly ? "جميع المرضى" : "مرضى اليوم"}
+    </span>
+  </motion.button>
+
+  {/* زر إضافة مريض جديد */}
+  <motion.button
+    whileHover={{ scale: 1.02 }}
+    whileTap={{ scale: 0.98 }}
+    onClick={() => setShowNewPatientModal(true)}
+    className={`
+      flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3
+      rounded-xl sm:rounded-2xl font-medium text-sm sm:text-base
+      text-white shadow-md hover:shadow-lg transition-all duration-200
+      flex-1 sm:flex-none justify-center
+    `}
+    style={{ 
+      background: primaryColor,
+      boxShadow: `0 4px 14px ${primaryColor}40`
+    }}
+  >
+    <UserPlus size={16} className="sm:w-[18px] sm:h-[18px]" />
+    <span className="whitespace-nowrap">
+      <span className="hidden sm:inline">مريض جديد</span>
+      <span className="sm:hidden">جديد</span>
+    </span>
+  </motion.button>
+</div>
           </div>
         </div>
 
@@ -705,21 +729,6 @@ const formatDate = (date: Date | string) => {
                               <h4 className="font-medium text-gray-900 text-base text-sm">
                                 {patient.fullName}
                               </h4>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingPatient(patient);
-                                  setShowEditPatientModal(true);
-                                }}
-                                className="p-1 rounded-lg hover:bg-gray-200 transition-colors"
-                                title="تعديل بيانات المريض"
-                              >
-                                <Edit
-                                  size={18}
-                                  className="text-gray-600 hover:text-gray-800"
-                                />
-                              </button>
-
                               <span
                                 className={`text-xs px-2.5 py-1 rounded-full font-medium ${patient.gender === "male" ? "bg-blue-100 text-blue-700" : "bg-pink-100 text-pink-700"}`}
                               >
@@ -731,16 +740,6 @@ const formatDate = (date: Date | string) => {
                                 </span>
                               )}
                             </div>
-                            <ChevronRight
-                              size={18}
-                              className="text-gray-400"
-                              style={{
-                                color:
-                                  selectedPatient?.id === patient.id
-                                    ? primaryColor
-                                    : undefined,
-                              }}
-                            />
                           </div>
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-1 text-gray-700">
@@ -1621,14 +1620,14 @@ function EditSessionModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 modal-fullscreen-overlay"
         // onClick={isLoading ? undefined : onClose}
       >
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto modal-fullscreen  [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="p-6" style={{ background: primaryColor }}>
@@ -2231,16 +2230,16 @@ function NewPatientModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-hidden"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-hidden modal-fullscreen-overlay"
       >
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto  modal-fullscreen [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="p-6" style={{ background: primaryColor }}>
+          <div className="p-3" style={{ background: primaryColor }}>
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-white flex items-center gap-3">
                 <UserPlus size={24} />
@@ -2256,7 +2255,7 @@ function NewPatientModal({
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          <form onSubmit={handleSubmit} className="p-3 space-y-3">
             {/* عرض الخطأ المحلي */}
             {localError && (
               <motion.div
@@ -2284,10 +2283,6 @@ function NewPatientModal({
 
             {/* معلومات أساسية */}
             <div className="space-y-4">
-              <h3 className="font-bold text-gray-900 text-lg">
-                المعلومات الأساسية
-              </h3>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -2871,17 +2866,17 @@ function NewAppointmentModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 modal-fullscreen-overlay"
         // onClick={isLoading ? undefined : onClose}
       >
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto modal-fullscreen [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="p-6" style={{ background: primaryColor }}>
+          <div className="p-3" style={{ background: primaryColor }}>
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-white flex items-center gap-3">
                 <CalendarIcon size={20} />
@@ -2898,7 +2893,7 @@ function NewAppointmentModal({
             <p className="text-white/90 mt-1">للمريض: {patient.fullName}</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <form onSubmit={handleSubmit} className="p-3 space-y-3">
             {/* عرض الخطأ المحلي */}
             {localError && (
               <motion.div
@@ -3226,16 +3221,16 @@ function EditPatientModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 overflow-hidden"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 overflow-hidden modal-fullscreen-overlay"
       >
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto modal-fullscreen [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="p-6" style={{ background: primaryColor }}>
+          <div className="p-3" style={{ background: primaryColor }}>
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-white flex items-center gap-3">
                 <Edit size={24} />
@@ -3252,7 +3247,7 @@ function EditPatientModal({
             <p className="text-white/90 mt-1">المريض: {patient.fullName}</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          <form onSubmit={handleSubmit} className="p-3 space-y-3">
             {localError && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
@@ -3277,12 +3272,8 @@ function EditPatientModal({
               </motion.div>
             )}
 
-            <div className="space-y-4">
-              <h3 className="font-bold text-gray-900 text-lg">
-                المعلومات الأساسية
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     الاسم الكامل <span className="text-red-500">*</span>
