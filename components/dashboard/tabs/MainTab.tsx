@@ -44,7 +44,7 @@ import {
   updateSession,
 } from "@/client/helpers/session";
 import { ToastContainer, useToast } from "./Toast";
-
+import { XRayViewerButton } from "../XRayViewer";
 // ============================================================
 // خدمة API محاكية (لتحضير الربط مع الباك إند)
 // ============================================================
@@ -1141,48 +1141,91 @@ function PatientDetailsCard({
             <X size={18} />
           </button>
 
-          {/* الاسم ورقم الهاتف وعدد الجلسات */}
-          <div className="flex items-start justify-between mt-2">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  {patient.fullName}
-                </h2>
-                <button
-                  onClick={onEditPatient}
-                  className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
-                  title="تعديل بيانات المريض"
-                >
-                  <Edit
-                    size={isMobile?22:16}
-                    className="text-gray-600 hover:text-gray-800"
-                  />
-                </button>
-              </div>
+{/* الاسم ورقم الهاتف وعدد الجلسات */}
+<div className="flex flex-col gap-3 mt-2">
+  {/* معلومات المريض */}
+  <div className="flex items-start justify-between">
+    <div>
+      <div className="flex items-center gap-2 mb-1">
+        <h2 className="text-2xl font-bold text-gray-900">
+          {patient.fullName}
+        </h2>
+      </div>
 
-              <div className="flex items-center gap-4 text-gray-600">
-                <span className="flex items-center gap-1.5">
-                  <Phone size={16} className="text-gray-400" />
-                  <span dir="ltr">{patient.phone}</span>
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Calendar size={16} className="text-gray-400" />
-                  <span>{sessions.length} جلسة</span>
-                </span>
-              </div>
-            </div>
+      <div className="flex items-center gap-4 text-gray-600">
+        <span className="flex items-center gap-1.5">
+          <Phone size={16} className="text-gray-400" />
+          <span dir="ltr">{patient.phone}</span>
+        </span>
+        <span className="flex items-center gap-1.5">
+          <Calendar size={16} className="text-gray-400" />
+          <span>{sessions.length} جلسة</span>
+        </span>
+      </div>
+    </div>
 
-            {/* زر إضافة موعد جديد */}
-            <button
-              onClick={onAddAppointment}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-medium text-sm
-                       transition-all hover:shadow-md active:scale-95"
-              style={{ background: primaryColor }}
-            >
-              <Plus size={18} />
-              <span>موعد جديد</span>
-            </button>
-          </div>
+    {/* الأزرار للشاشات الكبيرة */}
+    <div className="hidden sm:flex items-center gap-2">
+      <button
+        onClick={onEditPatient}
+        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-medium text-sm
+                 transition-all hover:bg-gray-200 active:scale-95"
+        title="تعديل بيانات المريض"
+      >
+        <Edit size={16} />
+        <span>تعديل</span>
+      </button>
+
+      <XRayViewerButton
+        patientId={patient.id}
+        patientName={patient.fullName}
+        primaryColor={primaryColor}
+        isMobile={false}
+      />
+
+      <button
+        onClick={onAddAppointment}
+        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-medium text-sm
+                 transition-all hover:shadow-md active:scale-95"
+        style={{ background: primaryColor }}
+      >
+        <Plus size={18} />
+        <span>موعد جديد</span>
+      </button>
+    </div>
+  </div>
+
+  {/* سطر الأزرار للهاتف */}
+  <div className="flex sm:hidden items-center gap-2 w-full">
+    <button
+      onClick={onEditPatient}
+      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-medium text-sm
+               transition-all hover:bg-gray-200 active:scale-95 flex-1 justify-center"
+    >
+      <Edit size={18} />
+      <span>تعديل</span>
+    </button>
+
+    <div className="flex-1">
+      <XRayViewerButton
+        patientId={patient.id}
+        patientName={patient.fullName}
+        primaryColor={primaryColor}
+        isMobile={true}
+      />
+    </div>
+
+    <button
+      onClick={onAddAppointment}
+      className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-medium text-sm
+               transition-all hover:shadow-md active:scale-95 flex-1 justify-center"
+      style={{ background: primaryColor }}
+    >
+      <Plus size={18} />
+      <span>موعد جديد</span>
+    </button>
+  </div>
+</div>
         </div>
 
         {/* Content */}
