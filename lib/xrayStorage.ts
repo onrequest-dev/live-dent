@@ -117,67 +117,91 @@ export interface PatientImage {
 }
 
 export async function getPatientImages(patientId: string): Promise<PatientImage[]> {
-  let localImages = await db.images.where('patientId').equals(patientId).toArray();
+  const jwt = document.cookie.split('; ').find(row => row.startsWith('jwt='))?.split('=')[1];
+  let serverImages: any[] = [];
+  let serverAvailable = false;
 
-  if (localImages.length === 0) {
-    const jwt = document.cookie.split('; ').find(row => row.startsWith('jwt='))?.split('=')[1];
+  // 1. محاولة جلب البيانات من الخادم
+  try {
     const response = await fetch(`/api/v1/xray_img?patientId=${encodeURIComponent(patientId)}`, {
       headers: jwt ? { 'Authorization': `Bearer ${jwt}` } : {},
     });
-    if (!response.ok) {
-      throw new Error('فشل جلب الصور من الخادم');
+    
+    if (response.ok) {
+      const data = await response.json();
+      serverImages = data.images;
+      serverAvailable = true;
     }
-    const data = await response.json();
-    const serverImages = data.images;
+  } catch (err) {
+    console.warn('⚠️ الخادم غير متاح، استخدام البيانات المحلية فقط:', err);
+    // سنستخدم البيانات المحلية فقط
+  }
 
-    for (const img of serverImages) {
-      try {
-        // ✅ إضافة patientId و mimeType افتراضي
-        const imageWithPatient: XrayImageMetadata = {
-          ...img,
-          patientId: patientId,
-          mimeType: img.mimeType || 'image/jpeg', // استخدم الـ mimeType المخزن أو افتراضي
-        };
-
-        let fileBlob = await getLocalFile(img.img_tele_id);
-        if (!fileBlob) {
-          try {
-            const buffer = await telegramClient.getFileBuffer(img.img_tele_id);
-            // ✅ استخدام الـ mimeType الصحيح بدلاً من فرض 'image/jpeg'
-            const mimeType = imageWithPatient.mimeType || 'image/jpeg';
-            fileBlob = new Blob([new Uint8Array(buffer)], { type: mimeType });
-            await storeLocalFile(img.img_tele_id, fileBlob, `${img.id}.${getExtensionFromMime(mimeType)}`);
-          } catch (downloadErr) {
-            console.error(`فشل تحميل الملف ${img.img_tele_id}:`, downloadErr);
-            fileBlob = null;
-          }
-        }
-        
-        await db.images.put(imageWithPatient);
-        localImages.push(imageWithPatient);
-        
-      } catch (err) {
-        console.error(`خطأ في معالجة الصورة ${img.id}:`, err);
+  // 2. إذا الخادم متاح، مزامنة IndexedDB
+  if (serverAvailable) {
+    const existingLocalImages = await db.images.where('patientId').equals(patientId).toArray();
+    const serverImageIds = new Set(serverImages.map((img: any) => img.id));
+    
+    // حذف الصور المحلية غير الموجودة على الخادم
+    for (const localImg of existingLocalImages) {
+      if (!serverImageIds.has(localImg.id)) {
+        await db.files.delete(localImg.img_tele_id);
+        await db.images.delete(localImg.id);
       }
+    }
+
+    // تحديث/إدراج الصور من الخادم
+    for (const img of serverImages) {
+      const metadata: XrayImageMetadata = {
+        id: img.id,
+        patientId,
+        title: img.title,
+        img_tele_id: img.img_tele_id,
+        created_at: img.created_at,
+        mimeType: img.mimeType || 'image/jpeg',
+      };
+      await db.images.put(metadata);
     }
   }
 
-  // إنشاء النتيجة
+  // 3. استرجاع الصور من التخزين المحلي (سواء تزامنت أو لا)
+  const localImages = await db.images.where('patientId').equals(patientId).toArray();
+  
+  // 4. بناء الروابط: محلي أولاً، ثم من تيليجرام إن أمكن
   const result: PatientImage[] = [];
+
   for (const img of localImages) {
     let localUrl: string | null = null;
+
+    // (أ) البحث عن الملف في التخزين المحلي
     const blob = await getLocalFile(img.img_tele_id);
     if (blob) {
       localUrl = URL.createObjectURL(blob);
-    } else {
+    } else if (serverAvailable) {
+      // (ب) تحميل من تيليجرام فقط إذا الخادم متاح (لدينا اتصال)
       try {
-        const directUrl = await telegramClient.getFileUrl(img.img_tele_id);
-        localUrl = directUrl;
-      } catch (urlErr) {
-        console.error(`لا يمكن الحصول على رابط للصورة ${img.id}:`, urlErr);
-        continue;
+        const buffer = await telegramClient.getFileBuffer(img.img_tele_id);
+        const mimeType = img.mimeType || 'image/jpeg';
+        const fileBlob = new Blob([new Uint8Array(buffer)], { type: mimeType });
+        const ext = getExtensionFromMime(mimeType);
+        await storeLocalFile(img.img_tele_id, fileBlob, `${img.id}.${ext}`);
+        localUrl = URL.createObjectURL(fileBlob);
+      } catch (downloadErr) {
+        console.error(`فشل تحميل الملف ${img.img_tele_id}:`, downloadErr);
+        try {
+          const directUrl = await telegramClient.getFileUrl(img.img_tele_id);
+          localUrl = directUrl;
+        } catch (urlErr) {
+          console.error(`لا يمكن الحصول على رابط للصورة ${img.id}:`, urlErr);
+          continue;
+        }
       }
+    } else {
+      // (ج) الخادم غير متاح والملف غير موجود محلياً - عرض صورة بديلة أو تخطي
+      console.warn(`⚠️ الملف ${img.img_tele_id} غير متاح محلياً ولا يمكن تحميله (لا يوجد اتصال)`);
+      localUrl = '/placeholder-image.png'; // رابط صورة افتراضية
     }
+
     result.push({
       id: img.id,
       title: img.title,
@@ -186,9 +210,9 @@ export async function getPatientImages(patientId: string): Promise<PatientImage[
       localUrl,
     });
   }
+
   return result;
 }
-
 // ✅ دالة مساعدة لاستخراج الامتداد من نوع MIME
 function getExtensionFromMime(mimeType: string): string {
   const extensions: Record<string, string> = {
