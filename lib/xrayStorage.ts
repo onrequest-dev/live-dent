@@ -156,7 +156,7 @@ function getExtensionFromMime(mimeType: string): string {
 
 export async function getPatientImages(patientId: string): Promise<PatientImage[]> {
   const CACHE_NAME = 'xray-images-api-cache';
-  const CACHE_DURATION = 60 * 1000; // دقيقة واحدة
+  const CACHE_DURATION = 60 * 1000 * 2; // دقيقة واحدة
   const cacheKey = `/api/v1/xray_img?patientId=${encodeURIComponent(patientId)}`;
   
   const jwt = document.cookie.split('; ').find(row => row.startsWith('jwt='))?.split('=')[1];

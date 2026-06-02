@@ -62,35 +62,22 @@ interface PDFImageViewerProps {
   isMobile: boolean;
 }
 
-// دالة مساعدة لتقريب مسافة اللمس
-const getTouchDistance = (touches: React.TouchList | TouchList) => {
-  if (touches.length < 2) return 0;
-  const dx = touches[0].clientX - touches[1].clientX;
-  const dy = touches[0].clientY - touches[1].clientY;
-  return Math.sqrt(dx * dx + dy * dy);
-};
+
 
 export default function PDFImageViewer({
   url,
   title,
   onPrev,
   onNext,
-  hasMultiple = false,
-  isMobile = false,
+  hasMultiple,
+  isMobile,
 }: PDFImageViewerProps) {
-  // -------- State للصور (نسختين لكل صفحة) --------
-  // lowResImages: صور معاينة منخفضة الدقة (تظهر أولاً)
-  // highResImages: صور عالية الدقة (تحل محل المنخفضة بعد تحميلها)
-  const [lowResImages, setLowResImages] = useState<string[]>([]);
-  const [highResImages, setHighResImages] = useState<string[]>([]);
+  const [images, setImages] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [numPages, setNumPages] = useState(0);
-  const [isLoadingLow, setIsLoadingLow] = useState(true); // تحميل المعاينة
-  const [isUpgrading, setIsUpgrading] = useState(false); // جاري تحسين الجودة
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
   const [scriptLoaded, setScriptLoaded] = useState(false);
-
-  // عناصر التحكم (تكبير، تدوير، سحب)
   const [scale, setScale] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -99,14 +86,79 @@ export default function PDFImageViewer({
   const abortControllerRef = useRef<AbortController | null>(null);
   const currentUrlRef = useRef<string>("");
 
-  // -------- Touch / drag references (نفس الأصلي) --------
+  // Touch / drag controls
   const lastTapRef = useRef(0);
   const dragStartRef = useRef({ x: 0, y: 0 });
   const posStartRef = useRef({ x: 0, y: 0 });
   const pinchStartRef = useRef<{ dist: number; scale: number } | null>(null);
   const swipeStartRef = useRef({ x: 0, y: 0, time: 0 });
 
-  // -------- تحميل مكتبة pdf.js --------
+  // ---------- IndexedDB Cache ----------
+  const DB_NAME = "PDFCache";
+  const STORE_NAME = "pdfImages";
+  const DB_VERSION = 1;
+  const dbRef = useRef<IDBDatabase | null>(null);
+
+  const openDB = useCallback(async (): Promise<IDBDatabase> => {
+    if (dbRef.current && dbRef.current.name === DB_NAME) {
+      return dbRef.current;
+    }
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        dbRef.current = request.result;
+        resolve(dbRef.current);
+      };
+      request.onupgradeneeded = (event) => {
+        const db = (event.target as IDBOpenDBRequest).result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          db.createObjectStore(STORE_NAME);
+        }
+      };
+    });
+  }, []);
+
+  const getCachedImages = useCallback(
+    async (pdfUrl: string): Promise<string[] | null> => {
+      try {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(STORE_NAME, "readonly");
+          const store = tx.objectStore(STORE_NAME);
+          const request = store.get(pdfUrl);
+          request.onsuccess = () => resolve(request.result || null);
+          request.onerror = () => reject(request.error);
+          tx.oncomplete = () => {
+            // لا نغلق dbRef لأننا نعيد استخدامه
+          };
+        });
+      } catch (err) {
+        console.error("Failed to read cache:", err);
+        return null;
+      }
+    },
+    [openDB],
+  );
+
+  const saveToCache = useCallback(
+    async (pdfUrl: string, images: string[]) => {
+      try {
+        const db = await openDB();
+        const tx = db.transaction(STORE_NAME, "readwrite");
+        const store = tx.objectStore(STORE_NAME);
+        store.put(images, pdfUrl);
+        tx.oncomplete = () => {
+          // تم الحفظ بنجاح
+        };
+      } catch (err) {
+        console.error("Failed to save cache:", err);
+      }
+    },
+    [openDB],
+  );
+
+  // Load pdf.js
   useEffect(() => {
     if ((window as any).pdfjsLib) {
       setScriptLoaded(true);
@@ -125,17 +177,17 @@ export default function PDFImageViewer({
     document.head.appendChild(script);
   }, []);
 
-  // -------- إعادة تعيين الحالة عند تغير URL --------
+  // Reset state when URL changes
   useEffect(() => {
+    // Cancel any ongoing conversion
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
-    setLowResImages([]);
-    setHighResImages([]);
+    // Reset all file-related state
+    setImages([]);
     setNumPages(0);
     setCurrentPage(0);
-    setIsLoadingLow(true);
-    setIsUpgrading(false);
+    setIsLoading(true);
     setError(false);
     setScale(1);
     setRotation(0);
@@ -143,122 +195,130 @@ export default function PDFImageViewer({
     currentUrlRef.current = url;
   }, [url]);
 
-  // -------- دالة تحويل صفحة معينة إلى صورة بدقة معينة (scale) وجودة --------
-  const renderPageToImage = useCallback(
-    async (
-      pdf: any,
-      pageNum: number,
-      scale: number,
-      quality: number = 0.92,
-    ): Promise<string> => {
-      const page = await pdf.getPage(pageNum);
-      const viewport = page.getViewport({ scale });
-      const canvas = document.createElement("canvas");
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      const context = canvas.getContext("2d");
-      await page.render({
-        canvasContext: context,
-        viewport: viewport,
-      }).promise;
-      const imageUrl = canvas.toDataURL("image/jpeg", quality);
-      canvas.remove();
-      return imageUrl;
-    },
-    [],
-  );
-
-  // -------- تحويل جميع الصفحات إلى low-res أولاً، ثم high-res للصفحة الحالية --------
-  const loadPDF = useCallback(async () => {
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-    const currentUrl = url;
-
-    try {
-      const pdfjsLib = (window as any).pdfjsLib;
-      const loadingTask = pdfjsLib.getDocument({ url: currentUrl });
-      const pdf = await loadingTask.promise;
-
-      if (controller.signal.aborted || currentUrlRef.current !== currentUrl)
-        return;
-
-      const totalPages = pdf.numPages;
-      setNumPages(totalPages);
-      setCurrentPage(0);
-
-      // --- الخطوة 1: تحويل جميع الصفحات بجودة منخفضة (scale 0.4) ---
-      const lowResPromises = [];
-      for (let i = 1; i <= totalPages; i++) {
-        lowResPromises.push(renderPageToImage(pdf, i, 0.4, 0.7));
-      }
-      const lowResArray = await Promise.all(lowResPromises);
-
-      if (controller.signal.aborted || currentUrlRef.current !== currentUrl)
-        return;
-      setLowResImages(lowResArray);
-      setIsLoadingLow(false);
-
-      // --- الخطوة 2: تحويل الصفحة الحالية (الصفحة 0) إلى high-res ---
-      setIsUpgrading(true);
-      const highResCurrent = await renderPageToImage(pdf, 1, 1.5, 0.95);
-      if (controller.signal.aborted || currentUrlRef.current !== currentUrl)
-        return;
-
-      // بناء مصفوفة highResImages: نضع الصورة العالية للصفحة 0 والباقي فارغ مؤقتاً
-      const newHighRes = new Array(totalPages).fill("");
-      newHighRes[0] = highResCurrent;
-      setHighResImages(newHighRes);
-      setIsUpgrading(false);
-
-      // (اختياري) تحميل باقي الصفحات بجودة عالية في الخلفية إذا كان هناك أكثر من صفحة
-      if (totalPages > 1) {
-        // تحميل الصفحات التالية بالترتيب دون انتظار، مع تجاهل الأخطاء
-        for (let i = 2; i <= totalPages; i++) {
-          if (controller.signal.aborted || currentUrlRef.current !== currentUrl)
-            break;
-          try {
-            const highImg = await renderPageToImage(pdf, i, 1.5, 0.95);
-            if (
-              !controller.signal.aborted &&
-              currentUrlRef.current === currentUrl
-            ) {
-              setHighResImages((prev) => {
-                const updated = [...prev];
-                updated[i - 1] = highImg;
-                return updated;
-              });
-            }
-          } catch (err) {
-            console.warn(`فشل تحميل high-res للصفحة ${i}`);
-          }
-        }
-      }
-    } catch (err: any) {
-      if (err?.name === "AbortError" || err?.message?.includes("abort")) return;
-      console.error("Error loading PDF:", err);
-      if (currentUrlRef.current === currentUrl) {
-        setError(true);
-        setIsLoadingLow(false);
-        setIsUpgrading(false);
-      }
-    }
-  }, [url, renderPageToImage]);
-
-  // -------- تشغيل التحميل عند توفر script ووجود url --------
+  // Convert PDF to images (with cache)
   useEffect(() => {
     if (!scriptLoaded || !url) return;
-    loadPDF();
-    return () => {
-      if (abortControllerRef.current) abortControllerRef.current.abort();
-    };
-  }, [scriptLoaded, url, loadPDF]);
 
-  // -------- التنقل بين الصفحات --------
+    const loadOrConvert = async () => {
+      // Create new abort controller for this operation
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+      const currentUrl = url;
+
+      try {
+        // 1. Try cache first
+        const cached = await getCachedImages(currentUrl);
+
+        // Check if we should abort or if URL changed
+        if (controller.signal.aborted || currentUrlRef.current !== currentUrl) {
+          return;
+        }
+
+        if (cached && cached.length > 0) {
+          // Use cached images
+          if (currentUrlRef.current === currentUrl) {
+            setImages(cached);
+            setNumPages(cached.length);
+            setCurrentPage(0);
+            setIsLoading(false);
+          }
+          return;
+        }
+
+        // 2. Convert PDF to images
+        const pdfjsLib = (window as any).pdfjsLib;
+        const loadingTask = pdfjsLib.getDocument({ url: currentUrl });
+        const pdf = await loadingTask.promise;
+
+        // Check if we should abort or if URL changed
+        if (controller.signal.aborted || currentUrlRef.current !== currentUrl) {
+          return;
+        }
+
+        // Only update numPages if URL still matches
+        if (currentUrlRef.current === currentUrl) {
+          setNumPages(pdf.numPages);
+        } else {
+          return;
+        }
+
+        const imageUrls: string[] = [];
+        const scaleQuality = 2.5; // good balance between quality and performance
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+          // Check for abort signal before each page
+          if (
+            controller.signal.aborted ||
+            currentUrlRef.current !== currentUrl
+          ) {
+            return;
+          }
+
+          const page = await pdf.getPage(i);
+          const viewport = page.getViewport({ scale: scaleQuality });
+          const canvas = document.createElement("canvas");
+          const context = canvas.getContext("2d");
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+
+          await page.render({
+            canvasContext: context,
+            viewport: viewport,
+          }).promise;
+
+          const imageUrl = canvas.toDataURL("image/jpeg", 0.95);
+          imageUrls.push(imageUrl);
+          canvas.remove();
+        }
+
+        // Final check before updating state and saving cache
+        if (controller.signal.aborted || currentUrlRef.current !== currentUrl) {
+          return;
+        }
+
+        // Save to cache
+        await saveToCache(currentUrl, imageUrls);
+
+        // Final check before updating state
+        if (controller.signal.aborted || currentUrlRef.current !== currentUrl) {
+          return;
+        }
+
+        // Update state with converted images
+        if (currentUrlRef.current === currentUrl) {
+          setImages(imageUrls);
+          setCurrentPage(0);
+          setIsLoading(false);
+        }
+      } catch (err: any) {
+        // Ignore abort errors
+        if (err?.name === "AbortError" || err?.message?.includes("abort")) {
+          return;
+        }
+        console.error("Error converting PDF:", err);
+        if (currentUrlRef.current === currentUrl) {
+          setError(true);
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadOrConvert();
+
+    // Cleanup: abort any ongoing conversion when component unmounts or URL changes
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [scriptLoaded, url, getCachedImages, saveToCache]);
+
+  // Navigation functions
   const goToPrevPage = () => {
     if (currentPage > 0) {
       setCurrentPage(currentPage - 1);
       resetView();
-    } else if (hasMultiple && onPrev) {
+    } else if (hasMultiple) {
       onPrev();
     }
   };
@@ -267,7 +327,7 @@ export default function PDFImageViewer({
     if (currentPage < numPages - 1) {
       setCurrentPage(currentPage + 1);
       resetView();
-    } else if (hasMultiple && onNext) {
+    } else if (hasMultiple) {
       onNext();
     }
   };
@@ -278,7 +338,14 @@ export default function PDFImageViewer({
     setPosition({ x: 0, y: 0 });
   }, []);
 
-  // -------- دوال معالجة اللمس والفأرة (نفس الكود الأصلي مع الاحتفاظ بالوظائف) --------
+  // Touch / mouse helpers
+  const getTouchDistance = (touches: React.TouchList | TouchList) => {
+    if (touches.length < 2) return 0;
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
   const handleMouseDown = (e: React.MouseEvent) => {
     if (scale <= 1) return;
     e.preventDefault();
@@ -297,10 +364,13 @@ export default function PDFImageViewer({
     });
   };
 
-  const handleMouseUp = () => setIsDragging(false);
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
 
   const handleTouchStart = (e: React.TouchEvent) => {
     const now = Date.now();
+
     if (e.touches.length === 2) {
       pinchStartRef.current = {
         dist: getTouchDistance(e.touches),
@@ -308,14 +378,20 @@ export default function PDFImageViewer({
       };
       return;
     }
+
     if (e.touches.length === 1) {
       const touch = e.touches[0];
       swipeStartRef.current = { x: touch.clientX, y: touch.clientY, time: now };
+
       if (now - lastTapRef.current < 300) {
-        if (scale > 1) resetView();
-        else setScale(2.5);
+        if (scale > 1) {
+          resetView();
+        } else {
+          setScale(2.5);
+        }
       }
       lastTapRef.current = now;
+
       if (scale > 1) {
         setIsDragging(true);
         dragStartRef.current = { x: touch.clientX, y: touch.clientY };
@@ -333,6 +409,7 @@ export default function PDFImageViewer({
       setScale(Math.max(0.5, Math.min(5, newScale)));
       return;
     }
+
     if (e.touches.length === 1 && isDragging) {
       const dx = e.touches[0].clientX - dragStartRef.current.x;
       const dy = e.touches[0].clientY - dragStartRef.current.y;
@@ -346,12 +423,15 @@ export default function PDFImageViewer({
   const handleTouchEnd = (e: React.TouchEvent) => {
     setIsDragging(false);
     pinchStartRef.current = null;
+
     if (scale <= 1 && hasMultiple && e.changedTouches.length === 1) {
       const touch = e.changedTouches[0];
       const dx = touch.clientX - swipeStartRef.current.x;
       const dy = touch.clientY - swipeStartRef.current.y;
       const dt = Date.now() - swipeStartRef.current.time;
+
       if (Math.abs(dy) > Math.abs(dx)) return;
+
       if (Math.abs(dx) > 80 || (Math.abs(dx) > 30 && dt < 300)) {
         if (dx > 0) goToPrevPage();
         else goToNextPage();
@@ -359,22 +439,23 @@ export default function PDFImageViewer({
     }
   };
 
-  // منع التمرير أثناء pinch
+  // Prevent touchmove on container when zoomed/pinch
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+
     const preventDefault = (e: Event) => {
       const touchEvent = e as TouchEvent;
       if (touchEvent.touches && touchEvent.touches.length > 1) {
         e.preventDefault();
       }
     };
+
     container.addEventListener("touchmove", preventDefault, { passive: false });
     return () => container.removeEventListener("touchmove", preventDefault);
   }, []);
 
-  // -------- عرض الخطأ --------
-  if (error || (!isLoadingLow && lowResImages.length === 0)) {
+  if (error || (!isLoading && images.length === 0)) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center bg-gray-100">
         <FileText size={32} className="text-red-400 mb-2" />
@@ -391,12 +472,6 @@ export default function PDFImageViewer({
     );
   }
 
-  // -------- تحديد الصورة التي نعرضها حالياً (أولوية: high-res إن وجدت، وإلا low-res) --------
-  const currentImage =
-    highResImages[currentPage] || lowResImages[currentPage] || "";
-  const showUpgradingBadge =
-    isUpgrading && !highResImages[currentPage] && lowResImages[currentPage];
-
   return (
     <div
       ref={containerRef}
@@ -409,18 +484,19 @@ export default function PDFImageViewer({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* تحميل المعاينة الأولية */}
-      {isLoadingLow && (
+      {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-200 z-20">
           <div className="flex flex-col items-center gap-2">
             <Loader2 className="animate-spin text-blue-500" size={36} />
-            <p className="text-gray-600 text-sm">جاري تحضير المعاينة...</p>
+            <p className="text-gray-600 text-sm">جاري تحويل PDF إلى صور...</p>
+            <p className="text-gray-400 text-xs">
+              الصفحة {currentPage + 1} من {numPages || "?"}
+            </p>
           </div>
         </div>
       )}
 
-      {/* عرض الصورة الحالية */}
-      {!isLoadingLow && currentImage && (
+      {!isLoading && images[currentPage] && (
         <>
           <div
             className="w-full h-full flex items-center justify-center"
@@ -430,7 +506,7 @@ export default function PDFImageViewer({
             }}
           >
             <img
-              src={currentImage}
+              src={images[currentPage]}
               alt={`${title || "PDF"} - صفحة ${currentPage + 1}`}
               className="max-w-full max-h-full select-none pointer-events-none"
               draggable={false}
@@ -441,15 +517,6 @@ export default function PDFImageViewer({
             />
           </div>
 
-          {/* شارة تحسين الجودة (تظهر فقط أثناء تحميل النسخة العالية) */}
-          {showUpgradingBadge && (
-            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm rounded-full px-3 py-1.5 z-10 flex items-center gap-2">
-              <Loader2 size={14} className="animate-spin text-white" />
-              <span className="text-white text-xs">جاري تحسين الجودة...</span>
-            </div>
-          )}
-
-          {/* عداد الصفحات */}
           {numPages > 1 && (
             <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm rounded-full px-3 py-1 z-10">
               <span className="text-white text-xs font-medium">
@@ -458,7 +525,7 @@ export default function PDFImageViewer({
             </div>
           )}
 
-          {/* أيامات التمرير للأجهزة المحمولة (كما في الأصل) */}
+          {/* Mobile swipe hints */}
           {isMobile && numPages > 1 && scale <= 1 && (
             <>
               <div className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none z-10">
@@ -482,7 +549,7 @@ export default function PDFImageViewer({
             </>
           )}
 
-          {/* أزرار التنقل للحواسيب */}
+          {/* Desktop navigation buttons */}
           {!isMobile && numPages > 1 && (
             <>
               <button
@@ -500,7 +567,7 @@ export default function PDFImageViewer({
             </>
           )}
 
-          {/* شريط التحكم المحمول */}
+          {/* Mobile control bar */}
           {isMobile && (
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-full px-4 py-2 z-20">
               <button
@@ -538,6 +605,8 @@ export default function PDFImageViewer({
     </div>
   );
 }
+
+
 
 // ============================================================
 // عارض الصور مع دعم كامل للمس
