@@ -1,4 +1,5 @@
-// lib/telegramClient.ts
+// lib/telegram-media.ts
+
 export interface TelegramConfig {
   botToken: string;
   chatId: string;
@@ -60,10 +61,14 @@ class TelegramMediaManager {
     return `https://api.telegram.org/file/bot${this.botToken}/${data.result.file_path}`;
   }
 
-  async getFileBuffer(fileId: string): Promise<Buffer> {
-    const url = await this.getFileUrl(fileId);
-    const res = await fetch(url);
-    return Buffer.from(await res.arrayBuffer());
+  // ✅ تعديل: إزالة هذه الدالة تماماً - لن نستخدمها من المتصفح
+  // async getFileBuffer(fileId: string): Promise<Buffer> {
+  //   // هذه الدالة تسبب CORS error - لن نستخدمها
+  // }
+
+  // ✅ دالة جديدة: الحصول على الرابط فقط (سيتم عرضه مباشرة في img)
+  getDirectFileUrl(fileId: string): Promise<string> {
+    return this.getFileUrl(fileId);
   }
 }
 

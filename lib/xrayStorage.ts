@@ -1,4 +1,6 @@
 // lib/xrayStorage.ts
+
+import { handleUploadXrayFile } from '@/client/helpers/upload_image';
 import { db, XrayImageMetadata } from './db';
 import { telegramClient } from './telegram-media';
 
@@ -24,17 +26,35 @@ async function getLocalFile(fileId: string): Promise<Blob | null> {
   return record ? record.blob : null;
 }
 
-// إنشاء رابط محلي (blob URL) من ملف مخزن
-export async function getLocalImageUrl(fileId: string): Promise<string | null> {
-  const blob = await getLocalFile(fileId);
-  if (!blob) return null;
-  return URL.createObjectURL(blob);
+// ✅ دالة جديدة: الحصول على الرابط الصحيح من Telegram باستخدام file_id
+async function getTelegramFileUrl(fileId: string): Promise<string> {
+  // استدعاء API /getFile للحصول على file_path الصحيح
+  const botToken = process.env.NEXT_PUBLIC_XRAY_TELEGRAM_BOT_TOKEN!;
+  
+  const response = await fetch(`https://api.telegram.org/bot${botToken}/getFile`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ file_id: fileId }),
+  });
+  
+  const data = await response.json();
+  
+  if (!data.ok) {
+    throw new Error(`Telegram API error: ${data.description}`);
+  }
+  
+  // بناء الرابط الصحيح باستخدام file_path من الاستجابة
+  const filePath = data.result.file_path;
+  const fullUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
+  
+  
+  return fullUrl;
 }
 
-// دالة إضافة صورة واحدة (مع دعم المصفوفات)
+// دالة إضافة صورة واحدة
 export interface AddImageParams {
   patientId: string;
-  file: File;          // الملف المختار من المستخدم
+  file: File;
   title?: string;
 }
 
@@ -43,26 +63,21 @@ export interface AddedImageResult {
   title: string;
   img_tele_id: string;
   created_at: string;
-  localUrl: string;    // رابط مؤقت للعرض
+  localUrl: string;
 }
-
-// lib/xrayStorage.ts
 
 export async function addXRayImage({ patientId, file, title = '' }: AddImageParams): Promise<AddedImageResult> {
   // 1. رفع الملف إلى تلجرام
   const buffer = await toBuffer(file);
   const isImage = file.type.startsWith('image/');
   let imgTeleId: string;
-  if (isImage) {
-    imgTeleId = await telegramClient.addImage(buffer, title);
-  } else {
-    imgTeleId = await telegramClient.addDocument(buffer, title, file.name);
-  }
+  imgTeleId = await handleUploadXrayFile(file, patientId);
 
-  // 2. ✅ تخزين الملف محلياً مع حفظ نوع MIME الأصلي
-  await storeLocalFile(imgTeleId, file, file.name); // file.type هو الـ MIME الحقيقي (مثلاً: 'image/png', 'application/pdf')
 
-  // 3. استدعاء API
+  // 2. تخزين الملف محلياً
+  await storeLocalFile(imgTeleId, file, file.name);
+
+  // 3. استدعاء API لحفظ البيانات في الخادم
   const jwt = document.cookie.split('; ').find(row => row.startsWith('jwt='))?.split('=')[1];
   const response = await fetch('/api/v1/xray_img', {
     method: 'POST',
@@ -84,19 +99,28 @@ export async function addXRayImage({ patientId, file, title = '' }: AddImagePara
   const result = await response.json();
   const inserted = result.images[0];
 
-  // 4. ✅ تخزين البيانات الوصفية مع mimeType
+  // 4. تخزين البيانات الوصفية في IndexedDB
   const metadata: XrayImageMetadata = {
     id: inserted.id,
     patientId,
     title: inserted.title,
     img_tele_id: inserted.img_tele_id,
     created_at: inserted.created_at,
-    mimeType: file.type,  // ✅ حفظ نوع الملف
+    mimeType: file.type,
   };
   await db.images.put(metadata);
 
-  // إنشاء رابط محلي
+  // إنشاء رابط محلي من الملف المخزن محلياً
   const localUrl = URL.createObjectURL(file);
+   try {
+    const CACHE_NAME = 'xray-images-api-cache';
+    const cacheKey = `/api/v1/xray_img?patientId=${encodeURIComponent(patientId)}`;
+    const cache = await caches.open(CACHE_NAME);
+    await cache.delete(cacheKey);
+    console.log('✅ Cache cleared for patient:', patientId);
+  } catch (err) {
+    console.warn('⚠️ Failed to clear cache:', err);
+  }
 
   return {
     id: inserted.id,
@@ -107,34 +131,91 @@ export async function addXRayImage({ patientId, file, title = '' }: AddImagePara
   };
 }
 
-// دالة استعادة كل صور مريض مع روابط محلية
+// واجهة صورة المريض
 export interface PatientImage {
   id: string;
   title: string;
   img_tele_id: string;
   created_at: string;
-  localUrl: string;     // رابط blob مؤقت
+  localUrl: string;
+  mimeType?: string;
+}
+
+// ✅ دالة مساعدة لاستخراج الامتداد من نوع MIME
+function getExtensionFromMime(mimeType: string): string {
+  const extensions: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/jpg': 'jpg',
+    'image/png': 'png',
+    'image/gif': 'gif',
+    'image/webp': 'webp',
+    'application/pdf': 'pdf',
+  };
+  return extensions[mimeType] || 'bin';
 }
 
 export async function getPatientImages(patientId: string): Promise<PatientImage[]> {
+  const CACHE_NAME = 'xray-images-api-cache';
+  const CACHE_DURATION = 60 * 1000; // دقيقة واحدة
+  const cacheKey = `/api/v1/xray_img?patientId=${encodeURIComponent(patientId)}`;
+  
   const jwt = document.cookie.split('; ').find(row => row.startsWith('jwt='))?.split('=')[1];
   let serverImages: any[] = [];
   let serverAvailable = false;
 
-  // 1. محاولة جلب البيانات من الخادم
+  // 0. محاولة قراءة من Cache API قبل الجلب من الخادم
+  let cachedResponseUsed = false;
   try {
-    const response = await fetch(`/api/v1/xray_img?patientId=${encodeURIComponent(patientId)}`, {
-      headers: jwt ? { 'Authorization': `Bearer ${jwt}` } : {},
-    });
+    const cache = await caches.open(CACHE_NAME);
+    const cachedResponse = await cache.match(cacheKey);
     
-    if (response.ok) {
-      const data = await response.json();
-      serverImages = data.images;
-      serverAvailable = true;
+    if (cachedResponse) {
+      const cachedData = await cachedResponse.clone().json();
+      const cachedTimestamp = cachedResponse.headers.get('x-cache-timestamp');
+      
+      if (cachedTimestamp && (Date.now() - parseInt(cachedTimestamp)) < CACHE_DURATION) {
+        serverImages = cachedData.images;
+        serverAvailable = true;
+        cachedResponseUsed = true;
+      }
     }
   } catch (err) {
-    console.warn('⚠️ الخادم غير متاح، استخدام البيانات المحلية فقط:', err);
-    // سنستخدم البيانات المحلية فقط
+    console.warn('⚠️ فشل قراءة من Cache API:', err);
+  }
+
+  // 1. محاولة جلب البيانات من الخادم (إذا لم يتم استخدام الكاش أو انتهت صلاحيته)
+  if (!cachedResponseUsed) {
+    try {
+      const response = await fetch(cacheKey, {
+        headers: jwt ? { 'Authorization': `Bearer ${jwt}` } : {},
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        serverImages = data.images;
+        serverAvailable = true;
+        
+        // تخزين الاستجابة في Cache API مع إضافة توقيت
+        try {
+          const cache = await caches.open(CACHE_NAME);
+          const responseToCache = response.clone();
+          const headers = new Headers(responseToCache.headers);
+          headers.set('x-cache-timestamp', Date.now().toString());
+          
+          const cachedResponse = new Response(JSON.stringify(data), {
+            status: responseToCache.status,
+            statusText: responseToCache.statusText,
+            headers: headers,
+          });
+          
+          await cache.put(cacheKey, cachedResponse);
+        } catch (err) {
+          console.warn('⚠️ فشل تخزين في Cache API:', err);
+        }
+      }
+    } catch (err) {
+      console.warn('⚠️ الخادم غير متاح، استخدام البيانات المحلية فقط:', err);
+    }
   }
 
   // 2. إذا الخادم متاح، مزامنة IndexedDB
@@ -142,7 +223,6 @@ export async function getPatientImages(patientId: string): Promise<PatientImage[
     const existingLocalImages = await db.images.where('patientId').equals(patientId).toArray();
     const serverImageIds = new Set(serverImages.map((img: any) => img.id));
     
-    // حذف الصور المحلية غير الموجودة على الخادم
     for (const localImg of existingLocalImages) {
       if (!serverImageIds.has(localImg.id)) {
         await db.files.delete(localImg.img_tele_id);
@@ -150,7 +230,6 @@ export async function getPatientImages(patientId: string): Promise<PatientImage[
       }
     }
 
-    // تحديث/إدراج الصور من الخادم
     for (const img of serverImages) {
       const metadata: XrayImageMetadata = {
         id: img.id,
@@ -164,42 +243,31 @@ export async function getPatientImages(patientId: string): Promise<PatientImage[
     }
   }
 
-  // 3. استرجاع الصور من التخزين المحلي (سواء تزامنت أو لا)
+  // 3. استرجاع الصور من التخزين المحلي
   const localImages = await db.images.where('patientId').equals(patientId).toArray();
   
-  // 4. بناء الروابط: محلي أولاً، ثم من تيليجرام إن أمكن
+  // 4. بناء الروابط
   const result: PatientImage[] = [];
 
   for (const img of localImages) {
     let localUrl: string | null = null;
 
-    // (أ) البحث عن الملف في التخزين المحلي
+    // (أ) البحث عن الملف في التخزين المحلي (IndexedDB)
     const blob = await getLocalFile(img.img_tele_id);
     if (blob) {
+      // ✅ موجود محلياً - استخدمه مباشرة
       localUrl = URL.createObjectURL(blob);
-    } else if (serverAvailable) {
-      // (ب) تحميل من تيليجرام فقط إذا الخادم متاح (لدينا اتصال)
-      try {
-        const buffer = await telegramClient.getFileBuffer(img.img_tele_id);
-        const mimeType = img.mimeType || 'image/jpeg';
-        const fileBlob = new Blob([new Uint8Array(buffer)], { type: mimeType });
-        const ext = getExtensionFromMime(mimeType);
-        await storeLocalFile(img.img_tele_id, fileBlob, `${img.id}.${ext}`);
-        localUrl = URL.createObjectURL(fileBlob);
-      } catch (downloadErr) {
-        console.error(`فشل تحميل الملف ${img.img_tele_id}:`, downloadErr);
-        try {
-          const directUrl = await telegramClient.getFileUrl(img.img_tele_id);
-          localUrl = directUrl;
-        } catch (urlErr) {
-          console.error(`لا يمكن الحصول على رابط للصورة ${img.id}:`, urlErr);
-          continue;
-        }
-      }
     } else {
-      // (ج) الخادم غير متاح والملف غير موجود محلياً - عرض صورة بديلة أو تخطي
-      console.warn(`⚠️ الملف ${img.img_tele_id} غير متاح محلياً ولا يمكن تحميله (لا يوجد اتصال)`);
-      localUrl = '/placeholder-image.png'; // رابط صورة افتراضية
+      // (ب) غير موجود محلياً - احصل على الرابط الصحيح من Telegram
+      try {
+        // ✅ استخدام الدالة الجديدة للحصول على الرابط الصحيح
+        localUrl = img.img_tele_id
+      } catch (error) {
+        console.error(`❌ Failed to get URL for ${img.id}:`, error);
+        // استخدم placeholder في حالة الفشل
+        const isImage = img.mimeType?.startsWith('image/');
+        localUrl = isImage ? '/images/image-placeholder.svg' : '/images/pdf-placeholder.svg';
+      }
     }
 
     result.push({
@@ -208,28 +276,15 @@ export async function getPatientImages(patientId: string): Promise<PatientImage[
       img_tele_id: img.img_tele_id,
       created_at: img.created_at,
       localUrl,
+      mimeType: img.mimeType,
     });
   }
 
   return result;
 }
-// ✅ دالة مساعدة لاستخراج الامتداد من نوع MIME
-function getExtensionFromMime(mimeType: string): string {
-  const extensions: Record<string, string> = {
-    'image/jpeg': 'jpg',
-    'image/jpg': 'jpg',
-    'image/png': 'png',
-    'image/gif': 'gif',
-    'image/webp': 'webp',
-    'application/pdf': 'pdf',
-    'video/mp4': 'mp4',
-  };
-  return extensions[mimeType] || 'bin';
-}
 
 // دالة حذف صورة
 export async function deleteXRayImage(imageId: string, patientId?: string): Promise<void> {
-  // 1. استدعاء API route للحذف من supabase
   const jwt = document.cookie.split('; ').find(row => row.startsWith('jwt='))?.split('=')[1];
   const response = await fetch(`/api/v1/xray_img?imageId=${imageId}`, {
     method: 'DELETE',
@@ -240,17 +295,16 @@ export async function deleteXRayImage(imageId: string, patientId?: string): Prom
     throw new Error(error.error || 'فشل حذف الصورة من الخادم');
   }
 
-  // 2. الحصول على بيانات الصورة قبل حذفها من IndexedDB (لنعرف img_tele_id)
   const imageMeta = await db.images.get(imageId);
   if (imageMeta) {
-    // حذف الملف المخزن محلياً
     await db.files.delete(imageMeta.img_tele_id);
-    // حذف البيانات الوصفية
     await db.images.delete(imageId);
   }
 }
 
-// اختياري: تحرير الروابط المؤقتة (عند إغلاق المكون)
+// تحرير الروابط المؤقتة
 export function revokeLocalUrl(url: string) {
-  URL.revokeObjectURL(url);
+  if (url && url.startsWith('blob:')) {
+    URL.revokeObjectURL(url);
+  }
 }

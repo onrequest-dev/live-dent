@@ -46,3 +46,39 @@ export const handleUploadImage = async (file: File, type: 'logo' | 'pfp', clinic
     throw new Error("فشل في تحميل الصورة");
   }
 };
+
+
+
+export const handleUploadXrayFile = async (file: File, patientId?:string): Promise<string> =>{
+  if (!file) {
+    console.error("No file provided");
+    throw new Error("No file provided");
+  }
+  const fileExt = file.name.split('.').pop();
+  
+  let fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+  fileName = `img_${fileName}.${fileExt}`
+  const filePath = `xray/${fileName}`;
+  try {
+    const { data, error } = await supabase_client.storage
+      .from('media') 
+      .upload(filePath, file, {
+        cacheControl: '0',
+        upsert: true, 
+      });
+
+    if (error) {
+      console.error("Upload error:", error);
+      throw error;
+    }
+    const { data: { publicUrl } } = supabase_client.storage
+      .from('media')
+      .getPublicUrl(filePath);
+    
+    if(!publicUrl) throw new Error("فشل تحميل الصورة" ); 
+    return publicUrl;
+
+  } catch (error) {
+    throw new Error("فشل في تحميل الصورة");
+  }
+}

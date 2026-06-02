@@ -29,6 +29,7 @@ import {
   revokeLocalUrl,
   type PatientImage,
 } from "@/lib/xrayStorage";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 interface XRayViewerProps {
   patientId: string;
@@ -40,78 +41,498 @@ interface XRayViewerProps {
 // ============================================================
 // ✅ عارض PDF باستخدام object tag (أكثر توافقاً)
 // ============================================================
-function PDFViewer({ url, title }: { url: string; title?: string }) {
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
 
-  // محاولة استخدام Object أولاً، ثم iframe كاحتياط
+interface PDFImageViewerProps {
+  url: string;
+  title?: string;
+  onPrev: () => void;
+  onNext: () => void;
+  hasMultiple: boolean;
+  isMobile: boolean;
+}
+
+// PDFImageViewer.tsx
+
+interface PDFImageViewerProps {
+  url: string;
+  title?: string;
+  onPrev: () => void;
+  onNext: () => void;
+  hasMultiple: boolean;
+  isMobile: boolean;
+}
+
+// دالة مساعدة لتقريب مسافة اللمس
+const getTouchDistance = (touches: React.TouchList | TouchList) => {
+  if (touches.length < 2) return 0;
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+};
+
+export default function PDFImageViewer({
+  url,
+  title,
+  onPrev,
+  onNext,
+  hasMultiple = false,
+  isMobile = false,
+}: PDFImageViewerProps) {
+  // -------- State للصور (نسختين لكل صفحة) --------
+  // lowResImages: صور معاينة منخفضة الدقة (تظهر أولاً)
+  // highResImages: صور عالية الدقة (تحل محل المنخفضة بعد تحميلها)
+  const [lowResImages, setLowResImages] = useState<string[]>([]);
+  const [highResImages, setHighResImages] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [numPages, setNumPages] = useState(0);
+  const [isLoadingLow, setIsLoadingLow] = useState(true); // تحميل المعاينة
+  const [isUpgrading, setIsUpgrading] = useState(false); // جاري تحسين الجودة
+  const [error, setError] = useState(false);
+  const [scriptLoaded, setScriptLoaded] = useState(false);
+
+  // عناصر التحكم (تكبير، تدوير، سحب)
+  const [scale, setScale] = useState(1);
+  const [rotation, setRotation] = useState(0);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const currentUrlRef = useRef<string>("");
+
+  // -------- Touch / drag references (نفس الأصلي) --------
+  const lastTapRef = useRef(0);
+  const dragStartRef = useRef({ x: 0, y: 0 });
+  const posStartRef = useRef({ x: 0, y: 0 });
+  const pinchStartRef = useRef<{ dist: number; scale: number } | null>(null);
+  const swipeStartRef = useRef({ x: 0, y: 0, time: 0 });
+
+  // -------- تحميل مكتبة pdf.js --------
+  useEffect(() => {
+    if ((window as any).pdfjsLib) {
+      setScriptLoaded(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js";
+    script.async = true;
+    script.onload = () => {
+      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
+      setScriptLoaded(true);
+    };
+    script.onerror = () => setError(true);
+    document.head.appendChild(script);
+  }, []);
+
+  // -------- إعادة تعيين الحالة عند تغير URL --------
+  useEffect(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    setLowResImages([]);
+    setHighResImages([]);
+    setNumPages(0);
+    setCurrentPage(0);
+    setIsLoadingLow(true);
+    setIsUpgrading(false);
+    setError(false);
+    setScale(1);
+    setRotation(0);
+    setPosition({ x: 0, y: 0 });
+    currentUrlRef.current = url;
+  }, [url]);
+
+  // -------- دالة تحويل صفحة معينة إلى صورة بدقة معينة (scale) وجودة --------
+  const renderPageToImage = useCallback(
+    async (
+      pdf: any,
+      pageNum: number,
+      scale: number,
+      quality: number = 0.92,
+    ): Promise<string> => {
+      const page = await pdf.getPage(pageNum);
+      const viewport = page.getViewport({ scale });
+      const canvas = document.createElement("canvas");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const context = canvas.getContext("2d");
+      await page.render({
+        canvasContext: context,
+        viewport: viewport,
+      }).promise;
+      const imageUrl = canvas.toDataURL("image/jpeg", quality);
+      canvas.remove();
+      return imageUrl;
+    },
+    [],
+  );
+
+  // -------- تحويل جميع الصفحات إلى low-res أولاً، ثم high-res للصفحة الحالية --------
+  const loadPDF = useCallback(async () => {
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const currentUrl = url;
+
+    try {
+      const pdfjsLib = (window as any).pdfjsLib;
+      const loadingTask = pdfjsLib.getDocument({ url: currentUrl });
+      const pdf = await loadingTask.promise;
+
+      if (controller.signal.aborted || currentUrlRef.current !== currentUrl)
+        return;
+
+      const totalPages = pdf.numPages;
+      setNumPages(totalPages);
+      setCurrentPage(0);
+
+      // --- الخطوة 1: تحويل جميع الصفحات بجودة منخفضة (scale 0.4) ---
+      const lowResPromises = [];
+      for (let i = 1; i <= totalPages; i++) {
+        lowResPromises.push(renderPageToImage(pdf, i, 0.4, 0.7));
+      }
+      const lowResArray = await Promise.all(lowResPromises);
+
+      if (controller.signal.aborted || currentUrlRef.current !== currentUrl)
+        return;
+      setLowResImages(lowResArray);
+      setIsLoadingLow(false);
+
+      // --- الخطوة 2: تحويل الصفحة الحالية (الصفحة 0) إلى high-res ---
+      setIsUpgrading(true);
+      const highResCurrent = await renderPageToImage(pdf, 1, 1.5, 0.95);
+      if (controller.signal.aborted || currentUrlRef.current !== currentUrl)
+        return;
+
+      // بناء مصفوفة highResImages: نضع الصورة العالية للصفحة 0 والباقي فارغ مؤقتاً
+      const newHighRes = new Array(totalPages).fill("");
+      newHighRes[0] = highResCurrent;
+      setHighResImages(newHighRes);
+      setIsUpgrading(false);
+
+      // (اختياري) تحميل باقي الصفحات بجودة عالية في الخلفية إذا كان هناك أكثر من صفحة
+      if (totalPages > 1) {
+        // تحميل الصفحات التالية بالترتيب دون انتظار، مع تجاهل الأخطاء
+        for (let i = 2; i <= totalPages; i++) {
+          if (controller.signal.aborted || currentUrlRef.current !== currentUrl)
+            break;
+          try {
+            const highImg = await renderPageToImage(pdf, i, 1.5, 0.95);
+            if (
+              !controller.signal.aborted &&
+              currentUrlRef.current === currentUrl
+            ) {
+              setHighResImages((prev) => {
+                const updated = [...prev];
+                updated[i - 1] = highImg;
+                return updated;
+              });
+            }
+          } catch (err) {
+            console.warn(`فشل تحميل high-res للصفحة ${i}`);
+          }
+        }
+      }
+    } catch (err: any) {
+      if (err?.name === "AbortError" || err?.message?.includes("abort")) return;
+      console.error("Error loading PDF:", err);
+      if (currentUrlRef.current === currentUrl) {
+        setError(true);
+        setIsLoadingLow(false);
+        setIsUpgrading(false);
+      }
+    }
+  }, [url, renderPageToImage]);
+
+  // -------- تشغيل التحميل عند توفر script ووجود url --------
+  useEffect(() => {
+    if (!scriptLoaded || !url) return;
+    loadPDF();
+    return () => {
+      if (abortControllerRef.current) abortControllerRef.current.abort();
+    };
+  }, [scriptLoaded, url, loadPDF]);
+
+  // -------- التنقل بين الصفحات --------
+  const goToPrevPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage(currentPage - 1);
+      resetView();
+    } else if (hasMultiple && onPrev) {
+      onPrev();
+    }
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < numPages - 1) {
+      setCurrentPage(currentPage + 1);
+      resetView();
+    } else if (hasMultiple && onNext) {
+      onNext();
+    }
+  };
+
+  const resetView = useCallback(() => {
+    setScale(1);
+    setRotation(0);
+    setPosition({ x: 0, y: 0 });
+  }, []);
+
+  // -------- دوال معالجة اللمس والفأرة (نفس الكود الأصلي مع الاحتفاظ بالوظائف) --------
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (scale <= 1) return;
+    e.preventDefault();
+    setIsDragging(true);
+    dragStartRef.current = { x: e.clientX, y: e.clientY };
+    posStartRef.current = { ...position };
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    const dx = e.clientX - dragStartRef.current.x;
+    const dy = e.clientY - dragStartRef.current.y;
+    setPosition({
+      x: posStartRef.current.x + dx,
+      y: posStartRef.current.y + dy,
+    });
+  };
+
+  const handleMouseUp = () => setIsDragging(false);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const now = Date.now();
+    if (e.touches.length === 2) {
+      pinchStartRef.current = {
+        dist: getTouchDistance(e.touches),
+        scale: scale,
+      };
+      return;
+    }
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      swipeStartRef.current = { x: touch.clientX, y: touch.clientY, time: now };
+      if (now - lastTapRef.current < 300) {
+        if (scale > 1) resetView();
+        else setScale(2.5);
+      }
+      lastTapRef.current = now;
+      if (scale > 1) {
+        setIsDragging(true);
+        dragStartRef.current = { x: touch.clientX, y: touch.clientY };
+        posStartRef.current = { ...position };
+      }
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && pinchStartRef.current) {
+      e.preventDefault();
+      const newDist = getTouchDistance(e.touches);
+      const newScale =
+        (newDist / pinchStartRef.current.dist) * pinchStartRef.current.scale;
+      setScale(Math.max(0.5, Math.min(5, newScale)));
+      return;
+    }
+    if (e.touches.length === 1 && isDragging) {
+      const dx = e.touches[0].clientX - dragStartRef.current.x;
+      const dy = e.touches[0].clientY - dragStartRef.current.y;
+      setPosition({
+        x: posStartRef.current.x + dx,
+        y: posStartRef.current.y + dy,
+      });
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    setIsDragging(false);
+    pinchStartRef.current = null;
+    if (scale <= 1 && hasMultiple && e.changedTouches.length === 1) {
+      const touch = e.changedTouches[0];
+      const dx = touch.clientX - swipeStartRef.current.x;
+      const dy = touch.clientY - swipeStartRef.current.y;
+      const dt = Date.now() - swipeStartRef.current.time;
+      if (Math.abs(dy) > Math.abs(dx)) return;
+      if (Math.abs(dx) > 80 || (Math.abs(dx) > 30 && dt < 300)) {
+        if (dx > 0) goToPrevPage();
+        else goToNextPage();
+      }
+    }
+  };
+
+  // منع التمرير أثناء pinch
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const preventDefault = (e: Event) => {
+      const touchEvent = e as TouchEvent;
+      if (touchEvent.touches && touchEvent.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+    container.addEventListener("touchmove", preventDefault, { passive: false });
+    return () => container.removeEventListener("touchmove", preventDefault);
+  }, []);
+
+  // -------- عرض الخطأ --------
+  if (error || (!isLoadingLow && lowResImages.length === 0)) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center bg-gray-100">
+        <FileText size={32} className="text-red-400 mb-2" />
+        <p className="text-gray-600 text-sm">تعذر عرض PDF</p>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2 text-blue-500 underline text-sm"
+        >
+          فتح في نافذة جديدة
+        </a>
+      </div>
+    );
+  }
+
+  // -------- تحديد الصورة التي نعرضها حالياً (أولوية: high-res إن وجدت، وإلا low-res) --------
+  const currentImage =
+    highResImages[currentPage] || lowResImages[currentPage] || "";
+  const showUpgradingBadge =
+    isUpgrading && !highResImages[currentPage] && lowResImages[currentPage];
+
   return (
-    <div className="w-full h-full bg-gray-200 relative">
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-200 z-10">
-          <div className="flex flex-col items-center gap-3">
-            <Loader2 className="animate-spin text-blue-500" size={40} />
-            <p className="text-gray-600 text-sm font-medium">جاري تحميل PDF...</p>
-            <p className="text-gray-400 text-xs truncate max-w-[200px]">{title}</p>
+    <div
+      ref={containerRef}
+      className="w-full h-full overflow-hidden bg-gray-100 touch-none relative"
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* تحميل المعاينة الأولية */}
+      {isLoadingLow && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-200 z-20">
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="animate-spin text-blue-500" size={36} />
+            <p className="text-gray-600 text-sm">جاري تحضير المعاينة...</p>
           </div>
         </div>
       )}
-      
-      {hasError ? (
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-gray-100">
-          <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mb-4">
-            <FileText size={32} className="text-red-400" />
-          </div>
-          <h3 className="text-gray-700 font-semibold mb-2">تعذر عرض ملف PDF</h3>
-          <p className="text-gray-500 text-sm mb-4">
-            قد يكون المتصفح لا يدعم عرض PDF. يمكنك تحميل الملف أو فتحه في نافذة جديدة.
-          </p>
-          <div className="flex gap-3">
-            <a
-              href={url}
-              download={title}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl font-medium text-sm hover:bg-blue-600 transition-colors"
-            >
-              <ExternalLink size={16} />
-              تحميل PDF
-            </a>
-            <a
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-xl font-medium text-sm hover:bg-gray-50 transition-colors"
-            >
-              <ExternalLink size={16} />
-              فتح في نافذة جديدة
-            </a>
-          </div>
-        </div>
-      ) : (
+
+      {/* عرض الصورة الحالية */}
+      {!isLoadingLow && currentImage && (
         <>
-          {/* المحاولة الأولى: object */}
-          <object
-            data={url}
-            type="application/pdf"
-            className="w-full h-full"
-            onLoad={() => setIsLoading(false)}
-            onError={() => {
-              // object فشل، نجرب iframe
-              setHasError(false);
+          <div
+            className="w-full h-full flex items-center justify-center"
+            style={{
+              transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) rotate(${rotation}deg)`,
+              transition: isDragging ? "none" : "transform 0.3s ease-out",
             }}
           >
-            {/* المحاولة الثانية: iframe */}
-            <iframe
-              src={`${url}#view=FitH&toolbar=0&navpanes=0`}
-              className="w-full h-full border-0"
-              onLoad={() => setIsLoading(false)}
-              onError={() => {
-                setIsLoading(false);
-                setHasError(true);
+            <img
+              src={currentImage}
+              alt={`${title || "PDF"} - صفحة ${currentPage + 1}`}
+              className="max-w-full max-h-full select-none pointer-events-none"
+              draggable={false}
+              style={{
+                boxShadow:
+                  scale > 1 ? "0 25px 50px -12px rgba(0,0,0,0.25)" : "none",
               }}
-              title={title || "PDF Viewer"}
-              sandbox="allow-scripts allow-same-origin"
             />
-          </object>
+          </div>
+
+          {/* شارة تحسين الجودة (تظهر فقط أثناء تحميل النسخة العالية) */}
+          {showUpgradingBadge && (
+            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm rounded-full px-3 py-1.5 z-10 flex items-center gap-2">
+              <Loader2 size={14} className="animate-spin text-white" />
+              <span className="text-white text-xs">جاري تحسين الجودة...</span>
+            </div>
+          )}
+
+          {/* عداد الصفحات */}
+          {numPages > 1 && (
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm rounded-full px-3 py-1 z-10">
+              <span className="text-white text-xs font-medium">
+                {currentPage + 1} / {numPages}
+              </span>
+            </div>
+          )}
+
+          {/* أيامات التمرير للأجهزة المحمولة (كما في الأصل) */}
+          {isMobile && numPages > 1 && scale <= 1 && (
+            <>
+              <div className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none z-10">
+                <motion.div
+                  animate={{ opacity: [0.3, 0.7, 0.3] }}
+                  transition={{ repeat: Infinity, duration: 2 }}
+                  className="w-8 h-8 rounded-full bg-black/30 flex items-center justify-center"
+                >
+                  <ChevronLeft size={20} className="text-white" />
+                </motion.div>
+              </div>
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none z-10">
+                <motion.div
+                  animate={{ opacity: [0.3, 0.7, 0.3] }}
+                  transition={{ repeat: Infinity, duration: 2 }}
+                  className="w-8 h-8 rounded-full bg-black/30 flex items-center justify-center"
+                >
+                  <ChevronRight size={20} className="text-white" />
+                </motion.div>
+              </div>
+            </>
+          )}
+
+          {/* أزرار التنقل للحواسيب */}
+          {!isMobile && numPages > 1 && (
+            <>
+              <button
+                onClick={goToPrevPage}
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 shadow-lg flex items-center justify-center hover:bg-white transition-all text-gray-700 z-10"
+              >
+                <ChevronLeft size={22} />
+              </button>
+              <button
+                onClick={goToNextPage}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 shadow-lg flex items-center justify-center hover:bg-white transition-all text-gray-700 z-10"
+              >
+                <ChevronRight size={22} />
+              </button>
+            </>
+          )}
+
+          {/* شريط التحكم المحمول */}
+          {isMobile && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-full px-4 py-2 z-20">
+              <button
+                onClick={() => setScale((prev) => Math.max(prev - 0.3, 0.5))}
+                className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white active:scale-90 transition-transform"
+              >
+                <ZoomOut size={16} />
+              </button>
+              <span className="text-white text-xs min-w-[45px] text-center font-medium">
+                {Math.round(scale * 100)}%
+              </span>
+              <button
+                onClick={() => setScale((prev) => Math.min(prev + 0.3, 5))}
+                className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white active:scale-90 transition-transform"
+              >
+                <ZoomIn size={16} />
+              </button>
+              <div className="w-px h-5 bg-white/20" />
+              <button
+                onClick={() => setRotation((prev) => (prev + 90) % 360)}
+                className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white active:scale-90 transition-transform"
+              >
+                <RotateCw size={16} />
+              </button>
+              <button
+                onClick={resetView}
+                className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white active:scale-90 transition-transform"
+              >
+                <Maximize2 size={16} />
+              </button>
+            </div>
+          )}
         </>
       )}
     </div>
@@ -141,7 +562,7 @@ function ImageViewer({
   const [rotation, setRotation] = useState(0);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
-  
+
   const lastTapRef = useRef(0);
   const dragStartRef = useRef({ x: 0, y: 0 });
   const posStartRef = useRef({ x: 0, y: 0 });
@@ -185,7 +606,7 @@ function ImageViewer({
 
   const handleTouchStart = (e: React.TouchEvent) => {
     const now = Date.now();
-    
+
     if (e.touches.length === 2) {
       pinchStartRef.current = {
         dist: getTouchDistance(e.touches),
@@ -193,11 +614,11 @@ function ImageViewer({
       };
       return;
     }
-    
+
     if (e.touches.length === 1) {
       const touch = e.touches[0];
       swipeStartRef.current = { x: touch.clientX, y: touch.clientY, time: now };
-      
+
       if (now - lastTapRef.current < 300) {
         if (scale > 1) {
           resetView();
@@ -206,7 +627,7 @@ function ImageViewer({
         }
       }
       lastTapRef.current = now;
-      
+
       if (scale > 1) {
         setIsDragging(true);
         dragStartRef.current = { x: touch.clientX, y: touch.clientY };
@@ -219,11 +640,12 @@ function ImageViewer({
     if (e.touches.length === 2 && pinchStartRef.current) {
       e.preventDefault();
       const newDist = getTouchDistance(e.touches);
-      const newScale = (newDist / pinchStartRef.current.dist) * pinchStartRef.current.scale;
+      const newScale =
+        (newDist / pinchStartRef.current.dist) * pinchStartRef.current.scale;
       setScale(Math.max(0.5, Math.min(5, newScale)));
       return;
     }
-    
+
     if (e.touches.length === 1 && isDragging) {
       const dx = e.touches[0].clientX - dragStartRef.current.x;
       const dy = e.touches[0].clientY - dragStartRef.current.y;
@@ -237,15 +659,15 @@ function ImageViewer({
   const handleTouchEnd = (e: React.TouchEvent) => {
     setIsDragging(false);
     pinchStartRef.current = null;
-    
+
     if (scale <= 1 && hasMultiple && e.changedTouches.length === 1) {
       const touch = e.changedTouches[0];
       const dx = touch.clientX - swipeStartRef.current.x;
       const dy = touch.clientY - swipeStartRef.current.y;
       const dt = Date.now() - swipeStartRef.current.time;
-      
+
       if (Math.abs(dy) > Math.abs(dx)) return;
-      
+
       if (Math.abs(dx) > 80 || (Math.abs(dx) > 30 && dt < 300)) {
         if (dx > 0) onPrev();
         else onNext();
@@ -256,16 +678,16 @@ function ImageViewer({
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    
+
     const preventDefault = (e: Event) => {
       const touchEvent = e as TouchEvent;
       if (touchEvent.touches && touchEvent.touches.length > 1) {
         e.preventDefault();
       }
     };
-    
-    container.addEventListener('touchmove', preventDefault, { passive: false });
-    return () => container.removeEventListener('touchmove', preventDefault);
+
+    container.addEventListener("touchmove", preventDefault, { passive: false });
+    return () => container.removeEventListener("touchmove", preventDefault);
   }, []);
 
   return (
@@ -284,7 +706,7 @@ function ImageViewer({
         className="w-full h-full flex items-center justify-center"
         style={{
           transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) rotate(${rotation}deg)`,
-          transition: isDragging ? 'none' : 'transform 0.3s ease-out',
+          transition: isDragging ? "none" : "transform 0.3s ease-out",
         }}
       >
         <img
@@ -293,7 +715,8 @@ function ImageViewer({
           className="max-w-full max-h-full select-none pointer-events-none"
           draggable={false}
           style={{
-            boxShadow: scale > 1 ? '0 25px 50px -12px rgba(0,0,0,0.25)' : 'none',
+            boxShadow:
+              scale > 1 ? "0 25px 50px -12px rgba(0,0,0,0.25)" : "none",
           }}
         />
       </div>
@@ -344,7 +767,7 @@ function ImageViewer({
       {isMobile && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-full px-4 py-2 z-20">
           <button
-            onClick={() => setScale(prev => Math.max(prev - 0.3, 0.5))}
+            onClick={() => setScale((prev) => Math.max(prev - 0.3, 0.5))}
             className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white active:scale-90 transition-transform"
           >
             <ZoomOut size={16} />
@@ -353,14 +776,14 @@ function ImageViewer({
             {Math.round(scale * 100)}%
           </span>
           <button
-            onClick={() => setScale(prev => Math.min(prev + 0.3, 5))}
+            onClick={() => setScale((prev) => Math.min(prev + 0.3, 5))}
             className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white active:scale-90 transition-transform"
           >
             <ZoomIn size={16} />
           </button>
           <div className="w-px h-5 bg-white/20" />
           <button
-            onClick={() => setRotation(prev => (prev + 90) % 360)}
+            onClick={() => setRotation((prev) => (prev + 90) % 360)}
             className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white active:scale-90 transition-transform"
           >
             <RotateCw size={16} />
@@ -390,7 +813,9 @@ export function XRayViewerButton({
   const [images, setImages] = useState<PatientImage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
+    null,
+  );
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -413,12 +838,12 @@ export function XRayViewerButton({
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") handleClose();
     };
-    
+
     if (isOpen) {
       window.addEventListener("keydown", handleEsc);
       document.body.style.overflow = "hidden";
     }
-    
+
     return () => {
       window.removeEventListener("keydown", handleEsc);
       document.body.style.overflow = "";
@@ -442,15 +867,15 @@ export function XRayViewerButton({
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     if (file.size > 50 * 1024 * 1024) {
       setError("حجم الملف كبير جداً. الحد الأقصى هو 50 ميجابايت");
       return;
     }
-    
+
     setIsUploading(true);
     setError(null);
-    
+
     try {
       const result = await addXRayImage({ patientId, file, title: file.name });
       setImages((prev) => {
@@ -469,13 +894,18 @@ export function XRayViewerButton({
   const handleDelete = async (imageId: string) => {
     setIsDeleting(true);
     setError(null);
-    
+
     try {
       await deleteXRayImage(imageId, patientId);
       setImages((prev) => {
         const newImages = prev.filter((img) => img.id !== imageId);
-        if (selectedImageIndex !== null && selectedImageIndex >= newImages.length) {
-          setSelectedImageIndex(newImages.length > 0 ? newImages.length - 1 : null);
+        if (
+          selectedImageIndex !== null &&
+          selectedImageIndex >= newImages.length
+        ) {
+          setSelectedImageIndex(
+            newImages.length > 0 ? newImages.length - 1 : null,
+          );
         }
         return newImages;
       });
@@ -497,14 +927,14 @@ export function XRayViewerButton({
 
   const navigateImage = (direction: "prev" | "next") => {
     if (selectedImageIndex === null || images.length === 0) return;
-    
+
     if (direction === "prev") {
-      setSelectedImageIndex((prev) => 
-        prev !== null ? (prev > 0 ? prev - 1 : images.length - 1) : 0
+      setSelectedImageIndex((prev) =>
+        prev !== null ? (prev > 0 ? prev - 1 : images.length - 1) : 0,
       );
     } else {
-      setSelectedImageIndex((prev) => 
-        prev !== null ? (prev < images.length - 1 ? prev + 1 : 0) : 0
+      setSelectedImageIndex((prev) =>
+        prev !== null ? (prev < images.length - 1 ? prev + 1 : 0) : 0,
       );
     }
   };
@@ -512,14 +942,14 @@ export function XRayViewerButton({
   const isPDF = (image: PatientImage): boolean => {
     if (!image?.localUrl) return false;
     const url = image.localUrl.toLowerCase();
-    const title = (image.title || '').toLowerCase();
-    return url.endsWith('.pdf') || title.endsWith('.pdf') || url.includes('.pdf');
+    const title = (image.title || "").toLowerCase();
+    return (
+      url.endsWith(".pdf") || title.endsWith(".pdf") || url.includes(".pdf")
+    );
   };
 
-  const selectedImage = selectedImageIndex !== null ? images[selectedImageIndex] : null;
-
-  console.log('📄 Current file:', selectedImage?.title, '| Is PDF:', selectedImage ? isPDF(selectedImage) : 'N/A');
-  console.log('📄 URL:', selectedImage?.localUrl?.substring(0, 100));
+  const selectedImage =
+    selectedImageIndex !== null ? images[selectedImageIndex] : null;
 
   return (
     <>
@@ -570,17 +1000,21 @@ export function XRayViewerButton({
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                   {!isMobile && (
                     <button
                       onClick={() => setIsFullscreen(!isFullscreen)}
                       className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30"
                     >
-                      {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                      {isFullscreen ? (
+                        <Minimize2 size={14} />
+                      ) : (
+                        <Maximize2 size={14} />
+                      )}
                     </button>
                   )}
-                  
+
                   <button
                     onClick={handleClose}
                     className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-red-500 transition-colors"
@@ -595,7 +1029,9 @@ export function XRayViewerButton({
                 <div className="flex items-center gap-2 sm:gap-3">
                   <label
                     className={`flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-lg font-medium text-xs sm:text-sm cursor-pointer transition-all active:scale-95 ${
-                      isUploading ? "opacity-50 cursor-not-allowed" : "hover:opacity-90"
+                      isUploading
+                        ? "opacity-50 cursor-not-allowed"
+                        : "hover:opacity-90"
                     }`}
                     style={{ background: primaryColor, color: "white" }}
                   >
@@ -619,7 +1055,7 @@ export function XRayViewerButton({
                       className="hidden"
                     />
                   </label>
-                  
+
                   {images.length > 0 && (
                     <span className="text-xs sm:text-sm text-gray-500">
                       {selectedImageIndex !== null
@@ -627,9 +1063,9 @@ export function XRayViewerButton({
                         : images.length}
                     </span>
                   )}
-                  
+
                   <div className="flex-1" />
-                  
+
                   {selectedImage && (
                     <button
                       onClick={() => setDeleteConfirmId(selectedImage.id)}
@@ -650,8 +1086,13 @@ export function XRayViewerButton({
               {/* رسالة الخطأ */}
               {error && (
                 <div className="mx-3 sm:mx-4 mt-2 p-2 sm:p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2 flex-shrink-0">
-                  <AlertCircle size={16} className="text-red-500 flex-shrink-0 mt-0.5" />
-                  <p className="text-red-700 text-xs sm:text-sm flex-1">{error}</p>
+                  <AlertCircle
+                    size={16}
+                    className="text-red-500 flex-shrink-0 mt-0.5"
+                  />
+                  <p className="text-red-700 text-xs sm:text-sm flex-1">
+                    {error}
+                  </p>
                   <button
                     onClick={() => setError(null)}
                     className="text-red-400 hover:text-red-600 flex-shrink-0"
@@ -666,15 +1107,23 @@ export function XRayViewerButton({
                 <div className="flex-1 min-h-0 relative bg-gray-100">
                   {isLoading ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <Loader2 size={36} className="animate-spin mb-3" style={{ color: primaryColor }} />
-                      <p className="text-gray-500 text-sm">جاري تحميل الملفات...</p>
+                      <Loader2
+                        size={36}
+                        className="animate-spin mb-3"
+                        style={{ color: primaryColor }}
+                      />
+                      <p className="text-gray-500 text-sm">
+                        جاري تحميل الملفات...
+                      </p>
                     </div>
                   ) : images.length === 0 ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
                       <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mb-3 border-2 border-dashed border-gray-300">
                         <Camera size={28} className="text-gray-400" />
                       </div>
-                      <h3 className="text-gray-600 font-medium mb-1">لا توجد ملفات</h3>
+                      <h3 className="text-gray-600 font-medium mb-1">
+                        لا توجد ملفات
+                      </h3>
                       <p className="text-gray-400 text-xs sm:text-sm">
                         قم برفع صور الأشعة أو ملفات PDF للمريض
                       </p>
@@ -682,9 +1131,14 @@ export function XRayViewerButton({
                   ) : selectedImage ? (
                     /* ✅ عرض PDF أو صورة */
                     isPDF(selectedImage) ? (
-                      <PDFViewer 
-                        url={selectedImage.localUrl} 
-                        title={selectedImage.title} 
+                      <PDFImageViewer
+                        key={selectedImage.id}
+                        url={selectedImage.localUrl}
+                        title={selectedImage.title}
+                        onPrev={() => navigateImage("prev")}
+                        onNext={() => navigateImage("next")}
+                        hasMultiple={images.length > 1}
+                        isMobile={isMobile}
                       />
                     ) : (
                       <ImageViewer
@@ -727,7 +1181,9 @@ export function XRayViewerButton({
                         {isPDF(img) ? (
                           <div className="w-full h-full bg-blue-50 flex flex-col items-center justify-center gap-0.5">
                             <FileText size={16} className="text-blue-500" />
-                            <span className="text-[8px] text-blue-600 font-medium">PDF</span>
+                            <span className="text-[8px] text-blue-600 font-medium">
+                              PDF
+                            </span>
                           </div>
                         ) : (
                           <img
@@ -736,7 +1192,7 @@ export function XRayViewerButton({
                             className="w-full h-full object-cover"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
+                              target.style.display = "none";
                               if (target.parentElement) {
                                 target.parentElement.innerHTML = `
                                   <div class="w-full h-full bg-gray-100 flex items-center justify-center">
