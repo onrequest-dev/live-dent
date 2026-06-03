@@ -26,6 +26,12 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
         sizes: '512x512',
         type: 'image/png',
       },
+      {
+       src: '/icon-splash-512x512.png',  // ← صورة مختلفة عن الـ 512 العادية
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'maskable',
+    }
     ],
   }
 }
