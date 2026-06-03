@@ -29,6 +29,7 @@ import {
   revokeLocalUrl,
   type PatientImage,
 } from "@/lib/xrayStorage";
+import { useModalBackHandler } from "@/hooks/useModalBackHandler";
 
 interface XRayViewerProps {
   patientId: string;
@@ -698,6 +699,7 @@ export function XRayViewerButton({
   primaryColor,
   isMobile = false,
 }: XRayViewerProps) {
+  
   const [isOpen, setIsOpen] = useState(false);
   const [images, setImages] = useState<PatientImage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -811,6 +813,7 @@ export function XRayViewerButton({
     setDeleteConfirmId(null);
     setError(null);
   };
+  useModalBackHandler(handleClose);
 
   const navigateImage = (direction: "prev" | "next") => {
     if (selectedImageIndex === null || images.length === 0) return;

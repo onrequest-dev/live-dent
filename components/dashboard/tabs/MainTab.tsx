@@ -45,6 +45,7 @@ import {
 } from "@/client/helpers/session";
 import { ToastContainer, useToast } from "./Toast";
 import { XRayViewerButton } from "../XRayViewer";
+import { useModalBackHandler } from "@/hooks/useModalBackHandler";
 // ============================================================
 // خدمة API محاكية (لتحضير الربط مع الباك إند)
 // ============================================================
@@ -1118,6 +1119,8 @@ function PatientDetailsCard({
   onEditPatient,
   onRequestDeleteSession,
 }: PatientDetailsCardProps) {
+
+  useModalBackHandler(onClose);
   const finance = calculateFinance();
   const pastSessions = sessions;
   const [selectedSession, setSelectedSession] = useState<any>(null);
@@ -1529,6 +1532,7 @@ function EditSessionModal({
   onDelete,
   addToast,
 }: EditSessionModalProps) {
+  useModalBackHandler(onClose);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [formData, setFormData] = useState({
@@ -1941,6 +1945,7 @@ function ConfirmDeleteModal({
   sessionInfo,
   addToast,
 }: ConfirmDeleteModalProps) {
+  useModalBackHandler(onClose);
   const [isLoading, setIsLoading] = useState(false);
 
   if (!isOpen) return null;
@@ -2080,6 +2085,7 @@ function NewPatientModal({
   isLoading: externalLoading = false,
   addToast,
 }: NewPatientModalProps) {
+  useModalBackHandler(onClose);
   const [internalLoading, setInternalLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -2756,6 +2762,7 @@ function NewAppointmentModal({
   isLoading: externalLoading = false,
   addToast,
 }: NewAppointmentModalProps) {
+  useModalBackHandler(onClose);
   const [internalLoading, setInternalLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -3145,6 +3152,7 @@ function EditPatientModal({
   isLoading: externalLoading = false,
   addToast,
 }: EditPatientModalProps) {
+    useModalBackHandler( onClose);
   const [internalLoading, setInternalLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 

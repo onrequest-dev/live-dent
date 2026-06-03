@@ -37,6 +37,13 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       window.removeEventListener("refreshPatientsData", handleRefreshRequest);
   }, [refetch, isRefetching]);
 
+
+
+
+
+ 
+
+
   // شاشة تحميل للـ SSR
   if (!isClient) {
     return (
