@@ -7,6 +7,8 @@ import { useParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { PWAInstallPrompt } from "@/components/dashboard/PWAInstallPrompt";
+import DoubleClickToExit from "@/contexts/DoubleClickToExit";
+
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const { clinicData, isLoading, secondaryColor, refetch } = useClinic();
   const [isRefetching, setIsRefetching] = useState(false);
@@ -131,8 +133,10 @@ export default function DashboardLayout({
   }
 
   return (
-    <ClinicProvider clinicId={clinicId}>
-      <DashboardContent>{children}</DashboardContent>
-    </ClinicProvider>
+    <DoubleClickToExit message="اضغط مرتين للخروج من التطبيق" timeout={2000}>
+      <ClinicProvider clinicId={clinicId}>
+        <DashboardContent>{children}</DashboardContent>
+      </ClinicProvider>
+    </DoubleClickToExit>
   );
 }

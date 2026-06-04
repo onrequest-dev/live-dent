@@ -46,7 +46,6 @@ import {
 import { ToastContainer, useToast } from "./Toast";
 import { XRayViewerButton } from "../XRayViewer";
 import { useModalBackHandler } from "@/hooks/useModalBackHandler";
-import { useModalRouter } from "@/hooks/useModalRouter";
 // ============================================================
 // خدمة API محاكية (لتحضير الربط مع الباك إند)
 // ============================================================
@@ -1121,8 +1120,7 @@ function PatientDetailsCard({
   onRequestDeleteSession,
 }: PatientDetailsCardProps) {
 
-  const {closeModal} = useModalBackHandler(onClose);
- 
+  useModalBackHandler(onClose);
   const finance = calculateFinance();
   const pastSessions = sessions;
   const [selectedSession, setSelectedSession] = useState<any>(null);
@@ -1139,7 +1137,7 @@ function PatientDetailsCard({
         <div className="p-6 border-b border-gray-100 relative">
           {/* زر الإغلاق */}
           <button
-            onClick={closeModal}
+            onClick={onClose}
             className="absolute left-0 top-0 w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-gray-500 hover:bg-red-500 transition-colors"
           >
             <X size={18} />
@@ -1534,7 +1532,7 @@ function EditSessionModal({
   onDelete,
   addToast,
 }: EditSessionModalProps) {
-  // useModalBackHandler(onClose);
+  useModalBackHandler(onClose);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [formData, setFormData] = useState({
@@ -1947,7 +1945,7 @@ function ConfirmDeleteModal({
   sessionInfo,
   addToast,
 }: ConfirmDeleteModalProps) {
-  // useModalBackHandler(onClose);
+  useModalBackHandler(onClose);
   const [isLoading, setIsLoading] = useState(false);
 
   if (!isOpen) return null;
@@ -2087,7 +2085,7 @@ function NewPatientModal({
   isLoading: externalLoading = false,
   addToast,
 }: NewPatientModalProps) {
-  // useModalBackHandler(onClose);
+  useModalBackHandler(onClose);
   const [internalLoading, setInternalLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -2764,7 +2762,7 @@ function NewAppointmentModal({
   isLoading: externalLoading = false,
   addToast,
 }: NewAppointmentModalProps) {
-  // useModalBackHandler(onClose);
+  useModalBackHandler(onClose);
   const [internalLoading, setInternalLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -3154,7 +3152,7 @@ function EditPatientModal({
   isLoading: externalLoading = false,
   addToast,
 }: EditPatientModalProps) {
-    // useModalBackHandler( onClose);
+    useModalBackHandler( onClose);
   const [internalLoading, setInternalLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 

@@ -12,14 +12,11 @@ import {
   ChevronLeft,
   ChevronRight,
   AlertCircle,
-  ExternalLink,
   Maximize2,
   Minimize2,
   Camera,
   ZoomIn,
   ZoomOut,
-  RotateCw,
-  Image as ImageIcon,
 } from "lucide-react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import {
@@ -61,7 +58,7 @@ function ViewerSkeleton() {
             rx="6"
             className="fill-gray-300 animate-pulse"
           />
-          
+
           {/* الملف الرئيسي */}
           <rect
             x="20"
@@ -73,7 +70,7 @@ function ViewerSkeleton() {
             stroke="#D1D5DB"
             strokeWidth="1.5"
           />
-          
+
           {/* طية الملف */}
           <path
             d="M55 20 L55 35 Q55 40 60 40 L70 40"
@@ -87,31 +84,84 @@ function ViewerSkeleton() {
           />
 
           {/* أسطر النص الوهمية */}
-          <rect x="28" y="46" width="24" height="3" rx="1.5" className="fill-gray-300 animate-pulse" />
-          <rect x="28" y="52" width="32" height="3" rx="1.5" className="fill-gray-300 animate-pulse" style={{ animationDelay: '0.2s' }} />
-          <rect x="28" y="58" width="20" height="3" rx="1.5" className="fill-gray-300 animate-pulse" style={{ animationDelay: '0.4s' }} />
-          <rect x="28" y="64" width="28" height="3" rx="1.5" className="fill-gray-300 animate-pulse" style={{ animationDelay: '0.6s' }} />
+          <rect
+            x="28"
+            y="46"
+            width="24"
+            height="3"
+            rx="1.5"
+            className="fill-gray-300 animate-pulse"
+          />
+          <rect
+            x="28"
+            y="52"
+            width="32"
+            height="3"
+            rx="1.5"
+            className="fill-gray-300 animate-pulse"
+            style={{ animationDelay: "0.2s" }}
+          />
+          <rect
+            x="28"
+            y="58"
+            width="20"
+            height="3"
+            rx="1.5"
+            className="fill-gray-300 animate-pulse"
+            style={{ animationDelay: "0.4s" }}
+          />
+          <rect
+            x="28"
+            y="64"
+            width="28"
+            height="3"
+            rx="1.5"
+            className="fill-gray-300 animate-pulse"
+            style={{ animationDelay: "0.6s" }}
+          />
 
           {/* أيقونة الصورة في المنتصف */}
-          <rect x="35" y="46" width="16" height="14" rx="2" className="fill-gray-300 animate-pulse" style={{ animationDelay: '0.3s' }} />
-          <circle cx="40" cy="50" r="2.5" className="fill-gray-400 animate-pulse" style={{ animationDelay: '0.5s' }} />
+          <rect
+            x="35"
+            y="46"
+            width="16"
+            height="14"
+            rx="2"
+            className="fill-gray-300 animate-pulse"
+            style={{ animationDelay: "0.3s" }}
+          />
+          <circle
+            cx="40"
+            cy="50"
+            r="2.5"
+            className="fill-gray-400 animate-pulse"
+            style={{ animationDelay: "0.5s" }}
+          />
           <path
             d="M35 57 L40 53 L45 57"
             stroke="#9CA3AF"
             strokeWidth="1.5"
             className="animate-pulse"
-            style={{ animationDelay: '0.7s' }}
+            style={{ animationDelay: "0.7s" }}
           />
         </svg>
       </div>
 
       {/* نص التحميل */}
       <div className="flex flex-col items-center gap-2">
-        <p className="text-gray-600 text-sm font-semibold">جاري تحميل الملفات</p>
+        <p className="text-gray-600 text-sm font-semibold">
+          جاري تحميل الملفات
+        </p>
         <div className="flex gap-1">
           <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce" />
-          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce" style={{ animationDelay: '0.15s' }} />
-          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce" style={{ animationDelay: '0.3s' }} />
+          <span
+            className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce"
+            style={{ animationDelay: "0.15s" }}
+          />
+          <span
+            className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce"
+            style={{ animationDelay: "0.3s" }}
+          />
         </div>
       </div>
     </div>
@@ -168,7 +218,7 @@ function UploadSkeleton() {
             stroke="#D1D5DB"
             strokeWidth="1.5"
           />
-          
+
           {/* طية الملف */}
           <path
             d="M56 30 L56 40 Q56 43 59 43 L68 43"
@@ -176,7 +226,7 @@ function UploadSkeleton() {
             stroke="#D1D5DB"
             strokeWidth="1.5"
           />
-          
+
           {/* سهم للأعلى */}
           <path
             d="M50 55 L50 70"
@@ -214,15 +264,25 @@ function UploadSkeleton() {
         <p className="text-gray-600 text-sm font-semibold">جاري رفع الملف</p>
         <div className="flex gap-1">
           <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce" />
-          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce" style={{ animationDelay: '0.15s' }} />
-          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce" style={{ animationDelay: '0.3s' }} />
+          <span
+            className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce"
+            style={{ animationDelay: "0.15s" }}
+          />
+          <span
+            className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce"
+            style={{ animationDelay: "0.3s" }}
+          />
         </div>
       </div>
 
       <style jsx>{`
         @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
         }
       `}</style>
     </div>
@@ -387,10 +447,7 @@ function PDFImageViewer({
         const scaleQuality = 2.5;
 
         for (let i = 1; i <= pdf.numPages; i++) {
-          if (
-            controller.signal.aborted ||
-            currentUrlRef.current !== currentUrl
-          )
+          if (controller.signal.aborted || currentUrlRef.current !== currentUrl)
             return;
 
           const page = await pdf.getPage(i);
@@ -691,6 +748,294 @@ function ImageViewer({
 }
 
 // ============================================================
+// مكون المودال الداخلي (يُركب فقط عند الفتح)
+// ============================================================
+function XRayModal({
+  isOpen,
+  onClose,
+  patientName,
+  primaryColor,
+  isMobile,
+  images,
+  isLoading,
+  isUploading,
+  selectedImageIndex,
+  selectedImage,
+  error,
+  isDeleting,
+  navigateImage,
+  handleUpload,
+  handleDelete,
+  setDeleteConfirmId,
+  setIsFullscreen,
+  isFullscreen,
+  fileInputRef,
+  setError,
+}: any) {
+  // ✅ سيتم استدعاء الهوك عند فتح المودال فقط
+  useModalBackHandler(onClose);
+
+  if (!isOpen) return null;
+
+  const isPDF = (image: any): boolean => {
+    if (!image?.localUrl) return false;
+    const url = image.localUrl.toLowerCase();
+    const title = (image.title || "").toLowerCase();
+    return (
+      url.endsWith(".pdf") || title.endsWith(".pdf") || url.includes(".pdf")
+    );
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        className={`bg-white shadow-2xl w-full h-full flex flex-col overflow-hidden ${
+          isFullscreen || isMobile
+            ? "fixed inset-0 rounded-none"
+            : "rounded-2xl max-w-[95vw] max-h-[95vh]"
+        }`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div
+          className="px-3 sm:px-6 py-2.5 sm:py-4 flex-shrink-0 flex items-center justify-between"
+          style={{ background: primaryColor }}
+        >
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+            <Camera size={20} className="text-white flex-shrink-0" />
+            <div className="min-w-0">
+              <h2 className="text-sm sm:text-lg font-bold text-white truncate">
+                {selectedImage?.title || "صور الأشعة والملفات"}
+              </h2>
+              <p className="text-white/70 text-[10px] sm:text-xs">
+                {patientName}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            {!isMobile && (
+              <button
+                onClick={() => setIsFullscreen(!isFullscreen)}
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30"
+              >
+                {isFullscreen ? (
+                  <Minimize2 size={14} />
+                ) : (
+                  <Maximize2 size={14} />
+                )}
+              </button>
+            )}
+
+            <button
+              onClick={onClose}
+              className="w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-red-500 transition-colors"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </div>
+
+        {/* Toolbar - RTL Layout */}
+        <div className="px-2 sm:px-4 py-2 bg-white border-b border-gray-200 flex-shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Delete button - Far Right */}
+            {selectedImage && (
+              <button
+                onClick={() => setDeleteConfirmId(selectedImage.id)}
+                disabled={isDeleting}
+                className="flex items-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 font-medium text-xs sm:text-sm disabled:opacity-50 active:scale-95 transition-all"
+              >
+                {isDeleting ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Trash2 size={14} />
+                )}
+                <span className="hidden sm:inline">حذف</span>
+              </button>
+            )}
+
+            {/* Upload button - Next to Delete */}
+            <label
+              className={`flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-lg font-medium text-xs sm:text-sm cursor-pointer transition-all active:scale-95 ${
+                isUploading
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:opacity-90"
+              }`}
+              style={{ background: primaryColor, color: "white" }}
+            >
+              {isUploading ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Upload size={14} />
+              )}
+              <span className="hidden sm:inline">
+                {isUploading ? "جاري الرفع..." : "رفع ملف"}
+              </span>
+              <span className="sm:hidden">{isUploading ? "..." : "رفع"}</span>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,.pdf"
+                onChange={handleUpload}
+                disabled={isUploading}
+                className="hidden"
+              />
+            </label>
+
+            {/* File counter - to the left of buttons */}
+            {images.length > 0 && (
+              <span className="text-xs sm:text-sm text-gray-500">
+                {selectedImageIndex !== null
+                  ? `${selectedImageIndex + 1} / ${images.length}`
+                  : images.length}
+              </span>
+            )}
+
+            {/* Spacer pushes everything to the right */}
+            <div className="flex-1" />
+          </div>
+        </div>
+
+        {/* Error message */}
+        {error && (
+          <div className="mx-3 sm:mx-4 mt-2 p-2 sm:p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2 flex-shrink-0">
+            <AlertCircle
+              size={16}
+              className="text-red-500 flex-shrink-0 mt-0.5"
+            />
+            <p className="text-red-700 text-xs sm:text-sm flex-1">{error}</p>
+            <button
+              onClick={() => setError(null)}
+              className="text-red-400 hover:text-red-600 flex-shrink-0"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
+
+        {/* Main viewer area */}
+        <div className="flex-1 min-h-0 flex flex-col sm:flex-row">
+          <div className="flex-1 min-h-0 relative bg-gray-100">
+            {isLoading ? (
+              <ViewerSkeleton />
+            ) : isUploading ? (
+              <UploadSkeleton />
+            ) : images.length === 0 ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
+                <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mb-3 border-2 border-dashed border-gray-300">
+                  <Camera size={28} className="text-gray-400" />
+                </div>
+                <h3 className="text-gray-600 font-medium mb-1">
+                  لا توجد ملفات
+                </h3>
+                <p className="text-gray-400 text-xs sm:text-sm">
+                  قم برفع صور الأشعة أو ملفات PDF للمريض
+                </p>
+              </div>
+            ) : selectedImage ? (
+              isPDF(selectedImage) ? (
+                <PDFImageViewer
+                  key={selectedImage.id}
+                  url={selectedImage.localUrl}
+                  title={selectedImage.title}
+                  onPrev={() => navigateImage("prev")}
+                  onNext={() => navigateImage("next")}
+                  hasMultiple={images.length > 1}
+                  isMobile={isMobile}
+                />
+              ) : (
+                <ImageViewer
+                  src={selectedImage.localUrl}
+                  alt={selectedImage.title || ""}
+                  onPrev={() => navigateImage("prev")}
+                  onNext={() => navigateImage("next")}
+                  hasMultiple={images.length > 1}
+                  isMobile={isMobile}
+                />
+              )
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-gray-500">
+                الرجاء اختيار ملف
+              </div>
+            )}
+          </div>
+
+          {/* Thumbnails */}
+          {images.length > 1 && (
+            <div
+              className={`flex gap-1.5 bg-white border-gray-200 flex-shrink-0 ${
+                isMobile
+                  ? "flex-row h-16 overflow-x-auto border-t p-1.5"
+                  : "flex-col w-20 overflow-y-auto border-l p-2"
+              }`}
+            >
+              {images.map((img: any, index: number) => (
+                <button
+                  key={img.id}
+                  onClick={() => navigateImage(index)}
+                  className={`flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all active:scale-95 relative ${
+                    isMobile ? "w-12 h-12" : "w-full h-14"
+                  } ${
+                    selectedImageIndex === index
+                      ? "border-blue-500 ring-2 ring-blue-500"
+                      : "border-transparent hover:border-gray-300"
+                  }`}
+                >
+                  {isPDF(img) ? (
+                    <div className="w-full h-full bg-blue-50 flex flex-col items-center justify-center gap-0.5">
+                      <FileText size={16} className="text-blue-500" />
+                      <span className="text-[8px] text-blue-600 font-medium">
+                        PDF
+                      </span>
+                    </div>
+                  ) : (
+                    <img
+                      src={img.localUrl}
+                      alt=""
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = "none";
+                        if (target.parentElement) {
+                          target.parentElement.innerHTML = `
+                            <div class="w-full h-full bg-gray-100 flex items-center justify-center">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-400">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                <circle cx="8.5" cy="8.5" r="1.5"/>
+                                <polyline points="21,15 16,10 5,21"/>
+                              </svg>
+                            </div>
+                          `;
+                        }
+                      }}
+                    />
+                  )}
+                  <div className="absolute top-0 right-0 bg-black/60 text-white text-[8px] px-1 rounded-bl font-medium">
+                    {index + 1}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ============================================================
 // المكون الرئيسي XRayViewerButton
 // ============================================================
 export function XRayViewerButton({
@@ -699,12 +1044,13 @@ export function XRayViewerButton({
   primaryColor,
   isMobile = false,
 }: XRayViewerProps) {
-  
   const [isOpen, setIsOpen] = useState(false);
   const [images, setImages] = useState<PatientImage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
+    null,
+  );
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -793,7 +1139,7 @@ export function XRayViewerButton({
           selectedImageIndex >= newImages.length
         ) {
           setSelectedImageIndex(
-            newImages.length > 0 ? newImages.length - 1 : null
+            newImages.length > 0 ? newImages.length - 1 : null,
           );
         }
         return newImages;
@@ -813,29 +1159,24 @@ export function XRayViewerButton({
     setDeleteConfirmId(null);
     setError(null);
   };
-  useModalBackHandler(handleClose);
 
-  const navigateImage = (direction: "prev" | "next") => {
+  const navigateImage = (direction: "prev" | "next" | number) => {
+    if (typeof direction === "number") {
+      setSelectedImageIndex(direction);
+      return;
+    }
+
     if (selectedImageIndex === null || images.length === 0) return;
 
     if (direction === "prev") {
       setSelectedImageIndex((prev) =>
-        prev !== null ? (prev > 0 ? prev - 1 : images.length - 1) : 0
+        prev !== null ? (prev > 0 ? prev - 1 : images.length - 1) : 0,
       );
     } else {
       setSelectedImageIndex((prev) =>
-        prev !== null ? (prev < images.length - 1 ? prev + 1 : 0) : 0
+        prev !== null ? (prev < images.length - 1 ? prev + 1 : 0) : 0,
       );
     }
-  };
-
-  const isPDF = (image: PatientImage): boolean => {
-    if (!image?.localUrl) return false;
-    const url = image.localUrl.toLowerCase();
-    const title = (image.title || "").toLowerCase();
-    return (
-      url.endsWith(".pdf") || title.endsWith(".pdf") || url.includes(".pdf")
-    );
   };
 
   const selectedImage =
@@ -855,255 +1196,28 @@ export function XRayViewerButton({
 
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center"
-            onClick={handleClose}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className={`bg-white shadow-2xl w-full h-full flex flex-col overflow-hidden ${
-                isFullscreen || isMobile
-                  ? "fixed inset-0 rounded-none"
-                  : "rounded-2xl max-w-[95vw] max-h-[95vh]"
-              }`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Header */}
-              <div
-                className="px-3 sm:px-6 py-2.5 sm:py-4 flex-shrink-0 flex items-center justify-between"
-                style={{ background: primaryColor }}
-              >
-                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                  <Camera size={20} className="text-white flex-shrink-0" />
-                  <div className="min-w-0">
-                    <h2 className="text-sm sm:text-lg font-bold text-white truncate">
-                      {selectedImage?.title || "صور الأشعة والملفات"}
-                    </h2>
-                    <p className="text-white/70 text-[10px] sm:text-xs">
-                      {patientName}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-                  {!isMobile && (
-                    <button
-                      onClick={() => setIsFullscreen(!isFullscreen)}
-                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30"
-                    >
-                      {isFullscreen ? (
-                        <Minimize2 size={14} />
-                      ) : (
-                        <Maximize2 size={14} />
-                      )}
-                    </button>
-                  )}
-
-<button
-  onClick={handleClose}
-  className="w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-red-500 transition-colors"
->
-  <X size={18} />
-</button>
-                </div>
-              </div>
-
-{/* Toolbar - RTL Layout */}
-<div className="px-2 sm:px-4 py-2 bg-white border-b border-gray-200 flex-shrink-0">
-  <div className="flex items-center gap-2 sm:gap-3">
-    {/* Delete button - Far Right */}
-    {selectedImage && (
-      <button
-        onClick={() => setDeleteConfirmId(selectedImage.id)}
-        disabled={isDeleting}
-        className="flex items-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 font-medium text-xs sm:text-sm disabled:opacity-50 active:scale-95 transition-all"
-      >
-        {isDeleting ? (
-          <Loader2 size={14} className="animate-spin" />
-        ) : (
-          <Trash2 size={14} />
-        )}
-        <span className="hidden sm:inline">حذف</span>
-      </button>
-    )}
-
-    {/* Upload button - Next to Delete */}
-    <label
-      className={`flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-lg font-medium text-xs sm:text-sm cursor-pointer transition-all active:scale-95 ${
-        isUploading
-          ? "opacity-50 cursor-not-allowed"
-          : "hover:opacity-90"
-      }`}
-      style={{ background: primaryColor, color: "white" }}
-    >
-      {isUploading ? (
-        <Loader2 size={14} className="animate-spin" />
-      ) : (
-        <Upload size={14} />
-      )}
-      <span className="hidden sm:inline">
-        {isUploading ? "جاري الرفع..." : "رفع ملف"}
-      </span>
-      <span className="sm:hidden">
-        {isUploading ? "..." : "رفع"}
-      </span>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*,.pdf"
-        onChange={handleUpload}
-        disabled={isUploading}
-        className="hidden"
-      />
-    </label>
-
-    {/* File counter - to the left of buttons */}
-    {images.length > 0 && (
-      <span className="text-xs sm:text-sm text-gray-500">
-        {selectedImageIndex !== null
-          ? `${selectedImageIndex + 1} / ${images.length}`
-          : images.length}
-      </span>
-    )}
-
-    {/* Spacer pushes everything to the right */}
-    <div className="flex-1" />
-  </div>
-</div>
-
-              {/* Error message */}
-              {error && (
-                <div className="mx-3 sm:mx-4 mt-2 p-2 sm:p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2 flex-shrink-0">
-                  <AlertCircle
-                    size={16}
-                    className="text-red-500 flex-shrink-0 mt-0.5"
-                  />
-                  <p className="text-red-700 text-xs sm:text-sm flex-1">
-                    {error}
-                  </p>
-                  <button
-                    onClick={() => setError(null)}
-                    className="text-red-400 hover:text-red-600 flex-shrink-0"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              )}
-
-              {/* Main viewer area */}
-              <div className="flex-1 min-h-0 flex flex-col sm:flex-row">
-                <div className="flex-1 min-h-0 relative bg-gray-100">
-                  {isLoading ? (
-                    <ViewerSkeleton />
-                  ) : isUploading ? (
-                    <UploadSkeleton />
-                  ) : images.length === 0 ? (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
-                      <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mb-3 border-2 border-dashed border-gray-300">
-                        <Camera size={28} className="text-gray-400" />
-                      </div>
-                      <h3 className="text-gray-600 font-medium mb-1">
-                        لا توجد ملفات
-                      </h3>
-                      <p className="text-gray-400 text-xs sm:text-sm">
-                        قم برفع صور الأشعة أو ملفات PDF للمريض
-                      </p>
-                    </div>
-                  ) : selectedImage ? (
-                    isPDF(selectedImage) ? (
-                      <PDFImageViewer
-                        key={selectedImage.id}
-                        url={selectedImage.localUrl}
-                        title={selectedImage.title}
-                        onPrev={() => navigateImage("prev")}
-                        onNext={() => navigateImage("next")}
-                        hasMultiple={images.length > 1}
-                        isMobile={isMobile}
-                      />
-                    ) : (
-                      <ImageViewer
-                        src={selectedImage.localUrl}
-                        alt={selectedImage.title || ""}
-                        onPrev={() => navigateImage("prev")}
-                        onNext={() => navigateImage("next")}
-                        hasMultiple={images.length > 1}
-                        isMobile={isMobile}
-                      />
-                    )
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center text-gray-500">
-                      الرجاء اختيار ملف
-                    </div>
-                  )}
-                </div>
-
-                {/* Thumbnails */}
-                {images.length > 1 && (
-                  <div
-                    className={`flex gap-1.5 bg-white border-gray-200 flex-shrink-0 ${
-                      isMobile
-                        ? "flex-row h-16 overflow-x-auto border-t p-1.5"
-                        : "flex-col w-20 overflow-y-auto border-l p-2"
-                    }`}
-                  >
-                    {images.map((img, index) => (
-                      <button
-                        key={img.id}
-                        onClick={() => setSelectedImageIndex(index)}
-                        className={`flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all active:scale-95 relative ${
-                          isMobile ? "w-12 h-12" : "w-full h-14"
-                        } ${
-                          selectedImageIndex === index
-                            ? "border-blue-500 ring-2 ring-blue-500"
-                            : "border-transparent hover:border-gray-300"
-                        }`}
-                      >
-                        {isPDF(img) ? (
-                          <div className="w-full h-full bg-blue-50 flex flex-col items-center justify-center gap-0.5">
-                            <FileText size={16} className="text-blue-500" />
-                            <span className="text-[8px] text-blue-600 font-medium">
-                              PDF
-                            </span>
-                          </div>
-                        ) : (
-                          <img
-                            src={img.localUrl}
-                            alt=""
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = "none";
-                              if (target.parentElement) {
-                                target.parentElement.innerHTML = `
-                                  <div class="w-full h-full bg-gray-100 flex items-center justify-center">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-400">
-                                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                                      <circle cx="8.5" cy="8.5" r="1.5"/>
-                                      <polyline points="21,15 16,10 5,21"/>
-                                    </svg>
-                                  </div>
-                                `;
-                              }
-                            }}
-                          />
-                        )}
-                        <div className="absolute top-0 right-0 bg-black/60 text-white text-[8px] px-1 rounded-bl font-medium">
-                          {index + 1}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
+          <XRayModal
+            isOpen={isOpen}
+            onClose={handleClose}
+            patientName={patientName}
+            primaryColor={primaryColor}
+            isMobile={isMobile}
+            images={images}
+            isLoading={isLoading}
+            isUploading={isUploading}
+            selectedImageIndex={selectedImageIndex}
+            selectedImage={selectedImage}
+            error={error}
+            isDeleting={isDeleting}
+            navigateImage={navigateImage}
+            handleUpload={handleUpload}
+            handleDelete={handleDelete}
+            setDeleteConfirmId={setDeleteConfirmId}
+            setIsFullscreen={setIsFullscreen}
+            isFullscreen={isFullscreen}
+            fileInputRef={fileInputRef}
+            setError={setError}
+          />
         )}
       </AnimatePresence>
 
