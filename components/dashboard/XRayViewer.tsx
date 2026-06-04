@@ -19,9 +19,9 @@ import {
   ZoomIn,
   ZoomOut,
   RotateCw,
-  ChevronUp,
-  ChevronDown,
+  Image as ImageIcon,
 } from "lucide-react";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import {
   addXRayImage,
   getPatientImages,
@@ -29,7 +29,6 @@ import {
   revokeLocalUrl,
   type PatientImage,
 } from "@/lib/xrayStorage";
-import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 interface XRayViewerProps {
   patientId: string;
@@ -39,7 +38,198 @@ interface XRayViewerProps {
 }
 
 // ============================================================
-// ✅ عارض PDF باستخدام object tag (أكثر توافقاً)
+// Skeleton Loader Component (مع SVG متحرك)
+// ============================================================
+function ViewerSkeleton() {
+  return (
+    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 gap-5">
+      {/* SVG متحرك لملف وهمي */}
+      <div className="w-24 h-24">
+        <svg
+          viewBox="0 0 100 100"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-full h-full"
+        >
+          {/* ظل الملف */}
+          <rect
+            x="25"
+            y="28"
+            width="50"
+            height="60"
+            rx="6"
+            className="fill-gray-300 animate-pulse"
+          />
+          
+          {/* الملف الرئيسي */}
+          <rect
+            x="20"
+            y="20"
+            width="50"
+            height="60"
+            rx="6"
+            className="fill-gray-200"
+            stroke="#D1D5DB"
+            strokeWidth="1.5"
+          />
+          
+          {/* طية الملف */}
+          <path
+            d="M55 20 L55 35 Q55 40 60 40 L70 40"
+            className="fill-gray-300"
+            stroke="#D1D5DB"
+            strokeWidth="1.5"
+          />
+          <path
+            d="M55 20 L55 35 Q55 40 60 40 L70 40 L70 35 L55 20Z"
+            className="fill-gray-300"
+          />
+
+          {/* أسطر النص الوهمية */}
+          <rect x="28" y="46" width="24" height="3" rx="1.5" className="fill-gray-300 animate-pulse" />
+          <rect x="28" y="52" width="32" height="3" rx="1.5" className="fill-gray-300 animate-pulse" style={{ animationDelay: '0.2s' }} />
+          <rect x="28" y="58" width="20" height="3" rx="1.5" className="fill-gray-300 animate-pulse" style={{ animationDelay: '0.4s' }} />
+          <rect x="28" y="64" width="28" height="3" rx="1.5" className="fill-gray-300 animate-pulse" style={{ animationDelay: '0.6s' }} />
+
+          {/* أيقونة الصورة في المنتصف */}
+          <rect x="35" y="46" width="16" height="14" rx="2" className="fill-gray-300 animate-pulse" style={{ animationDelay: '0.3s' }} />
+          <circle cx="40" cy="50" r="2.5" className="fill-gray-400 animate-pulse" style={{ animationDelay: '0.5s' }} />
+          <path
+            d="M35 57 L40 53 L45 57"
+            stroke="#9CA3AF"
+            strokeWidth="1.5"
+            className="animate-pulse"
+            style={{ animationDelay: '0.7s' }}
+          />
+        </svg>
+      </div>
+
+      {/* نص التحميل */}
+      <div className="flex flex-col items-center gap-2">
+        <p className="text-gray-600 text-sm font-semibold">جاري تحميل الملفات</p>
+        <div className="flex gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce" />
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce" style={{ animationDelay: '0.15s' }} />
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce" style={{ animationDelay: '0.3s' }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Upload Skeleton (مع SVG رفع)
+// ============================================================
+function UploadSkeleton() {
+  return (
+    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 gap-5">
+      {/* SVG متحرك للرفع */}
+      <div className="w-24 h-24 relative">
+        <svg
+          viewBox="0 0 100 100"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-full h-full"
+        >
+          {/* دائرة خارجية دوارة */}
+          <circle
+            cx="50"
+            cy="50"
+            r="42"
+            className="stroke-gray-200"
+            strokeWidth="3"
+            fill="none"
+          />
+          <circle
+            cx="50"
+            cy="50"
+            r="42"
+            className="stroke-blue-500"
+            strokeWidth="3"
+            fill="none"
+            strokeDasharray="264"
+            strokeDashoffset="80"
+            strokeLinecap="round"
+            style={{
+              animation: "spin 1.5s linear infinite",
+              transformOrigin: "center",
+            }}
+          />
+
+          {/* أيقونة الملف في المنتصف */}
+          <rect
+            x="32"
+            y="30"
+            width="36"
+            height="40"
+            rx="4"
+            className="fill-gray-200"
+            stroke="#D1D5DB"
+            strokeWidth="1.5"
+          />
+          
+          {/* طية الملف */}
+          <path
+            d="M56 30 L56 40 Q56 43 59 43 L68 43"
+            className="fill-gray-300"
+            stroke="#D1D5DB"
+            strokeWidth="1.5"
+          />
+          
+          {/* سهم للأعلى */}
+          <path
+            d="M50 55 L50 70"
+            className="stroke-blue-500"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+          >
+            <animate
+              attributeName="d"
+              values="M50 55 L50 70;M50 52 L50 67;M50 55 L50 70"
+              dur="1.5s"
+              repeatCount="indefinite"
+            />
+          </path>
+          <path
+            d="M44 60 L50 54 L56 60"
+            className="stroke-blue-500"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+          >
+            <animate
+              attributeName="d"
+              values="M44 60 L50 54 L56 60;M44 57 L50 51 L56 57;M44 60 L50 54 L56 60"
+              dur="1.5s"
+              repeatCount="indefinite"
+            />
+          </path>
+        </svg>
+      </div>
+
+      {/* نص الرفع */}
+      <div className="flex flex-col items-center gap-2">
+        <p className="text-gray-600 text-sm font-semibold">جاري رفع الملف</p>
+        <div className="flex gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce" />
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce" style={{ animationDelay: '0.15s' }} />
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce" style={{ animationDelay: '0.3s' }} />
+        </div>
+      </div>
+
+      <style jsx>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ============================================================
+// ✅ عارض PDF باستخدام تحويل الصفحات إلى صور
 // ============================================================
 
 interface PDFImageViewerProps {
@@ -51,20 +241,7 @@ interface PDFImageViewerProps {
   isMobile: boolean;
 }
 
-// PDFImageViewer.tsx
-
-interface PDFImageViewerProps {
-  url: string;
-  title?: string;
-  onPrev: () => void;
-  onNext: () => void;
-  hasMultiple: boolean;
-  isMobile: boolean;
-}
-
-
-
-export default function PDFImageViewer({
+function PDFImageViewer({
   url,
   title,
   onPrev,
@@ -78,20 +255,9 @@ export default function PDFImageViewer({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
   const [scriptLoaded, setScriptLoaded] = useState(false);
-  const [scale, setScale] = useState(1);
-  const [rotation, setRotation] = useState(0);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const currentUrlRef = useRef<string>("");
-
-  // Touch / drag controls
-  const lastTapRef = useRef(0);
-  const dragStartRef = useRef({ x: 0, y: 0 });
-  const posStartRef = useRef({ x: 0, y: 0 });
-  const pinchStartRef = useRef<{ dist: number; scale: number } | null>(null);
-  const swipeStartRef = useRef({ x: 0, y: 0, time: 0 });
+  const transformRef = useRef<any>(null);
 
   // ---------- IndexedDB Cache ----------
   const DB_NAME = "PDFCache";
@@ -100,9 +266,7 @@ export default function PDFImageViewer({
   const dbRef = useRef<IDBDatabase | null>(null);
 
   const openDB = useCallback(async (): Promise<IDBDatabase> => {
-    if (dbRef.current && dbRef.current.name === DB_NAME) {
-      return dbRef.current;
-    }
+    if (dbRef.current?.name === DB_NAME) return dbRef.current;
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
       request.onerror = () => reject(request.error);
@@ -129,9 +293,6 @@ export default function PDFImageViewer({
           const request = store.get(pdfUrl);
           request.onsuccess = () => resolve(request.result || null);
           request.onerror = () => reject(request.error);
-          tx.oncomplete = () => {
-            // لا نغلق dbRef لأننا نعيد استخدامه
-          };
         });
       } catch (err) {
         console.error("Failed to read cache:", err);
@@ -142,15 +303,12 @@ export default function PDFImageViewer({
   );
 
   const saveToCache = useCallback(
-    async (pdfUrl: string, images: string[]) => {
+    async (pdfUrl: string, imgData: string[]) => {
       try {
         const db = await openDB();
         const tx = db.transaction(STORE_NAME, "readwrite");
         const store = tx.objectStore(STORE_NAME);
-        store.put(images, pdfUrl);
-        tx.oncomplete = () => {
-          // تم الحفظ بنجاح
-        };
+        store.put(imgData, pdfUrl);
       } catch (err) {
         console.error("Failed to save cache:", err);
       }
@@ -179,43 +337,33 @@ export default function PDFImageViewer({
 
   // Reset state when URL changes
   useEffect(() => {
-    // Cancel any ongoing conversion
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
-    // Reset all file-related state
     setImages([]);
     setNumPages(0);
     setCurrentPage(0);
     setIsLoading(true);
     setError(false);
-    setScale(1);
-    setRotation(0);
-    setPosition({ x: 0, y: 0 });
     currentUrlRef.current = url;
   }, [url]);
 
-  // Convert PDF to images (with cache)
+  // Convert PDF to images
   useEffect(() => {
     if (!scriptLoaded || !url) return;
 
     const loadOrConvert = async () => {
-      // Create new abort controller for this operation
       const controller = new AbortController();
       abortControllerRef.current = controller;
       const currentUrl = url;
 
       try {
-        // 1. Try cache first
         const cached = await getCachedImages(currentUrl);
 
-        // Check if we should abort or if URL changed
-        if (controller.signal.aborted || currentUrlRef.current !== currentUrl) {
+        if (controller.signal.aborted || currentUrlRef.current !== currentUrl)
           return;
-        }
 
-        if (cached && cached.length > 0) {
-          // Use cached images
+        if (cached?.length) {
           if (currentUrlRef.current === currentUrl) {
             setImages(cached);
             setNumPages(cached.length);
@@ -225,76 +373,50 @@ export default function PDFImageViewer({
           return;
         }
 
-        // 2. Convert PDF to images
         const pdfjsLib = (window as any).pdfjsLib;
         const loadingTask = pdfjsLib.getDocument({ url: currentUrl });
         const pdf = await loadingTask.promise;
 
-        // Check if we should abort or if URL changed
-        if (controller.signal.aborted || currentUrlRef.current !== currentUrl) {
+        if (controller.signal.aborted || currentUrlRef.current !== currentUrl)
           return;
-        }
 
-        // Only update numPages if URL still matches
-        if (currentUrlRef.current === currentUrl) {
-          setNumPages(pdf.numPages);
-        } else {
-          return;
-        }
+        setNumPages(pdf.numPages);
 
         const imageUrls: string[] = [];
-        const scaleQuality = 2.5; // good balance between quality and performance
+        const scaleQuality = 2.5;
 
         for (let i = 1; i <= pdf.numPages; i++) {
-          // Check for abort signal before each page
           if (
             controller.signal.aborted ||
             currentUrlRef.current !== currentUrl
-          ) {
+          )
             return;
-          }
 
           const page = await pdf.getPage(i);
           const viewport = page.getViewport({ scale: scaleQuality });
           const canvas = document.createElement("canvas");
-          const context = canvas.getContext("2d");
           canvas.width = viewport.width;
           canvas.height = viewport.height;
+          const context = canvas.getContext("2d")!;
 
-          await page.render({
-            canvasContext: context,
-            viewport: viewport,
-          }).promise;
-
-          const imageUrl = canvas.toDataURL("image/jpeg", 0.95);
-          imageUrls.push(imageUrl);
+          await page.render({ canvasContext: context, viewport }).promise;
+          imageUrls.push(canvas.toDataURL("image/jpeg", 0.95));
           canvas.remove();
         }
 
-        // Final check before updating state and saving cache
-        if (controller.signal.aborted || currentUrlRef.current !== currentUrl) {
+        if (controller.signal.aborted || currentUrlRef.current !== currentUrl)
           return;
-        }
 
-        // Save to cache
         await saveToCache(currentUrl, imageUrls);
 
-        // Final check before updating state
-        if (controller.signal.aborted || currentUrlRef.current !== currentUrl) {
-          return;
-        }
-
-        // Update state with converted images
         if (currentUrlRef.current === currentUrl) {
           setImages(imageUrls);
           setCurrentPage(0);
           setIsLoading(false);
         }
       } catch (err: any) {
-        // Ignore abort errors
-        if (err?.name === "AbortError" || err?.message?.includes("abort")) {
+        if (err?.name === "AbortError" || err?.message?.includes("abort"))
           return;
-        }
         console.error("Error converting PDF:", err);
         if (currentUrlRef.current === currentUrl) {
           setError(true);
@@ -304,20 +426,13 @@ export default function PDFImageViewer({
     };
 
     loadOrConvert();
-
-    // Cleanup: abort any ongoing conversion when component unmounts or URL changes
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
+    return () => abortControllerRef.current?.abort();
   }, [scriptLoaded, url, getCachedImages, saveToCache]);
 
-  // Navigation functions
   const goToPrevPage = () => {
     if (currentPage > 0) {
       setCurrentPage(currentPage - 1);
-      resetView();
+      transformRef.current?.resetTransform();
     } else if (hasMultiple) {
       onPrev();
     }
@@ -326,134 +441,11 @@ export default function PDFImageViewer({
   const goToNextPage = () => {
     if (currentPage < numPages - 1) {
       setCurrentPage(currentPage + 1);
-      resetView();
+      transformRef.current?.resetTransform();
     } else if (hasMultiple) {
       onNext();
     }
   };
-
-  const resetView = useCallback(() => {
-    setScale(1);
-    setRotation(0);
-    setPosition({ x: 0, y: 0 });
-  }, []);
-
-  // Touch / mouse helpers
-  const getTouchDistance = (touches: React.TouchList | TouchList) => {
-    if (touches.length < 2) return 0;
-    const dx = touches[0].clientX - touches[1].clientX;
-    const dy = touches[0].clientY - touches[1].clientY;
-    return Math.sqrt(dx * dx + dy * dy);
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (scale <= 1) return;
-    e.preventDefault();
-    setIsDragging(true);
-    dragStartRef.current = { x: e.clientX, y: e.clientY };
-    posStartRef.current = { ...position };
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    const dx = e.clientX - dragStartRef.current.x;
-    const dy = e.clientY - dragStartRef.current.y;
-    setPosition({
-      x: posStartRef.current.x + dx,
-      y: posStartRef.current.y + dy,
-    });
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    const now = Date.now();
-
-    if (e.touches.length === 2) {
-      pinchStartRef.current = {
-        dist: getTouchDistance(e.touches),
-        scale: scale,
-      };
-      return;
-    }
-
-    if (e.touches.length === 1) {
-      const touch = e.touches[0];
-      swipeStartRef.current = { x: touch.clientX, y: touch.clientY, time: now };
-
-      if (now - lastTapRef.current < 300) {
-        if (scale > 1) {
-          resetView();
-        } else {
-          setScale(2.5);
-        }
-      }
-      lastTapRef.current = now;
-
-      if (scale > 1) {
-        setIsDragging(true);
-        dragStartRef.current = { x: touch.clientX, y: touch.clientY };
-        posStartRef.current = { ...position };
-      }
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (e.touches.length === 2 && pinchStartRef.current) {
-      e.preventDefault();
-      const newDist = getTouchDistance(e.touches);
-      const newScale =
-        (newDist / pinchStartRef.current.dist) * pinchStartRef.current.scale;
-      setScale(Math.max(0.5, Math.min(5, newScale)));
-      return;
-    }
-
-    if (e.touches.length === 1 && isDragging) {
-      const dx = e.touches[0].clientX - dragStartRef.current.x;
-      const dy = e.touches[0].clientY - dragStartRef.current.y;
-      setPosition({
-        x: posStartRef.current.x + dx,
-        y: posStartRef.current.y + dy,
-      });
-    }
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    setIsDragging(false);
-    pinchStartRef.current = null;
-
-    if (scale <= 1 && hasMultiple && e.changedTouches.length === 1) {
-      const touch = e.changedTouches[0];
-      const dx = touch.clientX - swipeStartRef.current.x;
-      const dy = touch.clientY - swipeStartRef.current.y;
-      const dt = Date.now() - swipeStartRef.current.time;
-
-      if (Math.abs(dy) > Math.abs(dx)) return;
-
-      if (Math.abs(dx) > 80 || (Math.abs(dx) > 30 && dt < 300)) {
-        if (dx > 0) goToPrevPage();
-        else goToNextPage();
-      }
-    }
-  };
-
-  // Prevent touchmove on container when zoomed/pinch
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const preventDefault = (e: Event) => {
-      const touchEvent = e as TouchEvent;
-      if (touchEvent.touches && touchEvent.touches.length > 1) {
-        e.preventDefault();
-      }
-    };
-
-    container.addEventListener("touchmove", preventDefault, { passive: false });
-    return () => container.removeEventListener("touchmove", preventDefault);
-  }, []);
 
   if (error || (!isLoading && images.length === 0)) {
     return (
@@ -473,143 +465,115 @@ export default function PDFImageViewer({
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="w-full h-full overflow-hidden bg-gray-100 touch-none relative"
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-    >
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-200 z-20">
-          <div className="flex flex-col items-center gap-2">
-            <Loader2 className="animate-spin text-blue-500" size={36} />
-            <p className="text-gray-600 text-sm">جاري تحويل PDF إلى صور...</p>
-            <p className="text-gray-400 text-xs">
-              الصفحة {currentPage + 1} من {numPages || "?"}
-            </p>
-          </div>
-        </div>
-      )}
+    <div className="w-full h-full overflow-hidden bg-gray-100 relative select-none">
+      {isLoading && <ViewerSkeleton />}
 
       {!isLoading && images[currentPage] && (
-        <>
-          <div
-            className="w-full h-full flex items-center justify-center"
-            style={{
-              transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) rotate(${rotation}deg)`,
-              transition: isDragging ? "none" : "transform 0.3s ease-out",
-            }}
-          >
-            <img
-              src={images[currentPage]}
-              alt={`${title || "PDF"} - صفحة ${currentPage + 1}`}
-              className="max-w-full max-h-full select-none pointer-events-none"
-              draggable={false}
-              style={{
-                boxShadow:
-                  scale > 1 ? "0 25px 50px -12px rgba(0,0,0,0.25)" : "none",
-              }}
-            />
-          </div>
-
-          {numPages > 1 && (
-            <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm rounded-full px-3 py-1 z-10">
-              <span className="text-white text-xs font-medium">
-                {currentPage + 1} / {numPages}
-              </span>
-            </div>
-          )}
-
-          {/* Mobile swipe hints */}
-          {isMobile && numPages > 1 && scale <= 1 && (
+        <TransformWrapper
+          ref={transformRef}
+          initialScale={1}
+          minScale={0.5}
+          maxScale={5}
+          centerOnInit
+          wheel={{ step: 0.0008 }}
+          panning={{
+            disabled: false,
+            velocityDisabled: false,
+          }}
+          doubleClick={{ mode: "reset" }}
+          pinch={{ step: 5 }}
+        >
+          {({ zoomIn, zoomOut, resetTransform, centerView }) => (
             <>
-              <div className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none z-10">
-                <motion.div
-                  animate={{ opacity: [0.3, 0.7, 0.3] }}
-                  transition={{ repeat: Infinity, duration: 2 }}
-                  className="w-8 h-8 rounded-full bg-black/30 flex items-center justify-center"
-                >
-                  <ChevronLeft size={20} className="text-white" />
-                </motion.div>
-              </div>
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none z-10">
-                <motion.div
-                  animate={{ opacity: [0.3, 0.7, 0.3] }}
-                  transition={{ repeat: Infinity, duration: 2 }}
-                  className="w-8 h-8 rounded-full bg-black/30 flex items-center justify-center"
-                >
-                  <ChevronRight size={20} className="text-white" />
-                </motion.div>
-              </div>
-            </>
-          )}
+              <TransformComponent
+                wrapperStyle={{ width: "100%", height: "100%" }}
+                contentStyle={{ width: "100%", height: "100%" }}
+              >
+                <div className="w-full h-full flex items-center justify-center">
+                  <img
+                    src={images[currentPage]}
+                    alt={`${title || "PDF"} - صفحة ${currentPage + 1}`}
+                    className="max-w-full max-h-full pointer-events-none"
+                    draggable={false}
+                    style={{
+                      boxShadow: "0 10px 40px -12px rgba(0,0,0,0.3)",
+                    }}
+                  />
+                </div>
+              </TransformComponent>
 
-          {/* Desktop navigation buttons */}
-          {!isMobile && numPages > 1 && (
-            <>
+              {/* Page indicator */}
+              {numPages > 1 && (
+                <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm rounded-full px-3 py-1.5 z-10">
+                  <span className="text-white text-xs font-medium">
+                    {currentPage + 1} / {numPages}
+                  </span>
+                </div>
+              )}
+
+              {/* Navigation buttons */}
               <button
-                onClick={goToPrevPage}
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 shadow-lg flex items-center justify-center hover:bg-white transition-all text-gray-700 z-10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goToPrevPage();
+                }}
+                disabled={currentPage === 0 && !hasMultiple}
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white active:scale-90 transition-transform z-20 disabled:opacity-30 hover:bg-black/40"
               >
                 <ChevronLeft size={22} />
               </button>
               <button
-                onClick={goToNextPage}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 shadow-lg flex items-center justify-center hover:bg-white transition-all text-gray-700 z-10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goToNextPage();
+                }}
+                disabled={currentPage === numPages - 1 && !hasMultiple}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white active:scale-90 transition-transform z-20 disabled:opacity-30 hover:bg-black/40"
               >
                 <ChevronRight size={22} />
               </button>
+
+              {/* Zoom controls */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-full px-4 py-2 z-20">
+                <button
+                  onClick={() => zoomOut()}
+                  className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white active:scale-90 transition-transform hover:bg-white/30"
+                >
+                  <ZoomOut size={16} />
+                </button>
+                <button
+                  onClick={() => zoomIn()}
+                  className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white active:scale-90 transition-transform hover:bg-white/30"
+                >
+                  <ZoomIn size={16} />
+                </button>
+                <div className="w-px h-5 bg-white/20" />
+                <button
+                  onClick={() => resetTransform()}
+                  className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white active:scale-90 transition-transform hover:bg-white/30"
+                >
+                  <Maximize2 size={16} />
+                </button>
+              </div>
+
+              {/* Hint text */}
+              {!isMobile && (
+                <div className="absolute bottom-4 left-4 bg-black/40 backdrop-blur-sm rounded-full px-3 py-1.5 z-10 pointer-events-none hidden sm:block">
+                  <p className="text-white/80 text-[10px]">
+                    🖱️ سكرول للزوم • اسحب للتنقل • نقر مزدوج للتصغير
+                  </p>
+                </div>
+              )}
             </>
           )}
-
-          {/* Mobile control bar */}
-          {isMobile && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-full px-4 py-2 z-20">
-              <button
-                onClick={() => setScale((prev) => Math.max(prev - 0.3, 0.5))}
-                className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white active:scale-90 transition-transform"
-              >
-                <ZoomOut size={16} />
-              </button>
-              <span className="text-white text-xs min-w-[45px] text-center font-medium">
-                {Math.round(scale * 100)}%
-              </span>
-              <button
-                onClick={() => setScale((prev) => Math.min(prev + 0.3, 5))}
-                className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white active:scale-90 transition-transform"
-              >
-                <ZoomIn size={16} />
-              </button>
-              <div className="w-px h-5 bg-white/20" />
-              <button
-                onClick={() => setRotation((prev) => (prev + 90) % 360)}
-                className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white active:scale-90 transition-transform"
-              >
-                <RotateCw size={16} />
-              </button>
-              <button
-                onClick={resetView}
-                className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white active:scale-90 transition-transform"
-              >
-                <Maximize2 size={16} />
-              </button>
-            </div>
-          )}
-        </>
+        </TransformWrapper>
       )}
     </div>
   );
 }
 
-
-
 // ============================================================
-// عارض الصور مع دعم كامل للمس
+// عارض الصور المحسن باستخدام react-zoom-pan-pinch
 // ============================================================
 function ImageViewer({
   src,
@@ -626,251 +590,107 @@ function ImageViewer({
   hasMultiple: boolean;
   isMobile: boolean;
 }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1);
-  const [rotation, setRotation] = useState(0);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-
-  const lastTapRef = useRef(0);
-  const dragStartRef = useRef({ x: 0, y: 0 });
-  const posStartRef = useRef({ x: 0, y: 0 });
-  const pinchStartRef = useRef<{ dist: number; scale: number } | null>(null);
-  const swipeStartRef = useRef({ x: 0, y: 0, time: 0 });
-
-  const resetView = useCallback(() => {
-    setScale(1);
-    setRotation(0);
-    setPosition({ x: 0, y: 0 });
-  }, []);
-
-  const getTouchDistance = (touches: React.TouchList | TouchList) => {
-    if (touches.length < 2) return 0;
-    const dx = touches[0].clientX - touches[1].clientX;
-    const dy = touches[0].clientY - touches[1].clientY;
-    return Math.sqrt(dx * dx + dy * dy);
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (scale <= 1) return;
-    e.preventDefault();
-    setIsDragging(true);
-    dragStartRef.current = { x: e.clientX, y: e.clientY };
-    posStartRef.current = { ...position };
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    const dx = e.clientX - dragStartRef.current.x;
-    const dy = e.clientY - dragStartRef.current.y;
-    setPosition({
-      x: posStartRef.current.x + dx,
-      y: posStartRef.current.y + dy,
-    });
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    const now = Date.now();
-
-    if (e.touches.length === 2) {
-      pinchStartRef.current = {
-        dist: getTouchDistance(e.touches),
-        scale: scale,
-      };
-      return;
-    }
-
-    if (e.touches.length === 1) {
-      const touch = e.touches[0];
-      swipeStartRef.current = { x: touch.clientX, y: touch.clientY, time: now };
-
-      if (now - lastTapRef.current < 300) {
-        if (scale > 1) {
-          resetView();
-        } else {
-          setScale(2.5);
-        }
-      }
-      lastTapRef.current = now;
-
-      if (scale > 1) {
-        setIsDragging(true);
-        dragStartRef.current = { x: touch.clientX, y: touch.clientY };
-        posStartRef.current = { ...position };
-      }
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (e.touches.length === 2 && pinchStartRef.current) {
-      e.preventDefault();
-      const newDist = getTouchDistance(e.touches);
-      const newScale =
-        (newDist / pinchStartRef.current.dist) * pinchStartRef.current.scale;
-      setScale(Math.max(0.5, Math.min(5, newScale)));
-      return;
-    }
-
-    if (e.touches.length === 1 && isDragging) {
-      const dx = e.touches[0].clientX - dragStartRef.current.x;
-      const dy = e.touches[0].clientY - dragStartRef.current.y;
-      setPosition({
-        x: posStartRef.current.x + dx,
-        y: posStartRef.current.y + dy,
-      });
-    }
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    setIsDragging(false);
-    pinchStartRef.current = null;
-
-    if (scale <= 1 && hasMultiple && e.changedTouches.length === 1) {
-      const touch = e.changedTouches[0];
-      const dx = touch.clientX - swipeStartRef.current.x;
-      const dy = touch.clientY - swipeStartRef.current.y;
-      const dt = Date.now() - swipeStartRef.current.time;
-
-      if (Math.abs(dy) > Math.abs(dx)) return;
-
-      if (Math.abs(dx) > 80 || (Math.abs(dx) > 30 && dt < 300)) {
-        if (dx > 0) onPrev();
-        else onNext();
-      }
-    }
-  };
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const preventDefault = (e: Event) => {
-      const touchEvent = e as TouchEvent;
-      if (touchEvent.touches && touchEvent.touches.length > 1) {
-        e.preventDefault();
-      }
-    };
-
-    container.addEventListener("touchmove", preventDefault, { passive: false });
-    return () => container.removeEventListener("touchmove", preventDefault);
-  }, []);
+  const transformRef = useRef<any>(null);
 
   return (
-    <div
-      ref={containerRef}
-      className="w-full h-full overflow-hidden bg-gray-100 touch-none relative"
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-    >
-      <div
-        className="w-full h-full flex items-center justify-center"
-        style={{
-          transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) rotate(${rotation}deg)`,
-          transition: isDragging ? "none" : "transform 0.3s ease-out",
+    <div className="w-full h-full overflow-hidden bg-gray-100 relative select-none">
+      <TransformWrapper
+        ref={transformRef}
+        initialScale={1}
+        minScale={0.5}
+        maxScale={5}
+        centerOnInit
+        wheel={{ step: 0.0008 }}
+        panning={{
+          disabled: false,
+          velocityDisabled: false,
         }}
+        doubleClick={{ mode: "reset" }}
+        pinch={{ step: 5 }}
       >
-        <img
-          src={src}
-          alt={alt}
-          className="max-w-full max-h-full select-none pointer-events-none"
-          draggable={false}
-          style={{
-            boxShadow:
-              scale > 1 ? "0 25px 50px -12px rgba(0,0,0,0.25)" : "none",
-          }}
-        />
-      </div>
-
-      {/* مؤشرات التنقل للموبايل */}
-      {isMobile && hasMultiple && scale <= 1 && (
-        <>
-          <div className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none z-10">
-            <motion.div
-              animate={{ opacity: [0.3, 0.7, 0.3] }}
-              transition={{ repeat: Infinity, duration: 2 }}
-              className="w-8 h-8 rounded-full bg-black/30 flex items-center justify-center"
+        {({ zoomIn, zoomOut, resetTransform }) => (
+          <>
+            <TransformComponent
+              wrapperStyle={{ width: "100%", height: "100%" }}
+              contentStyle={{ width: "100%", height: "100%" }}
             >
-              <ChevronLeft size={20} className="text-white" />
-            </motion.div>
-          </div>
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none z-10">
-            <motion.div
-              animate={{ opacity: [0.3, 0.7, 0.3] }}
-              transition={{ repeat: Infinity, duration: 2 }}
-              className="w-8 h-8 rounded-full bg-black/30 flex items-center justify-center"
-            >
-              <ChevronRight size={20} className="text-white" />
-            </motion.div>
-          </div>
-        </>
-      )}
+              <div className="w-full h-full flex items-center justify-center">
+                <img
+                  src={src}
+                  alt={alt}
+                  className="max-w-full max-h-full pointer-events-none"
+                  draggable={false}
+                  style={{
+                    boxShadow: "0 10px 40px -12px rgba(0,0,0,0.3)",
+                  }}
+                />
+              </div>
+            </TransformComponent>
 
-      {/* أزرار التنقل للديسكتوب */}
-      {!isMobile && hasMultiple && (
-        <>
-          <button
-            onClick={onPrev}
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 shadow-lg flex items-center justify-center hover:bg-white transition-all text-gray-700 z-10"
-          >
-            <ChevronLeft size={22} />
-          </button>
-          <button
-            onClick={onNext}
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 shadow-lg flex items-center justify-center hover:bg-white transition-all text-gray-700 z-10"
-          >
-            <ChevronRight size={22} />
-          </button>
-        </>
-      )}
+            {/* Navigation buttons */}
+            {hasMultiple && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onPrev();
+                  }}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white active:scale-90 transition-transform z-20 hover:bg-black/40"
+                >
+                  <ChevronLeft size={22} />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onNext();
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white active:scale-90 transition-transform z-20 hover:bg-black/40"
+                >
+                  <ChevronRight size={22} />
+                </button>
+              </>
+            )}
 
-      {/* شريط التحكم للصور */}
-      {isMobile && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-full px-4 py-2 z-20">
-          <button
-            onClick={() => setScale((prev) => Math.max(prev - 0.3, 0.5))}
-            className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white active:scale-90 transition-transform"
-          >
-            <ZoomOut size={16} />
-          </button>
-          <span className="text-white text-xs min-w-[45px] text-center font-medium">
-            {Math.round(scale * 100)}%
-          </span>
-          <button
-            onClick={() => setScale((prev) => Math.min(prev + 0.3, 5))}
-            className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white active:scale-90 transition-transform"
-          >
-            <ZoomIn size={16} />
-          </button>
-          <div className="w-px h-5 bg-white/20" />
-          <button
-            onClick={() => setRotation((prev) => (prev + 90) % 360)}
-            className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white active:scale-90 transition-transform"
-          >
-            <RotateCw size={16} />
-          </button>
-          <button
-            onClick={resetView}
-            className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white active:scale-90 transition-transform"
-          >
-            <Maximize2 size={16} />
-          </button>
-        </div>
-      )}
+            {/* Zoom controls */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-full px-4 py-2 z-20">
+              <button
+                onClick={() => zoomOut()}
+                className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white active:scale-90 transition-transform hover:bg-white/30"
+              >
+                <ZoomOut size={16} />
+              </button>
+              <button
+                onClick={() => zoomIn()}
+                className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white active:scale-90 transition-transform hover:bg-white/30"
+              >
+                <ZoomIn size={16} />
+              </button>
+              <div className="w-px h-5 bg-white/20" />
+              <button
+                onClick={() => resetTransform()}
+                className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white active:scale-90 transition-transform hover:bg-white/30"
+              >
+                <Maximize2 size={16} />
+              </button>
+            </div>
+
+            {/* Hint text */}
+            {!isMobile && (
+              <div className="absolute bottom-4 left-4 bg-black/40 backdrop-blur-sm rounded-full px-3 py-1.5 z-10 pointer-events-none hidden sm:block">
+                <p className="text-white/80 text-[10px]">
+                  🖱️ سكرول للزوم • اسحب للتنقل • نقر مزدوج للتصغير
+                </p>
+              </div>
+            )}
+          </>
+        )}
+      </TransformWrapper>
     </div>
   );
 }
 
 // ============================================================
-// المكون الرئيسي
+// المكون الرئيسي XRayViewerButton
 // ============================================================
 export function XRayViewerButton({
   patientId,
@@ -882,9 +702,7 @@ export function XRayViewerButton({
   const [images, setImages] = useState<PatientImage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
-    null,
-  );
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -973,7 +791,7 @@ export function XRayViewerButton({
           selectedImageIndex >= newImages.length
         ) {
           setSelectedImageIndex(
-            newImages.length > 0 ? newImages.length - 1 : null,
+            newImages.length > 0 ? newImages.length - 1 : null
           );
         }
         return newImages;
@@ -999,11 +817,11 @@ export function XRayViewerButton({
 
     if (direction === "prev") {
       setSelectedImageIndex((prev) =>
-        prev !== null ? (prev > 0 ? prev - 1 : images.length - 1) : 0,
+        prev !== null ? (prev > 0 ? prev - 1 : images.length - 1) : 0
       );
     } else {
       setSelectedImageIndex((prev) =>
-        prev !== null ? (prev < images.length - 1 ? prev + 1 : 0) : 0,
+        prev !== null ? (prev < images.length - 1 ? prev + 1 : 0) : 0
       );
     }
   };
@@ -1053,7 +871,7 @@ export function XRayViewerButton({
               }`}
               onClick={(e) => e.stopPropagation()}
             >
-              {/* الهيدر */}
+              {/* Header */}
               <div
                 className="px-3 sm:px-6 py-2.5 sm:py-4 flex-shrink-0 flex items-center justify-between"
                 style={{ background: primaryColor }}
@@ -1065,7 +883,7 @@ export function XRayViewerButton({
                       {selectedImage?.title || "صور الأشعة والملفات"}
                     </h2>
                     <p className="text-white/70 text-[10px] sm:text-xs">
-                      {patientName} • {images.length} ملف
+                      {patientName}
                     </p>
                   </div>
                 </div>
@@ -1084,75 +902,79 @@ export function XRayViewerButton({
                     </button>
                   )}
 
-                  <button
-                    onClick={handleClose}
-                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-red-500 transition-colors"
-                  >
-                    <X size={16} />
-                  </button>
+<button
+  onClick={handleClose}
+  className="w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-red-500 transition-colors"
+>
+  <X size={18} />
+</button>
                 </div>
               </div>
 
-              {/* شريط الأدوات */}
-              <div className="px-2 sm:px-4 py-2 bg-white border-b border-gray-200 flex-shrink-0">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <label
-                    className={`flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-lg font-medium text-xs sm:text-sm cursor-pointer transition-all active:scale-95 ${
-                      isUploading
-                        ? "opacity-50 cursor-not-allowed"
-                        : "hover:opacity-90"
-                    }`}
-                    style={{ background: primaryColor, color: "white" }}
-                  >
-                    {isUploading ? (
-                      <Loader2 size={14} className="animate-spin" />
-                    ) : (
-                      <Upload size={14} />
-                    )}
-                    <span className="hidden sm:inline">
-                      {isUploading ? "جاري الرفع..." : "رفع ملف"}
-                    </span>
-                    <span className="sm:hidden">
-                      {isUploading ? "..." : "رفع"}
-                    </span>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*,.pdf"
-                      onChange={handleUpload}
-                      disabled={isUploading}
-                      className="hidden"
-                    />
-                  </label>
+{/* Toolbar - RTL Layout */}
+<div className="px-2 sm:px-4 py-2 bg-white border-b border-gray-200 flex-shrink-0">
+  <div className="flex items-center gap-2 sm:gap-3">
+    {/* Delete button - Far Right */}
+    {selectedImage && (
+      <button
+        onClick={() => setDeleteConfirmId(selectedImage.id)}
+        disabled={isDeleting}
+        className="flex items-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 font-medium text-xs sm:text-sm disabled:opacity-50 active:scale-95 transition-all"
+      >
+        {isDeleting ? (
+          <Loader2 size={14} className="animate-spin" />
+        ) : (
+          <Trash2 size={14} />
+        )}
+        <span className="hidden sm:inline">حذف</span>
+      </button>
+    )}
 
-                  {images.length > 0 && (
-                    <span className="text-xs sm:text-sm text-gray-500">
-                      {selectedImageIndex !== null
-                        ? `${selectedImageIndex + 1} / ${images.length}`
-                        : images.length}
-                    </span>
-                  )}
+    {/* Upload button - Next to Delete */}
+    <label
+      className={`flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-lg font-medium text-xs sm:text-sm cursor-pointer transition-all active:scale-95 ${
+        isUploading
+          ? "opacity-50 cursor-not-allowed"
+          : "hover:opacity-90"
+      }`}
+      style={{ background: primaryColor, color: "white" }}
+    >
+      {isUploading ? (
+        <Loader2 size={14} className="animate-spin" />
+      ) : (
+        <Upload size={14} />
+      )}
+      <span className="hidden sm:inline">
+        {isUploading ? "جاري الرفع..." : "رفع ملف"}
+      </span>
+      <span className="sm:hidden">
+        {isUploading ? "..." : "رفع"}
+      </span>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*,.pdf"
+        onChange={handleUpload}
+        disabled={isUploading}
+        className="hidden"
+      />
+    </label>
 
-                  <div className="flex-1" />
+    {/* File counter - to the left of buttons */}
+    {images.length > 0 && (
+      <span className="text-xs sm:text-sm text-gray-500">
+        {selectedImageIndex !== null
+          ? `${selectedImageIndex + 1} / ${images.length}`
+          : images.length}
+      </span>
+    )}
 
-                  {selectedImage && (
-                    <button
-                      onClick={() => setDeleteConfirmId(selectedImage.id)}
-                      disabled={isDeleting}
-                      className="flex items-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 font-medium text-xs sm:text-sm disabled:opacity-50 active:scale-95 transition-all"
-                    >
-                      {isDeleting ? (
-                        <Loader2 size={14} className="animate-spin" />
-                      ) : (
-                        <Trash2 size={14} />
-                      )}
-                      <span className="hidden sm:inline">حذف</span>
-                    </button>
-                  )}
-                </div>
-              </div>
+    {/* Spacer pushes everything to the right */}
+    <div className="flex-1" />
+  </div>
+</div>
 
-              {/* رسالة الخطأ */}
+              {/* Error message */}
               {error && (
                 <div className="mx-3 sm:mx-4 mt-2 p-2 sm:p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2 flex-shrink-0">
                   <AlertCircle
@@ -1171,20 +993,13 @@ export function XRayViewerButton({
                 </div>
               )}
 
-              {/* منطقة العرض الرئيسية */}
+              {/* Main viewer area */}
               <div className="flex-1 min-h-0 flex flex-col sm:flex-row">
                 <div className="flex-1 min-h-0 relative bg-gray-100">
                   {isLoading ? (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <Loader2
-                        size={36}
-                        className="animate-spin mb-3"
-                        style={{ color: primaryColor }}
-                      />
-                      <p className="text-gray-500 text-sm">
-                        جاري تحميل الملفات...
-                      </p>
-                    </div>
+                    <ViewerSkeleton />
+                  ) : isUploading ? (
+                    <UploadSkeleton />
                   ) : images.length === 0 ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
                       <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mb-3 border-2 border-dashed border-gray-300">
@@ -1198,7 +1013,6 @@ export function XRayViewerButton({
                       </p>
                     </div>
                   ) : selectedImage ? (
-                    /* ✅ عرض PDF أو صورة */
                     isPDF(selectedImage) ? (
                       <PDFImageViewer
                         key={selectedImage.id}
@@ -1226,7 +1040,7 @@ export function XRayViewerButton({
                   )}
                 </div>
 
-                {/* المصغرات */}
+                {/* Thumbnails */}
                 {images.length > 1 && (
                   <div
                     className={`flex gap-1.5 bg-white border-gray-200 flex-shrink-0 ${
@@ -1259,6 +1073,7 @@ export function XRayViewerButton({
                             src={img.localUrl}
                             alt=""
                             className="w-full h-full object-cover"
+                            loading="lazy"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
                               target.style.display = "none";
@@ -1289,7 +1104,7 @@ export function XRayViewerButton({
         )}
       </AnimatePresence>
 
-      {/* تأكيد الحذف */}
+      {/* Delete confirmation dialog */}
       <AnimatePresence>
         {deleteConfirmId && (
           <motion.div
