@@ -18,7 +18,9 @@ import {
   Settings,
   Menu,
   X,
+  TableProperties,
 } from 'lucide-react';
+import { BsFileEarmarkExcel } from 'react-icons/bs';
 import { Clinic } from '@/types';
 import { AccountSwitcher } from './AccountSwitcher';
 
@@ -27,13 +29,13 @@ const bottomNavItems = [
   { tab: 'cv', label: 'CV الطبيب', icon: UserCircle },
   { tab: 'clinic', label: 'العيادة', icon: Building2 },
   { tab: 'main', label: 'الرئيسية', icon: LayoutDashboard, featured: true },
-  { tab: 'patients', label: 'المرضى', icon: Users },
+  { tab: 'patients', label: 'المرضى', icon:  TableProperties },
   { tab: 'settings', label: 'الإعدادات', icon: Settings },
 ];
 
 const menuItems = [
   { tab: 'main', label: 'الرئيسية', icon: LayoutDashboard },
-  { tab: 'patients', label: 'جدول المرضى', icon: Users },
+  { tab: 'patients', label: 'جدول المرضى', icon:  TableProperties },
   { tab: 'clinic', label: 'معلومات العيادة', icon: Building2 },
   { tab: 'cv', label: 'CV الطبيب', icon: UserCircle },
   { tab: 'settings', label: 'الإعدادات', icon: Settings }, 
@@ -220,12 +222,7 @@ export function DashboardSidebar({ clinicData }: DashboardSidebarProps) {
 
 // ✨ شريط التنقل السفلي للهاتف - تصميم أنيق وناعم
 const MobileBottomNav = () => (
-  <motion.nav
-    initial={{ y: 100, opacity: 0 }}
-    animate={{ y: 0, opacity: 1 }}
-    transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-    className="fixed bottom-4 left-4 right-4 z-50 md:hidden"
-  >
+  <nav className="fixed bottom-4 left-4 right-4 z-50 md:hidden">
     <div className="relative">
 <div 
   className="
@@ -362,7 +359,7 @@ const MobileBottomNav = () => (
       
       <div className="h-[env(safe-area-inset-bottom,8px)]" />
     </div>
-  </motion.nav>
+  </nav>
 );
 
   // عرض القائمة الجانبية للشاشات الكبيرة
