@@ -20,7 +20,7 @@ declare global {
 const DoubleClickToExit: React.FC<DoubleClickToExitProps> = ({
   children,
   message: customMessage = "اضغط مرة أخرى للخروج من التطبيق",
-  timeout = 2000,
+  timeout = 1000,
 }) => {
   const backPressCount = useRef<number>(0);
   const timeoutId = useRef<NodeJS.Timeout | null>(null);
@@ -42,7 +42,7 @@ const DoubleClickToExit: React.FC<DoubleClickToExitProps> = ({
         if (!window.closed) {
           window.location.href = "about:blank";
         }
-      }, 100);
+      }, 3000);
     }, 300);
   };
 
