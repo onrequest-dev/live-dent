@@ -1,7 +1,8 @@
-// contexts/DoubleClickToExit.tsx (نسخة مبسطة)
+// contexts/DoubleClickToExit.tsx (نسخة أبسط)
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import Toast from "./Toast"; // تأكد من المسار الصحيح
 
 interface DoubleClickToExitProps {
   children: React.ReactNode;
@@ -81,24 +82,12 @@ const DoubleClickToExit: React.FC<DoubleClickToExitProps> = ({
 
   return (
     <>
-      {toastMessage && (
-        <div
-          style={{
-            position: "fixed",
-            top: "20px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            backgroundColor: "#333",
-            color: "white",
-            padding: "10px 20px",
-            borderRadius: "8px",
-            zIndex: 9999,
-            boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
-          }}
-        >
-          ⚠️ {toastMessage}
-        </div>
-      )}
+      <Toast 
+        message={toastMessage} 
+        duration={2000}
+        position="bottom"
+        type="simple"
+      />
       {children}
     </>
   );

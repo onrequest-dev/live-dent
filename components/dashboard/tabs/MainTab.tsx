@@ -994,7 +994,6 @@ const formatDate = (date: Date | string) => {
                   setSelectedPatient(null);
                 }}
                 onAddAppointment={() => {
-                  setIsMobileDrawerOpen(false);
                   setShowNewAppointmentModal(true);
                 }}
                 onWhatsApp={handleWhatsApp}
@@ -1217,15 +1216,18 @@ function PatientDetailsCard({
       />
     </div>
 
-    <button
-      onClick={onAddAppointment}
-      className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-medium text-sm
-               transition-all hover:shadow-md active:scale-95 flex-1 justify-center"
-      style={{ background: primaryColor }}
-    >
-      <Plus size={18} />
-      <span>موعد جديد</span>
-    </button>
+  <button
+    onClick={(e) => {
+      e.stopPropagation(); // إضافة هذا
+      onAddAppointment(); // الذي يقوم بفتح المودال
+    }}
+    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-medium text-sm
+            transition-all hover:shadow-md active:scale-95 flex-1 justify-center"
+    style={{ background: primaryColor }}
+  >
+    <Plus size={18} />
+    <span>موعد جديد</span>
+  </button>
   </div>
 </div>
         </div>
@@ -2873,7 +2875,7 @@ function NewAppointmentModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 modal-fullscreen-overlay"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4 modal-fullscreen-overlay"
         // onClick={isLoading ? undefined : onClose}
       >
         <motion.div
