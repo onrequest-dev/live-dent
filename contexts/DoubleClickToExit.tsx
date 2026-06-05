@@ -40,6 +40,7 @@ const DoubleClickToExit: React.FC<DoubleClickToExitProps> = ({
       window.close();
       setTimeout(() => {
         if (!window.closed) {
+          window.close();
         //   window.location.href = "about:blank";
         }
       }, 3000);
