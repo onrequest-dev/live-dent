@@ -44,7 +44,8 @@ import {
   updateSession,
 } from "@/client/helpers/session";
 import { ToastContainer, useToast } from "./Toast";
-
+import { XRayViewerButton } from "../XRayViewer";
+import { useModalBackHandler } from "@/hooks/useModalBackHandler";
 // ============================================================
 // خدمة API محاكية (لتحضير الربط مع الباك إند)
 // ============================================================
@@ -597,31 +598,55 @@ const formatDate = (date: Date | string) => {
                 style={{ "--tw-ring-color": primaryColor } as any}
               />
             </div>
-            <div className="flex items-center gap-3 w-full lg:w-auto">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setShowTodayOnly(!showTodayOnly)}
-                className="flex items-center gap-2 px-5 py-3.5 rounded-2xl font-medium text-base shadow-lg transition-all"
-                style={{
-                  background: showTodayOnly ? primaryColor : "white",
-                  color: showTodayOnly ? "white" : "#374151",
-                }}
-              >
-                <Users size={18} />
-                <span>{showTodayOnly ? "جميع المرضى" : "مرضى اليوم"}</span>
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setShowNewPatientModal(true)}
-                className="flex items-center gap-2 px-5 py-3.5 rounded-2xl font-medium text-base text-white shadow-lg transition-all"
-                style={{ background: primaryColor }}
-              >
-                <UserPlus size={18} />
-                <span className="hidden lg:inline">مريض جديد</span>
-              </motion.button>
-            </div>
+<div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+  {/* زر تبديل عرض المرضى */}
+  <motion.button
+    whileHover={{ scale: 1.02 }}
+    whileTap={{ scale: 0.98 }}
+    onClick={() => setShowTodayOnly(!showTodayOnly)}
+    className={`
+      flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl
+      font-medium text-sm sm:text-base transition-all duration-200
+      shadow-md hover:shadow-lg flex-1 sm:flex-none justify-center
+      ${showTodayOnly 
+        ? "text-white shadow-lg" 
+        : "text-gray-700 bg-white border border-gray-200 hover:border-gray-300"
+      }
+    `}
+    style={{
+      background: showTodayOnly ? primaryColor : undefined,
+      color: showTodayOnly ? "white" : undefined,
+    }}
+  >
+    <Users size={16} className="sm:w-[18px] sm:h-[18px]" />
+    <span className="whitespace-nowrap">
+      {showTodayOnly ? "جميع المرضى" : "مرضى اليوم"}
+    </span>
+  </motion.button>
+
+  {/* زر إضافة مريض جديد */}
+  <motion.button
+    whileHover={{ scale: 1.02 }}
+    whileTap={{ scale: 0.98 }}
+    onClick={() => setShowNewPatientModal(true)}
+    className={`
+      flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3
+      rounded-xl sm:rounded-2xl font-medium text-sm sm:text-base
+      text-white shadow-md hover:shadow-lg transition-all duration-200
+      flex-1 sm:flex-none justify-center
+    `}
+    style={{ 
+      background: primaryColor,
+      boxShadow: `0 4px 14px ${primaryColor}40`
+    }}
+  >
+    <UserPlus size={16} className="sm:w-[18px] sm:h-[18px]" />
+    <span className="whitespace-nowrap">
+      <span className="hidden sm:inline">مريض جديد</span>
+      <span className="sm:hidden">جديد</span>
+    </span>
+  </motion.button>
+</div>
           </div>
         </div>
 
@@ -705,21 +730,6 @@ const formatDate = (date: Date | string) => {
                               <h4 className="font-medium text-gray-900 text-base text-sm">
                                 {patient.fullName}
                               </h4>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingPatient(patient);
-                                  setShowEditPatientModal(true);
-                                }}
-                                className="p-1 rounded-lg hover:bg-gray-200 transition-colors"
-                                title="تعديل بيانات المريض"
-                              >
-                                <Edit
-                                  size={18}
-                                  className="text-gray-600 hover:text-gray-800"
-                                />
-                              </button>
-
                               <span
                                 className={`text-xs px-2.5 py-1 rounded-full font-medium ${patient.gender === "male" ? "bg-blue-100 text-blue-700" : "bg-pink-100 text-pink-700"}`}
                               >
@@ -731,16 +741,6 @@ const formatDate = (date: Date | string) => {
                                 </span>
                               )}
                             </div>
-                            <ChevronRight
-                              size={18}
-                              className="text-gray-400"
-                              style={{
-                                color:
-                                  selectedPatient?.id === patient.id
-                                    ? primaryColor
-                                    : undefined,
-                              }}
-                            />
                           </div>
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-1 text-gray-700">
@@ -994,7 +994,6 @@ const formatDate = (date: Date | string) => {
                   setSelectedPatient(null);
                 }}
                 onAddAppointment={() => {
-                  setIsMobileDrawerOpen(false);
                   setShowNewAppointmentModal(true);
                 }}
                 onWhatsApp={handleWhatsApp}
@@ -1119,6 +1118,8 @@ function PatientDetailsCard({
   onEditPatient,
   onRequestDeleteSession,
 }: PatientDetailsCardProps) {
+
+  useModalBackHandler(onClose);
   const finance = calculateFinance();
   const pastSessions = sessions;
   const [selectedSession, setSelectedSession] = useState<any>(null);
@@ -1141,48 +1142,94 @@ function PatientDetailsCard({
             <X size={18} />
           </button>
 
-          {/* الاسم ورقم الهاتف وعدد الجلسات */}
-          <div className="flex items-start justify-between mt-2">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  {patient.fullName}
-                </h2>
-                <button
-                  onClick={onEditPatient}
-                  className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
-                  title="تعديل بيانات المريض"
-                >
-                  <Edit
-                    size={isMobile?22:16}
-                    className="text-gray-600 hover:text-gray-800"
-                  />
-                </button>
-              </div>
+{/* الاسم ورقم الهاتف وعدد الجلسات */}
+<div className="flex flex-col gap-3 mt-2">
+  {/* معلومات المريض */}
+  <div className="flex items-start justify-between">
+    <div>
+      <div className="flex items-center gap-2 mb-1">
+        <h2 className="text-2xl font-bold text-gray-900">
+          {patient.fullName}
+        </h2>
+      </div>
 
-              <div className="flex items-center gap-4 text-gray-600">
-                <span className="flex items-center gap-1.5">
-                  <Phone size={16} className="text-gray-400" />
-                  <span dir="ltr">{patient.phone}</span>
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Calendar size={16} className="text-gray-400" />
-                  <span>{sessions.length} جلسة</span>
-                </span>
-              </div>
-            </div>
+      <div className="flex items-center gap-4 text-gray-600">
+        <span className="flex items-center gap-1.5">
+          <Phone size={16} className="text-gray-400" />
+          <span dir="ltr">{patient.phone}</span>
+        </span>
+        <span className="flex items-center gap-1.5">
+          <Calendar size={16} className="text-gray-400" />
+          <span>{sessions.length} جلسة</span>
+        </span>
+      </div>
+    </div>
 
-            {/* زر إضافة موعد جديد */}
-            <button
-              onClick={onAddAppointment}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-medium text-sm
-                       transition-all hover:shadow-md active:scale-95"
-              style={{ background: primaryColor }}
-            >
-              <Plus size={18} />
-              <span>موعد جديد</span>
-            </button>
-          </div>
+    {/* الأزرار للشاشات الكبيرة */}
+    <div className="hidden sm:flex items-center gap-2">
+      <button
+        onClick={onEditPatient}
+        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-medium text-sm
+                 transition-all hover:bg-gray-200 active:scale-95"
+        title="تعديل بيانات المريض"
+      >
+        <Edit size={16} />
+        <span>تعديل</span>
+      </button>
+
+      <XRayViewerButton
+        patientId={patient.id}
+        patientName={patient.fullName}
+        primaryColor={primaryColor}
+        isMobile={false}
+      />
+
+      <button
+        onClick={onAddAppointment}
+        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-medium text-sm
+                 transition-all hover:shadow-md active:scale-95"
+        style={{ background: primaryColor }}
+      >
+        <Plus size={18} />
+        <span>موعد جديد</span>
+      </button>
+    </div>
+  </div>
+
+  {/* سطر الأزرار للهاتف */}
+  <div className="flex sm:hidden items-center gap-2 w-full">
+    <button
+      onClick={onEditPatient}
+      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-medium text-sm
+               transition-all hover:bg-gray-200 active:scale-95 flex-1 justify-center"
+    >
+      <Edit size={18} />
+      <span>تعديل</span>
+    </button>
+
+    <div className="flex-1">
+      <XRayViewerButton
+        patientId={patient.id}
+        patientName={patient.fullName}
+        primaryColor={primaryColor}
+        isMobile={true}
+      />
+    </div>
+
+  <button
+    onClick={(e) => {
+      e.stopPropagation(); // إضافة هذا
+      onAddAppointment(); // الذي يقوم بفتح المودال
+    }}
+    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-medium text-sm
+            transition-all hover:shadow-md active:scale-95 flex-1 justify-center"
+    style={{ background: primaryColor }}
+  >
+    <Plus size={18} />
+    <span>موعد جديد</span>
+  </button>
+  </div>
+</div>
         </div>
 
         {/* Content */}
@@ -1487,6 +1534,7 @@ function EditSessionModal({
   onDelete,
   addToast,
 }: EditSessionModalProps) {
+  useModalBackHandler(onClose);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [formData, setFormData] = useState({
@@ -1578,14 +1626,14 @@ function EditSessionModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 modal-fullscreen-overlay"
         // onClick={isLoading ? undefined : onClose}
       >
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto modal-fullscreen  [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="p-6" style={{ background: primaryColor }}>
@@ -1899,6 +1947,7 @@ function ConfirmDeleteModal({
   sessionInfo,
   addToast,
 }: ConfirmDeleteModalProps) {
+  useModalBackHandler(onClose);
   const [isLoading, setIsLoading] = useState(false);
 
   if (!isOpen) return null;
@@ -2038,6 +2087,7 @@ function NewPatientModal({
   isLoading: externalLoading = false,
   addToast,
 }: NewPatientModalProps) {
+  useModalBackHandler(onClose);
   const [internalLoading, setInternalLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -2188,16 +2238,16 @@ function NewPatientModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-hidden"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-hidden modal-fullscreen-overlay"
       >
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto  modal-fullscreen [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="p-6" style={{ background: primaryColor }}>
+          <div className="p-3" style={{ background: primaryColor }}>
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-white flex items-center gap-3">
                 <UserPlus size={24} />
@@ -2213,7 +2263,7 @@ function NewPatientModal({
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          <form onSubmit={handleSubmit} className="p-3 space-y-3">
             {/* عرض الخطأ المحلي */}
             {localError && (
               <motion.div
@@ -2241,10 +2291,6 @@ function NewPatientModal({
 
             {/* معلومات أساسية */}
             <div className="space-y-4">
-              <h3 className="font-bold text-gray-900 text-lg">
-                المعلومات الأساسية
-              </h3>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -2718,6 +2764,7 @@ function NewAppointmentModal({
   isLoading: externalLoading = false,
   addToast,
 }: NewAppointmentModalProps) {
+  useModalBackHandler(onClose);
   const [internalLoading, setInternalLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -2828,17 +2875,17 @@ function NewAppointmentModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4 modal-fullscreen-overlay"
         // onClick={isLoading ? undefined : onClose}
       >
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto modal-fullscreen [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="p-6" style={{ background: primaryColor }}>
+          <div className="p-3" style={{ background: primaryColor }}>
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-white flex items-center gap-3">
                 <CalendarIcon size={20} />
@@ -2855,7 +2902,7 @@ function NewAppointmentModal({
             <p className="text-white/90 mt-1">للمريض: {patient.fullName}</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <form onSubmit={handleSubmit} className="p-3 space-y-3">
             {/* عرض الخطأ المحلي */}
             {localError && (
               <motion.div
@@ -3107,6 +3154,7 @@ function EditPatientModal({
   isLoading: externalLoading = false,
   addToast,
 }: EditPatientModalProps) {
+    useModalBackHandler( onClose);
   const [internalLoading, setInternalLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -3183,16 +3231,16 @@ function EditPatientModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 overflow-hidden"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 overflow-hidden modal-fullscreen-overlay"
       >
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto modal-fullscreen [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="p-6" style={{ background: primaryColor }}>
+          <div className="p-3" style={{ background: primaryColor }}>
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-white flex items-center gap-3">
                 <Edit size={24} />
@@ -3209,7 +3257,7 @@ function EditPatientModal({
             <p className="text-white/90 mt-1">المريض: {patient.fullName}</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          <form onSubmit={handleSubmit} className="p-3 space-y-3">
             {localError && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
@@ -3234,12 +3282,8 @@ function EditPatientModal({
               </motion.div>
             )}
 
-            <div className="space-y-4">
-              <h3 className="font-bold text-gray-900 text-lg">
-                المعلومات الأساسية
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     الاسم الكامل <span className="text-red-500">*</span>
