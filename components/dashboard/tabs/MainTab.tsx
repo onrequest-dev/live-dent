@@ -285,13 +285,13 @@ export function MainTab({
     });
   };
 
-const formatDate = (date: Date | string) => {
-  const d = new Date(date);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${day}/${month}/${year}`;
-};
+  const formatDate = (date: Date | string) => {
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${day}/${month}/${year}`;
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -579,12 +579,12 @@ const formatDate = (date: Date | string) => {
     <>
       <ToastContainer toasts={toasts} removeToast={removeToast} />
 
-        <div
-          className="min-h-screen p-4 lg:p-6"
-          style={{
-            background: `linear-gradient(145deg, rgba(59, 131, 246, 0) 0%, rgba(59, 131, 246, 0) 100%)`,
-          }}
-        >
+      <div
+        className="min-h-screen p-4 lg:p-6"
+        style={{
+          background: `linear-gradient(145deg, rgba(59, 131, 246, 0) 0%, rgba(59, 131, 246, 0) 100%)`,
+        }}
+      >
         {/* شريط العمليات العلوي */}
         <div className="mb-6 lg:mb-8">
           <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
@@ -598,55 +598,56 @@ const formatDate = (date: Date | string) => {
                 style={{ "--tw-ring-color": primaryColor } as any}
               />
             </div>
-<div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
-  {/* زر تبديل عرض المرضى */}
-  <motion.button
-    whileHover={{ scale: 1.02 }}
-    whileTap={{ scale: 0.98 }}
-    onClick={() => setShowTodayOnly(!showTodayOnly)}
-    className={`
+            <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+              {/* زر تبديل عرض المرضى */}
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowTodayOnly(!showTodayOnly)}
+                className={`
       flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl
       font-medium text-sm sm:text-base transition-all duration-200
       shadow-md hover:shadow-lg flex-1 sm:flex-none justify-center
-      ${showTodayOnly 
-        ? "text-white shadow-lg" 
-        : "text-gray-700 bg-white border border-gray-200 hover:border-gray-300"
+      ${
+        showTodayOnly
+          ? "text-white shadow-lg"
+          : "text-gray-700 bg-white border border-gray-200 hover:border-gray-300"
       }
     `}
-    style={{
-      background: showTodayOnly ? primaryColor : undefined,
-      color: showTodayOnly ? "white" : undefined,
-    }}
-  >
-    <Users size={16} className="sm:w-[18px] sm:h-[18px]" />
-    <span className="whitespace-nowrap">
-      {showTodayOnly ? "جميع المرضى" : "مرضى اليوم"}
-    </span>
-  </motion.button>
+                style={{
+                  background: showTodayOnly ? primaryColor : undefined,
+                  color: showTodayOnly ? "white" : undefined,
+                }}
+              >
+                <Users size={16} className="sm:w-[18px] sm:h-[18px]" />
+                <span className="whitespace-nowrap">
+                  {showTodayOnly ? "جميع المرضى" : "مرضى اليوم"}
+                </span>
+              </motion.button>
 
-  {/* زر إضافة مريض جديد */}
-  <motion.button
-    whileHover={{ scale: 1.02 }}
-    whileTap={{ scale: 0.98 }}
-    onClick={() => setShowNewPatientModal(true)}
-    className={`
+              {/* زر إضافة مريض جديد */}
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowNewPatientModal(true)}
+                className={`
       flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3
       rounded-xl sm:rounded-2xl font-medium text-sm sm:text-base
       text-white shadow-md hover:shadow-lg transition-all duration-200
       flex-1 sm:flex-none justify-center
     `}
-    style={{ 
-      background: primaryColor,
-      boxShadow: `0 4px 14px ${primaryColor}40`
-    }}
-  >
-    <UserPlus size={16} className="sm:w-[18px] sm:h-[18px]" />
-    <span className="whitespace-nowrap">
-      <span className="hidden sm:inline">مريض جديد</span>
-      <span className="sm:hidden">جديد</span>
-    </span>
-  </motion.button>
-</div>
+                style={{
+                  background: primaryColor,
+                  boxShadow: `0 4px 14px ${primaryColor}40`,
+                }}
+              >
+                <UserPlus size={16} className="sm:w-[18px] sm:h-[18px]" />
+                <span className="whitespace-nowrap">
+                  <span className="hidden sm:inline">مريض جديد</span>
+                  <span className="sm:hidden">جديد</span>
+                </span>
+              </motion.button>
+            </div>
           </div>
         </div>
 
@@ -1092,7 +1093,7 @@ interface PatientDetailsCardProps {
   onEditSession: (session: Session) => void;
   onDeleteSession: (sessionId: string) => void;
   onRequestDeleteSession: (sessionId: string) => void;
-  onEditPatient: () => void; 
+  onEditPatient: () => void;
 }
 
 function PatientDetailsCard({
@@ -1118,7 +1119,6 @@ function PatientDetailsCard({
   onEditPatient,
   onRequestDeleteSession,
 }: PatientDetailsCardProps) {
-
   useModalBackHandler(onClose);
   const finance = calculateFinance();
   const pastSessions = sessions;
@@ -1131,105 +1131,105 @@ function PatientDetailsCard({
 
   return (
     <>
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden ">
         {/* Header - معلومات أساسية */}
         <div className="p-6 border-b border-gray-100 relative">
           {/* زر الإغلاق */}
           <button
             onClick={onClose}
-            className="absolute left-0 top-0 w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-gray-500 hover:bg-red-500 transition-colors"
+            className="absolute left-1 top-1 w-8 h-8 rounded-full  flex items-center justify-center text-gray-400 hover:text-gray-700  transition-colors"
           >
             <X size={18} />
           </button>
 
-{/* الاسم ورقم الهاتف وعدد الجلسات */}
-<div className="flex flex-col gap-3 mt-2">
-  {/* معلومات المريض */}
-  <div className="flex items-start justify-between">
-    <div>
-      <div className="flex items-center gap-2 mb-1">
-        <h2 className="text-2xl font-bold text-gray-900">
-          {patient.fullName}
-        </h2>
-      </div>
+          {/* الاسم ورقم الهاتف وعدد الجلسات */}
+          <div className="flex flex-col gap-3 mt-2">
+            {/* معلومات المريض */}
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    {patient.fullName}
+                  </h2>
+                </div>
 
-      <div className="flex items-center gap-4 text-gray-600">
-        <span className="flex items-center gap-1.5">
-          <Phone size={16} className="text-gray-400" />
-          <span dir="ltr">{patient.phone}</span>
-        </span>
-        <span className="flex items-center gap-1.5">
-          <Calendar size={16} className="text-gray-400" />
-          <span>{sessions.length} جلسة</span>
-        </span>
-      </div>
-    </div>
+                <div className="flex items-center gap-4 text-gray-600">
+                  <span className="flex items-center gap-1.5">
+                    <Phone size={16} className="text-gray-400" />
+                    <span dir="ltr">{patient.phone}</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <Calendar size={16} className="text-gray-400" />
+                    <span>{sessions.length} جلسة</span>
+                  </span>
+                </div>
+              </div>
 
-    {/* الأزرار للشاشات الكبيرة */}
-    <div className="hidden sm:flex items-center gap-2">
-      <button
-        onClick={onEditPatient}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-medium text-sm
+              {/* الأزرار للشاشات الكبيرة */}
+              <div className="hidden sm:flex items-center gap-2">
+                <button
+                  onClick={onEditPatient}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-medium text-sm
                  transition-all hover:bg-gray-200 active:scale-95"
-        title="تعديل بيانات المريض"
-      >
-        <Edit size={16} />
-        <span>تعديل</span>
-      </button>
+                  title="تعديل بيانات المريض"
+                >
+                  <Edit size={16} />
+                  <span>تعديل</span>
+                </button>
 
-      <XRayViewerButton
-        patientId={patient.id}
-        patientName={patient.fullName}
-        primaryColor={primaryColor}
-        isMobile={false}
-      />
+                <XRayViewerButton
+                  patientId={patient.id}
+                  patientName={patient.fullName}
+                  primaryColor={primaryColor}
+                  isMobile={false}
+                />
 
-      <button
-        onClick={onAddAppointment}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-medium text-sm
+                <button
+                  onClick={onAddAppointment}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-medium text-sm
                  transition-all hover:shadow-md active:scale-95"
-        style={{ background: primaryColor }}
-      >
-        <Plus size={18} />
-        <span>موعد جديد</span>
-      </button>
-    </div>
-  </div>
+                  style={{ background: primaryColor }}
+                >
+                  <Plus size={18} />
+                  <span>موعد جديد</span>
+                </button>
+              </div>
+            </div>
 
-  {/* سطر الأزرار للهاتف */}
-  <div className="flex sm:hidden items-center gap-2 w-full">
-    <button
-      onClick={onEditPatient}
-      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-medium text-sm
+            {/* سطر الأزرار للهاتف */}
+            <div className="flex sm:hidden items-center gap-2 w-full">
+              <button
+                onClick={onEditPatient}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-medium text-sm
                transition-all hover:bg-gray-200 active:scale-95 flex-1 justify-center"
-    >
-      <Edit size={18} />
-      <span>تعديل</span>
-    </button>
+              >
+                <Edit size={18} />
+                <span>تعديل</span>
+              </button>
 
-    <div className="flex-1">
-      <XRayViewerButton
-        patientId={patient.id}
-        patientName={patient.fullName}
-        primaryColor={primaryColor}
-        isMobile={true}
-      />
-    </div>
+              <div className="flex-1">
+                <XRayViewerButton
+                  patientId={patient.id}
+                  patientName={patient.fullName}
+                  primaryColor={primaryColor}
+                  isMobile={true}
+                />
+              </div>
 
-  <button
-    onClick={(e) => {
-      e.stopPropagation(); // إضافة هذا
-      onAddAppointment(); // الذي يقوم بفتح المودال
-    }}
-    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-medium text-sm
+              <button
+                onClick={(e) => {
+                  e.stopPropagation(); // إضافة هذا
+                  onAddAppointment(); // الذي يقوم بفتح المودال
+                }}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-medium text-sm
             transition-all hover:shadow-md active:scale-95 flex-1 justify-center"
-    style={{ background: primaryColor }}
-  >
-    <Plus size={18} />
-    <span>موعد جديد</span>
-  </button>
-  </div>
-</div>
+                style={{ background: primaryColor }}
+              >
+                <Plus size={18} />
+                <span>موعد جديد</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Content */}
@@ -3154,7 +3154,7 @@ function EditPatientModal({
   isLoading: externalLoading = false,
   addToast,
 }: EditPatientModalProps) {
-    useModalBackHandler( onClose);
+  useModalBackHandler(onClose);
   const [internalLoading, setInternalLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 

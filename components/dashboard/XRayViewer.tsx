@@ -533,7 +533,7 @@ function PDFImageViewer({
           minScale={0.5}
           maxScale={5}
           centerOnInit
-          wheel={{ step: 0.0008 }}
+          wheel={{ step: 0.008 }}
           panning={{
             disabled: false,
             velocityDisabled: false,
