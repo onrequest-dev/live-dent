@@ -30,6 +30,9 @@ import {
   GripVertical,
   Loader2,
   AlertCircle,
+  Mars,
+  Venus,
+  CalendarCheck,
 } from "lucide-react";
 
 import {
@@ -46,7 +49,7 @@ import {
 import { ToastContainer, useToast } from "./Toast";
 import { XRayViewerButton } from "../XRayViewer";
 import { useModalBackHandler } from "@/hooks/useModalBackHandler";
-import ToothLoader from '../../loding';
+import ToothLoader from "../../loding";
 // ============================================================
 // خدمة API محاكية (لتحضير الربط مع الباك إند)
 // ============================================================
@@ -2651,26 +2654,39 @@ function NewPatientModal({
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto  modal-fullscreen [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto modal-fullscreen [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="p-3" style={{ background: primaryColor }}>
+          {/* Header - Sticky */}
+          <div className="sticky top-0 z-20 bg-white p-4 shadow-sm border-b border-gray-100">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-                <UserPlus size={24} />
-                إضافة مريض جديد
-              </h2>
+              <div className="flex items-center gap-3">
+                {/* شريط عمودي ملون */}
+                <div
+                  className="w-1 h-8 rounded-md"
+                  style={{ background: primaryColor }}
+                ></div>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">
+                    إضافة مريض جديد
+                  </h2>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    أكمل البيانات المطلوبة
+                  </p>
+                </div>
+              </div>
               <button
                 onClick={onClose}
                 disabled={isLoading}
-                className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title="إغلاق"
               >
-                <X size={18} />
+                <X size={20} />
               </button>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-3 space-y-3">
+          <form onSubmit={handleSubmit} className="p-4 space-y-4 pb-24">
             {/* عرض الخطأ المحلي */}
             {localError && (
               <motion.div
@@ -2698,78 +2714,81 @@ function NewPatientModal({
 
             {/* معلومات أساسية */}
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    الاسم الكامل <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.fullName}
-                    onChange={(e) => {
-                      const valueWithoutNumbers = e.target.value.replace(
-                        /[0-9]/g,
-                        "",
-                      );
-                      setFormData({
-                        ...formData,
-                        fullName: valueWithoutNumbers,
-                      });
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key >= "0" && e.key <= "9") {
-                        e.preventDefault();
-                      }
-                    }}
-                    disabled={isLoading}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{ "--tw-ring-color": primaryColor } as any}
-                    placeholder="مثال: أحمد محمد الكامل"
-                  />
-                </div>
+              {/* الاسم الكامل */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  الاسم الكامل <span className="text-red-500 font-bold">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.fullName}
+                  onChange={(e) => {
+                    const valueWithoutNumbers = e.target.value.replace(
+                      /[0-9]/g,
+                      "",
+                    );
+                    setFormData({
+                      ...formData,
+                      fullName: valueWithoutNumbers,
+                    });
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key >= "0" && e.key <= "9") {
+                      e.preventDefault();
+                    }
+                  }}
+                  disabled={isLoading}
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 shadow-sm focus:ring-2 focus:ring-opacity-50 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-gray-400"
+                  style={{ "--tw-ring-color": primaryColor } as any}
+                  placeholder="أدخل الاسم الكامل"
+                />
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    رقم الجوال (واتساب)
-                  </label>
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => {
-                      let phoneValue = e.target.value.replace(/[^\d+]/g, "");
+              {/* رقم الجوال */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  رقم الجوال (واتساب)
+                </label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => {
+                    let phoneValue = e.target.value.replace(/[^\d+]/g, "");
 
-                      if (phoneValue.startsWith("0")) {
-                        phoneValue = "+963" + phoneValue.slice(2);
-                      }
+                    if (phoneValue.startsWith("0")) {
+                      phoneValue = "+963" + phoneValue.slice(2);
+                    }
 
-                      setFormData({ ...formData, phone: phoneValue });
-                    }}
-                    onKeyDown={(e) => {
-                      const allowedKeys = [
-                        "Backspace",
-                        "Delete",
-                        "ArrowLeft",
-                        "ArrowRight",
-                        "Tab",
-                        "+",
-                      ];
-                      if (
-                        !allowedKeys.includes(e.key) &&
-                        !(e.key >= "0" && e.key <= "9")
-                      ) {
-                        e.preventDefault();
-                      }
-                    }}
-                    disabled={isLoading}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{ "--tw-ring-color": primaryColor } as any}
-                    placeholder="+963........"
-                    dir="ltr"
-                  />
-                </div>
+                    setFormData({ ...formData, phone: phoneValue });
+                  }}
+                  onKeyDown={(e) => {
+                    const allowedKeys = [
+                      "Backspace",
+                      "Delete",
+                      "ArrowLeft",
+                      "ArrowRight",
+                      "Tab",
+                      "+",
+                    ];
+                    if (
+                      !allowedKeys.includes(e.key) &&
+                      !(e.key >= "0" && e.key <= "9")
+                    ) {
+                      e.preventDefault();
+                    }
+                  }}
+                  disabled={isLoading}
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 shadow-sm focus:ring-2 focus:ring-opacity-50 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-gray-400"
+                  style={{ "--tw-ring-color": primaryColor } as any}
+                  placeholder="+963........"
+                  dir="ltr"
+                />
+              </div>
 
-                <div>
+              {/* العمر والجنس في صف واحد - متساويان في الارتفاع */}
+              <div className="flex gap-3 items-stretch">
+                <div className="w-1/2 flex-shrink-0 flex flex-col">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     العمر
                   </label>
@@ -2782,63 +2801,64 @@ function NewPatientModal({
                       setFormData({ ...formData, age: e.target.value })
                     }
                     disabled={isLoading}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full flex-1 px-3 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 shadow-sm focus:ring-2 focus:ring-opacity-50 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-gray-400"
                     style={{ "--tw-ring-color": primaryColor } as any}
-                    placeholder="بين 5 و 100"
+                    placeholder="5-100"
                   />
-                  {formData.age &&
-                    parseInt(formData.age) >= 5 &&
-                    parseInt(formData.age) <= 100 && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        سنة الميلاد تقريباً:{" "}
-                        {calculateBirthYear(parseInt(formData.age))}
-                      </p>
-                    )}
                 </div>
-
-                <div>
+                <div className="flex-1 flex flex-col">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     الجنس
                   </label>
-                  <div className="flex gap-4">
+                  <div className="flex gap-2 flex-1 ">
                     <label
-                      className={`flex items-center gap-2 ${isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
+                      className={` w-1/2 flex items-center justify-center rounded-xl border-2 transition-all cursor-pointer ${
+                        formData.gender === "male"
+                          ? "border-blue-500 bg-blue-50 shadow-sm"
+                          : "border-gray-200 bg-white hover:border-gray-300"
+                      } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                      title="ذكر"
                     >
                       <input
                         type="radio"
                         value="male"
                         checked={formData.gender === "male"}
-                        onChange={(e) =>
+                        onChange={() =>
                           setFormData({ ...formData, gender: "male" })
                         }
                         disabled={isLoading}
-                        className="w-4 h-4"
-                        style={{ accentColor: primaryColor }}
+                        className="sr-only"
                       />
-                      <span className="text-gray-700">ذكر</span>
+                      <Mars size={20} className="text-blue-600" />
                     </label>
                     <label
-                      className={`flex items-center gap-2 ${isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
+                      className={`w-1/2 flex items-center justify-center rounded-xl border-2 transition-all cursor-pointer ${
+                        formData.gender === "female"
+                          ? "border-pink-500 bg-pink-50 shadow-sm"
+                          : "border-gray-200 bg-white hover:border-gray-300"
+                      } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                      title="أنثى"
                     >
                       <input
                         type="radio"
                         value="female"
                         checked={formData.gender === "female"}
-                        onChange={(e) =>
+                        onChange={() =>
                           setFormData({ ...formData, gender: "female" })
                         }
                         disabled={isLoading}
-                        className="w-4 h-4"
-                        style={{ accentColor: primaryColor }}
+                        className="sr-only"
                       />
-                      <span className="text-gray-700">أنثى</span>
+                      <Venus size={20} className="text-pink-600" />
                     </label>
                   </div>
                 </div>
+              </div>
 
-                {/* حقل الإجراء المخطط */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+              {/* الإجراء المخطط 2/3 والسعر الإجمالي 1/3 */}
+              <div className="flex gap-3 items-start">
+                <div className="w-2/3">
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
                     الإجراء المخطط
                   </label>
                   <input
@@ -2851,40 +2871,62 @@ function NewPatientModal({
                       })
                     }
                     disabled={isLoading}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 shadow-sm focus:ring-2 focus:ring-opacity-50 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-gray-400"
                     style={{ "--tw-ring-color": primaryColor } as any}
-                    placeholder="مثال: زراعة أسنان، تقويم..."
+                    placeholder="مثال: زراعة أسنان"
                   />
                 </div>
-
-                {/* حقل السعر الإجمالي */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                <div className="w-1/3">
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
                     السعر الإجمالي
                   </label>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={formData.totalPrice}
-                    onChange={(e) => {
-                      const value = e.target.value
-                        .replace(/[^0-9.]/g, "")
-                        .replace(/(\..*)\./g, "$1");
+                  <div className="relative">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={formData.totalPrice}
+                      onChange={(e) => {
+                        const value = e.target.value
+                          .replace(/[^0-9.]/g, "")
+                          .replace(/(\..*)\./g, "$1");
 
-                      setFormData({
-                        ...formData,
-                        totalPrice: value,
-                      });
-                    }}
-                    disabled={isLoading}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{ "--tw-ring-color": primaryColor } as any}
-                    placeholder="0"
-                    dir="ltr"
-                  />
+                        setFormData({
+                          ...formData,
+                          totalPrice: value,
+                        });
+                      }}
+                      disabled={isLoading}
+                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 shadow-sm focus:ring-2 focus:ring-opacity-50 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-gray-400 "
+                      style={{ "--tw-ring-color": primaryColor } as any}
+                      placeholder="0"
+                      dir="ltr"
+                    />
+                      <span className="absolute  right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">
+                      $
+                    </span>
+                  </div>
                 </div>
               </div>
 
+              {/* العنوان */}
+              {/* <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  العنوان
+                </label>
+                <input
+                  type="text"
+                  value={formData.address}
+                  onChange={(e) =>
+                    setFormData({ ...formData, address: e.target.value })
+                  }
+                  disabled={isLoading}
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 shadow-sm focus:ring-2 focus:ring-opacity-50 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-gray-400"
+                  style={{ "--tw-ring-color": primaryColor } as any}
+                  placeholder="أدخل العنوان"
+                />
+              </div> */}
+
+              {/* ملاحظات */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   ملاحظات
@@ -2896,7 +2938,7 @@ function NewPatientModal({
                   }
                   disabled={isLoading}
                   rows={2}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent transition-all resize-none disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 shadow-sm focus:ring-2 focus:ring-opacity-50 focus:border-transparent transition-all resize-none disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-gray-400"
                   style={{ "--tw-ring-color": primaryColor } as any}
                   placeholder="أي ملاحظات إضافية..."
                 />
@@ -2905,7 +2947,49 @@ function NewPatientModal({
 
             {/* الموعد الأول */}
             <div className="space-y-4">
-              <div className="flex items-center gap-3">
+              <div className="sticky top-20 z-10 bg-white flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200 hover:border-gray-300 transition-colors">
+                <div
+                  className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0 cursor-pointer ${
+                    formData.addAppointment
+                      ? "bg-[--tw-ring-color] border-[--tw-ring-color]"
+                      : "border-gray-400"
+                  } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                  style={{ "--tw-ring-color": primaryColor } as any}
+                  onClick={() =>
+                    !isLoading &&
+                    setFormData({
+                      ...formData,
+                      addAppointment: !formData.addAppointment,
+                    })
+                  }
+                >
+                  {formData.addAppointment && (
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="white"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="w-3.5 h-3.5"
+                    >
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
+                </div>
+
+                <label
+                  htmlFor="addAppointment"
+                  className={`flex-1 cursor-pointer select-none ${isLoading ? "cursor-not-allowed" : ""}`}
+                >
+                  <h3 className="font-semibold text-gray-900">
+                    إضافة موعد أولي
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    يمكنك تخطي هذه الخطوة
+                  </p>
+                </label>
+
                 <input
                   type="checkbox"
                   id="addAppointment"
@@ -2917,215 +3001,211 @@ function NewPatientModal({
                     })
                   }
                   disabled={isLoading}
-                  className="w-4 h-4"
-                  style={{ accentColor: primaryColor }}
+                  className="sr-only"
                 />
-                <label
-                  htmlFor="addAppointment"
-                  className={`font-bold text-gray-900 text-lg ${isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
-                >
-                  إضافة موعد أولي
-                </label>
               </div>
 
               {formData.addAppointment && (
-                <div className="p-4 bg-gray-50 rounded-xl space-y-4">
+                  <div className="p-4 bg-gray-50 rounded-xl space-y-4 border-2 border-dashed border-gray-200">
+                  {/* طريقة تحديد الموعد */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       طريقة تحديد الموعد
                     </label>
-                    <div className="flex gap-4">
-                      <label
-                        className={`flex items-center gap-2 ${isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
+
+                    <div className="inline-flex w-full bg-gray-100 p-1 rounded-xl">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData({ ...formData, appointmentMode: "days" })
+                        }
+                        disabled={isLoading}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200 ${
+                          formData.appointmentMode === "days"
+                            ? "bg-white text-gray-900 shadow-sm"
+                            : "text-gray-500 hover:text-gray-700"
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
-                        <input
-                          type="radio"
-                          value="days"
-                          checked={formData.appointmentMode === "days"}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              appointmentMode: e.target.value as
-                                | "days"
-                                | "date",
-                            })
-                          }
-                          disabled={isLoading}
-                          className="w-4 h-4"
-                          style={{ accentColor: primaryColor }}
-                        />
-                        <span className="text-gray-700">بعد عدة أيام</span>
-                      </label>
-                      <label
-                        className={`flex items-center gap-2 ${isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
+                        <Calendar size={16} className="flex-shrink-0" />
+                        <span>بعد أيام</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData({ ...formData, appointmentMode: "date" })
+                        }
+                        disabled={isLoading}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200 ${
+                          formData.appointmentMode === "date"
+                            ? "bg-white text-gray-900 shadow-sm"
+                            : "text-gray-500 hover:text-gray-700"
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
-                        <input
-                          type="radio"
-                          value="date"
-                          checked={formData.appointmentMode === "date"}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              appointmentMode: e.target.value as
-                                | "days"
-                                | "date",
-                            })
-                          }
-                          disabled={isLoading}
-                          className="w-4 h-4"
-                          style={{ accentColor: primaryColor }}
-                        />
-                        <span className="text-gray-700">تاريخ محدد</span>
-                      </label>
+                        <CalendarCheck size={16} className="flex-shrink-0" />
+                        <span>تاريخ محدد</span>
+                      </button>
                     </div>
                   </div>
 
-                  {formData.appointmentMode === "days" ? (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        بعد كم يوم؟ (1 - 10 أيام)
+                  {/* الإجراء 2/3 والتكلفة 1/3 في صف واحد */}
+                  <div className="flex gap-3 items-start">
+                    <div className="w-2/3">
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">
+                        الإجراء{" "}
+                        <span className="text-red-500 font-bold">*</span>
                       </label>
                       <input
-                        type="number"
-                        min="1"
-                        max="10"
-                        value={formData.appointment.days}
+                        type="text"
+                        required
+                        value={formData.appointment.procedure}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
                             appointment: {
                               ...formData.appointment,
-                              days: e.target.value,
+                              procedure: e.target.value,
                             },
                           })
                         }
                         disabled={isLoading}
-                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 shadow-sm focus:ring-2 focus:ring-opacity-50 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-gray-400"
                         style={{ "--tw-ring-color": primaryColor } as any}
+                        placeholder="مثال: كشف أولي"
                       />
-                      <p className="text-sm text-gray-600 mt-2">
-                        التاريخ المحدد:{" "}
-                        <span className="font-medium">
-                          {formattedAppointmentDate}
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">
+                        التكلفة{" "}
+                        <span className="text-red-500 font-bold">*</span>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          required
+                          value={formData.appointment.cost}
+                          onChange={(e) => {
+                            const value = e.target.value
+                              .replace(/[^0-9.]/g, "")
+                              .replace(/(\..*)\./g, "$1");
+
+                            setFormData({
+                              ...formData,
+                              appointment: {
+                                ...formData.appointment,
+                                cost: value,
+                              },
+                            });
+                          }}
+                          disabled={isLoading}
+                          className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 shadow-sm focus:ring-2 focus:ring-opacity-50 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-gray-400 "
+                          style={{ "--tw-ring-color": primaryColor } as any}
+                          placeholder="0"
+                          dir="ltr"
+                        />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">
+                          $
                         </span>
-                      </p>
+                      </div>
                     </div>
-                  ) : (
-                    <div>
+                  </div>
+
+                  {/* التاريخ والوقت في صف واحد */}
+                  <div className="flex gap-3 items-start">
+                    {formData.appointmentMode === "days" ? (
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          بعد كم يوم؟
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="10"
+                          value={formData.appointment.days}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              appointment: {
+                                ...formData.appointment,
+                                days: e.target.value,
+                              },
+                            })
+                          }
+                          disabled={isLoading}
+                          className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 shadow-sm focus:ring-2 focus:ring-opacity-50 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-gray-400"
+                          style={{ "--tw-ring-color": primaryColor } as any}
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-2/3">
+                        <label className=" block text-sm font-medium text-gray-700 mb-2">
+                          التاريخ
+                        </label>
+                        <input
+                          type="date"
+                          value={formData.appointment.date}
+                          min={new Date().toISOString().split("T")[0]}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              appointment: {
+                                ...formData.appointment,
+                                date: e.target.value,
+                              },
+                            })
+                          }
+                          disabled={isLoading}
+                          className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 shadow-sm focus:ring-2 focus:ring-opacity-50 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                          style={{ "--tw-ring-color": primaryColor } as any}
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        اختر التاريخ
+                        الوقت
                       </label>
                       <input
-                        type="date"
-                        value={formData.appointment.date}
-                        min={new Date().toISOString().split("T")[0]}
+                        type="time"
+                        value={formData.appointment.time}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
                             appointment: {
                               ...formData.appointment,
-                              date: e.target.value,
+                              time: e.target.value,
                             },
                           })
                         }
                         disabled={isLoading}
-                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 shadow-sm focus:ring-2 focus:ring-opacity-50 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{ "--tw-ring-color": primaryColor } as any}
                       />
                     </div>
-                  )}
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      الوقت
-                    </label>
-                    <input
-                      type="time"
-                      value={formData.appointment.time}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          appointment: {
-                            ...formData.appointment,
-                            time: e.target.value,
-                          },
-                        })
-                      }
-                      disabled={isLoading}
-                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{ "--tw-ring-color": primaryColor } as any}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      الإجراء
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.appointment.procedure}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          appointment: {
-                            ...formData.appointment,
-                            procedure: e.target.value,
-                          },
-                        })
-                      }
-                      disabled={isLoading}
-                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{ "--tw-ring-color": primaryColor } as any}
-                      placeholder="مثال: كشف أولي، تنظيف أسنان..."
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      التكلفة ($)
-                    </label>
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      required
-                      value={formData.appointment.cost}
-                      onChange={(e) => {
-                        const value = e.target.value
-                          .replace(/[^0-9.]/g, "")
-                          .replace(/(\..*)\./g, "$1");
-
-                        setFormData({
-                          ...formData,
-                          appointment: { ...formData.appointment, cost: value },
-                        });
-                      }}
-                      disabled={isLoading}
-                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{ "--tw-ring-color": primaryColor } as any}
-                      placeholder="0"
-                    />
                   </div>
                 </div>
               )}
             </div>
+          </form>
 
-            {/* أزرار */}
-            <div className="flex gap-3 pt-4 border-t border-gray-200">
+          {/* Footer - Sticky */}
+          <div className="sticky bottom-0 z-20 bg-white border-t border-gray-200 p-4 shadow-lg">
+            <div className="flex gap-3">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={isLoading}
-                className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-700 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-3.5 bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-700 font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
               >
                 إلغاء
               </button>
               <button
                 type="submit"
+                onClick={handleSubmit}
                 disabled={isLoading}
-                className="flex-1 px-4 py-3 rounded-xl text-white font-medium transition-all
+                className="flex-1 px-4 py-3.5 rounded-xl text-white font-medium transition-all
                         disabled:opacity-70 disabled:cursor-not-allowed
-                        flex items-center justify-center gap-2 hover:opacity-90"
+                        flex items-center justify-center gap-2 shadow-lg active:scale-[0.98]"
                 style={{ background: primaryColor }}
               >
                 {isLoading ? (
@@ -3134,11 +3214,14 @@ function NewPatientModal({
                     <span>جاري الإضافة...</span>
                   </>
                 ) : (
-                  <span>إضافة المريض</span>
+                  <>
+                    <UserPlus size={20} />
+                    <span>إضافة المريض</span>
+                  </>
                 )}
               </button>
             </div>
-          </form>
+          </div>
         </motion.div>
       </motion.div>
     </>
@@ -3289,7 +3372,7 @@ function NewAppointmentModal({
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto modal-fullscreen [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[92vh] overflow-y-auto modal-fullscreen [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="p-3" style={{ background: primaryColor }}>
