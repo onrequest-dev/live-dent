@@ -286,13 +286,13 @@ export function MainTab({
     });
   };
 
-const formatDate = (date: Date | string) => {
-  const d = new Date(date);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${day}/${month}/${year}`;
-};
+  const formatDate = (date: Date | string) => {
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${day}/${month}/${year}`;
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -564,7 +564,7 @@ const formatDate = (date: Date | string) => {
 
   if (!clinicData) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <ToothLoader />
         </div>
@@ -576,85 +576,214 @@ const formatDate = (date: Date | string) => {
     <>
       <ToastContainer toasts={toasts} removeToast={removeToast} />
 
-        <div
-          className="min-h-screen p-4 lg:p-6"
-          style={{
-            background: `linear-gradient(145deg, rgba(59, 131, 246, 0) 0%, rgba(59, 131, 246, 0) 100%)`,
-          }}
-        >
+      <div className="min-h-screen  p-3 sm:p-4 lg:p-6 ">
         {/* شريط العمليات العلوي */}
-        <div className="mb-6 lg:mb-8">
-          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
-            <div className="relative flex-1 w-full lg:max-w-md">
+        <div className="mb-4 sm:mb-6 lg:mb-8 ">
+          {/* ============================================================ */}
+          {/* سطح المكتب: كل العناصر في سطر واحد                            */}
+          {/* ============================================================ */}
+          <div className="hidden lg:flex items-center gap-3">
+            {/* زر إضافة مريض جديد */}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setShowNewPatientModal(true)}
+              className="flex items-center gap-2 px-5 py-3 rounded-full font-medium text-sm text-white transition-all duration-200 flex-shrink-0 shadow-sm"
+              style={{
+                background: primaryColor,
+                boxShadow: `0 2px 8px ${primaryColor}35`,
+              }}
+            >
+              <UserPlus size={18} className="flex-shrink-0" />
+              <span className="whitespace-nowrap">مريض جديد</span>
+            </motion.button>
+
+            {/* حقل البحث - يملأ المساحة المتبقية */}
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search size={18} className="text-gray-400" />
+              </div>
               <input
                 type="text"
-                placeholder="البحث عن مريض بالاسم أو رقم الهاتف..."
+                placeholder="البحث عن مريض..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pr-12 pl-4 py-3.5 bg-white rounded-2xl text-gray-900 placeholder-gray-500 text-base shadow-lg border-0 focus:ring-2 transition-all"
+                className="w-full pl-10 pr-4 py-3 bg-gray-100 rounded-full text-gray-900 placeholder-gray-400 text-sm border-0 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
                 style={{ "--tw-ring-color": primaryColor } as any}
               />
             </div>
-<div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
-  {/* زر تبديل عرض المرضى */}
-  <motion.button
-    whileHover={{ scale: 1.02 }}
-    whileTap={{ scale: 0.98 }}
-    onClick={() => setShowTodayOnly(!showTodayOnly)}
-    className={`
-      flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl
-      font-medium text-sm sm:text-base transition-all duration-200
-      shadow-md hover:shadow-lg flex-1 sm:flex-none justify-center
-      ${showTodayOnly 
-        ? "text-white shadow-lg" 
-        : "text-gray-700 bg-white border border-gray-200 hover:border-gray-300"
-      }
-    `}
-    style={{
-      background: showTodayOnly ? primaryColor : undefined,
-      color: showTodayOnly ? "white" : undefined,
-    }}
-  >
-    <Users size={16} className="sm:w-[18px] sm:h-[18px]" />
-    <span className="whitespace-nowrap">
-      {showTodayOnly ? "جميع المرضى" : "مرضى اليوم"}
-    </span>
-  </motion.button>
 
-  {/* زر إضافة مريض جديد */}
-  <motion.button
-    whileHover={{ scale: 1.02 }}
-    whileTap={{ scale: 0.98 }}
-    onClick={() => setShowNewPatientModal(true)}
-    className={`
-      flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3
-      rounded-xl sm:rounded-2xl font-medium text-sm sm:text-base
-      text-white shadow-md hover:shadow-lg transition-all duration-200
-      flex-1 sm:flex-none justify-center
-    `}
-    style={{ 
-      background: primaryColor,
-      boxShadow: `0 4px 14px ${primaryColor}40`
-    }}
-  >
-    <UserPlus size={16} className="sm:w-[18px] sm:h-[18px]" />
-    <span className="whitespace-nowrap">
-      <span className="hidden sm:inline">مريض جديد</span>
-      <span className="sm:hidden">جديد</span>
-    </span>
-  </motion.button>
-</div>
+            {/* حاوية الفلاتر المجمعة */}
+            <div className="flex items-center gap-0.5 bg-gray-100 p-1 rounded-full flex-shrink-0 ">
+              {/* فلتر 1: اليوم / الكل */}
+              <motion.button
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setShowTodayOnly(!showTodayOnly)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-full font-medium text-sm transition-all duration-200 ${
+                  showTodayOnly
+                    ? " text-gray-900 "
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {!showTodayOnly ? (
+                  <Calendar size={15} className="flex-shrink-0 text-blue-600" />
+                ) : (
+                  <Users size={15} className="flex-shrink-0" />
+                )}
+                <span className="whitespace-nowrap">
+                  {!showTodayOnly ? "مرضى اليوم" : "جميع المرضى"}
+                </span>
+              </motion.button>
+
+              {/* فاصل رأسي رفيع */}
+              <div className="w-px  h-5 bg-gray-300 mx-0.5" />
+
+              {/* فلتر 2: ترتيب (شكلي فقط) */}
+              <motion.button
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.97 }}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-full font-medium text-sm transition-all duration-200 text-gray-500 hover:text-gray-700"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="15"
+                  height="15"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="flex-shrink-0"
+                >
+                  <path d="M3 6h18" />
+                  <path d="M6 12h12" />
+                  <path d="M10 18h4" />
+                </svg>
+                <span className="whitespace-nowrap">الأحدث</span>
+                <ChevronRight size={13} className="flex-shrink-0 rotate-90" />
+              </motion.button>
+            </div>
+          </div>
+
+          {/* ============================================================ */}
+          {/* الجوال والتابلت: صفين                                        */}
+          {/* ============================================================ */}
+          <div className="flex flex-col gap-2 sm:gap-3 lg:hidden">
+            {/* الصف الأول: زر الإضافة (1/3) + حقل البحث (2/3) */}
+            <div
+              className="flex items-center gap-2 sm:gap-3"
+              style={{ width: "calc(100% - 8px)" }}
+            >
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setShowNewPatientModal(true)}
+                className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full font-medium text-xs sm:text-sm text-white transition-all duration-200 flex-shrink-0 shadow-sm"
+                style={{
+                  background: primaryColor,
+                  boxShadow: `0 2px 8px ${primaryColor}35`,
+                  width: "33.333%",
+                }}
+              >
+                <UserPlus
+                  size={15}
+                  className="sm:w-[17px] sm:h-[17px] flex-shrink-0"
+                />
+                <span className="whitespace-nowrap">
+                  <span className="hidden sm:inline">جديد</span>
+                  <span className="sm:hidden">جديد</span>
+                </span>
+              </motion.button>
+
+              <div className="relative" style={{ width: "66.666%" }}>
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search
+                    size={16}
+                    className="text-gray-400 sm:w-[18px] sm:h-[18px]"
+                  />
+                </div>
+                <input
+                  type="text"
+                  placeholder="البحث عن مريض..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 sm:pl-10 pr-4 py-2.5 sm:py-2.5 bg-gray-100 rounded-full text-gray-900 placeholder-gray-400 text-sm sm:text-base border-0 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+                  style={{ "--tw-ring-color": primaryColor } as any}
+                />
+              </div>
+            </div>
+
+            {/* الصف الثاني: الفلترين في حاوية واحدة مقسمة */}
+            <div
+              className="flex items-center gap-0.5 bg-gray-100 p-1 rounded-full mt-2"
+              style={{ width: "calc(100% - 8px)" }}
+            >
+              {/* فلتر 1: اليوم / الكل */}
+              <motion.button
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setShowTodayOnly(!showTodayOnly)}
+                className={`flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full font-medium text-[11px] sm:text-xs transition-all duration-200 flex-1 ${
+                  showTodayOnly
+                    ? " text-gray-900 "
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {!showTodayOnly ? (
+                  <Calendar
+                    size={13}
+                    className="sm:w-[14px] sm:h-[14px] flex-shrink-0 text-blue-600"
+                  />
+                ) : (
+                  <Users
+                    size={13}
+                    className="sm:w-[14px] sm:h-[14px] flex-shrink-0"
+                  />
+                )}
+                <span className="whitespace-nowrap">
+                  {!showTodayOnly ? "اليوم" : "الكل"}
+                </span>
+              </motion.button>
+
+              {/* فاصل رأسي رفيع */}
+              <div className="w-px h-4 bg-gray-300" />
+
+              {/* فلتر 2: ترتيب (شكلي فقط) */}
+              <motion.button
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.97 }}
+                className="flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full font-medium text-[11px] sm:text-xs transition-all duration-200 text-gray-500 hover:text-gray-700 flex-1"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="13"
+                  height="13"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="sm:w-[14px] sm:h-[14px] flex-shrink-0"
+                >
+                  <path d="M3 6h18" />
+                  <path d="M6 12h12" />
+                  <path d="M10 18h4" />
+                </svg>
+                <span className="whitespace-nowrap">الأحدث</span>
+              </motion.button>
+            </div>
           </div>
         </div>
 
         {/* المحتوى الرئيسي */}
-        <div className="flex flex-col lg:flex-row gap-0">
-          {/* عمود قائمة المرضى */}
+        <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
+          {/* عمود قائمة المرضى - كرت Native */}
           <div
             ref={listRef}
-            className={`relative flex-shrink-0 transition-all duration-200 rounded-2xl ${
+            className={`relative flex-shrink-0 transition-all duration-200 ${
               !selectedPatient ? "flex-1" : ""
-            } ${isCollapsed ? "w-20" : ""}`}
+            } ${isCollapsed ? "w-16 sm:w-20" : ""}`}
             style={
               selectedPatient && !isCollapsed
                 ? { width: `${listWidth}px` }
@@ -662,28 +791,69 @@ const formatDate = (date: Date | string) => {
             }
           >
             <div
-              className={`bg-white rounded-2xl shadow-sm border border-gray-200 h-full ${isCollapsed ? "px-1" : ""}`}
+              className={`bg-white rounded-[1.25rem] sm:rounded-3xl shadow-sm border border-gray-100 h-full overflow-hidden ${isCollapsed ? "px-1" : ""}`}
             >
               {/* Header مع زر الطي/الفرد */}
               <div
-                className={`flex items-center rounded-2xl ${isCollapsed ? "justify-center py-4" : "px-5 py-4 border-b border-gray-200 bg-gray-50/50"}`}
+                className={`flex items-center ${isCollapsed ? "justify-center py-3 sm:py-4" : "px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 bg-gray-50/50"}`}
               >
                 {!isCollapsed ? (
                   <>
                     <div className="flex items-center justify-between w-full">
-                      <h3 className="font-semibold text-gray-800">
-                        {showTodayOnly ? "مرضى اليوم" : "جميع المرضى"}
-                        <span className="text-sm font-normal text-gray-500 mr-2">
-                          ({patientsWithDetails.length})
-                        </span>
-                      </h3>
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        {/* أيقونة معبرة مع خلفية ملونة */}
+                        <div
+                          className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                          style={{
+                            background: showTodayOnly
+                              ? `${primaryColor}15`
+                              : "#f3f4f6",
+                          }}
+                        >
+                          {showTodayOnly ? (
+                            <Calendar
+                              size={16}
+                              className="sm:w-[18px] sm:h-[18px]"
+                              style={{ color: primaryColor }}
+                            />
+                          ) : (
+                            <Users
+                              size={16}
+                              className="sm:w-[18px] sm:h-[18px] text-gray-500"
+                            />
+                          )}
+                        </div>
+
+                        {/* النص الرئيسي مع وصف إضافي */}
+                        <div className="flex flex-col gap-0.5">
+                          <h3 className="font-bold text-gray-900 text-sm sm:text-base leading-tight">
+                            {showTodayOnly ? "مرضى اليوم" : "جميع المرضى"}
+                          </h3>
+                          <div className="flex items-center gap-1.5">
+                            {/* وسام العدد */}
+                            <span
+                              className="text-[11px] sm:text-xs font-semibold px-0.5 py-0.5 "
+                              style={{
+                                color: primaryColor,
+                              }}
+                            >
+                              {patientsWithDetails.length}
+                            </span>
+                            <span className="text-[11px] sm:text-xs text-gray-400">
+                              {showTodayOnly
+                                ? "لديهم مواعيد اليوم"
+                                : "في القائمة"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                       {selectedPatient && (
                         <button
                           onClick={() => setIsCollapsed(true)}
                           className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors"
                           title="طي القائمة"
                         >
-                          <PanelLeftClose size={18} className="text-gray-600" />
+                          <PanelLeftClose size={16} className="text-gray-500" />
                         </button>
                       )}
                     </div>
@@ -691,20 +861,21 @@ const formatDate = (date: Date | string) => {
                 ) : (
                   <button
                     onClick={() => setIsCollapsed(false)}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors"
                     title="توسيع القائمة"
                   >
-                    <PanelLeftOpen size={20} className="text-gray-600" />
+                    <PanelLeftOpen size={18} className="text-gray-500" />
                   </button>
                 )}
               </div>
 
               {/* محتوى القائمة */}
               {!isCollapsed ? (
-                <div className="max-h-[calc(100vh-280px)] overflow-y-auto scrollbar-hide">
+                <div className="max-h-[calc(100vh-260px)] sm:max-h-[calc(100vh-280px)] overflow-y-auto scrollbar-hide">
                   <AnimatePresence>
                     {patientsWithDetails.map((patient, index) => {
                       const finance = calculatePatientFinance(patient.id);
+                      const isSelected = selectedPatient?.id === patient.id;
                       return (
                         <motion.div
                           key={patient.id}
@@ -713,47 +884,71 @@ const formatDate = (date: Date | string) => {
                           exit={{ opacity: 0 }}
                           transition={{ delay: index * 0.02 }}
                           onClick={() => handlePatientSelect(patient)}
-                          className={`px-5 py-4 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors duration-150
-                            ${selectedPatient?.id === patient.id ? "bg-blue-50/70 border-r-4" : "hover:bg-gray-50 border-r-4 border-r-transparent"}`}
+                          className={`px-4 sm:px-5 py-3 sm:py-4 cursor-pointer transition-colors duration-150 border-b border-gray-50 last:border-b-0
+                            ${isSelected ? "bg-blue-50/60" : "hover:bg-gray-50/80"}`}
                           style={{
-                            borderRightColor:
-                              selectedPatient?.id === patient.id
-                                ? primaryColor
-                                : "transparent",
+                            borderRight: isSelected
+                              ? `3px solid ${primaryColor}`
+                              : "3px solid transparent",
                           }}
                         >
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-medium text-gray-900 text-base text-sm">
+                          <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+                            <div className="flex items-center gap-1.5 sm:gap-2">
+                              <h4 className="font-medium text-gray-900 text-sm sm:text-base">
                                 {patient.fullName}
                               </h4>
                               <span
-                                className={`text-xs px-2.5 py-1 rounded-full font-medium ${patient.gender === "male" ? "bg-blue-100 text-blue-700" : "bg-pink-100 text-pink-700"}`}
+                                className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-medium ${patient.gender === "male" ? "bg-blue-100 text-blue-700" : "bg-pink-100 text-pink-700"}`}
                               >
                                 {patient.gender === "male" ? "ذكر" : "أنثى"}
                               </span>
                               {patient.age && (
-                                <span className="text-xs text-gray-500">
+                                <span className="text-[10px] sm:text-xs text-gray-400">
                                   {patient.age} سنة
                                 </span>
                               )}
                             </div>
                           </div>
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-1 text-gray-700">
-                              <Phone size={14} className="text-gray-400" />
-                              <span className="text-sm" dir="ltr">
+                          <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+                            <div className="flex items-center gap-1 sm:gap-1.5 text-gray-600">
+                              <Phone
+                                size={13}
+                                className="text-gray-400 flex-shrink-0"
+                              />
+                              <span className="text-xs sm:text-sm" dir="ltr">
                                 {patient.phone}
                               </span>
+                              {/* زر واتساب مدمج داخل صف الهاتف */}
+                              {/* <button
+                                onClick={(e) =>
+                                  handleWhatsApp(
+                                    patient,
+                                    patient.todaySession,
+                                    e,
+                                  )
+                                }
+                                className="inline-flex items-center justify-center w-7 h-7  rounded-full bg-green-50 text-green-600 hover:bg-green-100 transition-colors active:scale-95 flex-shrink-0"
+                                title="واتساب"
+                              >
+                                <svg
+                                  viewBox="0 0 24 24"
+                                  width="14"
+                                  height="14"
+                                  fill="currentColor"
+                                  className="sm:w-[40px] sm:h-[40px]"
+                                >
+                                  <path d="M19.077 4.928C17.191 3.041 14.683 2 12.006 2 6.498 2 2.017 6.477 2.012 11.984c-.001 1.76.46 3.478 1.335 4.992L2 21.991l5.172-1.356c1.46.796 3.104 1.215 4.828 1.216h.004c5.508 0 9.99-4.478 9.995-9.984.002-2.667-1.035-5.175-2.922-7.064zm-7.071 15.355h-.003c-1.507 0-2.985-.405-4.273-1.169l-.306-.181-3.069.805.819-2.991-.202-.32a8.268 8.268 0 0 1-1.267-4.439c.003-4.572 3.724-8.29 8.301-8.29 2.216.001 4.299.865 5.866 2.432a8.238 8.238 0 0 1 2.428 5.873c-.003 4.572-3.724 8.29-8.297 8.29zm4.551-6.208c-.25-.125-1.476-.728-1.705-.812-.229-.083-.396-.124-.562.125-.167.25-.647.812-.793.978-.146.167-.292.187-.542.062-.25-.124-1.054-.389-2.008-1.24-.742-.662-1.243-1.48-1.389-1.729-.146-.25-.015-.385.11-.509.112-.112.25-.292.375-.438.125-.146.167-.25.25-.417.083-.167.042-.313-.021-.438-.062-.125-.562-1.355-.771-1.855-.203-.486-.409-.42-.562-.427-.144-.007-.308-.009-.473-.009-.166 0-.437.063-.666.313-.229.25-.874.854-.874 2.083s.895 2.416 1.02 2.583c.125.166 1.761 2.688 4.267 3.77.596.257 1.062.411 1.425.526.599.19 1.144.163 1.575.099.48-.072 1.476-.604 1.684-1.187.208-.583.208-1.083.146-1.187-.062-.104-.229-.167-.479-.292z" />
+                                </svg>
+                              </button> */}
                             </div>
                             {patient.todaySession && (
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex items-center gap-1 sm:gap-1.5">
                                 <Clock
-                                  size={14}
+                                  size={13}
                                   style={{ color: primaryColor }}
                                 />
                                 <span
-                                  className="text-sm font-medium"
+                                  className="text-xs sm:text-sm font-medium"
                                   style={{ color: primaryColor }}
                                 >
                                   {formatTime(patient.todaySession.startTime)}
@@ -762,67 +957,132 @@ const formatDate = (date: Date | string) => {
                             )}
                           </div>
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1 sm:gap-1.5">
                               {patient.todaySession ? (
                                 <>
                                   <Stethoscope
-                                    size={14}
+                                    size={13}
                                     className="text-gray-400"
                                   />
-                                  <span className="text-sm text-gray-700">
+                                  <span className="text-xs sm:text-sm text-gray-600">
                                     {patient.todaySession.plannedProcedure ||
                                       "كشف"}
                                   </span>
                                 </>
                               ) : (
-                                <span className="text-sm text-gray-400">
+                                <span className="text-xs sm:text-sm text-gray-400">
                                   لا يوجد موعد اليوم
                                 </span>
                               )}
                             </div>
-                            <button
-                              onClick={(e) =>
-                                handleWhatsApp(patient, patient.todaySession, e)
-                              }
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-white text-sm font-medium transition-all hover:shadow-md active:scale-95"
-                              style={{
-                                background: "#25D366",
-                                boxShadow: "0 2px 4px rgba(37, 211, 102, 0.2)",
-                              }}
-                            >
-                              <svg
-                                viewBox="0 0 24 24"
-                                width="16"
-                                height="16"
-                                fill="currentColor"
-                              >
-                                <path d="M19.077 4.928C17.191 3.041 14.683 2 12.006 2 6.498 2 2.017 6.477 2.012 11.984c-.001 1.76.46 3.478 1.335 4.992L2 21.991l5.172-1.356c1.46.796 3.104 1.215 4.828 1.216h.004c5.508 0 9.99-4.478 9.995-9.984.002-2.667-1.035-5.175-2.922-7.064zm-7.071 15.355h-.003c-1.507 0-2.985-.405-4.273-1.169l-.306-.181-3.069.805.819-2.991-.202-.32a8.268 8.268 0 0 1-1.267-4.439c.003-4.572 3.724-8.29 8.301-8.29 2.216.001 4.299.865 5.866 2.432a8.238 8.238 0 0 1 2.428 5.873c-.003 4.572-3.724 8.29-8.297 8.29zm4.551-6.208c-.25-.125-1.476-.728-1.705-.812-.229-.083-.396-.124-.562.125-.167.25-.647.812-.793.978-.146.167-.292.187-.542.062-.25-.124-1.054-.389-2.008-1.24-.742-.662-1.243-1.48-1.389-1.729-.146-.25-.015-.385.11-.509.112-.112.25-.292.375-.438.125-.146.167-.25.25-.417.083-.167.042-.313-.021-.438-.062-.125-.562-1.355-.771-1.855-.203-.486-.409-.42-.562-.427-.144-.007-.308-.009-.473-.009-.166 0-.437.063-.666.313-.229.25-.874.854-.874 2.083s.895 2.416 1.02 2.583c.125.166 1.761 2.688 4.267 3.77.596.257 1.062.411 1.425.526.599.19 1.144.163 1.575.099.48-.072 1.476-.604 1.684-1.187.208-.583.208-1.083.146-1.187-.062-.104-.229-.167-.479-.292z" />
-                              </svg>
-                            </button>
                           </div>
                         </motion.div>
                       );
                     })}
                   </AnimatePresence>
                   {patientsWithDetails.length === 0 && (
-                    <div className="text-center py-16">
-                      <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-100 flex items-center justify-center">
-                        <Users size={28} className="text-gray-400" />
+                    <div className="text-center py-10 sm:py-14">
+                      {/* أيقونة مع خلفية دائرية ناعمة */}
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+                        <Users
+                          size={28}
+                          className="sm:w-8 sm:h-8 text-gray-300"
+                        />
                       </div>
-                      <p className="text-gray-600 font-medium mb-1">
+
+                      {/* العنوان */}
+                      <p className="text-gray-800 font-semibold mb-1.5 text-sm sm:text-base">
                         لا يوجد مرضى
                       </p>
-                      <p className="text-gray-500 text-sm">
+
+                      {/* الوصف */}
+                      <p className="text-gray-400 text-xs sm:text-sm mb-5">
                         {showTodayOnly
                           ? "لا توجد مواعيد لهذا اليوم"
-                          : "ابدأ بإضافة مريض جديد"}
+                          : "لا يوجد أي مرضى في القائمة بعد"}
                       </p>
+
+                      {/* بطاقات صغيرة أفقية (Horizontal Pills) - تصميم iOS Settings Suggestions */}
+                      <div className="inline-flex flex-col gap-2">
+                        {showTodayOnly && (
+                          <button
+                            onClick={() => {
+                              setShowTodayOnly(false);
+                              setSearchQuery("");
+                            }}
+                            className="flex items-center gap-3 px-4 py-2.5 sm:py-3 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors duration-200 group"
+                          >
+                            {/* أيقونة داخل دائرة */}
+                            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white flex items-center justify-center flex-shrink-0 shadow-sm">
+                              <Users
+                                size={15}
+                                className="sm:w-4 sm:h-4 text-gray-500"
+                              />
+                            </div>
+
+                            {/* النص */}
+                            <div className="text-right flex-1">
+                              <p className="text-xs sm:text-sm font-medium text-gray-700">
+                                عرض جميع المرضى
+                              </p>
+                              <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5">
+                                تصفح القائمة الكاملة بدون فلترة
+                              </p>
+                            </div>
+
+                            {/* سهم للإشارة */}
+                            <ChevronRight
+                              size={14}
+                              className="text-gray-300 group-hover:text-gray-500 transition-colors flex-shrink-0"
+                            />
+                          </button>
+                        )}
+
+                        <button
+                          onClick={() => setShowNewPatientModal(true)}
+                          className="flex items-center gap-3 px-4 py-2.5 sm:py-3 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors duration-200 group"
+                        >
+                          {/* أيقونة داخل دائرة */}
+                          <div
+                            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm"
+                            style={{
+                              backgroundColor: `${primaryColor}15`,
+                            }}
+                          >
+                            <Plus
+                              size={15}
+                              className="sm:w-4 sm:h-4"
+                              style={{ color: primaryColor }}
+                            />
+                          </div>
+
+                          {/* النص */}
+                          <div className="text-right flex-1">
+                            <p className="text-xs sm:text-sm font-medium text-gray-700">
+                              {showTodayOnly
+                                ? "إضافة مريض جديد"
+                                : "إضافة أول مريض"}
+                            </p>
+                            <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5">
+                              {showTodayOnly
+                                ? "تسجيل مريض وإضافة موعد"
+                                : "ابدأ ببناء قاعدة مرضاك"}
+                            </p>
+                          </div>
+
+                          {/* سهم للإشارة */}
+                          <ChevronRight
+                            size={14}
+                            className="text-gray-300 group-hover:text-gray-500 transition-colors flex-shrink-0"
+                          />
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="max-h-[calc(100vh-280px)] overflow-y-auto scrollbar-hide py-2">
-                  <div className="flex flex-col items-center gap-1">
+                <div className="max-h-[calc(100vh-260px)] sm:max-h-[calc(100vh-280px)] overflow-y-auto scrollbar-hide py-2">
+                  <div className="flex flex-col items-center gap-1 sm:gap-1.5">
                     {patientsWithDetails.map((patient) => {
                       const initials = getInitials(patient.fullName);
                       const isSelected = selectedPatient?.id === patient.id;
@@ -832,14 +1092,17 @@ const formatDate = (date: Date | string) => {
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                           onClick={() => handlePatientSelect(patient)}
-                          className={`w-12 h-12 rounded-full flex items-center justify-center font-medium text-sm transition-all shadow-sm
+                          className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-medium text-xs sm:text-sm transition-all shadow-sm
                             ${isSelected ? "ring-2 ring-offset-1" : "hover:shadow-md"}`}
-                          style={{
-                            backgroundColor: isSelected
-                              ? primaryColor
-                              : "#f3f4f6",
-                            color: isSelected ? "white" : "#374151",
-                          }}
+                          style={
+                            {
+                              backgroundColor: isSelected
+                                ? primaryColor
+                                : "#f3f4f6",
+                              color: isSelected ? "white" : "#374151",
+                              "--tw-ring-color": primaryColor,
+                            } as React.CSSProperties
+                          }
                           title={patient.fullName}
                         >
                           {initials}
@@ -849,21 +1112,22 @@ const formatDate = (date: Date | string) => {
                   </div>
                   {patientsWithDetails.length === 0 && (
                     <div className="flex justify-center py-4">
-                      <Users size={24} className="text-gray-400" />
+                      <Users size={20} className="text-gray-400" />
                     </div>
                   )}
                 </div>
               )}
             </div>
 
+            {/* مقبض تغيير الحجم - سطح المكتب فقط */}
             {!isCollapsed && selectedPatient && !isMobile && (
               <div
                 className="absolute top-0 -left-3 w-6 h-full cursor-col-resize z-10 flex items-center justify-center group"
                 onMouseDown={handleMouseDown}
               >
-                <div className="w-1 h-12 bg-gray-300 rounded-full group-hover:bg-blue-400 transition-colors" />
+                <div className="w-1 h-10 sm:h-12 bg-gray-300 rounded-full group-hover:bg-blue-400 transition-colors" />
                 <GripVertical
-                  size={16}
+                  size={14}
                   className="absolute text-gray-400 group-hover:text-blue-500 transition-colors"
                 />
               </div>
@@ -1089,7 +1353,7 @@ interface PatientDetailsCardProps {
   onEditSession: (session: Session) => void;
   onDeleteSession: (sessionId: string) => void;
   onRequestDeleteSession: (sessionId: string) => void;
-  onEditPatient: () => void; 
+  onEditPatient: () => void;
 }
 
 function PatientDetailsCard({
@@ -1115,7 +1379,6 @@ function PatientDetailsCard({
   onEditPatient,
   onRequestDeleteSession,
 }: PatientDetailsCardProps) {
-
   useModalBackHandler(onClose);
   const finance = calculateFinance();
   const pastSessions = sessions;
@@ -1126,135 +1389,204 @@ function PatientDetailsCard({
     (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime(),
   );
 
+  // دالة مساعدة لعرض حالة الجلسة بشكل موحد
+  const getSessionStatusBadge = (status: Session["status"]) => {
+    switch (status) {
+      case "scheduled":
+        return {
+          dotColor: "bg-yellow-400",
+          textColor: "text-yellow-700",
+          bgColor: "bg-yellow-50",
+          label: "مجدولة",
+        };
+      case "completed":
+        return {
+          dotColor: "bg-green-500",
+          textColor: "text-green-700",
+          bgColor: "bg-green-50",
+          label: "مكتملة",
+        };
+      case "in-progress":
+        return {
+          dotColor: "bg-blue-500",
+          textColor: "text-blue-700",
+          bgColor: "bg-blue-50",
+          label: "قيد التنفيذ",
+        };
+      case "cancelled":
+        return {
+          dotColor: "bg-red-500",
+          textColor: "text-red-700",
+          bgColor: "bg-red-50",
+          label: "ملغية",
+        };
+      case "no-show":
+        return {
+          dotColor: "bg-gray-400",
+          textColor: "text-gray-700",
+          bgColor: "bg-gray-50",
+          label: "لم يحضر",
+        };
+    }
+  };
+
   return (
     <>
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm sm:shadow-md border border-gray-100 overflow-hidden">
         {/* Header - معلومات أساسية */}
-        <div className="p-6 border-b border-gray-100 relative">
+        <div className="relative p-4 pt-10 sm:p-6 sm:pt-12 border-b border-gray-100">
           {/* زر الإغلاق */}
           <button
             onClick={onClose}
-            className="absolute left-0 top-0 w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-gray-500 hover:bg-red-500 transition-colors"
+            className="absolute left-2 top-2 sm:left-3 sm:top-3 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
           >
             <X size={18} />
           </button>
 
-{/* الاسم ورقم الهاتف وعدد الجلسات */}
-<div className="flex flex-col gap-3 mt-2">
-  {/* معلومات المريض */}
-  <div className="flex items-start justify-between">
-    <div>
-      <div className="flex items-center gap-2 mb-1">
-        <h2 className="text-2xl font-bold text-gray-900">
-          {patient.fullName}
-        </h2>
-      </div>
+          {/* الاسم ورقم الهاتف وعدد الجلسات */}
+          <div className="flex flex-col gap-3 mt-1 sm:mt-2">
+            {/* معلومات المريض */}
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+                    {patient.fullName}
+                  </h2>
+                </div>
 
-      <div className="flex items-center gap-4 text-gray-600">
-        <span className="flex items-center gap-1.5">
-          <Phone size={16} className="text-gray-400" />
-          <span dir="ltr">{patient.phone}</span>
-        </span>
-        <span className="flex items-center gap-1.5">
-          <Calendar size={16} className="text-gray-400" />
-          <span>{sessions.length} جلسة</span>
-        </span>
-      </div>
-    </div>
+                <div className="flex items-center gap-3 sm:gap-4 text-gray-600">
+                  <span className="flex items-center gap-1 sm:gap-1.5">
+                    <Phone size={14} className="sm:w-4 sm:h-4 text-gray-400" />
+                    <span dir="ltr" className="text-xs sm:text-sm">
+                      {patient.phone}
+                    </span>
+                    {/* زر واتساب مدمج */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onWhatsApp(patient);
+                      }}
+                      className="inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-green-50 text-green-600 hover:bg-green-100 transition-colors active:scale-95 flex-shrink-0"
+                      title="واتساب"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="12"
+                        height="12"
+                        fill="currentColor"
+                        className="sm:w-[13px] sm:h-[13px]"
+                      >
+                        <path d="M19.077 4.928C17.191 3.041 14.683 2 12.006 2 6.498 2 2.017 6.477 2.012 11.984c-.001 1.76.46 3.478 1.335 4.992L2 21.991l5.172-1.356c1.46.796 3.104 1.215 4.828 1.216h.004c5.508 0 9.99-4.478 9.995-9.984.002-2.667-1.035-5.175-2.922-7.064zm-7.071 15.355h-.003c-1.507 0-2.985-.405-4.273-1.169l-.306-.181-3.069.805.819-2.991-.202-.32a8.268 8.268 0 0 1-1.267-4.439c.003-4.572 3.724-8.29 8.301-8.29 2.216.001 4.299.865 5.866 2.432a8.238 8.238 0 0 1 2.428 5.873c-.003 4.572-3.724 8.29-8.297 8.29zm4.551-6.208c-.25-.125-1.476-.728-1.705-.812-.229-.083-.396-.124-.562.125-.167.25-.647.812-.793.978-.146.167-.292.187-.542.062-.25-.124-1.054-.389-2.008-1.24-.742-.662-1.243-1.48-1.389-1.729-.146-.25-.015-.385.11-.509.112-.112.25-.292.375-.438.125-.146.167-.25.25-.417.083-.167.042-.313-.021-.438-.062-.125-.562-1.355-.771-1.855-.203-.486-.409-.42-.562-.427-.144-.007-.308-.009-.473-.009-.166 0-.437.063-.666.313-.229.25-.874.854-.874 2.083s.895 2.416 1.02 2.583c.125.166 1.761 2.688 4.267 3.77.596.257 1.062.411 1.425.526.599.19 1.144.163 1.575.099.48-.072 1.476-.604 1.684-1.187.208-.583.208-1.083.146-1.187-.062-.104-.229-.167-.479-.292z" />
+                      </svg>
+                    </button>
+                  </span>
+                  <span className="flex items-center gap-1 sm:gap-1.5">
+                    <Calendar
+                      size={14}
+                      className="sm:w-4 sm:h-4 text-gray-400"
+                    />
+                    <span className="text-xs sm:text-sm">
+                      {sessions.length} جلسة
+                    </span>
+                  </span>
+                </div>
+              </div>
 
-    {/* الأزرار للشاشات الكبيرة */}
-    <div className="hidden sm:flex items-center gap-2">
-      <button
-        onClick={onEditPatient}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-medium text-sm
-                 transition-all hover:bg-gray-200 active:scale-95"
-        title="تعديل بيانات المريض"
-      >
-        <Edit size={16} />
-        <span>تعديل</span>
-      </button>
+              {/* الأزرار للشاشات الكبيرة */}
+              <div className="hidden sm:flex items-center gap-2">
+                <button
+                  onClick={onEditPatient}
+                  className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-gray-100 text-gray-700 font-medium text-xs sm:text-sm transition-all hover:bg-gray-200 active:scale-95"
+                  title="تعديل بيانات المريض"
+                >
+                  <Edit size={14} className="sm:w-4 sm:h-4" />
+                  <span>تعديل</span>
+                </button>
 
-      <XRayViewerButton
-        patientId={patient.id}
-        patientName={patient.fullName}
-        primaryColor={primaryColor}
-        isMobile={false}
-      />
+                <XRayViewerButton
+                  patientId={patient.id}
+                  patientName={patient.fullName}
+                  primaryColor={primaryColor}
+                  isMobile={false}
+                />
 
-      <button
-        onClick={onAddAppointment}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-medium text-sm
-                 transition-all hover:shadow-md active:scale-95"
-        style={{ background: primaryColor }}
-      >
-        <Plus size={18} />
-        <span>موعد جديد</span>
-      </button>
-    </div>
-  </div>
+                <button
+                  onClick={onAddAppointment}
+                  className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full text-white font-medium text-xs sm:text-sm transition-all hover:shadow-md active:scale-95"
+                  style={{ background: primaryColor }}
+                >
+                  <Plus size={14} className="sm:w-[18px] sm:h-[18px]" />
+                  <span>موعد جديد</span>
+                </button>
+              </div>
+            </div>
 
-  {/* سطر الأزرار للهاتف */}
-  <div className="flex sm:hidden items-center gap-2 w-full">
-    <button
-      onClick={onEditPatient}
-      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-medium text-sm
-               transition-all hover:bg-gray-200 active:scale-95 flex-1 justify-center"
-    >
-      <Edit size={18} />
-      <span>تعديل</span>
-    </button>
+            {/* سطر الأزرار للهاتف */}
+            <div className="flex sm:hidden items-center gap-2 w-full">
+              <button
+                onClick={onEditPatient}
+                className="flex items-center gap-1.5 px-3 py-2.5 rounded-full bg-gray-100 text-gray-700 font-medium text-xs transition-all hover:bg-gray-200 active:scale-95 flex-1 justify-center"
+              >
+                <Edit size={14} />
+                <span>تعديل</span>
+              </button>
 
-    <div className="flex-1">
-      <XRayViewerButton
-        patientId={patient.id}
-        patientName={patient.fullName}
-        primaryColor={primaryColor}
-        isMobile={true}
-      />
-    </div>
+              <div className="flex-1">
+                <XRayViewerButton
+                  patientId={patient.id}
+                  patientName={patient.fullName}
+                  primaryColor={primaryColor}
+                  isMobile={true}
+                />
+              </div>
 
-  <button
-    onClick={(e) => {
-      e.stopPropagation(); // إضافة هذا
-      onAddAppointment(); // الذي يقوم بفتح المودال
-    }}
-    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-medium text-sm
-            transition-all hover:shadow-md active:scale-95 flex-1 justify-center"
-    style={{ background: primaryColor }}
-  >
-    <Plus size={18} />
-    <span>موعد جديد</span>
-  </button>
-  </div>
-</div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddAppointment();
+                }}
+                className="flex items-center gap-1.5 px-3 py-2.5 rounded-full text-white font-medium text-xs transition-all hover:shadow-md active:scale-95 flex-1 justify-center"
+                style={{ background: primaryColor }}
+              >
+                <Plus size={14} />
+                <span>موعد جديد</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
           {/* العمر والجنس وسنة الميلاد */}
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {/* العمر والجنس وسنة الميلاد */}
-            <div className="flex items-center gap-6">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-6">
               {patient.age && (
                 <>
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500">العمر:</span>
-                    <span className="text-xs font-medium text-gray-900">
+                    <span className="text-[11px] sm:text-xs text-gray-500">
+                      العمر:
+                    </span>
+                    <span className="text-[11px] sm:text-xs font-medium text-gray-900">
                       {patient.age} سنة
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500">سنة الميلاد:</span>
-                    <span className="text-xs font-medium text-gray-900">
+                    <span className="text-[11px] sm:text-xs text-gray-500">
+                      سنة الميلاد:
+                    </span>
+                    <span className="text-[11px] sm:text-xs font-medium text-gray-900">
                       {calculateBirthYear(patient.age)} تقريباً
                     </span>
                   </div>
                 </>
               )}
               <div className="flex items-center gap-1">
-                <span className="text-xs text-gray-500">الجنس:</span>
+                <span className="text-[11px] sm:text-xs text-gray-500">
+                  الجنس:
+                </span>
                 <span
-                  className={`text-xs font-medium px-1 py-1 rounded-full ${
+                  className={`text-[11px] sm:text-xs font-medium px-1.5 py-0.5 rounded-full ${
                     patient.gender === "male"
                       ? "bg-blue-50 text-blue-700"
                       : "bg-pink-50 text-pink-700"
@@ -1265,142 +1597,218 @@ function PatientDetailsCard({
               </div>
             </div>
 
-            <div className="space-y-3">
-              {/* معلومات إضافية */}
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2 border-t border-gray-100">
-                {/* الإجراء المخطط */}
-                <div className="flex items-center gap-2">
-                  <Stethoscope size={14} className="text-gray-400" />
-                  <span className="text-xs text-gray-500">الإجراء المخطط:</span>
-                  <span className="text-sm font-medium text-gray-900">
-                    {patient.plannedProcedure || "غير محدد"}
-                  </span>
-                </div>
+            {/* معلومات إضافية */}
+            <div className="flex flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-2 pt-2 sm:pt-3 border-t border-gray-100">
+              {/* الإجراء المخطط */}
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Stethoscope
+                  size={13}
+                  className="sm:w-[14px] sm:h-[14px] text-gray-400"
+                />
+                <span className="text-[11px] sm:text-xs text-gray-500">
+                  الإجراء المخطط:
+                </span>
+                <span className="text-xs sm:text-sm font-medium text-gray-900">
+                  {patient.plannedProcedure || "غير محدد"}
+                </span>
+              </div>
 
-                {/* السعر الإجمالي */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500">السعر الإجمالي:</span>
-                  <span className="text-sm font-semibold text-gray-900">
-                    {patient.totalPrice
-                      ? `${formatCurrency(parseFloat(patient.totalPrice))}`
-                      : formatCurrency(finance.totalCost)}
-                  </span>
-                </div>
-
-                {/* المبلغ المتبقي */}
-                {/* <div className="flex items-center gap-2">
-      <span className="text-xs text-gray-500">المتبقي:</span>
-      <span
-        className={`text-sm font-bold px-2 py-0.5 rounded-full ${
-          finance.totalDue > 0
-            ? "text-red-600 bg-red-50"
-            : "text-green-600 bg-green-50"
-        }`}
-      >
-        {finance.totalDue > 0
-          ? formatCurrency(finance.totalDue)
-          : "مكتمل ✓"}
-      </span>
-    </div> */}
+              {/* السعر الإجمالي */}
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className="text-[11px] sm:text-xs text-gray-500">
+                  السعر الإجمالي:
+                </span>
+                <span className="text-xs sm:text-sm font-semibold text-gray-900">
+                  {patient.totalPrice
+                    ? `${formatCurrency(parseFloat(patient.totalPrice))}`
+                    : formatCurrency(finance.totalCost)}
+                </span>
               </div>
             </div>
           </div>
 
           {/* ملاحظات إن وجدت */}
           {patient.notes && (
-            <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-              <p className="text-sm text-gray-600">{patient.notes}</p>
+            <div className="p-3 sm:p-4 bg-gray-50 rounded-xl sm:rounded-2xl border border-gray-100">
+              <p className="text-xs sm:text-sm text-gray-600">
+                {patient.notes}
+              </p>
             </div>
           )}
 
-          {/* جدول المواعيد */}
+          {/* المواعيد */}
           {sortedSessions.length > 0 ? (
             <div>
-              <h3 className="font-semibold text-gray-900 mb-3 text-base">
+              <h3 className="font-semibold text-gray-900 mb-3 text-sm sm:text-base">
                 المواعيد
               </h3>
 
-              {/* حاوية قابلة للتمرير الأفقي عند الحاجة */}
-              <div className="border border-gray-200 rounded-xl overflow-x-auto">
-                {/* جدول بعرض أدنى يضمن ظهور جميع الأعمدة على الشاشات الكبيرة، مع إمكانية التمرير على الصغيرة */}
+              {/* ============================================================ */}
+              {/* عرض الجدول للشاشات الكبيرة فقط */}
+              {/* ============================================================ */}
+              <div className="hidden lg:block border border-gray-200 rounded-xl overflow-x-auto">
                 <div className="min-w-[900px] lg:min-w-full">
                   {/* رأس الجدول */}
                   <div className="grid grid-cols-[100px_1.5fr_1fr_100px_100px_100px_100px] bg-gray-50 px-4 py-3 border-b border-gray-200">
-                    <div className="text-sm font-medium text-gray-500 text-right">
+                    <div className="text-xs sm:text-sm font-medium text-gray-500 text-right">
                       الحالة
                     </div>
-                    <div className="text-sm font-medium text-gray-500 text-right">
+                    <div className="text-xs sm:text-sm font-medium text-gray-500 text-right">
                       الإجراء
                     </div>
-                    <div className="text-sm font-medium text-gray-500 text-right">
+                    <div className="text-xs sm:text-sm font-medium text-gray-500 text-right">
                       التاريخ
                     </div>
-                    <div className="text-sm font-medium text-gray-500 text-right">
+                    <div className="text-xs sm:text-sm font-medium text-gray-500 text-right">
                       الوقت
                     </div>
-                    {/* <div className="text-sm font-medium text-gray-500 text-right">المدفوع</div> */}
-                    <div className="text-sm font-medium text-gray-500 text-right">
+                    <div className="text-xs sm:text-sm font-medium text-gray-500 text-right">
                       الإجمالي
                     </div>
-                    <div className="text-sm font-medium text-gray-500 text-right">
+                    <div className="text-xs sm:text-sm font-medium text-gray-500 text-right">
                       حالة الدفع
                     </div>
-                    <div className="text-sm font-medium text-gray-500 text-right">
+                    <div className="text-xs sm:text-sm font-medium text-gray-500 text-right">
                       إجراءات
                     </div>
                   </div>
 
                   {/* صفوف الجدول */}
                   <div className="divide-y divide-gray-100">
-                    {sortedSessions.map((session) => (
-                      <div
-                        key={session.id}
-                        className="grid grid-cols-[100px_1.5fr_1fr_100px_100px_100px_100px] px-4 py-2 items-center hover:bg-gray-50/50 cursor-pointer transition-colors"
-                        onClick={() => setSelectedSession(session)}
-                      >
-                        {/* حالة الجلسة */}
-                        <div className="flex items-center gap-2">
-                          {session.status === "scheduled" ? (
-                            <>
-                              <div className="w-2 h-2 rounded-full bg-yellow-400 flex-shrink-0" />
-                              <span className="text-sm text-yellow-700 truncate">
-                                مجدول
-                              </span>
-                            </>
-                          ) : session.status === "completed" ? (
-                            <>
-                              <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
-                              <span className="text-sm text-green-700 truncate">
-                                مكتملة
-                              </span>
-                            </>
-                          ) : session.status === "in-progress" ? (
-                            <>
-                              <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
-                              <span className="text-sm text-blue-700 truncate">
-                                قيد التنفيذ
-                              </span>
-                            </>
-                          ) : session.status === "cancelled" ? (
-                            <>
-                              <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
-                              <span className="text-sm text-red-700 truncate">
-                                ملغية
-                              </span>
-                            </>
-                          ) : (
-                            <>
-                              <div className="w-2 h-2 rounded-full bg-gray-400 flex-shrink-0" />
-                              <span className="text-sm text-gray-700 truncate">
-                                لم يحضر
-                              </span>
-                            </>
-                          )}
-                        </div>
-
-                        {/* الإجراء مع truncate وtitle لإظهار النص الكامل عند التحويم */}
+                    {sortedSessions.map((session) => {
+                      const statusBadge = getSessionStatusBadge(session.status);
+                      return (
                         <div
-                          className="text-sm text-gray-900 font-medium truncate"
+                          key={session.id}
+                          className="grid grid-cols-[100px_1.5fr_1fr_100px_100px_100px_100px] px-4 py-2.5 items-center hover:bg-gray-50/50 cursor-pointer transition-colors"
+                          onClick={() => setSelectedSession(session)}
+                        >
+                          {/* حالة الجلسة */}
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={`w-2 h-2 rounded-full ${statusBadge.dotColor} flex-shrink-0`}
+                            />
+                            <span
+                              className={`text-xs sm:text-sm ${statusBadge.textColor} truncate`}
+                            >
+                              {statusBadge.label}
+                            </span>
+                          </div>
+
+                          {/* الإجراء */}
+                          <div
+                            className="text-xs sm:text-sm text-gray-900 font-medium truncate"
+                            title={
+                              session.performedProcedure ||
+                              session.plannedProcedure ||
+                              "جلسة"
+                            }
+                          >
+                            {session.performedProcedure ||
+                              session.plannedProcedure ||
+                              "جلسة"}
+                          </div>
+
+                          {/* التاريخ */}
+                          <div className="text-xs sm:text-sm text-gray-600 truncate">
+                            {formatDate(session.startTime)}
+                          </div>
+
+                          {/* الوقت */}
+                          <div className="text-xs sm:text-sm text-gray-600 truncate">
+                            {formatTime(session.startTime)}
+                          </div>
+
+                          {/* الإجمالي */}
+                          <div className="text-xs sm:text-sm font-semibold text-gray-900 truncate">
+                            {formatCurrency(session.sessionCost)}
+                          </div>
+
+                          {/* حالة الدفع */}
+                          <div className="text-xs sm:text-sm text-gray-600 truncate">
+                            {session.isPaid ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-50 text-green-700 text-[11px] sm:text-xs font-medium">
+                                <CheckCircle size={11} />
+                                مدفوع
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-50 text-red-700 text-[11px] sm:text-xs font-medium">
+                                <AlertCircle size={11} />
+                                غير مدفوع
+                              </span>
+                            )}
+                          </div>
+
+                          {/* أزرار الإجراءات */}
+                          <div className="flex items-center justify-end gap-1.5 sm:gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEditSession(session);
+                              }}
+                              className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors flex-shrink-0"
+                              title="تعديل الجلسة"
+                            >
+                              <Edit
+                                size={14}
+                                className="sm:w-4 sm:h-4 text-gray-600"
+                              />
+                            </button>
+
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onRequestDeleteSession(session.id);
+                              }}
+                              className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-red-50 hover:bg-red-100 transition-colors flex-shrink-0"
+                              title="حذف الجلسة"
+                            >
+                              <Trash2
+                                size={14}
+                                className="sm:w-4 sm:h-4 text-red-600"
+                              />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* ============================================================ */}
+              {/* عرض البطاقات للشاشات الصغيرة (الجوال والتابلت) */}
+              {/* ============================================================ */}
+              <div className="flex flex-col gap-2 sm:gap-3 lg:hidden">
+                {sortedSessions.map((session) => {
+                  const statusBadge = getSessionStatusBadge(session.status);
+                  return (
+                    <div
+                      key={session.id}
+                      className="bg-gray-50 rounded-xl sm:rounded-2xl p-3 sm:p-4 cursor-pointer hover:bg-gray-100 transition-colors border border-gray-100"
+                      onClick={() => setSelectedSession(session)}
+                    >
+                      {/* الصف الأول: حالة الجلسة + التاريخ */}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-1.5">
+                          <div
+                            className={`w-2 h-2 rounded-full ${statusBadge.dotColor} flex-shrink-0`}
+                          />
+                          <span
+                            className={`text-[11px] sm:text-xs font-medium px-2 py-0.5 rounded-full ${statusBadge.bgColor} ${statusBadge.textColor}`}
+                          >
+                            {statusBadge.label}
+                          </span>
+                        </div>
+                        <span className="text-[11px] sm:text-xs text-gray-500">
+                          {formatDate(session.startTime)}
+                        </span>
+                      </div>
+
+                      {/* الصف الثاني: الإجراء + الوقت */}
+                      <div className="flex items-center justify-between mb-2">
+                        <span
+                          className="text-xs sm:text-sm font-medium text-gray-900 truncate max-w-[60%]"
                           title={
                             session.performedProcedure ||
                             session.plannedProcedure ||
@@ -1410,44 +1818,42 @@ function PatientDetailsCard({
                           {session.performedProcedure ||
                             session.plannedProcedure ||
                             "جلسة"}
-                        </div>
-
-                        <div className="text-sm text-gray-600 truncate">
-                          {formatDate(session.startTime)}
-                        </div>
-
-                        <div className="text-sm text-gray-600 truncate">
+                        </span>
+                        <span className="text-[11px] sm:text-xs text-gray-500">
                           {formatTime(session.startTime)}
-                        </div>
+                        </span>
+                      </div>
 
-                        <div className="text-sm font-semibold text-gray-900 truncate">
-                          {formatCurrency(session.sessionCost)}
-                        </div>
-
-                        <div className="text-sm text-gray-600 truncate">
+                      {/* الصف الثالث: التكلفة + حالة الدفع + الأزرار */}
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs sm:text-sm font-semibold text-gray-900">
+                            {formatCurrency(session.sessionCost)}
+                          </span>
                           {session.isPaid ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-50 text-green-700 text-xs font-medium">
-                              <CheckCircle size={12} />
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-green-50 text-green-700 text-[10px] sm:text-[11px] font-medium">
+                              <CheckCircle size={10} />
                               مدفوع
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-50 text-red-700 text-xs font-medium">
-                              <AlertCircle size={12} />
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-50 text-red-700 text-[10px] sm:text-[11px] font-medium">
+                              <AlertCircle size={10} />
                               غير مدفوع
                             </span>
                           )}
                         </div>
-                        {/* عمود الإجراءات */}
-                        <div className="flex items-center justify-end gap-2">
+
+                        {/* أزرار الإجراءات */}
+                        <div className="flex items-center gap-1">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               onEditSession(session);
                             }}
-                            className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors flex-shrink-0"
+                            className="p-1.5 rounded-lg bg-white hover:bg-gray-200 transition-colors flex-shrink-0 shadow-sm"
                             title="تعديل الجلسة"
                           >
-                            <Edit size={16} className="text-gray-600" />
+                            <Edit size={13} className="text-gray-600" />
                           </button>
 
                           <button
@@ -1455,24 +1861,28 @@ function PatientDetailsCard({
                               e.stopPropagation();
                               onRequestDeleteSession(session.id);
                             }}
-                            className="p-2 rounded-lg bg-red-50 hover:bg-red-100 transition-colors flex-shrink-0"
+                            className="p-1.5 rounded-lg bg-white hover:bg-red-50 transition-colors flex-shrink-0 shadow-sm"
                             title="حذف الجلسة"
                           >
-                            <Trash2 size={16} className="text-red-600" />
+                            <Trash2 size={13} className="text-red-600" />
                           </button>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ) : (
-            <div className="text-center py-8">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gray-50 flex items-center justify-center">
-                <History size={20} className="text-gray-300" />
+            /* حالة عدم وجود جلسات */
+            <div className="text-center py-8 sm:py-10">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-3 rounded-full bg-gray-50 flex items-center justify-center">
+                <History
+                  size={20}
+                  className="sm:w-[22px] sm:h-[22px] text-gray-300"
+                />
               </div>
-              <p className="text-sm text-gray-500">لا توجد جلسات</p>
+              <p className="text-xs sm:text-sm text-gray-500">لا توجد جلسات</p>
             </div>
           )}
         </div>
@@ -3151,7 +3561,7 @@ function EditPatientModal({
   isLoading: externalLoading = false,
   addToast,
 }: EditPatientModalProps) {
-    useModalBackHandler( onClose);
+  useModalBackHandler(onClose);
   const [internalLoading, setInternalLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 

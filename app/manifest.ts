@@ -9,12 +9,16 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     const secondary_color = cookieStore.get('secondary_color')?.value || "#00305f";
   return {
     name: 'Live-dent',
-    short_name: 'Live-dent',
+    short_name: 'LiveDent',
     description: "نظام رقمي متكامل يدير جميع جوانب عيادة الأسنان بكل احترافية وسهولة",
     start_url: '/',
     display: 'standalone',
     background_color: secondary_color,
     theme_color: primary_color,
+     dir: 'ltr',
+        lang: 'ar',
+        orientation: 'portrait',
+        prefer_related_applications: false,
     icons: [
       {
         src: '/icon-192x192.png',

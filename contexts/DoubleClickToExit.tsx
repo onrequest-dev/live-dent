@@ -67,7 +67,7 @@ const DoubleClickToExit: React.FC<DoubleClickToExitProps> = ({
       if (backPressCount.current === 1) {
         showToast(customMessage);
         timeoutId.current = setTimeout(resetCounter, timeout);
-      } else if (backPressCount.current >= 2) {
+      } else if (backPressCount.current >= 3) {
         if (timeoutId.current) clearTimeout(timeoutId.current);
         exitApp();
         resetCounter();
