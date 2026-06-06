@@ -12,6 +12,9 @@ import { MessagesTab } from '../../../components/dashboard/tabs/MessagesTab';
 import { SettingsTab } from '../../../components/dashboard/tabs/SettingsTab';
 import { getClinic, getClinicData } from '@/client/helpers/clinic';
 import { Clinic, Patient, PatientCase, Session } from '@/types';
+import ToothLoader from '../../../components/loding';
+import NoInternetIcon from '../../../components/NoInternetConnection';
+
 
 export default function DashboardPage() {
   const searchParams = useSearchParams();
@@ -79,8 +82,7 @@ export default function DashboardPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-blue-500"></div>
-          <p className="mt-4 text-gray-600">جاري تحميل البيانات...</p>
+          <ToothLoader />
         </div>
       </div>
     );
@@ -92,38 +94,7 @@ return (
   <div className="flex items-center justify-center min-h-[400px] p-6">
     <div className="text-center space-y-4">
       {/* SVG Illustration */}
-      <div className="flex justify-center">
-        <svg
-          className="w-68 h-18"
-          viewBox="0 0 100 100"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          
-          {/* Signal waves with slash */}
-          <g stroke="#4B5563" strokeWidth="1.8" fill="none">
-            <path d="M35,30 Q50,15 65,30" opacity="0.4" />
-            <path d="M40,38 Q50,28 60,38" opacity="0.6" />
-            <path d="M45,46 Q50,41 55,46" opacity="0.8" />
-          </g>
-        </svg>
-      </div>
-
-      {/* Text Content */}
-      <div className="space-y-4">
-        {/* <p className="text-gray-700 text-base font-medium">{error}</p> */}
-        <p className="text-gray-600 text-base">تحقق من الاتصال بالإنترنت ثم أعد المحاولة</p>
-        
-        {/* Retry Button */}
-        <div className="pt-4">
-          <button
-            onClick={() => window.location.reload()}
-            className="px-6 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors duration-200"
-          >
-            إعادة المحاولة
-          </button>
-        </div>
-      </div>
+      <NoInternetIcon />
     </div>
   </div>
 );

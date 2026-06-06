@@ -26,7 +26,7 @@ import {
 import { Clinic } from '@/types';
 import { updateProfile } from '@/client/helpers/clinic';
 import { handleUploadImage } from '@/client/helpers/upload_image';
-
+import ToothLoader from '../../loding';
 // ============================================================
 // الواجهات الداخلية للمكون فقط (للتعديل)
 // ============================================================
@@ -325,9 +325,7 @@ export function DoctorCVTab({ clinicData, onProfileUpdate }: DoctorCVTabProps) {
     return (
       <div className="min-h-screen flex items-center justify-center" dir="rtl">
         <div className="text-center">
-          <div className="w-16 h-16 rounded-full border-4 border-t-transparent animate-spin mx-auto mb-4"
-               style={{ borderColor: '#007bff', borderTopColor: 'transparent' }} />
-          <p className="text-gray-900 font-medium">جاري تحميل البيانات...</p>
+          <ToothLoader />
         </div>
       </div>
     );

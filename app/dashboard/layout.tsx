@@ -8,7 +8,7 @@ import { Suspense, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { PWAInstallPrompt } from "@/components/dashboard/PWAInstallPrompt";
 import DoubleClickToExit from "@/contexts/DoubleClickToExit";
-
+import ToothLoader from '../../components/loding';
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const { clinicData, isLoading, secondaryColor, refetch } = useClinic();
   const [isRefetching, setIsRefetching] = useState(false);
@@ -51,11 +51,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div
-            className="w-16 h-16 rounded-full border-4 border-t-transparent animate-spin mx-auto mb-4"
-            style={{ borderColor: "#007bff", borderTopColor: "transparent" }}
-          />
-          <p className="text-gray-600">جاري التحميل...</p>
+          <ToothLoader />
         </div>
       </div>
     );
@@ -66,13 +62,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div
-            className="w-16 h-16 rounded-full border-4 border-t-transparent animate-spin mx-auto mb-4"
-            style={{ borderColor: "#007bff", borderTopColor: "transparent" }}
-          />
-          <p className="text-gray-600">
-            {isRefetching ? "جاري تحديث البيانات..." : "جاري تحميل البيانات..."}
-          </p>
+          <ToothLoader />
         </div>
       </div>
     );

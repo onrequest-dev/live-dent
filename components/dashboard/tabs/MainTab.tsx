@@ -46,6 +46,7 @@ import {
 import { ToastContainer, useToast } from "./Toast";
 import { XRayViewerButton } from "../XRayViewer";
 import { useModalBackHandler } from "@/hooks/useModalBackHandler";
+import ToothLoader from '../../loding';
 // ============================================================
 // خدمة API محاكية (لتحضير الربط مع الباك إند)
 // ============================================================
@@ -565,11 +566,7 @@ const formatDate = (date: Date | string) => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div
-            className="w-16 h-16 rounded-full border-4 border-t-transparent animate-spin mx-auto mb-4"
-            style={{ borderColor: "#007bff", borderTopColor: "transparent" }}
-          />
-          <p className="text-gray-600">جاري تحميل البيانات...</p>
+          <ToothLoader />
         </div>
       </div>
     );
