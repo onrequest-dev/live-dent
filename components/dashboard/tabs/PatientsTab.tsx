@@ -29,6 +29,7 @@ import {
   Stethoscope,
   LayoutGrid,
   CalendarDays,
+  Filter,
 } from "lucide-react";
 import * as XLSX from "xlsx-js-style";
 import { Clinic, Patient, PatientCase, Session } from "@/types";
@@ -277,6 +278,43 @@ interface PatientsHeaderProps {
   onViewModeChange: (mode: ViewMode) => void;
 }
 
+// components/dashboard/tabs/PatientsTab.tsx (تحديث PatientsHeader)
+
+interface PatientsHeaderProps {
+  clinicName: string;
+  clinicColor: string;
+  periodTitle: string;
+  onRefresh: () => void;
+  onExport: () => void;
+  viewMode: ViewMode;
+  viewType: ViewType;
+  onViewModeChange: (mode: ViewMode) => void;
+}
+
+// ============================================================================
+// Component: PatientsHeader - مبسط ونظيف
+// ============================================================================
+
+interface PatientsHeaderProps {
+  clinicName: string;
+  clinicColor: string;
+  periodTitle: string;
+  onRefresh: () => void;
+  onExport: () => void;
+  viewMode: ViewMode;
+  viewType: ViewType;
+  onViewModeChange: (mode: ViewMode) => void;
+  // 🆕 خصائص إحصائية مبسطة
+  totalSessions: number;
+  totalCost: number;
+  paidCost: number;
+  unpaidCost: number;
+  paymentFilter: "all" | "paid" | "unpaid";
+  onPaymentFilterChange: (filter: "all" | "paid" | "unpaid") => void;
+  handleViewTypeChange: (type: ViewType) => void;
+  isMobile: boolean;
+}
+
 function PatientsHeader({
   clinicName,
   clinicColor,
@@ -286,197 +324,293 @@ function PatientsHeader({
   viewMode,
   viewType,
   onViewModeChange,
+  totalSessions,
+  totalCost,
+  paidCost,
+  unpaidCost,
+  paymentFilter,
+  onPaymentFilterChange,
+  handleViewTypeChange,
+  isMobile,
 }: PatientsHeaderProps) {
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-800">
-          جدول المرضى
-          <span className="text-sm font-normal text-gray-500 mr-2">
-            - {clinicName}
-          </span>
-        </h1>
-        <p className="text-gray-500 text-sm mt-0.5">{periodTitle}</p>
-      </div>
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <button
+    <div className="space-y-3 sm:space-y-4">
+      {/* ============================================================ */}
+      {/* الصف الأول: العنوان الرئيسي + أزرار التحكم                      */}
+      {/* ============================================================ */}
+      <div className="flex items-start justify-between gap-3">
+        {/* العنوان والفترة */}
+        <div className="min-w-0 flex-1">
+          <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 truncate">
+            جدول المرضى
+            <span className="text-sm font-normal text-gray-500 mr-2 hidden sm:inline">
+              - {clinicName}
+            </span>
+          </h1>
+          <p className="text-gray-500 text-xs sm:text-sm mt-0.5 truncate">
+            {periodTitle}
+          </p>
+        </div>
+
+        {/* أزرار التحكم (سطح المكتب) */}
+        <div className="hidden sm:flex items-center gap-3 flex-shrink-0">
+          <ViewTypeSwitcher
+            clinicColor={clinicColor}
+            viewType={viewType}
+            onViewTypeChange={handleViewTypeChange}
+          />
+          {/* زر التحديث */}
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={onRefresh}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 rounded-lg text-white transition-all hover:opacity-90 shadow-sm flex-1 sm:flex-none"
-            style={{ backgroundColor: clinicColor }}
+            className="flex items-center gap-2 px-5 py-3 rounded-full text-white text-sm font-semibold transition-all duration-200 shadow-sm"
+            style={{
+              backgroundColor: clinicColor,
+              boxShadow: `0 2px 8px ${clinicColor}30`,
+            }}
           >
             <RefreshCcw size={16} />
-            <span className="font-medium text-sm">تحديث البيانات</span>
-          </button>
-          <button
+            <span>تحديث</span>
+          </motion.button>
+
+          {/* زر التصدير */}
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={onExport}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 rounded-lg text-white transition-all hover:opacity-90 shadow-sm flex-1 sm:flex-none"
-            style={{ backgroundColor: clinicColor }}
+            className="flex items-center gap-2 px-5 py-3 rounded-full text-white text-sm font-semibold transition-all duration-200 shadow-sm"
+            style={{
+              backgroundColor: clinicColor,
+              boxShadow: `0 2px 8px ${clinicColor}30`,
+            }}
           >
             <Download size={16} />
-            <span className="font-medium text-sm">تحميل Excel</span>
-          </button>
+            <span>Excel</span>
+          </motion.button>
         </div>
-        {viewType === "table" && (
-          <div className="flex items-center bg-gray-100 rounded-lg p-1 w-full sm:w-auto overflow-x-auto">
-            <button
-              onClick={() => onViewModeChange("all")}
-              className={`flex-1 sm:flex-none px-3 py-2.5 sm:py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${
-                viewMode === "all"
-                  ? "bg-white text-gray-800 shadow-sm"
-                  : "text-gray-600 hover:text-gray-800"
-              }`}
-            >
-              <List size={15} className="inline ml-1.5" />
-              عرض الكل
-            </button>
-            <button
-              onClick={() => onViewModeChange("month")}
-              className={`flex-1 sm:flex-none px-3 py-2.5 sm:py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${
-                viewMode === "month"
-                  ? "bg-white text-gray-800 shadow-sm"
-                  : "text-gray-600 hover:text-gray-800"
-              }`}
-            >
-              <Calendar size={15} className="inline ml-1.5" />
-              الشهر الحالي
-            </button>
-            <button
-              onClick={() => onViewModeChange("day")}
-              className={`flex-1 sm:flex-none px-3 py-2.5 sm:py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${
-                viewMode === "day"
-                  ? "bg-white text-gray-800 shadow-sm"
-                  : "text-gray-600 hover:text-gray-800"
-              }`}
-            >
-              <Calendar size={15} className="inline ml-1.5" />
-              يوم محدد
-            </button>
-          </div>
-        )}
       </div>
+
+      {/* ============================================================ */}
+      {/* الصف الثاني: شريط إحصائيات مبسط (سطح المكتب فقط) + أزرار الجوال */}
+      {/* ============================================================ */}
+      <div className="flex items-center justify-between gap-3">
+        {/* الإحصائيات المبسطة - تظهر في سطح المكتب فقط */}
+        <div className="hidden sm:flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-gray-600 overflow-x-auto scrollbar-hide">
+          {/* إجمالي الجلسات */}
+          <div className="flex items-center gap-1.5 whitespace-nowrap">
+            <div
+              className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+              style={{ backgroundColor: clinicColor }}
+            />
+            <span className="text-gray-900">جلسات:</span>
+            <span className="font-bold text-gray-800">{totalSessions}</span>
+          </div>
+
+          {/* فاصل */}
+          <span className="text-gray-300 select-none">·</span>
+
+          {/* إجمالي التكلفة */}
+          <div className="flex items-center gap-1.5 whitespace-nowrap">
+            <Receipt size={12} className="text-gray-400 flex-shrink-0" />
+            <span className="font-bold text-gray-900">
+              {totalCost.toLocaleString()}
+            </span>
+            <span className="text-gray-800 text-xs">$</span>
+          </div>
+
+          {/* فاصل */}
+          <span className="text-gray-300 select-none">·</span>
+
+          {/* مدفوع - زر فلتر مصغر */}
+          <button
+            onClick={() =>
+              onPaymentFilterChange(paymentFilter === "paid" ? "all" : "paid")
+            }
+            className={`flex items-center gap-1 whitespace-nowrap transition-all duration-200 px-1.5 py-0.5 rounded ${
+              paymentFilter === "paid"
+                ? "bg-teal-50 text-teal-700 font-semibold"
+                : "text-gray-500 hover:text-teal-600"
+            }`}
+          >
+            <CheckCircle size={11} className="flex-shrink-0" />
+            <span className="font-medium">{paidCost.toLocaleString()}</span>
+            <span className="text-gray-400 text-xs">$</span>
+          </button>
+
+          {/* فاصل */}
+          <span className="text-gray-300 select-none">·</span>
+
+          {/* غير مدفوع - زر فلتر مصغر */}
+          <button
+            onClick={() =>
+              onPaymentFilterChange(
+                paymentFilter === "unpaid" ? "all" : "unpaid",
+              )
+            }
+            className={`flex items-center gap-1 whitespace-nowrap transition-all duration-200 px-1.5 py-0.5 rounded ${
+              paymentFilter === "unpaid"
+                ? "bg-amber-50 text-amber-700 font-semibold"
+                : "text-gray-500 hover:text-amber-600"
+            }`}
+          >
+            <XCircle size={11} className="flex-shrink-0" />
+            <span className="font-medium">{unpaidCost.toLocaleString()}</span>
+            <span className="text-gray-400 text-xs">$</span>
+          </button>
+
+          {/* مؤشر الفلتر النشط */}
+          {paymentFilter !== "all" && (
+            <button
+              onClick={() => onPaymentFilterChange("all")}
+              className="text-xs text-gray-500 hover:text-gray-700 whitespace-nowrap flex items-center gap-1"
+            >
+              <X size={10} />
+              <span>إلغاء</span>
+            </button>
+          )}
+        </div>
+
+        {/* ملخص مبسط للجوال (نص صغير فقط) */}
+        <div className="flex sm:hidden items-center gap-2 text-xs text-gray-600">
+          <span className="font-bold text-gray-800">{totalSessions}</span>
+          <span className="text-gray-900">جلسة</span>
+          <span className="text-gray-300">·</span>
+          <span className="font-bold text-gray-800">
+            {totalCost.toLocaleString()}
+          </span>
+          <span className="text-gray-400 text-xs">$</span>
+        </div>
+
+        {/* أزرار التحكم (الجوال فقط) */}
+        <div className="flex sm:hidden items-center gap-2 flex-shrink-0">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={onRefresh}
+            className="flex items-center gap-2 px-4 py-2 rounded-full text-white text-sm font-semibold transition-all duration-200 shadow-sm"
+            style={{
+              backgroundColor: clinicColor,
+              boxShadow: `0 2px 8px ${clinicColor}30`,
+            }}
+          >
+            <RefreshCcw size={16} />
+            <span>تحديث</span>
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={onExport}
+            className="flex items-center gap-2 px-4 py-2 rounded-full text-white text-sm font-semibold transition-all duration-200 shadow-sm"
+            style={{
+              backgroundColor: clinicColor,
+              boxShadow: `0 2px 8px ${clinicColor}30`,
+            }}
+          >
+            <Download size={16} />
+            <span>Excel</span>
+          </motion.button>
+        </div>
+      </div>
+
+      {/* ============================================================ */}
+      {/* خط فاصل رفيع */}
+      {/* ============================================================ */}
+      <div className="border-b border-gray-100" />
     </div>
   );
 }
-
 // ============================================================================
-// Component: PatientsStatsCards
+// Component: PatientsStatsCards - مع دعم وضع التقويم
 // ============================================================================
 
 interface PatientsStatsCardsProps {
   clinicColor: string;
   sessions: Session[];
+  paymentFilter: "all" | "paid" | "unpaid";
+  onPaymentFilterChange: (filter: "all" | "paid" | "unpaid") => void;
+  viewType: ViewType; // 🆕 لمعرفة ما إذا كنا في وضع التقويم
 }
 
-function PatientsStatsCards({
-  clinicColor,
-  sessions,
-}: PatientsStatsCardsProps) {
-  const totalSessions = sessions.length;
-  const totalCost = sessions.reduce((sum, s) => sum + (s.sessionCost || 0), 0);
-  const paidCost = sessions
-    .filter((s) => s.isPaid)
-    .reduce((sum, s) => sum + (s.sessionCost || 0), 0);
-  const unpaidCost = sessions
-    .filter((s) => !s.isPaid)
-    .reduce((sum, s) => sum + (s.sessionCost || 0), 0);
-
-  return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-      <StatCard
-        clinicColor={clinicColor}
-        icon={List}
-        label="إجمالي الجلسات"
-        value={totalSessions.toLocaleString()}
-        iconBgClass=""
-      />
-      <StatCard
-        clinicColor={clinicColor}
-        icon={Receipt}
-        label="إجمالي التكلفة"
-        value={`${totalCost.toLocaleString()} $`}
-        iconBgClass="bg-opacity-15"
-        useClinicBg
-      />
-      <StatCard
-        clinicColor={clinicColor}
-        icon={CheckCircle}
-        label="القيمة المدفوعة"
-        value={`${paidCost.toLocaleString()} $`}
-        iconBgClass="bg-[#D1FAE5]"
-        iconColor="#059669"
-        borderColor="border-green-100"
-      />
-      <StatCard
-        clinicColor={clinicColor}
-        icon={XCircle}
-        label="القيمة غير المدفوعة"
-        value={`${unpaidCost.toLocaleString()} $`}
-        iconBgClass="bg-[#FEE2E2]"
-        iconColor="#DC2626"
-        borderColor="border-red-100"
-      />
-    </div>
-  );
-}
-
-interface StatCardProps {
+interface PatientsStatsBarProps {
   clinicColor: string;
-  icon: React.ElementType;
-  label: string;
-  value: string;
-  iconBgClass: string;
-  iconColor?: string;
-  useClinicBg?: boolean;
-  borderColor?: string;
+  paymentFilter: "all" | "paid" | "unpaid";
+  onPaymentFilterChange: (filter: "all" | "paid" | "unpaid") => void;
+  paidSessionsCount: number;
+  unpaidSessionsCount: number;
+  viewType: string;
 }
 
-function StatCard({
+export function PatientsStatsBar({
   clinicColor,
-  icon: Icon,
-  label,
-  value,
-  iconBgClass,
-  iconColor,
-  useClinicBg,
-  borderColor,
-}: StatCardProps) {
+  paymentFilter,
+  onPaymentFilterChange,
+  paidSessionsCount,
+  unpaidSessionsCount,
+  viewType,
+}: PatientsStatsBarProps) {
+  if (viewType === "calendar") return null;
+
+  const totalCount = paidSessionsCount + unpaidSessionsCount;
+
   return (
-    <div
-      className={`flex items-center gap-2 sm:gap-3 bg-white rounded-xl shadow-sm border ${borderColor || "border-gray-100"} p-3 sm:px-5 sm:py-3`}
-      style={{ backgroundColor: `${clinicColor}10` }}
-    >
-      <div
-        className={`p-1.5 sm:p-2 rounded-lg flex-shrink-0 ${iconBgClass}`}
-        style={
-          useClinicBg ? { backgroundColor: `${clinicColor}15` } : undefined
-        }
+    <div className="flex items-center gap-1.5">
+      {/* الكل */}
+      <button
+        onClick={() => onPaymentFilterChange("all")}
+        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all
+          ${
+            paymentFilter === "all"
+              ? "bg-gray-100 text-gray-900"
+              : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+          }`}
       >
-        <Icon
-          size={16}
-          className="sm:size-[18px]"
-          style={{ color: iconColor || clinicColor }}
-        />
-      </div>
-      <div className="min-w-0">
-        <p className="text-[10px] sm:text-xs text-gray-900 mb-0.5 truncate">
-          {label}
-        </p>
-        <p className="text-base sm:text-xl font-bold text-gray-800 truncate">
-          {value}
-        </p>
-      </div>
+        الكل {totalCount}
+      </button>
+
+      {/* مدفوع */}
+      <button
+        onClick={() =>
+          onPaymentFilterChange(paymentFilter === "paid" ? "all" : "paid")
+        }
+        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all
+          ${
+            paymentFilter === "paid"
+              ? "bg-gray-100 text-green-800"
+              : "text-green-600 hover:text-green-800 hover:bg-green-100"
+          }`}
+      >
+        مدفوع {paidSessionsCount}
+      </button>
+
+      {/* غير مدفوع */}
+      <button
+        onClick={() =>
+          onPaymentFilterChange(paymentFilter === "unpaid" ? "all" : "unpaid")
+        }
+        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all
+          ${
+            paymentFilter === "unpaid"
+              ? "bg-gray-100 text-red-800"
+              : "text-red-600 hover:text-red-800 hover:bg-red-100"
+          }`}
+      >
+        غير مدفوع {unpaidSessionsCount}
+      </button>
+
+      {/* زر المسح */}
+      {paymentFilter !== "all" && (
+        <button
+          onClick={() => onPaymentFilterChange("all")}
+          className="p-1.5 rounded-full text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-all"
+        >
+          <X size={12} />
+        </button>
+      )}
     </div>
   );
 }
-
-// ============================================================================
-// Component: PatientsToolbar
-// ============================================================================
-
-// ============================================================================
-// Component: PatientsToolbar
-// ============================================================================
 
 interface PatientsToolbarProps {
   clinicColor: string;
@@ -492,10 +626,16 @@ interface PatientsToolbarProps {
   onSearchChange: (term: string) => void;
   onSearchClear: () => void;
   onSortToggle: (checked: boolean) => void;
+  onViewModeChange: (mode: ViewMode) => void;
   onViewTypeChange: (type: ViewType) => void;
   canGoPrevious: boolean;
   canGoNext: boolean;
   isMobile: boolean;
+  onRefresh: () => void;
+  onExport: () => void;
+  // 🆕 خصائص فلتر الدفع
+  paymentFilter: "all" | "paid" | "unpaid";
+  onPaymentFilterChange: (filter: "all" | "paid" | "unpaid") => void;
 }
 
 function PatientsToolbar({
@@ -512,162 +652,588 @@ function PatientsToolbar({
   onSearchChange,
   onSearchClear,
   onSortToggle,
+  onViewModeChange,
   onViewTypeChange,
   canGoPrevious,
   canGoNext,
   isMobile,
+  onRefresh,
+  onExport,
+  paymentFilter,
+  onPaymentFilterChange,
 }: PatientsToolbarProps) {
-  return (
-    <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
-      <div className="flex items-center gap-3 w-full md:w-auto">
-        {/* Day navigation - يظهر في وضع الجدول والأجندة عند تحديد يوم */}
-        {(viewType === "table" || viewType === "agenda") &&
-          viewMode === "day" && (
-            <div className="flex items-center gap-1 flex-1 md:flex-none">
-              <button
-                onClick={onPreviousDay}
-                disabled={!canGoPrevious}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
-                style={{ color: clinicColor }}
-              >
-                <ChevronRight size={16} />
-              </button>
-              <div className="relative flex-1 md:min-w-[180px]">
-                <select
-                  value={selectedDate}
-                  onChange={(e) => onDateChange(e.target.value)}
-                  className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 md:py-2 pr-7 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:border-transparent cursor-pointer"
-                  style={
-                    {
-                      "--tw-ring-color": clinicColor,
-                      direction: "rtl",
-                    } as React.CSSProperties
-                  }
-                >
-                  {availableDates.map((date) => (
-                    <option key={date} value={date}>
-                      {getDayName(date)} - {formatDisplayDate(date)}
-                    </option>
-                  ))}
-                </select>
-                <Calendar
-                  size={13}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400"
-                />
-              </div>
-              <button
-                onClick={onNextDay}
-                disabled={!canGoNext}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
-                style={{ color: clinicColor }}
-              >
-                <ChevronLeft size={16} />
-              </button>
-            </div>
-          )}
+  // حالة فتح/إغلاق قائمة الفلاتر
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const filterRef = useRef<HTMLDivElement>(null);
 
-        {/* Sort toggle - يظهر في وضعي الجدول والأجندة */}
-        {(viewType === "table" || viewType === "agenda") && (
-          <div className="flex items-center gap-2 bg-white rounded-lg border border-gray-200 px-3 py-2.5 md:py-2 flex-shrink-0">
-            <ArrowUpDown size={14} className="text-gray-400" />
-            <label className="flex items-center gap-2 cursor-pointer">
-              <span className="text-sm text-gray-600 whitespace-nowrap">
-                الأقدم أولاً
-              </span>
-              <input
-                type="checkbox"
-                checked={sortOrder === "asc"}
-                onChange={(e) => onSortToggle(e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 cursor-pointer"
-                style={{ accentColor: clinicColor }}
-              />
-            </label>
+  // إغلاق القائمة عند النقر خارجها
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        filterRef.current &&
+        !filterRef.current.contains(event.target as Node)
+      ) {
+        setIsFilterOpen(false);
+      }
+    };
+
+    if (isFilterOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [isFilterOpen]);
+
+  const isCalendarMode = viewType === "calendar";
+  const isDayMode =
+    viewMode === "day" && (viewType === "table" || viewType === "agenda");
+
+  // 🆕 عدد الفلاتر النشطة
+  const activeFiltersCount = [
+    paymentFilter !== "all" ? 1 : 0,
+    viewMode !== "all" ? 1 : 0,
+  ].reduce((sum, count) => sum + count, 0);
+
+const FilterPopover = () => {
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const filterRef = useRef<HTMLDivElement>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [hasScroll, setHasScroll] = useState(false);
+
+  // التحقق من وجود تمرير في المحتوى
+  useEffect(() => {
+    if (isFilterOpen && contentRef.current) {
+      const checkScroll = () => {
+        if (contentRef.current) {
+          setHasScroll(
+            contentRef.current.scrollHeight > contentRef.current.clientHeight,
+          );
+        }
+      };
+      checkScroll();
+      // استخدام ResizeObserver لمراقبة التغييرات
+      const observer = new ResizeObserver(checkScroll);
+      observer.observe(contentRef.current);
+      return () => observer.disconnect();
+    }
+  }, [isFilterOpen]);
+
+  // إغلاق القائمة عند النقر خارجها
+  useEffect(() => {
+    if (!isFilterOpen) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        filterRef.current &&
+        !filterRef.current.contains(event.target as Node)
+      ) {
+        setIsFilterOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isFilterOpen]);
+
+  // إغلاق عند الضغط على Escape
+  useEffect(() => {
+    if (!isFilterOpen) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsFilterOpen(false);
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isFilterOpen]);
+
+  // تنظيف timeout عند unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    };
+  }, []);
+
+  // فتح عند hover في سطح المكتب مع تأخير صغير
+  const handleMouseEnter = () => {
+    if (isMobile) return;
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsFilterOpen(true);
+    }, 150); // تأخير 150ms قبل الفتح
+  };
+
+  // إغلاق عند مغادرة hover مع تأخير للسماح بالعودة
+  const handleMouseLeave = () => {
+    if (isMobile) return;
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsFilterOpen(false);
+    }, 300); // تأخير 300ms قبل الإغلاق
+  };
+
+  // عدد الفلاتر النشطة
+  const activeFiltersCount = [
+    paymentFilter !== "all" ? 1 : 0,
+    viewMode !== "all" ? 1 : 0,
+  ].reduce((sum, count) => sum + count, 0);
+
+  // معالج اختيار فترة زمنية
+  const handleViewModeSelect = (mode: ViewMode) => {
+    onViewModeChange(mode);
+    // لا نغلق القائمة فوراً في سطح المكتب للسماح باختيارات متعددة
+    if (isMobile) setIsFilterOpen(false);
+  };
+
+  // معالج اختيار حالة الدفع
+  const handlePaymentFilterSelect = (filter: "all" | "paid" | "unpaid") => {
+    onPaymentFilterChange(filter);
+    if (isMobile) setIsFilterOpen(false);
+  };
+
+  // معالج اختيار الترتيب
+  const handleSortSelect = (asc: boolean) => {
+    onSortToggle(asc);
+    if (isMobile) setIsFilterOpen(false);
+  };
+
+  // إعادة تعيين الفلاتر
+  const handleResetFilters = () => {
+    onViewModeChange("all");
+    onPaymentFilterChange("all");
+    setIsFilterOpen(false);
+  };
+
+  // محتوى الفلاتر
+  const filterContent = (
+    <>
+      {/* رأس القائمة */}
+      <div className="flex items-center justify-between mb-3 px-1">
+        <h4 className="text-sm font-bold text-gray-800">خيارات العرض</h4>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsFilterOpen(false);
+          }}
+          className="p-1.5 rounded-full hover:bg-gray-100 transition-colors"
+          aria-label="إغلاق"
+        >
+          <X size={14} className="text-gray-400" />
+        </button>
+      </div>
+
+      {/* محتوى قابل للتمرير مع مؤشر */}
+      <div
+        ref={contentRef}
+        className="max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-50 pr-1"
+        style={{
+          scrollbarWidth: "thin",
+          scrollbarColor: "#D1D5DB #F9FAFB",
+        }}
+      >
+        {/* قسم الفترة الزمنية */}
+        <div className="mb-3">
+          <label className="block text-xs font-semibold text-gray-500 mb-2 px-1">
+            الفترة الزمنية
+          </label>
+          <div className="space-y-1">
+            {[
+              { value: "all", label: "عرض الكل", icon: List },
+              { value: "month", label: "الشهر الحالي", icon: Calendar },
+              { value: "day", label: "يوم محدد", icon: Calendar },
+            ].map((option) => (
+              <button
+                key={option.value}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleViewModeSelect(option.value as ViewMode);
+                }}
+                className={`
+                    w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
+                    transition-all duration-150
+                    ${
+                      viewMode === option.value
+                        ? "bg-gray-100 text-gray-900 shadow-sm"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-800"
+                    }
+                  `}
+              >
+                <option.icon size={16} className="flex-shrink-0" />
+                <span>{option.label}</span>
+                {viewMode === option.value && (
+                  <CheckCircle
+                    size={14}
+                    className="mr-auto text-gray-800 flex-shrink-0"
+                  />
+                )}
+              </button>
+            ))}
           </div>
-        )}
-      </div>
-
-      {/* Search */}
-      <div className="relative w-full md:flex-1">
-        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-          <Search size={16} className="text-gray-400" />
         </div>
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="البحث عن اسم المريض..."
-          className="w-full pr-9 pl-9 py-2.5 md:py-2 bg-white border border-gray-200 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all text-sm"
-          style={
-            {
-              "--tw-ring-color": clinicColor,
-              boxShadow: "none",
-            } as React.CSSProperties
-          }
-        />
-        {searchTerm && (
-          <button
-            onClick={onSearchClear}
-            className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 hover:text-gray-600"
-          >
-            <X size={16} />
-          </button>
-        )}
+
+        {/* فاصل */}
+        <div className="border-t border-gray-100 my-2" />
+
+        {/* قسم حالة الدفع */}
+        <div className="mb-3">
+          <label className="block text-xs font-semibold text-gray-500 mb-2 px-1">
+            حالة الدفع
+          </label>
+          <div className="space-y-1">
+            {[
+              {
+                value: "all",
+                label: "الكل",
+                icon: List,
+                color: "#6B7280",
+              },
+              {
+                value: "paid",
+                label: "مدفوع",
+                icon: CheckCircle,
+                color: "#0D9488",
+              },
+              {
+                value: "unpaid",
+                label: "غير مدفوع",
+                icon: XCircle,
+                color: "#D97706",
+              },
+            ].map((option) => (
+              <button
+                key={option.value}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePaymentFilterSelect(
+                    option.value as "all" | "paid" | "unpaid",
+                  );
+                }}
+                className={`
+                    w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
+                    transition-all duration-150
+                    ${
+                      paymentFilter === option.value
+                        ? "bg-gray-100 text-gray-900 shadow-sm"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-800"
+                    }
+                  `}
+              >
+                <option.icon
+                  size={16}
+                  className="flex-shrink-0"
+                  style={{ color: option.color }}
+                />
+                <span>{option.label}</span>
+                {paymentFilter === option.value && (
+                  <CheckCircle
+                    size={14}
+                    className="mr-auto text-gray-800 flex-shrink-0"
+                  />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* فاصل */}
+        <div className="border-t border-gray-100 my-2" />
+
+        {/* قسم الترتيب */}
+        <div className="mb-1">
+          <label className="block text-xs font-semibold text-gray-500 mb-2 px-1">
+            ترتيب حسب التاريخ
+          </label>
+          <div className="space-y-1">
+            {[
+              { value: "desc", label: "الأحدث أولاً", asc: false },
+              { value: "asc", label: "الأقدم أولاً", asc: true },
+            ].map((option) => (
+              <button
+                key={option.value}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSortSelect(option.asc);
+                }}
+                className={`
+                    w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
+                    transition-all duration-150
+                    ${
+                      sortOrder === option.value
+                        ? "bg-gray-100 text-gray-900 shadow-sm"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-800"
+                    }
+                  `}
+              >
+                <ArrowUpDown size={16} className="flex-shrink-0" />
+                <span>{option.label}</span>
+                {sortOrder === option.value && (
+                  <CheckCircle
+                    size={14}
+                    className="mr-auto text-gray-800 flex-shrink-0"
+                  />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* View type switcher - ثلاثة أوضاع */}
-      {!isMobile && (
-        <div className="flex items-center gap-2 md:border-r md:border-gray-200 md:pr-3">
-          <div className="flex items-center bg-gray-100 rounded-full p-0.5">
-            {/* زر عرض الجدول */}
-            <button
-              onClick={() => onViewTypeChange("table")}
-              className={`p-1.5 rounded-full transition ${
-                viewType === "table"
-                  ? "text-white shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-              style={
-                viewType === "table" ? { backgroundColor: clinicColor } : {}
-              }
-              title="عرض جدولي"
+      {/* مؤشر التمرير (يظهر عند وجود محتوى إضافي) */}
+      {hasScroll && (
+        <div className="flex justify-center mt-2">
+          <div className="text-xs text-gray-400 flex items-center gap-1">
+            <span>اسحب للمزيد</span>
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="animate-bounce"
             >
-              <LayoutGrid size={16} />
-            </button>
-
-            {/* زر عرض الأجندة (جديد) */}
-            <button
-              onClick={() => onViewTypeChange("agenda")}
-              className={`p-1.5 rounded-full transition ${
-                viewType === "agenda"
-                  ? "text-white shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-              style={
-                viewType === "agenda" ? { backgroundColor: clinicColor } : {}
-              }
-              title="عرض أجندة مكثفة"
-            >
-              <List size={16} />
-            </button>
-
-            {/* زر عرض التقويم */}
-            <button
-              onClick={() => onViewTypeChange("calendar")}
-              className={`p-1.5 rounded-full transition ${
-                viewType === "calendar"
-                  ? "text-white shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-              style={
-                viewType === "calendar" ? { backgroundColor: clinicColor } : {}
-              }
-              title="عرض تقويم"
-            >
-              <CalendarDays size={16} />
-            </button>
+              <path d="M6 9l6 6 6-6" />
+            </svg>
           </div>
         </div>
       )}
+
+      {/* زر إعادة تعيين */}
+      {(paymentFilter !== "all" || viewMode !== "all") && (
+        <>
+          <div className="border-t border-gray-100 my-2" />
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleResetFilters();
+            }}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl 
+                       text-sm font-medium text-blue-600 hover:bg-blue-50 
+                       transition-colors duration-150"
+          >
+            <RefreshCcw size={14} />
+            <span>إعادة تعيين الفلاتر</span>
+          </button>
+        </>
+      )}
+    </>
+  );
+
+  return (
+    <div
+      className="relative"
+      ref={filterRef}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* زر الفلتر */}
+      <button
+        onClick={() => {
+          if (isMobile) {
+            setIsFilterOpen(!isFilterOpen);
+          } else {
+            // في سطح المكتب: النقر يفتح/يغلق أيضاً (بالإضافة إلى hover)
+            setIsFilterOpen(!isFilterOpen);
+          }
+        }}
+        className={`
+            relative flex items-center gap-2 px-3 py-2.5 rounded-full font-medium text-sm
+            transition-all duration-200 whitespace-nowrap
+            ${
+              isFilterOpen || activeFiltersCount > 0
+                ? "bg-gray-800 text-white shadow-md"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-sm"
+            }
+          `}
+        aria-expanded={isFilterOpen}
+        aria-haspopup="true"
+      >
+        <Filter size={15} className="flex-shrink-0" />
+        <span className="hidden sm:inline">الفلاتر</span>
+        {activeFiltersCount > 0 && (
+          <span className="w-5 h-5 rounded-full bg-white text-gray-800 text-xs font-bold flex items-center justify-center">
+            {activeFiltersCount}
+          </span>
+        )}
+      </button>
+
+      {/* عرض القائمة حسب الجهاز */}
+      {isFilterOpen && (
+        <>
+          {isMobile ? (
+            // Modal مركزي في الجوال مع خلفية شفافة
+            <>
+              {/* خلفية داكنة */}
+              <div
+                className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+                onClick={() => setIsFilterOpen(false)}
+              />
+              {/* المحتوى في الأسفل (Bottom Sheet) */}
+              <motion.div
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "100%" }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-xl max-h-[80vh] overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* مقبض السحب */}
+                <div className="flex justify-center pt-3 pb-1">
+                  <div className="w-10 h-1 rounded-full bg-gray-300" />
+                </div>
+                <div className="p-4 overflow-y-auto max-h-[calc(80vh-2rem)]">
+                  {filterContent}
+                </div>
+              </motion.div>
+            </>
+          ) : (
+            // قائمة منسدلة لسطح المكتب - تظهر لليسار (RTL: لليمين)
+            <motion.div
+              initial={{ opacity: 0, y: -8, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.95 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              className="absolute left-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-xl border border-gray-200 p-3 z-50"
+              // left-0 يجعل القائمة تتمدد لليمين في اتجاه RTL
+              style={{
+                maxWidth: "calc(100vw - 2rem)",
+              }}
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+            >
+              {filterContent}
+            </motion.div>
+          )}
+        </>
+      )}
+    </div>
+  );
+};
+
+  // ============================================================================
+  // مكون فرعي: التنقل بين الأيام (يبقى كما هو)
+  // ============================================================================
+  const DayNavigation = () => {
+    if (isCalendarMode) return null;
+    if (!isDayMode) return null;
+
+    return (
+      <div className="flex items-center gap-1 bg-gray-100 rounded-full p-1">
+        <button
+          onClick={onPreviousDay}
+          disabled={!canGoPrevious}
+          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+          style={{ color: clinicColor }}
+        >
+          <ChevronRight size={16} />
+        </button>
+
+        <div className="relative">
+          <select
+            value={selectedDate}
+            onChange={(e) => onDateChange(e.target.value)}
+            className="appearance-none bg-transparent px-2 py-1.5 text-sm font-medium text-gray-700 focus:outline-none cursor-pointer text-center min-w-[140px] sm:min-w-[160px]"
+            style={{ direction: "rtl" }}
+          >
+            {availableDates.map((date) => (
+              <option key={date} value={date}>
+                {getDayName(date)} - {formatDisplayDate(date)}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <button
+          onClick={onNextDay}
+          disabled={!canGoNext}
+          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+          style={{ color: clinicColor }}
+        >
+          <ChevronLeft size={16} />
+        </button>
+      </div>
+    );
+  };
+
+  // ============================================================================
+  // Render
+  // ============================================================================
+  return (
+    <div className="mb-3 sm:mb-4">
+      {/* ============================================================ */}
+      {/* سطح المكتب: صف واحد                                          */}
+      {/* ============================================================ */}
+      <div className="hidden lg:flex items-center gap-3">
+        {/* حقل البحث - مخفي في التقويم */}
+        {!isCalendarMode && (
+          <div className="relative flex-1">
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+              <Search size={18} className="text-gray-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="البحث عن مريض..."
+              value={searchTerm}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="w-full pr-10 pl-4 py-3 bg-gray-100 rounded-full text-gray-900 placeholder-gray-400 text-sm border-0 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+              style={{ "--tw-ring-color": clinicColor } as React.CSSProperties}
+            />
+            {searchTerm && (
+              <button
+                onClick={onSearchClear}
+                className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 hover:text-gray-600"
+              >
+                <X size={18} />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* زر الفلتر الموحد + التنقل اليومي */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* التنقل بين الأيام - مخفي في التقويم */}
+          <DayNavigation />
+
+          {/* زر الفلتر الموحد - مخفي في التقويم */}
+          {!isCalendarMode && <FilterPopover />}
+        </div>
+      </div>
+
+      {/* ============================================================ */}
+      {/* الجوال والتابلت: صف واحد أو صفين حسب الحاجة                    */}
+      {/* ============================================================ */}
+      <div className="flex lg:hidden items-center gap-2">
+        {/* حقل البحث - مخفي في التقويم */}
+        {!isCalendarMode && (
+          <div className="relative flex-1">
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+              <Search
+                size={14}
+                className="text-gray-400 sm:w-[16px] sm:h-[16px]"
+              />
+            </div>
+            <input
+              type="text"
+              placeholder="بحث..."
+              value={searchTerm}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="w-full pr-8 sm:pr-10 pl-8 py-2.5 sm:py-3 bg-gray-100 rounded-full text-gray-900 placeholder-gray-400 text-sm border-0 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+              style={{ "--tw-ring-color": clinicColor } as React.CSSProperties}
+            />
+            {searchTerm && (
+              <button
+                onClick={onSearchClear}
+                className="absolute inset-y-0 left-0 pl-2 flex items-center text-gray-400 hover:text-gray-600"
+              >
+                <X size={14} className="sm:w-[16px] sm:h-[16px]" />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* التنقل اليومي + الفلتر الموحد */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <DayNavigation />
+          {!isCalendarMode && <FilterPopover />}
+        </div>
+      </div>
     </div>
   );
 }
@@ -1639,9 +2205,7 @@ function stackAppointments(sessions: Session[]): Session[][] {
       if (stack.length >= 3) continue; // الحد الأقصى 3
 
       const stackEnd = Math.max(
-        ...stack.map((s) =>
-          new Date(s.endTime || s.startTime).getTime(),
-        ),
+        ...stack.map((s) => new Date(s.endTime || s.startTime).getTime()),
       );
 
       // ضع الجلسة في stack فقط إذا كانت تتداخل زمنياً مع أي جلسة في الـ stack
@@ -3288,6 +3852,110 @@ function exportSessionsToExcel(
 // Main Component: PatientsTab
 // ============================================================================
 
+// ============================================================================
+// Component: ViewTypeSwitcher (مكبر - مستقل)
+// ============================================================================
+
+interface ViewTypeSwitcherProps {
+  clinicColor: string;
+  viewType: ViewType;
+  onViewTypeChange: (type: ViewType) => void;
+}
+
+function ViewTypeSwitcher({
+  clinicColor,
+  viewType,
+  onViewTypeChange,
+}: ViewTypeSwitcherProps) {
+  return (
+    <div className="flex items-center justify-center">
+      <div className="flex items-center bg-gray-100 rounded-full p-1">
+        {/* زر عرض الجدول */}
+        <button
+          onClick={() => onViewTypeChange("table")}
+          className={`
+            flex items-center gap-2 px-5 py-2 rounded-full font-medium text-sm
+            transition-all duration-200 whitespace-nowrap
+            ${
+              viewType === "table"
+                ? "text-white shadow-md"
+                : "text-gray-500 hover:text-gray-700"
+            }
+          `}
+          style={
+            viewType === "table"
+              ? {
+                  backgroundColor: clinicColor,
+                  boxShadow: `0 2px 8px ${clinicColor}40`,
+                }
+              : {}
+          }
+          title="عرض جدولي"
+        >
+          <LayoutGrid size={20} />
+          <span className="hidden sm:inline">جدول</span>
+        </button>
+
+        {/* زر عرض الأجندة */}
+        <button
+          onClick={() => onViewTypeChange("agenda")}
+          className={`
+            flex items-center gap-2 px-5 py-2 rounded-full font-medium text-sm
+            transition-all duration-200 whitespace-nowrap
+            ${
+              viewType === "agenda"
+                ? "text-white shadow-md"
+                : "text-gray-500 hover:text-gray-700"
+            }
+          `}
+          style={
+            viewType === "agenda"
+              ? {
+                  backgroundColor: clinicColor,
+                  boxShadow: `0 2px 8px ${clinicColor}40`,
+                }
+              : {}
+          }
+          title="عرض أجندة مكثفة"
+        >
+          <List size={20} />
+          <span className="hidden sm:inline">أجندة</span>
+        </button>
+
+        {/* زر عرض التقويم */}
+        <button
+          onClick={() => onViewTypeChange("calendar")}
+          className={`
+            flex items-center gap-2 px-5 py-2 rounded-full font-medium text-sm
+            transition-all duration-200 whitespace-nowrap
+            ${
+              viewType === "calendar"
+                ? "text-white shadow-md"
+                : "text-gray-500 hover:text-gray-700"
+            }
+          `}
+          style={
+            viewType === "calendar"
+              ? {
+                  backgroundColor: clinicColor,
+                  boxShadow: `0 2px 8px ${clinicColor}40`,
+                }
+              : {}
+          }
+          title="عرض تقويم"
+        >
+          <CalendarDays size={20} />
+          <span className="hidden sm:inline">تقويم</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Main Component: PatientsTab (معدل - Mobile First مع ترتيب جديد)
+// ============================================================================
+
 export function PatientsTab({
   clinicData,
   patients,
@@ -3306,7 +3974,7 @@ export function PatientsTab({
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
-  const [viewType, setViewType] = useState<ViewType>("agenda"); // 🆕 تعيين الأجندة كافتراضي
+  const [viewType, setViewType] = useState<ViewType>("agenda");
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() =>
     getStartOfWeek(today),
   );
@@ -3316,6 +3984,12 @@ export function PatientsTab({
   const [mobileCalendarSubView, setMobileCalendarSubView] = useState<
     "day" | "week"
   >("day");
+  const [paymentFilter, setPaymentFilter] = useState<"all" | "paid" | "unpaid">(
+    "all",
+  );
+  const [searchFilterType, setSearchFilterType] = useState<
+    "all" | "patient" | "procedure" | "date" | "status" | "payment"
+  >("all");
 
   const isMobile = useIsMobile();
   const { currentTimeRef, getCurrentTimeTop } = useCurrentTimeIndicator();
@@ -3366,13 +4040,40 @@ export function PatientsTab({
     else if (viewMode === "month") base = currentMonthSessions;
     else base = allSessionsSorted;
 
+    if (paymentFilter === "paid") {
+      base = base.filter((s) => s.isPaid);
+    } else if (paymentFilter === "unpaid") {
+      base = base.filter((s) => !s.isPaid);
+    }
+
     if (!searchTerm.trim()) return base;
 
     const normalized = normalizeSearchText(searchTerm);
     return base.filter((session) => {
       const patient = getPatientData(session.patientId);
       const name = patient?.fullName || session.patientSnapshot?.name || "";
-      return normalizeSearchText(name).includes(normalized);
+      const procedure =
+        session.plannedProcedure || session.performedProcedure || "";
+      const dateStr = formatDisplayDate(getDateString(session.startTime));
+      const statusLabel = getSessionStatusDisplay(session.status).label;
+      const paymentLabel = getPaymentMethodDisplay(session).label;
+
+      switch (searchFilterType) {
+        case "patient":
+          return normalizeSearchText(name).includes(normalized);
+        case "procedure":
+          return normalizeSearchText(procedure).includes(normalized);
+        case "date":
+          return normalizeSearchText(dateStr).includes(normalized);
+        case "status":
+          return normalizeSearchText(statusLabel).includes(normalized);
+        case "payment":
+          return normalizeSearchText(paymentLabel).includes(normalized);
+        default:
+          return normalizeSearchText(
+            `${name} ${procedure} ${dateStr} ${statusLabel} ${paymentLabel}`,
+          ).includes(normalized);
+      }
     });
   }, [
     viewMode,
@@ -3381,6 +4082,8 @@ export function PatientsTab({
     currentMonthSessions,
     allSessionsSorted,
     searchTerm,
+    searchFilterType,
+    paymentFilter,
     patients,
   ]);
 
@@ -3468,30 +4171,24 @@ export function PatientsTab({
     setSelectedCalendarDay(today.toISOString().split("T")[0]);
   };
 
-  // 🆕🚀 دالة موحدة لتغيير اليوم مع تحديث الأسبوع تلقائياً
   const changeCalendarDay = (newDateStr: string) => {
-    // تحديث اليوم المحدد في التقويم
     setSelectedCalendarDay(newDateStr);
 
-    // التحقق مما إذا كان اليوم الجديد خارج نطاق الأسبوع الحالي
     const newDate = new Date(newDateStr);
     const currentStart = new Date(currentWeekStart);
     const currentEnd = new Date(currentWeekStart);
-    currentEnd.setDate(currentEnd.getDate() + 6); // الأسبوع 7 أيام (0-6)
+    currentEnd.setDate(currentEnd.getDate() + 6);
     currentEnd.setHours(23, 59, 59, 999);
 
-    // إذا كان اليوم الجديد خارج الأسبوع الحالي → تحديث الأسبوع ليشمل اليوم الجديد
     if (newDate < currentStart || newDate > currentEnd) {
       setCurrentWeekStart(getStartOfWeek(newDate));
     }
 
-    // مزامنة selectedDate مع selectedCalendarDay للتناسق مع الأوضاع الأخرى
     if (viewType === "agenda" || viewType === "table") {
       setSelectedDate(newDateStr);
     }
   };
 
-  // 🆕 التنقل بين الأيام مع تغيير التاريخ تلقائياً (يستخدم changeCalendarDay)
   const handleCalendarDayNavigate = (direction: "prev" | "next") => {
     const current = new Date(selectedCalendarDay);
     current.setDate(current.getDate() + (direction === "next" ? 1 : -1));
@@ -3499,37 +4196,35 @@ export function PatientsTab({
     changeCalendarDay(newDateStr);
   };
 
-  // 🆕 تغيير نوع العرض مع مزامنة التاريخ
   const handleViewTypeChange = (type: ViewType) => {
     if (isMobile && type !== "agenda") return;
-    // قبل التغيير، احفظ نوع العرض الحالي للمقارنة
     const previousViewType = viewType;
     setViewType(type);
 
-    // مزامنة التاريخ بين طرق العرض المختلفة
     if (type === "agenda" || type === "table") {
-      // إذا كان قادماً من التقويم، استخدم آخر يوم محدد
       if (previousViewType === "calendar") {
         setSelectedDate(selectedCalendarDay);
       }
     } else if (type === "calendar") {
-      // إذا كان قادماً من الأجندة أو الجدول، استخدم selectedDate
       if (previousViewType === "agenda" || previousViewType === "table") {
         changeCalendarDay(selectedDate);
       }
     }
   };
 
-  // 🆕 تغيير وضع العرض (يوم/شهر/كل) مع ضبط التاريخ
   const handleViewModeChange = (mode: ViewMode) => {
     setViewMode(mode);
 
     if (mode === "day") {
-      // استخدام اليوم المحدد في الأجندة/التقويم
       if (selectedCalendarDay) {
         setSelectedDate(selectedCalendarDay);
       }
     }
+  };
+
+  const handleViewModeChangeWithReset = (mode: ViewMode) => {
+    setPaymentFilter("all");
+    handleViewModeChange(mode);
   };
 
   // ---- Period title ----
@@ -3571,7 +4266,12 @@ export function PatientsTab({
     );
   };
 
-  // ---- Current sessions for stats cards ----
+  // ---- Refresh handler ----
+  const handleRefresh = () => {
+    window.dispatchEvent(new CustomEvent("refreshPatientsData"));
+  };
+
+  // ---- Current sessions for stats ----
   const getCurrentDisplayedSessions = () => {
     if (viewType === "calendar") return calendarWeekSessions;
     return displayedSessions;
@@ -3579,29 +4279,69 @@ export function PatientsTab({
 
   const currentDisplayedSessions = getCurrentDisplayedSessions();
 
+  // 🆕 إحصائيات مبسطة للهيدر
+  const totalSessions = currentDisplayedSessions.length;
+  const totalCost = currentDisplayedSessions.reduce(
+    (sum, s) => sum + (s.sessionCost || 0),
+    0,
+  );
+  const paidCost = currentDisplayedSessions
+    .filter((s) => s.isPaid)
+    .reduce((sum, s) => sum + (s.sessionCost || 0), 0);
+  const unpaidCost = currentDisplayedSessions
+    .filter((s) => !s.isPaid)
+    .reduce((sum, s) => sum + (s.sessionCost || 0), 0);
+  const paidSessionsCount = currentDisplayedSessions.filter(
+    (s) => s.isPaid,
+  ).length;
+  const unpaidSessionsCount = currentDisplayedSessions.filter(
+    (s) => !s.isPaid,
+  ).length;
+
   // ============================================================================
   // Render
   // ============================================================================
   return (
-    <div className="space-y-5 pb-20" dir="rtl">
+    <div className="space-y-3 sm:space-y-4 pb-20" dir="rtl">
+      {/* ============================================================ */}
+      {/* 1. الهيدر مع الإحصائيات المبسطة وأزرار التحكم                    */}
+      {/* ============================================================ */}
       <PatientsHeader
         clinicName={clinicName}
         clinicColor={clinicColor}
         periodTitle={getPeriodTitle()}
-        onRefresh={() =>
-          window.dispatchEvent(new CustomEvent("refreshPatientsData"))
-        }
+        onRefresh={handleRefresh}
         onExport={handleExport}
         viewMode={viewMode}
         viewType={viewType}
-        onViewModeChange={handleViewModeChange}
+        onViewModeChange={handleViewModeChangeWithReset}
+        totalSessions={totalSessions}
+        totalCost={totalCost}
+        paidCost={paidCost}
+        unpaidCost={unpaidCost}
+        paymentFilter={paymentFilter}
+        onPaymentFilterChange={setPaymentFilter}
+        handleViewTypeChange={handleViewTypeChange}
+        isMobile={isMobile}
       />
 
-      <PatientsStatsCards
-        clinicColor={clinicColor}
-        sessions={currentDisplayedSessions}
-      />
+      {/* ============================================================ */}
+      {/* 3. فلتر الدفع المصغر (وسامات) - مخفي في التقويم                   */}
+      {/* ============================================================ */}
+      {viewType !== "calendar" && (
+        <PatientsStatsBar
+          clinicColor={clinicColor}
+          paymentFilter={paymentFilter}
+          onPaymentFilterChange={setPaymentFilter}
+          paidSessionsCount={paidSessionsCount}
+          unpaidSessionsCount={unpaidSessionsCount}
+          viewType={viewType}
+        />
+      )}
 
+      {/* ============================================================ */}
+      {/* 4. شريط الأدوات - فلتر موحد + تنقل + بحث                        */}
+      {/* ============================================================ */}
       <PatientsToolbar
         isMobile={isMobile}
         clinicColor={clinicColor}
@@ -3615,18 +4355,27 @@ export function PatientsTab({
         onPreviousDay={goToPreviousDay}
         onNextDay={goToNextDay}
         onSearchChange={setSearchTerm}
-        onSearchClear={() => setSearchTerm("")}
+        onSearchClear={() => {
+          setSearchTerm("");
+          setSearchFilterType("all");
+        }}
         onSortToggle={(checked) => setSortOrder(checked ? "asc" : "desc")}
+        onViewModeChange={handleViewModeChangeWithReset}
         onViewTypeChange={handleViewTypeChange}
         canGoPrevious={
           availableDates.indexOf(selectedDate) < availableDates.length - 1
         }
         canGoNext={availableDates.indexOf(selectedDate) > 0}
+        onRefresh={handleRefresh}
+        onExport={handleExport}
+        paymentFilter={paymentFilter}
+        onPaymentFilterChange={setPaymentFilter}
       />
 
-      {/* 🆕 عرض المحتوى حسب نوع العرض */}
+      {/* ============================================================ */}
+      {/* 5. المحتوى الرئيسي (جدول / أجندة / تقويم)                        */}
+      {/* ============================================================ */}
       {viewType === "calendar" ? (
-        // عرض التقويم
         <PatientsCalendar
           clinicColor={clinicColor}
           currentWeekStart={currentWeekStart}
@@ -3641,14 +4390,13 @@ export function PatientsTab({
           onPreviousWeek={goToPreviousWeek}
           onNextWeek={goToNextWeek}
           onTodayWeek={goToTodayWeek}
-          onCalendarDaySelect={changeCalendarDay} // 🆕 استخدام changeCalendarDay بدلاً من setSelectedCalendarDay
+          onCalendarDaySelect={changeCalendarDay}
           onMobileSubViewChange={setMobileCalendarSubView}
           onCalendarDayNavigate={handleCalendarDayNavigate}
           getPatientData={getPatientData}
           onSessionSelect={setSelectedSession}
         />
       ) : (
-        // عرض الجدول أو الأجندة
         <PatientsTable
           sessions={displayedSessions}
           sessionsWithMobileGroups={sessionsWithMobileGroups}
@@ -3661,7 +4409,9 @@ export function PatientsTab({
         />
       )}
 
-      {/* 🆕 نافذة تفاصيل الجلسة */}
+      {/* ============================================================ */}
+      {/* 6. نافذة تفاصيل الجلسة                                          */}
+      {/* ============================================================ */}
       {selectedSession && (
         <SessionDetailModal
           session={selectedSession}
