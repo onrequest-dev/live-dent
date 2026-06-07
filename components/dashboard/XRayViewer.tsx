@@ -33,6 +33,9 @@ interface XRayViewerProps {
   patientName: string;
   primaryColor: string;
   isMobile?: boolean;
+  className?: string;
+  style?: React.CSSProperties;
+  children?: React.ReactNode;
 }
 
 // ============================================================
@@ -1043,6 +1046,9 @@ export function XRayViewerButton({
   patientName,
   primaryColor,
   isMobile = false,
+  className,
+  style,
+  children,
 }: XRayViewerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [images, setImages] = useState<PatientImage[]>([]);
@@ -1184,15 +1190,19 @@ export function XRayViewerButton({
 
   return (
     <>
-      <button
-        onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-white font-medium text-xs sm:text-sm transition-all hover:shadow-md active:scale-95"
-        style={{ background: primaryColor }}
-      >
-        <Camera size={18} />
-        <span className="hidden sm:inline">صور الأشعة</span>
-        <span className="sm:hidden">أشعة</span>
-      </button>
+    <button
+      onClick={() => setIsOpen(true)}
+      className={className || "flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-white font-medium text-xs sm:text-sm transition-all hover:shadow-md active:scale-95"}
+      style={style || { background: primaryColor }}
+    >
+      {children || (
+        <>
+          <Camera size={18} />
+          <span className="hidden sm:inline">صور الأشعة</span>
+          <span className="sm:hidden">أشعة</span>
+        </>
+      )}
+    </button>
 
       <AnimatePresence>
         {isOpen && (
