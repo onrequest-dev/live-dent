@@ -51,6 +51,60 @@ import { ToastContainer, useToast } from "./Toast";
 import { XRayViewerButton } from "../XRayViewer";
 import { useModalBackHandler } from "@/hooks/useModalBackHandler";
 import ToothLoader from "../../loding";
+import { ToothChart, ToothData } from "../../ToothChart/ToothChart";
+
+
+////////////بيانات كذب لمكون الشارت//////////////
+
+const DEFAULT_TEETH_DATA: ToothData[] = [
+  // الضواحك والقواطع العلوية اليمنى (1-8)
+  { id: 1, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
+  { id: 2, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
+  { id: 3, procedure: "decayed", color: "#EF4444", treatments: ["إزالة التسوس", "حشوة مؤقتة", "", "", "", "", "", "", "", ""], notes: "يحتاج متابعة بعد أسبوع" },
+  { id: 4, procedure: "filled", color: "#3B82F6", treatments: ["حشوة دائمة", "", "", "", "", "", "", "", "", ""], notes: "" },
+  { id: 5, procedure: "crown", color: "#F59E0B", treatments: ["تحضير السن", "طبعات", "تركيب تاج مؤقت", "تركيب تاج دائم", "", "", "", "", "", ""], notes: "تاج زركونيا" },
+  { id: 6, procedure: "root-canal", color: "#8B4513", treatments: ["فتح اللب", "تنظيف القنوات", "حشو القنوات", "", "", "", "", "", "", ""], notes: "3 قنوات" },
+  { id: 7, procedure: "implant", color: "#10B981", treatments: ["زرع", "انتظار الالتحام", "تركيب الدعامة", "تركيب التاج", "", "", "", "", "", ""], notes: "زرعة ألمانية" },
+  { id: 8, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
+  
+  // القواطع العلوية الأمامية (9-10)
+  { id: 9, procedure: "custom", customProcedure: "تبييض بالليزر", color: "#DC2626", treatments: ["جلسة تبييض 1", "جلسة تبييض 2", "", "", "", "", "", "", "", ""], notes: "نتيجة ممتازة" },
+  { id: 10, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
+  
+  // القواطع العلوية الأمامية (11-12)
+  { id: 11, procedure: "filled", color: "#3B82F6", treatments: ["حشوة تجميلية", "", "", "", "", "", "", "", "", ""], notes: "" },
+  { id: 12, procedure: "crown", color: "#F59E0B", treatments: ["تاج إيماكس", "", "", "", "", "", "", "", "", ""], notes: "تاج تجميلي" },
+  
+  // الضواحك والقواطع العلوية اليسرى (13-16)
+  { id: 13, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
+  { id: 14, procedure: "decayed", color: "#EF4444", treatments: ["كشف تسوس", "", "", "", "", "", "", "", "", ""], notes: "تسوس بسيط" },
+  { id: 15, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
+  { id: 16, procedure: "missing", color: "#9CA3AF", treatments: ["خلع", "", "", "", "", "", "", "", "", ""], notes: "تم الخلع منذ 3 أشهر" },
+  
+  // الضواحك والقواطع السفلية اليسرى (17-24)
+  { id: 17, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
+  { id: 18, procedure: "filled", color: "#3B82F6", treatments: ["حشوة أملغم", "", "", "", "", "", "", "", "", ""], notes: "حشوة قديمة" },
+  { id: 19, procedure: "root-canal", color: "#8B4513", treatments: ["معالجة لبية", "حشو قنوات", "", "", "", "", "", "", "", ""], notes: "" },
+  { id: 20, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
+  { id: 21, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
+  { id: 22, procedure: "decayed", color: "#EF4444", treatments: ["تسوس بين الأسنان", "", "", "", "", "", "", "", "", ""], notes: "يحتاج أشعة" },
+  { id: 23, procedure: "crown", color: "#F59E0B", treatments: ["تاج معدني سيراميك", "", "", "", "", "", "", "", "", ""], notes: "" },
+  { id: 24, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
+  
+  // القواطع السفلية الأمامية (25-26)
+  { id: 25, procedure: "filled", color: "#3B82F6", treatments: ["حشوة", "", "", "", "", "", "", "", "", ""], notes: "" },
+  { id: 26, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
+  
+  // القواطع السفلية الأمامية (27-28)
+  { id: 27, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
+  { id: 28, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
+  
+  // الضواحك والقواطع السفلية اليمنى (29-32)
+  { id: 29, procedure: "implant", color: "#10B981", treatments: ["زرعة", "تركيب تاج", "", "", "", "", "", "", "", ""], notes: "زرعة سويسرية" },
+  { id: 30, procedure: "decayed", color: "#EF4444", treatments: ["تسوس عميق", "", "", "", "", "", "", "", "", ""], notes: "قد يحتاج معالجة لبية" },
+  { id: 31, procedure: "filled", color: "#3B82F6", treatments: ["حشوة", "", "", "", "", "", "", "", "", ""], notes: "" },
+  { id: 32, procedure: "crown", color: "#F59E0B", treatments: ["تاج", "", "", "", "", "", "", "", "", ""], notes: "" },
+];
 // ============================================================
 // خدمة API محاكية (لتحضير الربط مع الباك إند)
 // ============================================================
@@ -1387,7 +1441,8 @@ function PatientDetailsCard({
   const finance = calculateFinance();
   const pastSessions = sessions;
   const [selectedSession, setSelectedSession] = useState<any>(null);
-
+  const [activeTab, setActiveTab] = useState<'appointments' | 'chart' | 'xray'>('appointments');
+  const [showXRayViewer, setShowXRayViewer] = useState(false);
   // فرز الجلسات من الأحدث إلى الأقدم
   const sortedSessions = [...pastSessions].sort(
     (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime(),
@@ -1437,16 +1492,128 @@ function PatientDetailsCard({
   return (
     <>
       <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm sm:shadow-md border border-gray-100 overflow-hidden">
-        {/* Header - معلومات أساسية */}
-        <div className="relative p-4 pt-10 sm:p-6 sm:pt-12 border-b border-gray-100">
-          {/* زر الإغلاق */}
-          <button
-            onClick={onClose}
-            className="absolute left-2 top-2 sm:left-3 sm:top-3 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X size={18} />
-          </button>
 
+                {/* ============================================================ */}
+        {/* شريط التبويبات - ثابت في الأعلى */}
+        {/* ============================================================ */}
+<div className="flex items-center border-b border-gray-200 bg-gray-50/50 overflow-x-auto scrollbar-hide min-h-[48px] sm:min-h-0">
+  {/* تبويب المواعيد */}
+<button
+  onClick={() => setActiveTab('appointments')}
+  className={`
+    relative flex items-center gap-2 px-4 sm:px-5 py-6 sm:py-3 
+    text-sm sm:text-base font-medium transition-all duration-200
+    whitespace-nowrap flex-shrink-0
+    ${activeTab === 'appointments' 
+      ? 'text-gray-900 bg-white border-b-2' 
+      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100 border-b-2 border-transparent'
+    }
+  `}
+  style={activeTab === 'appointments' ? { 
+    borderBottomColor: primaryColor,
+    color: primaryColor
+  } : {}}
+>
+  <Calendar size={16} className="sm:w-[18px] sm:h-[18px]" />
+  <span>المواعيد</span>
+  {sessions.length > 0 && (
+    <span className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-600 ml-1">
+      {sessions.length}
+    </span>
+  )}
+</button>
+
+  {/* تبويب الشارت */}
+  <button
+    onClick={() => setActiveTab('chart')}
+    className={`
+      relative flex items-center gap-2 px-4 sm:px-5 py-5 sm:py-3 
+      text-sm sm:text-base font-medium transition-all duration-200
+      whitespace-nowrap flex-shrink-0
+      ${activeTab === 'chart' 
+        ? 'text-gray-900 bg-white border-b-2' 
+        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100 border-b-2 border-transparent'
+      }
+    `}
+    style={activeTab === 'chart' ? { 
+      borderBottomColor: primaryColor,
+      color: primaryColor
+    } : {}}
+  >
+    <Stethoscope size={16} className="sm:w-[18px] sm:h-[18px]" />
+    <span>الشارت</span>
+  </button>
+
+  {/* تبويب الأشعة */}
+  <XRayViewerButton
+    patientId={patient.id}
+    patientName={patient.fullName}
+    primaryColor={primaryColor}
+    isMobile={isMobile}
+    className={`
+      relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-5 sm:py-3 
+      text-xs sm:text-sm font-medium transition-all duration-300
+      whitespace-nowrap flex-shrink-0 rounded-t-xl
+      ${activeTab === 'xray' 
+        ? 'bg-white text-gray-900 shadow-sm z-10' 
+        : 'text-gray-400 hover:text-gray-600 hover:bg-white/60'
+      }
+    `}
+    style={activeTab === 'xray' ? { 
+      boxShadow: '0 -2px 8px rgba(0,0,0,0.03), 0 -1px 3px rgba(0,0,0,0.02)',
+      borderBottomColor: primaryColor,
+      color: primaryColor
+    } : { 
+      boxShadow: 'none',
+      borderBottomColor: 'transparent',
+      color: undefined
+    } as React.CSSProperties}
+  >
+    <svg 
+      viewBox="0 0 24 24" 
+      width="14" 
+      height="14" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+      className="sm:w-[16px] sm:h-[16px]"
+    >
+      <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+    </svg>
+    <span>الأشعة</span>
+  </XRayViewerButton>
+
+  {/* زر الإغلاق */}
+  <div className="flex-1" />
+  <button
+    onClick={onClose}
+    className="flex items-center gap-1.5 px-3 sm:px-4 py-5 sm:py-3 text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
+    title="إغلاق"
+  >
+    <X size={18} className="sm:w-[20px] sm:h-[20px]" />
+  </button>
+</div>
+        {/* ============================================================ */}
+        {/* محتوى التبويبات مع أنيميشن */}
+        {/* ============================================================ */}
+        <div className="p-4 sm:p-4">
+          <AnimatePresence mode="wait">
+            
+            {/* تبويب المواعيد */}
+            {activeTab === 'appointments' && (
+              <motion.div
+                key="appointments"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-4 sm:space-y-6"
+              >
+
+                        {/* Header - معلومات أساسية */}
+        <div className="relative p-4 pt-1 sm:p-6 sm:pt-2 border-b border-gray-100">
           {/* الاسم ورقم الهاتف وعدد الجلسات */}
           <div className="flex flex-col gap-3 mt-1 sm:mt-2">
             {/* معلومات المريض */}
@@ -1507,13 +1674,6 @@ function PatientDetailsCard({
                   <span>تعديل</span>
                 </button>
 
-                <XRayViewerButton
-                  patientId={patient.id}
-                  patientName={patient.fullName}
-                  primaryColor={primaryColor}
-                  isMobile={false}
-                />
-
                 <button
                   onClick={onAddAppointment}
                   className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full text-white font-medium text-xs sm:text-sm transition-all hover:shadow-md active:scale-95"
@@ -1534,16 +1694,6 @@ function PatientDetailsCard({
                 <Edit size={14} />
                 <span>تعديل</span>
               </button>
-
-              <div className="flex-1">
-                <XRayViewerButton
-                  patientId={patient.id}
-                  patientName={patient.fullName}
-                  primaryColor={primaryColor}
-                  isMobile={true}
-                />
-              </div>
-
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -1558,9 +1708,6 @@ function PatientDetailsCard({
             </div>
           </div>
         </div>
-
-        {/* Content */}
-        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
           {/* العمر والجنس وسنة الميلاد */}
           <div className="space-y-3 sm:space-y-4">
             {/* العمر والجنس وسنة الميلاد */}
@@ -1886,9 +2033,49 @@ function PatientDetailsCard({
                   className="sm:w-[22px] sm:h-[22px] text-gray-300"
                 />
               </div>
-              <p className="text-xs sm:text-sm text-gray-500">لا توجد جلسات</p>
-            </div>
-          )}
+                    <p className="text-xs sm:text-sm text-gray-500">
+                      لا توجد جلسات
+                    </p>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* تبويب الشارت */}
+            {activeTab === 'chart' && (
+              <motion.div
+                key="chart"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <ToothChart
+                  patientId={patient.id}
+                  patientName={patient.fullName}
+                  primaryColor={primaryColor}
+                  editable={true}
+                  onSave={async (teethData) => {
+                    // حفظ بيانات الأسنان
+                    console.log("Saving teeth data:", teethData);
+                    // await savePatientTeethData(patient.id, teethData);
+                  }}
+                />
+              </motion.div>
+            )}
+
+            {/* تبويب الأشعة */}
+            {/* {activeTab === 'xray' && (
+              <motion.div
+                key="xray"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+              </motion.div>
+            )} */}
+          </AnimatePresence>
         </div>
       </div>
 
