@@ -49,6 +49,7 @@ const DoubleClickToExit: React.FC<DoubleClickToExitProps> = ({
   };
 
   const resetCounter = (): void => {
+    // history.pushState(null, "", location.href);
     backPressCount.current = 0;
     if (timeoutId.current) {
       clearTimeout(timeoutId.current);
