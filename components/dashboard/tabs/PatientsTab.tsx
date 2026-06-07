@@ -32,12 +32,13 @@ import {
 } from "lucide-react";
 import * as XLSX from "xlsx-js-style";
 import { Clinic, Patient, PatientCase, Session } from "@/types";
+import React from "react";
 
 // ============================================================================
 // Types
 // ============================================================================
 type ViewMode = "day" | "month" | "all";
-type ViewType = "table" | "calendar";
+type ViewType = "table" | "calendar" | "agenda";
 
 interface PatientsTabProps {
   clinicData: Clinic | null;
@@ -473,6 +474,10 @@ function StatCard({
 // Component: PatientsToolbar
 // ============================================================================
 
+// ============================================================================
+// Component: PatientsToolbar
+// ============================================================================
+
 interface PatientsToolbarProps {
   clinicColor: string;
   viewType: ViewType;
@@ -490,6 +495,7 @@ interface PatientsToolbarProps {
   onViewTypeChange: (type: ViewType) => void;
   canGoPrevious: boolean;
   canGoNext: boolean;
+  isMobile: boolean;
 }
 
 function PatientsToolbar({
@@ -509,57 +515,59 @@ function PatientsToolbar({
   onViewTypeChange,
   canGoPrevious,
   canGoNext,
+  isMobile,
 }: PatientsToolbarProps) {
   return (
     <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
       <div className="flex items-center gap-3 w-full md:w-auto">
-        {/* Day navigation */}
-        {viewType === "table" && viewMode === "day" && (
-          <div className="flex items-center gap-1 flex-1 md:flex-none">
-            <button
-              onClick={onPreviousDay}
-              disabled={!canGoPrevious}
-              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
-              style={{ color: clinicColor }}
-            >
-              <ChevronRight size={16} />
-            </button>
-            <div className="relative flex-1 md:min-w-[180px]">
-              <select
-                value={selectedDate}
-                onChange={(e) => onDateChange(e.target.value)}
-                className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 md:py-2 pr-7 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:border-transparent cursor-pointer"
-                style={
-                  {
-                    "--tw-ring-color": clinicColor,
-                    direction: "rtl",
-                  } as React.CSSProperties
-                }
+        {/* Day navigation - يظهر في وضع الجدول والأجندة عند تحديد يوم */}
+        {(viewType === "table" || viewType === "agenda") &&
+          viewMode === "day" && (
+            <div className="flex items-center gap-1 flex-1 md:flex-none">
+              <button
+                onClick={onPreviousDay}
+                disabled={!canGoPrevious}
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                style={{ color: clinicColor }}
               >
-                {availableDates.map((date) => (
-                  <option key={date} value={date}>
-                    {getDayName(date)} - {formatDisplayDate(date)}
-                  </option>
-                ))}
-              </select>
-              <Calendar
-                size={13}
-                className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400"
-              />
+                <ChevronRight size={16} />
+              </button>
+              <div className="relative flex-1 md:min-w-[180px]">
+                <select
+                  value={selectedDate}
+                  onChange={(e) => onDateChange(e.target.value)}
+                  className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 md:py-2 pr-7 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:border-transparent cursor-pointer"
+                  style={
+                    {
+                      "--tw-ring-color": clinicColor,
+                      direction: "rtl",
+                    } as React.CSSProperties
+                  }
+                >
+                  {availableDates.map((date) => (
+                    <option key={date} value={date}>
+                      {getDayName(date)} - {formatDisplayDate(date)}
+                    </option>
+                  ))}
+                </select>
+                <Calendar
+                  size={13}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400"
+                />
+              </div>
+              <button
+                onClick={onNextDay}
+                disabled={!canGoNext}
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                style={{ color: clinicColor }}
+              >
+                <ChevronLeft size={16} />
+              </button>
             </div>
-            <button
-              onClick={onNextDay}
-              disabled={!canGoNext}
-              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
-              style={{ color: clinicColor }}
-            >
-              <ChevronLeft size={16} />
-            </button>
-          </div>
-        )}
+          )}
 
-        {/* Sort toggle */}
-        {viewType === "table" && (
+        {/* Sort toggle - يظهر في وضعي الجدول والأجندة */}
+        {(viewType === "table" || viewType === "agenda") && (
           <div className="flex items-center gap-2 bg-white rounded-lg border border-gray-200 px-3 py-2.5 md:py-2 flex-shrink-0">
             <ArrowUpDown size={14} className="text-gray-400" />
             <label className="flex items-center gap-2 cursor-pointer">
@@ -606,37 +614,60 @@ function PatientsToolbar({
         )}
       </div>
 
-      {/* View type switcher */}
-      <div className="flex items-center gap-2 md:border-r md:border-gray-200 md:pr-3">
-        <div className="flex items-center bg-gray-100 rounded-full p-0.5">
-          <button
-            onClick={() => onViewTypeChange("table")}
-            className={`p-1.5 rounded-full transition ${
-              viewType === "table"
-                ? "text-white shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-            style={viewType === "table" ? { backgroundColor: clinicColor } : {}}
-            title="عرض جدولي"
-          >
-            <LayoutGrid size={16} />
-          </button>
-          <button
-            onClick={() => onViewTypeChange("calendar")}
-            className={`p-1.5 rounded-full transition ${
-              viewType === "calendar"
-                ? "text-white shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-            style={
-              viewType === "calendar" ? { backgroundColor: clinicColor } : {}
-            }
-            title="عرض تقويم"
-          >
-            <CalendarDays size={16} />
-          </button>
+      {/* View type switcher - ثلاثة أوضاع */}
+      {!isMobile && (
+        <div className="flex items-center gap-2 md:border-r md:border-gray-200 md:pr-3">
+          <div className="flex items-center bg-gray-100 rounded-full p-0.5">
+            {/* زر عرض الجدول */}
+            <button
+              onClick={() => onViewTypeChange("table")}
+              className={`p-1.5 rounded-full transition ${
+                viewType === "table"
+                  ? "text-white shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+              style={
+                viewType === "table" ? { backgroundColor: clinicColor } : {}
+              }
+              title="عرض جدولي"
+            >
+              <LayoutGrid size={16} />
+            </button>
+
+            {/* زر عرض الأجندة (جديد) */}
+            <button
+              onClick={() => onViewTypeChange("agenda")}
+              className={`p-1.5 rounded-full transition ${
+                viewType === "agenda"
+                  ? "text-white shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+              style={
+                viewType === "agenda" ? { backgroundColor: clinicColor } : {}
+              }
+              title="عرض أجندة مكثفة"
+            >
+              <List size={16} />
+            </button>
+
+            {/* زر عرض التقويم */}
+            <button
+              onClick={() => onViewTypeChange("calendar")}
+              className={`p-1.5 rounded-full transition ${
+                viewType === "calendar"
+                  ? "text-white shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+              style={
+                viewType === "calendar" ? { backgroundColor: clinicColor } : {}
+              }
+              title="عرض تقويم"
+            >
+              <CalendarDays size={16} />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -709,6 +740,10 @@ function TableFooter({ sessionsCount, totalCost }: TableFooterProps) {
 // Component: PatientsTable (Desktop + Mobile)
 // ============================================================================
 
+// ============================================================================
+// Component: PatientsTable (Desktop + Mobile + Agenda)
+// ============================================================================
+
 interface PatientsTableProps {
   sessions: Session[];
   sessionsWithMobileGroups: Array<
@@ -716,6 +751,7 @@ interface PatientsTableProps {
   >;
   searchTerm: string;
   viewMode: ViewMode;
+  viewType: ViewType; // 🆕 إضافة نوع العرض
   isMobile: boolean;
   getPatientData: (patientId: string) => Patient | undefined;
   onSessionSelect: (session: Session) => void;
@@ -726,6 +762,7 @@ function PatientsTable({
   sessionsWithMobileGroups,
   searchTerm,
   viewMode,
+  viewType, // 🆕
   isMobile,
   getPatientData,
   onSessionSelect,
@@ -742,86 +779,470 @@ function PatientsTable({
 
   return (
     <>
-      {/* Desktop Table */}
+      {/* Desktop Table - يظهر فقط على سطح المكتب في وضعي الجدول والأجندة */}
       <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="sticky top-0 z-10 bg-gray-50/80">
-              <tr className="border-b border-gray-200">
-                <th className="py-3 px-0 w-1"></th>
-                <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700 whitespace-nowrap">
-                  اليوم والتاريخ
-                </th>
-                <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700">
-                  الاسم
-                </th>
-                <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700 whitespace-nowrap">
-                  الرقم
-                </th>
-                <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700 whitespace-nowrap hidden sm:table-cell">
-                  العمر
-                </th>
-                <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700 whitespace-nowrap hidden sm:table-cell">
-                  الجنس
-                </th>
-                <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700 max-w-xs">
-                  الجلسة
-                </th>
-                <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700 whitespace-nowrap">
-                  الوقت
-                </th>
-                <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700 whitespace-nowrap">
-                  التكلفة
-                </th>
-                <th className="py-3 px-3 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">
-                  الدفع
-                </th>
-                <th className="py-3 px-3 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">
-                  الحالة
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {sessions.map((session) => (
-                <DesktopTableRow
-                  key={session.id}
-                  session={session}
-                  getPatientData={getPatientData}
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <TableFooter sessionsCount={sessions.length} totalCost={totalCost} />
+        {viewType === "agenda" ? (
+          // 🆕 عرض الأجندة لسطح المكتب
+          <DesktopAgendaView
+            sessions={sessions}
+            getPatientData={getPatientData}
+            onSessionSelect={onSessionSelect}
+          />
+        ) : (
+          // عرض الجدول التقليدي مع رأس ثابت
+          <div
+            className="flex flex-col"
+            style={{ maxHeight: "calc(100vh - 170px)" }}
+          >
+            {/* رأس الجدول - ثابت في الأعلى */}
+            <div className="flex-shrink-0 bg-gray-50/80 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+              <table className="w-full">
+                <thead>
+                  <tr>
+                    <th className="py-3 px-0 w-1.5"></th>
+                    <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700 whitespace-nowrap">
+                      اليوم والتاريخ
+                    </th>
+                    <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700">
+                      الاسم
+                    </th>
+                    <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700 whitespace-nowrap">
+                      الرقم
+                    </th>
+                    <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700 whitespace-nowrap hidden sm:table-cell">
+                      العمر
+                    </th>
+                    <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700 whitespace-nowrap hidden sm:table-cell">
+                      الجنس
+                    </th>
+                    <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700 max-w-xs">
+                      الجلسة
+                    </th>
+                    <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700 whitespace-nowrap">
+                      الوقت
+                    </th>
+                    <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700 whitespace-nowrap">
+                      التكلفة
+                    </th>
+                    <th className="py-3 px-3 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">
+                      الدفع
+                    </th>
+                    <th className="py-3 px-3 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">
+                      الحالة
+                    </th>
+                  </tr>
+                </thead>
+              </table>
+            </div>
+
+            {/* محتوى الجدول - قابل للتمرير */}
+            <div className="flex-1 overflow-auto">
+              <table className="w-full">
+                <tbody>
+                  {sessions.map((session) => (
+                    <DesktopTableRow
+                      key={session.id}
+                      session={session}
+                      getPatientData={getPatientData}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Footer - ثابت في الأسفل */}
+            <div className="flex-shrink-0">
+              <TableFooter
+                sessionsCount={sessions.length}
+                totalCost={totalCost}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Mobile List */}
-      <div className="md:hidden bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        {sessionsWithMobileGroups.map((item, index) => {
-          if (item.type === "group") {
-            return (
-              <div
-                key={`m-group-${item.dateStr}`}
-                className="bg-gray-50/80 px-4 py-2 text-xs font-bold text-gray-600 border-b"
-              >
-                {getDayName(item.dateStr)} - {formatDisplayDate(item.dateStr)}
-              </div>
-            );
-          }
-          return (
-            <MobileListRow
-              key={item.session.id}
-              session={item.session}
-              getPatientData={getPatientData}
-              onSelect={onSessionSelect}
+      {/* Mobile View - يظهر على الهاتف فقط */}
+      <div className="md:hidden bg-white rounded-xl shadow-sm border border-gray-100 overflow-visible">
+        {viewType === "agenda" ? (
+          // 🆕 عرض الأجندة المكثفة للهاتف
+          <MobileAgendaView
+            sessions={sessions}
+            sessionsWithMobileGroups={sessionsWithMobileGroups}
+            getPatientData={getPatientData}
+            onSessionSelect={onSessionSelect}
+          />
+        ) : (
+          // عرض القائمة التقليدية للهاتف
+          <>
+            {sessionsWithMobileGroups.map((item, index) => {
+              if (item.type === "group") {
+                return (
+                  <div
+                    key={`m-group-${item.dateStr}`}
+                    className="bg-gray-50/80 px-4 py-2 text-xs font-bold text-gray-600 border-b"
+                  >
+                    {getDayName(item.dateStr)} -{" "}
+                    {formatDisplayDate(item.dateStr)}
+                  </div>
+                );
+              }
+              return (
+                <MobileListRow
+                  key={item.session.id}
+                  session={item.session}
+                  getPatientData={getPatientData}
+                  onSelect={onSessionSelect}
+                />
+              );
+            })}
+            <TableFooter
+              sessionsCount={sessions.length}
+              totalCost={totalCost}
             />
-          );
-        })}
-        <TableFooter sessionsCount={sessions.length} totalCost={totalCost} />
+          </>
+        )}
       </div>
     </>
   );
 }
+
+// ============================================================================
+// 🆕 Sub-component: DesktopAgendaView
+// ============================================================================
+
+interface DesktopAgendaViewProps {
+  sessions: Session[];
+  getPatientData: (patientId: string) => Patient | undefined;
+  onSessionSelect: (session: Session) => void;
+}
+
+function DesktopAgendaView({
+  sessions,
+  getPatientData,
+  onSessionSelect,
+}: DesktopAgendaViewProps) {
+  const totalCost = sessions.reduce((sum, s) => sum + (s.sessionCost || 0), 0);
+
+  const groupedByDate = sessions.reduce(
+    (acc, session) => {
+      const dateStr = getDateString(session.startTime);
+      if (!acc[dateStr]) acc[dateStr] = [];
+      acc[dateStr].push(session);
+      return acc;
+    },
+    {} as Record<string, Session[]>,
+  );
+
+  const sortedDates = Object.keys(groupedByDate).sort((a, b) =>
+    b.localeCompare(a),
+  );
+
+  return (
+    <div
+      className="flex flex-col bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+      style={{ height: "calc(100vh - 200px)" }}
+    >
+      {/* منطقة التمرير – الوحيدة القابلة للتمرير */}
+      <div className="flex-1 overflow-y-auto">
+        {sortedDates.map((dateStr) => (
+          <div key={dateStr}>
+            {/* رأس اليوم – خلفية صلبة و بدون blur */}
+            <div className="sticky top-0 z-10 bg-gray-50 px-6 py-2.5 flex items-center justify-between border-b border-gray-100 shadow-sm">
+              <div className="flex items-center gap-2">
+                <Calendar size={14} className="text-gray-500" />
+                <span className="text-sm font-semibold text-gray-700">
+                  {getDayName(dateStr)} - {formatDisplayDate(dateStr)}
+                </span>
+              </div>
+              <span className="text-xs text-gray-500">
+                {groupedByDate[dateStr].length} جلسات
+              </span>
+            </div>
+
+            <div className="p-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                {groupedByDate[dateStr].map((session) => (
+                  <AgendaCard
+                    key={session.id}
+                    session={session}
+                    getPatientData={getPatientData}
+                    onClick={onSessionSelect}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Footer ثابت أسفل الحاوية */}
+      <div className="flex-shrink-0 border-t border-gray-200">
+        <TableFooter sessionsCount={sessions.length} totalCost={totalCost} />
+      </div>
+    </div>
+  );
+}
+// ============================================================================
+// 🆕 Sub-component: MobileAgendaView
+// ============================================================================
+
+interface MobileAgendaViewProps {
+  sessions: Session[];
+  sessionsWithMobileGroups: Array<
+    { type: "group"; dateStr: string } | { type: "session"; session: Session }
+  >;
+  getPatientData: (patientId: string) => Patient | undefined;
+  onSessionSelect: (session: Session) => void;
+}
+
+function MobileAgendaView({
+  sessions,
+  sessionsWithMobileGroups,
+  getPatientData,
+  onSessionSelect,
+}: MobileAgendaViewProps) {
+  const totalCost = sessions.reduce((sum, s) => sum + (s.sessionCost || 0), 0);
+
+  return (
+    <div
+      className="flex flex-col bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+      style={{ height: "calc(100vh - 160px)" }}
+    >
+      <div className="flex-1 overflow-y-auto">
+        {sessionsWithMobileGroups.map((item, index) => {
+          if (item.type === "group") {
+            return (
+              <div
+                key={`agenda-group-${item.dateStr}`}
+                className="sticky top-0 z-10"
+              >
+                {/* طبقة الخلفية */}
+                <div className="absolute inset-0 bg-gradient-to-b from-gray-50 via-gray-50 to-gray-50/95" />
+
+                {/* شريط علوي ملون */}
+                <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-gray-400 via-gray-500 to-gray-400" />
+
+                {/* المحتوى */}
+                <div className="relative px-4 py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {/* دائرة اليوم */}
+                    <div className="w-9 h-9 rounded-full bg-white shadow-sm border border-gray-200 flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-bold text-gray-600">
+                        {new Date(item.dateStr).getDate()}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-sm font-bold text-gray-800">
+                        {getDayName(item.dateStr)}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {formatDisplayDate(item.dateStr)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* نقطة مؤشرة */}
+                  <div className="w-2 h-2 rounded-full bg-gray-400" />
+                </div>
+
+                {/* فاصل سفلي */}
+                <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
+              </div>
+            );
+          }
+          return (
+            <div key={`agenda-${item.session.id}`} className="my-5 mx-3">
+              <AgendaCard
+                session={item.session}
+                getPatientData={getPatientData}
+                onClick={onSessionSelect}
+                isMobile
+              />
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="flex-shrink-0 border-t border-gray-200">
+        <TableFooter sessionsCount={sessions.length} totalCost={totalCost} />
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// 🆕 Sub-component: AgendaCard (مشترك بين Desktop و Mobile)
+// ============================================================================
+
+interface AgendaCardProps {
+  session: Session;
+  getPatientData: (patientId: string) => Patient | undefined;
+  onClick: (session: Session) => void;
+  isMobile?: boolean;
+}
+
+function AgendaCard({
+  session,
+  getPatientData,
+  onClick,
+  isMobile = false,
+}: AgendaCardProps) {
+  const patient = getPatientData(session.patientId);
+  const statusDisplay = getSessionStatusDisplay(session.status);
+  const paymentDisplay = getPaymentMethodDisplay(session);
+  const StatusIcon = statusDisplay.icon;
+  const PaymentIcon = paymentDisplay.icon;
+  const timelineColor = getTimelineColor(session.status);
+  const timeStr = formatTime(session.startTime);
+
+  // تحديد ألوان الخلفية بناءً على الحالة
+  const getCardStyles = () => {
+    switch (session.status) {
+      case "completed":
+        return {
+          bg: "bg-green-50/70",
+          hoverBg: "hover:bg-green-100/80",
+          border: "border-green-200",
+          timelineBg: "#22C55E",
+        };
+      case "in-progress":
+        return {
+          bg: "bg-amber-50/70",
+          hoverBg: "hover:bg-amber-100/80",
+          border: "border-amber-200",
+          timelineBg: "#F59E0B",
+        };
+      case "scheduled":
+        return {
+          bg: "bg-blue-50/70",
+          hoverBg: "hover:bg-blue-100/80",
+          border: "border-blue-200",
+          timelineBg: "#3B82F6",
+        };
+      case "cancelled":
+        return {
+          bg: "bg-gray-50/70",
+          hoverBg: "hover:bg-gray-100/80",
+          border: "border-gray-200",
+          timelineBg: "#9CA3AF",
+        };
+      case "no-show":
+        return {
+          bg: "bg-orange-50/70",
+          hoverBg: "hover:bg-orange-100/80",
+          border: "border-orange-200",
+          timelineBg: "#F97316",
+        };
+      default:
+        return {
+          bg: "bg-gray-50/70",
+          hoverBg: "hover:bg-gray-100/80",
+          border: "border-gray-200",
+          timelineBg: "#9CA3AF",
+        };
+    }
+  };
+
+  const cardStyles = getCardStyles();
+
+  return (
+    <div
+      onClick={() => onClick(session)}
+      className={`
+        flex items-start gap-3 p-3 rounded-xl border cursor-pointer
+        transition-all duration-200
+        ${cardStyles.bg} ${cardStyles.hoverBg} ${cardStyles.border}
+        ${isMobile ? "active:scale-[0.98]" : "hover:shadow-md hover:scale-[1.01]"}
+      `}
+    >
+      {/* الخط الزمني على اليسار */}
+      <div className="flex flex-col items-center gap-1 flex-shrink-0">
+        <div
+          className="w-1.5 flex-1 min-h-[40px] rounded-full"
+          style={{ backgroundColor: cardStyles.timelineBg }}
+        ></div>
+        <StatusIcon
+          size={14}
+          style={{ color: statusDisplay.color }}
+          className="flex-shrink-0 mt-1"
+        />
+      </div>
+
+      {/* محتوى البطاقة */}
+      <div className="flex-1 min-w-0">
+        {/* اسم المريض والوقت */}
+        <div className="flex items-start justify-between gap-2 mb-1">
+          <h4 className="text-sm font-semibold text-gray-900 truncate">
+            {patient?.fullName || session.patientSnapshot?.name}
+          </h4>
+          <span className="text-xs font-medium text-gray-600 whitespace-nowrap flex-shrink-0">
+            {timeStr}
+          </span>
+        </div>
+
+        {/* الإجراء */}
+        <p className="text-xs text-gray-600 mb-2 line-clamp-2">
+          {session.plannedProcedure ||
+            session.performedProcedure ||
+            "لا يوجد إجراء"}
+        </p>
+
+        {/* معلومات إضافية وتفاصيل */}
+        <div className="flex items-center justify-between">
+          {/* الحالة والدفع */}
+          <div className="flex items-center gap-2">
+            <span
+              className="text-xs px-2 py-0.5 rounded-full font-medium"
+              style={{
+                backgroundColor: statusDisplay.bgColor,
+                color: statusDisplay.color,
+              }}
+            >
+              {statusDisplay.label}
+            </span>
+            <span
+              className="text-xs px-2 py-0.5 rounded-full font-medium"
+              style={{
+                backgroundColor: paymentDisplay.bgColor,
+                color: paymentDisplay.color,
+              }}
+            >
+              {paymentDisplay.label}
+            </span>
+          </div>
+
+          {/* التكلفة */}
+          <span
+            className="text-sm font-bold"
+            style={{ color: session.isPaid ? "#059669" : "#DC2626" }}
+          >
+            {session.sessionCost?.toLocaleString()} $
+          </span>
+        </div>
+
+        {/* معلومات المريض الإضافية (اختياري) */}
+        {patient && (
+          <div className="flex items-center gap-3 mt-2 pt-2 border-t border-gray-200/50">
+            {patient.phone && (
+              <span className="text-xs text-gray-500 flex items-center gap-1">
+                <Phone size={10} />
+                {patient.phone}
+              </span>
+            )}
+            {patient.age && (
+              <span className="text-xs text-gray-500">{patient.age} سنة</span>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Sub-component: DesktopTableRow
+// ============================================================================
 
 // ============================================================================
 // Sub-component: DesktopTableRow
@@ -833,7 +1254,6 @@ interface DesktopTableRowProps {
 }
 
 function DesktopTableRow({ session, getPatientData }: DesktopTableRowProps) {
-  const today = new Date();
   const dateStr = getDateString(session.startTime);
   const combinedDate = `${getDayName(dateStr)} ${formatDisplayDate(dateStr)}`;
   const patient = getPatientData(session.patientId);
@@ -848,65 +1268,119 @@ function DesktopTableRow({ session, getPatientData }: DesktopTableRowProps) {
   const PaymentIcon = paymentDisplay.icon;
   const StatusIcon = statusDisplay.icon;
   const timelineColor = getTimelineColor(session.status);
-  const past = new Date(session.startTime) < today;
+
+  // تعيين كلاسات الخلفية والـ hover بناءً على الحالة
+  const getRowStyles = () => {
+    switch (session.status) {
+      case "completed":
+        return {
+          bg: "bg-green-50/70",
+          hoverBg: "hover:bg-green-100/80",
+          border: "border-green-200",
+        };
+      case "in-progress":
+        return {
+          bg: "bg-amber-50/70",
+          hoverBg: "hover:bg-amber-100/80",
+          border: "border-amber-200",
+        };
+      case "scheduled":
+        return {
+          bg: "bg-blue-50/70",
+          hoverBg: "hover:bg-blue-100/80",
+          border: "border-blue-200",
+        };
+      case "cancelled":
+        return {
+          bg: "bg-gray-50/70",
+          hoverBg: "hover:bg-gray-100/80",
+          border: "border-gray-200",
+        };
+      case "no-show":
+        return {
+          bg: "bg-orange-50/70",
+          hoverBg: "hover:bg-orange-100/80",
+          border: "border-orange-200",
+        };
+      default:
+        return {
+          bg: "bg-gray-50/70",
+          hoverBg: "hover:bg-gray-100/80",
+          border: "border-gray-200",
+        };
+    }
+  };
+
+  const rowStyles = getRowStyles();
 
   return (
     <tr
-      className={`border-b border-gray-100 hover:bg-gray-50/80 transition-colors ${
-        past ? "bg-gray-50/40" : "bg-white"
-      }`}
+      className={`border-b ${rowStyles.border} transition-all duration-200 ${rowStyles.bg} ${rowStyles.hoverBg}`}
     >
+      {/* شريط جانبي أعرض مع لون الحالة */}
       <td
-        className="py-2.5 px-0 w-1"
+        className="py-2.5 px-0 w-1.5"
         style={{ backgroundColor: timelineColor }}
       ></td>
+
       <td className="py-2.5 px-3 text-xs md:text-sm text-gray-700 whitespace-nowrap">
         {combinedDate}
       </td>
-      <td className="py-2.5 px-3 text-xs md:text-sm text-gray-900 font-medium min-w-[120px]">
+
+      <td className="py-2.5 px-3 text-xs md:text-sm text-gray-900 font-semibold min-w-[120px]">
         {patient?.fullName || session.patientSnapshot?.name}
       </td>
+
       <td
         className="py-2.5 px-3 text-xs md:text-sm text-gray-600 whitespace-nowrap"
         dir="ltr"
       >
         {patient?.phone || session.patientSnapshot?.phone}
       </td>
+
       <td className="py-2.5 px-3 text-xs md:text-sm text-gray-700 whitespace-nowrap hidden sm:table-cell">
         {patient?.age || "-"}
       </td>
+
       <td className="py-2.5 px-3 text-xs md:text-sm text-gray-700 whitespace-nowrap hidden sm:table-cell">
         {genderArabic}
       </td>
+
       <td className="py-2.5 px-3 text-xs md:text-sm text-gray-700 max-w-[100px] md:max-w-xs">
         <span className="line-clamp-2">
           {session.plannedProcedure || session.performedProcedure || "-"}
         </span>
       </td>
+
       <td className="py-2.5 px-3 text-xs md:text-sm text-gray-600 whitespace-nowrap">
         {formatTime(session.startTime)}
       </td>
+
       <td className="py-2.5 px-3 text-xs md:text-sm font-bold whitespace-nowrap">
         <span style={{ color: session.isPaid ? "#059669" : "#DC2626" }}>
           {session.sessionCost?.toLocaleString()} $
         </span>
       </td>
+
+      {/* مؤشر الدفع - أكبر وأوضح */}
       <td className="py-2.5 px-3 text-center">
         <div
-          className="w-7 h-7 rounded-full flex items-center justify-center mx-auto"
+          className="w-9 h-9 rounded-full flex items-center justify-center mx-auto shadow-sm transition-transform hover:scale-110"
           style={{ backgroundColor: paymentDisplay.bgColor }}
           title={paymentDisplay.label}
         >
-          <PaymentIcon size={14} style={{ color: paymentDisplay.color }} />
+          <PaymentIcon size={16} style={{ color: paymentDisplay.color }} />
         </div>
       </td>
+
+      {/* مؤشر الحالة - أكبر وأوضح */}
       <td className="py-2.5 px-3 text-center">
         <div
-          className="w-7 h-7 rounded-full flex items-center justify-center mx-auto"
+          className="w-9 h-9 rounded-full flex items-center justify-center mx-auto shadow-sm transition-transform hover:scale-110"
           style={{ backgroundColor: statusDisplay.bgColor }}
           title={statusDisplay.label}
         >
-          <StatusIcon size={14} style={{ color: statusDisplay.color }} />
+          <StatusIcon size={16} style={{ color: statusDisplay.color }} />
         </div>
       </td>
     </tr>
@@ -928,7 +1402,6 @@ function MobileListRow({
   getPatientData,
   onSelect,
 }: MobileListRowProps) {
-  const today = new Date();
   const dateStr = getDateString(session.startTime);
   const combinedDate = `${getDayName(dateStr)} ${formatDisplayDate(dateStr)}`;
   const timeStr = formatTime(session.startTime);
@@ -936,41 +1409,102 @@ function MobileListRow({
   const statusDisplay = getSessionStatusDisplay(session.status);
   const StatusIcon = statusDisplay.icon;
   const timelineColor = getTimelineColor(session.status);
-  const past = new Date(session.startTime) < today;
+  const paymentDisplay = getPaymentMethodDisplay(session);
+
+  // تعيين كلاسات الخلفية والـ active بناءً على الحالة
+  const getRowStyles = () => {
+    switch (session.status) {
+      case "completed":
+        return {
+          bg: "bg-green-50/70",
+          activeBg: "active:bg-green-100",
+          border: "border-green-200",
+        };
+      case "in-progress":
+        return {
+          bg: "bg-amber-50/70",
+          activeBg: "active:bg-amber-100",
+          border: "border-amber-200",
+        };
+      case "scheduled":
+        return {
+          bg: "bg-blue-50/70",
+          activeBg: "active:bg-blue-100",
+          border: "border-blue-200",
+        };
+      case "cancelled":
+        return {
+          bg: "bg-gray-50/70",
+          activeBg: "active:bg-gray-100",
+          border: "border-gray-200",
+        };
+      case "no-show":
+        return {
+          bg: "bg-orange-50/70",
+          activeBg: "active:bg-orange-100",
+          border: "border-orange-200",
+        };
+      default:
+        return {
+          bg: "bg-gray-50/70",
+          activeBg: "active:bg-gray-100",
+          border: "border-gray-200",
+        };
+    }
+  };
+
+  const rowStyles = getRowStyles();
 
   return (
     <div
       onClick={() => onSelect(session)}
-      className={`flex items-center gap-3 px-4 py-3 border-b border-gray-100 cursor-pointer active:bg-gray-50 transition-colors ${
-        past ? "bg-gray-50/40" : "bg-white"
-      }`}
+      className={`flex items-center gap-3 px-4 py-3 border-b ${rowStyles.border} cursor-pointer ${rowStyles.activeBg} transition-all duration-200 ${rowStyles.bg}`}
     >
+      {/* شريط جانبي أعرض مع تدرج لوني */}
       <div
-        className="w-1 self-stretch rounded-full"
+        className="w-1.5 self-stretch rounded-full"
         style={{ backgroundColor: timelineColor }}
       ></div>
+
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900 truncate">
+        <p className="text-sm font-semibold text-gray-900 truncate">
           {patient?.fullName || session.patientSnapshot?.name}
         </p>
-        <p className="text-xs text-gray-500 mt-0.5">
+        <p className="text-xs text-gray-600 mt-0.5">
           {combinedDate} · {timeStr}
         </p>
       </div>
-      <div className="text-right">
+
+      <div className="text-right flex flex-col items-end gap-2">
+        {/* التكلفة مع لون أوضح */}
         <p
           className="text-sm font-bold"
           style={{ color: session.isPaid ? "#059669" : "#DC2626" }}
         >
           {session.sessionCost?.toLocaleString()} $
         </p>
-        <div className="mt-1 flex justify-end">
+
+        {/* مؤشر الحالة أكبر مع مؤشر الدفع */}
+        <div className="flex items-center gap-2">
+          {/* مؤشر الدفع */}
           <div
-            className="w-6 h-6 rounded-full flex items-center justify-center"
+            className="w-7 h-7 rounded-full flex items-center justify-center shadow-sm"
+            style={{ backgroundColor: paymentDisplay.bgColor }}
+            title={paymentDisplay.label}
+          >
+            {React.createElement(paymentDisplay.icon, {
+              size: 13,
+              style: { color: paymentDisplay.color },
+            })}
+          </div>
+
+          {/* مؤشر الحالة */}
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm"
             style={{ backgroundColor: statusDisplay.bgColor }}
             title={statusDisplay.label}
           >
-            <StatusIcon size={12} style={{ color: statusDisplay.color }} />
+            <StatusIcon size={14} style={{ color: statusDisplay.color }} />
           </div>
         </div>
       </div>
@@ -1065,7 +1599,7 @@ function PatientsCalendar({
 }
 
 // ============================================================================
-// Sub-component: DesktopCalendar
+// Sub-component: DesktopCalendar (محسّن)
 // ============================================================================
 
 interface DesktopCalendarProps {
@@ -1081,6 +1615,55 @@ interface DesktopCalendarProps {
   onSessionSelect: (session: Session) => void;
 }
 
+/**
+ * تكديس الجلسات المتداخلة زمنياً (بحد أقصى 3 بطاقات)
+ * تُرجع مصفوفة من stacks، كل stack يحتوي على جلسة أو أكثر
+ */
+function stackAppointments(sessions: Session[]): Session[][] {
+  if (sessions.length === 0) return [];
+
+  // ترتيب تصاعدي حسب وقت البداية
+  const sorted = [...sessions].sort(
+    (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+  );
+
+  const stacks: Session[][] = [];
+
+  for (const session of sorted) {
+    const sessionStart = new Date(session.startTime).getTime();
+    const sessionEnd = new Date(session.endTime || session.startTime).getTime();
+
+    // البحث عن stack يحتوي على جلسات متداخلة فقط
+    let placed = false;
+    for (const stack of stacks) {
+      if (stack.length >= 3) continue; // الحد الأقصى 3
+
+      const stackEnd = Math.max(
+        ...stack.map((s) =>
+          new Date(s.endTime || s.startTime).getTime(),
+        ),
+      );
+
+      // ضع الجلسة في stack فقط إذا كانت تتداخل زمنياً مع أي جلسة في الـ stack
+      if (sessionStart < stackEnd) {
+        stack.push(session);
+        placed = true;
+        break;
+      }
+    }
+
+    if (!placed) {
+      stacks.push([session]);
+    }
+  }
+
+  return stacks;
+}
+
+// ============================================================================
+// Sub-component: DesktopCalendar (Grid موحد - محاذاة مثالية)
+// ============================================================================
+
 function DesktopCalendar({
   weekDays,
   calendarWeekSessions,
@@ -1092,131 +1675,300 @@ function DesktopCalendar({
   getPatientData,
   onSessionSelect,
 }: DesktopCalendarProps) {
+  // تجميع الجلسات حسب اليوم
+  const sessionsByDay = useMemo(() => {
+    const map: Record<string, Session[]> = {};
+    weekDays.forEach((day) => {
+      const dateStr = day.toISOString().split("T")[0];
+      map[dateStr] = calendarWeekSessions.filter(
+        (s) => getDateString(s.startTime) === dateStr,
+      );
+    });
+    return map;
+  }, [weekDays, calendarWeekSessions]);
+
+  // تكديس الجلسات لكل يوم
+  const stackedByDay = useMemo(() => {
+    const map: Record<string, Session[][]> = {};
+    Object.entries(sessionsByDay).forEach(([dateStr, daySessions]) => {
+      map[dateStr] = stackAppointments(daySessions);
+    });
+    return map;
+  }, [sessionsByDay]);
+
+  // صيغة عرض نطاق الأسبوع
+  const weekRangeLabel = useMemo(() => {
+    const start = weekDays[0];
+    const end = weekDays[6];
+    const startStr = `${start.getDate()}/${start.getMonth() + 1}`;
+    const endStr = `${end.getDate()}/${end.getMonth() + 1}`;
+    return `من ${startStr} إلى ${endStr} `;
+  }, [weekDays]);
+
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  // الساعات من 9 صباحاً إلى 8 مساءً (12 ساعة)
+  const hours = [
+    { hour24: 9, label: "9 ص" },
+    { hour24: 10, label: "10 ص" },
+    { hour24: 11, label: "11 ص" },
+    { hour24: 12, label: "12 م" },
+    { hour24: 13, label: "1 م" },
+    { hour24: 14, label: "2 م" },
+    { hour24: 15, label: "3 م" },
+    { hour24: 16, label: "4 م" },
+    { hour24: 17, label: "5 م" },
+    { hour24: 18, label: "6 م" },
+    { hour24: 19, label: "7 م" },
+    { hour24: 20, label: "8 م" },
+  ];
+
+  // ارتفاع الرأس
+  const HEADER_HEIGHT = 44;
+  // ارتفاع محتوى الوقت
+  const TIME_CONTENT_HEIGHT = 660;
+
   return (
     <div
-      className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+      className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden"
       dir="rtl"
     >
-      {/* Week navigation header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50/80">
-        <button
-          onClick={onPreviousWeek}
-          className="p-1.5 rounded-lg hover:bg-gray-200 transition"
-        >
-          <ChevronRight size={18} className="text-gray-600" />
-        </button>
-        <h3 className="text-sm font-semibold text-gray-700">
-          {weekDays[0].toLocaleDateString("ar-SA", {
-            month: "short",
-            day: "numeric",
-          })}{" "}
-          -{" "}
-          {weekDays[5].toLocaleDateString("ar-SA", {
-            month: "short",
-            day: "numeric",
-          })}
+      {/* ========== رأس التنقل - تصميم واضح ========== */}
+      <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-white">
+        {/* عنوان الأسبوع */}
+        <h3 className="text-sm font-semibold text-gray-800 select-none">
+          {weekRangeLabel}
         </h3>
-        <button
-          onClick={onNextWeek}
-          className="p-1.5 rounded-lg hover:bg-gray-200 transition"
-        >
-          <ChevronLeft size={18} className="text-gray-600" />
-        </button>
-        <button
-          onClick={onTodayWeek}
-          className="text-xs px-3 py-1.5 rounded-md border border-gray-300 bg-white hover:bg-gray-100 transition font-medium"
-        >
-          اليوم
-        </button>
+
+        {/* مجموعة الأزرار */}
+        <div className="flex items-center gap-2">
+          {/* زر اليوم */}
+          <button
+            onClick={onTodayWeek}
+            className="h-9 px-4 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700
+                 hover:bg-gray-50 active:bg-gray-100 active:scale-95 transition-all duration-150
+                 shadow-sm select-none"
+          >
+            اليوم
+          </button>
+
+          {/* أزرار التنقل مع تسميات */}
+          <button
+            onClick={onPreviousWeek}
+            className="h-9 px-3 flex items-center gap-1.5 text-sm font-medium rounded-lg
+                 border border-gray-300 bg-white text-gray-700
+                 hover:bg-gray-50 active:bg-gray-100 active:scale-95 transition-all duration-150
+                 shadow-sm select-none"
+            aria-label="الأسبوع السابق"
+          >
+            <ChevronRight size={16} strokeWidth={2} />
+            <span>الأسبوع السابق</span>
+          </button>
+
+          <button
+            onClick={onNextWeek}
+            className="h-9 px-3 flex items-center gap-1.5 text-sm font-medium rounded-lg
+                 border border-gray-300 bg-white text-gray-700
+                 hover:bg-gray-50 active:bg-gray-100 active:scale-95 transition-all duration-150
+                 shadow-sm select-none"
+            aria-label="الأسبوع التالي"
+          >
+            <span>الأسبوع التالي</span>
+            <ChevronLeft size={16} strokeWidth={2} />
+          </button>
+        </div>
       </div>
 
-      {/* Time grid */}
-      <div className="relative overflow-auto" style={{ height: "660px" }}>
+      {/* ========== GRID موحد: رؤوس + وقت + بطاقات ========== */}
+      <div
+        className="relative overflow-auto"
+        style={{
+          height: `${HEADER_HEIGHT + TIME_CONTENT_HEIGHT}px`,
+          scrollbarGutter: "stable",
+        }}
+      >
         <div
           className="relative"
           style={{
             width: "100%",
-            height: "660px",
+            height: `${HEADER_HEIGHT + TIME_CONTENT_HEIGHT}px`,
             display: "grid",
-            gridTemplateColumns: "70px repeat(6, 1fr)",
-            gridTemplateRows: "40px auto",
+            gridTemplateColumns: "70px repeat(7, 1fr)",
+            gridTemplateRows: `${HEADER_HEIGHT}px 1fr`,
             direction: "rtl",
           }}
         >
-          {/* Header row */}
+          {/* ================================================================ */}
+          {/* الصف 1: رؤوس الأيام                                               */}
+          {/* ================================================================ */}
+
+          {/* الخلية الفارغة أعلى عمود الوقت */}
           <div
-            style={{
-              gridColumn: "1 / 2",
-              gridRow: "1",
-              position: "sticky",
-              top: 0,
-              zIndex: 20,
-              backgroundColor: "#f9fafb",
-            }}
-          ></div>
-          {weekDays.map((day, idx) => (
-            <div
-              key={idx}
-              className="flex flex-col items-center justify-center border-b border-gray-200 bg-gray-50/80 text-xs font-semibold text-gray-700"
-              style={{
-                gridColumn: `${idx + 2} / ${idx + 3}`,
-                gridRow: "1",
-              }}
-            >
-              <span>{getDayName(day.toISOString().split("T")[0])}</span>
-              <span className="text-[10px] text-gray-500">
-                {day.getDate()}/{day.getMonth() + 1}
-              </span>
-            </div>
-          ))}
+            className="bg-gray-50/60 border-b border-l border-gray-200"
+            style={{ gridColumn: "1 / 2", gridRow: "1 / 2" }}
+          />
 
-          {/* Time column */}
-          <CalendarTimeColumn />
+          {/* رؤوس الأيام السبعة */}
+          {weekDays.map((day, idx) => {
+            const dateStr = day.toISOString().split("T")[0];
+            const isToday = dateStr === todayStr;
 
-          {/* Day columns background grid */}
-          {weekDays.map((day, dayIndex) => (
-            <CalendarDayGrid key={`bg-${dayIndex}`} dayIndex={dayIndex} />
-          ))}
+            return (
+              <div
+                key={`header-${idx}`}
+                className={`
+                  flex flex-col items-center justify-center text-xs select-none
+                  border-b border-l border-gray-200 bg-gray-50/60
+                  ${idx === 6 ? "border-l-0" : ""}
+                  ${isToday ? "!bg-blue-50/70" : ""}
+                `}
+                style={{
+                  gridColumn: `${idx + 2} / ${idx + 3}`,
+                  gridRow: "1 / 2",
+                }}
+              >
+                <span className="text-[10px] text-gray-500 font-medium">
+                  {getDayName(dateStr)}
+                </span>
+                <span
+                  className={`
+                    text-sm font-bold leading-tight
+                    ${isToday ? "text-blue-600" : "text-gray-700"}
+                  `}
+                >
+                  {day.getDate()}
+                </span>
+              </div>
+            );
+          })}
 
-          {/* Current time indicator */}
+          {/* ================================================================ */}
+          {/* الصف 2: عمود الوقت                                                */}
+          {/* ================================================================ */}
+
+          <div
+            className="relative border-l border-gray-200 bg-white"
+            style={{ gridColumn: "1 / 2", gridRow: "2 / 3", zIndex: 10 }}
+          >
+            {hours.map((hour) => (
+              <div
+                key={hour.hour24}
+                className="absolute right-0 left-0 flex items-start border-t border-gray-200"
+                style={{
+                  top: `${(hour.hour24 - 9) * 60}px`,
+                  height: "60px",
+                }}
+              >
+                <span className="text-[11px] text-gray-400 font-medium pr-2 pt-1 select-none">
+                  {hour.label}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* ================================================================ */}
+          {/* الصف 2: أعمدة الأيام مع شبكة محسّنة                                */}
+          {/* ================================================================ */}
+
+          {weekDays.map((day, dayIndex) => {
+            const dateStr = day.toISOString().split("T")[0];
+            const isToday = dateStr === todayStr;
+            const isEvenColumn = dayIndex % 2 === 0;
+
+            return (
+              <div
+                key={`col-${dayIndex}`}
+                className={`
+                  relative
+                  ${dayIndex < 6 ? "border-l border-gray-200" : ""}
+                  ${isToday ? "bg-blue-50/30" : isEvenColumn ? "bg-gray-50/30" : "bg-white"}
+                `}
+                style={{
+                  gridColumn: `${dayIndex + 2} / ${dayIndex + 3}`,
+                  gridRow: "2 / 3",
+                }}
+              >
+                {/* خطوط الساعات - أكثر وضوحاً */}
+                {Array.from({ length: 12 }, (_, i) => i + 9).map((hour) => (
+                  <div
+                    key={`hour-${hour}`}
+                    className="absolute left-0 right-0"
+                    style={{ top: `${(hour - 9) * 60}px` }}
+                  >
+                    <div className="absolute left-0 right-0 border-t border-gray-300" />
+                  </div>
+                ))}
+
+                {/* خطوط نصف الساعة - أخف */}
+                {Array.from({ length: 11 }, (_, i) => i + 9).map((hour) => (
+                  <div
+                    key={`half-${hour}`}
+                    className="absolute left-0 right-0"
+                    style={{ top: `${(hour - 9) * 60 + 30}px` }}
+                  >
+                    <div className="absolute left-0 right-0 border-t border-dashed border-gray-200" />
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+
+          {/* ================================================================ */}
+          {/* مؤشر الوقت الحالي                                                */}
+          {/* ================================================================ */}
+
           <div
             ref={currentTimeRef}
             className="absolute left-0 right-0 z-20 pointer-events-none"
             style={{
-              top: `${getCurrentTimeTop()}px`,
-              borderTop: "2px solid #EF4444",
+              top: `${HEADER_HEIGHT + getCurrentTimeTop()}px`,
             }}
           >
-            <div className="absolute right-0 w-2.5 h-2.5 rounded-full bg-red-500 -translate-y-1/2 translate-x-1/2 shadow-sm" />
+            {/* خط أحمر */}
+            <div className="absolute left-0 right-0 border-t-2 border-red-500 shadow-sm" />
+            {/* دائرة حمراء على اليسار مع تأثير نبض */}
+            <div className="absolute right-0 -translate-y-1/2 translate-x-1/2">
+              <div className="w-3 h-3 rounded-full bg-red-500 shadow-md shadow-red-200">
+                <div className="w-3 h-3 rounded-full bg-red-500 animate-ping absolute inset-0 opacity-40" />
+              </div>
+            </div>
           </div>
 
-          {/* Appointment cards */}
+          {/* ================================================================ */}
+          {/* بطاقات المواعيد المكدسة                                          */}
+          {/* ================================================================ */}
+
           <div
-            className="absolute inset-0"
+            className="absolute pointer-events-none"
             style={{
-              top: "40px",
+              top: `${HEADER_HEIGHT}px`,
               right: "70px",
               left: "0",
+              bottom: "0",
               zIndex: 5,
             }}
           >
             {weekDays.map((day, dayIndex) => {
               const dateStr = day.toISOString().split("T")[0];
-              const daySessions = calendarWeekSessions.filter(
-                (s) => getDateString(s.startTime) === dateStr,
+              const stacks = stackedByDay[dateStr] || [];
+              // تعديل: استخدام 7 أعمدة متساوية داخل المساحة المتبقية
+              const colWidth = `calc((100% - 0px) / 7)`;
+              const colLeft = `calc(${dayIndex} * ${colWidth})`;
+
+              return stacks.flatMap((stack) =>
+                stack.map((session, sessionIdxInStack) => (
+                  <CalendarAppointmentCard
+                    key={session.id}
+                    session={session}
+                    colLeft={colLeft}
+                    colWidth={colWidth}
+                    stackIndex={sessionIdxInStack}
+                    totalInStack={stack.length}
+                    getPatientData={getPatientData}
+                    onClick={onSessionSelect}
+                  />
+                )),
               );
-              const colWidth = `calc((100% - 0px) / 6)`;
-              const left = `calc(${dayIndex} * ${colWidth})`;
-              return daySessions.map((session) => (
-                <CalendarAppointmentCard
-                  key={session.id}
-                  session={session}
-                  left={left}
-                  colWidth={colWidth}
-                  getPatientData={getPatientData}
-                  onClick={onSessionSelect}
-                />
-              ));
             })}
           </div>
         </div>
@@ -1229,85 +1981,124 @@ function DesktopCalendar({
 // Sub-component: CalendarTimeColumn
 // ============================================================================
 
+// ============================================================================
+// Sub-component: CalendarTimeColumn (نظام 12 ساعة)
+// ============================================================================
+
 function CalendarTimeColumn() {
+  // الساعات من 9 صباحاً إلى 8 مساءً (12 ساعة)
+  const hours = [
+    { hour24: 9, label: "9 ص" },
+    { hour24: 10, label: "10 ص" },
+    { hour24: 11, label: "11 ص" },
+    { hour24: 12, label: "12 م" },
+    { hour24: 13, label: "1 م" },
+    { hour24: 14, label: "2 م" },
+    { hour24: 15, label: "3 م" },
+    { hour24: 16, label: "4 م" },
+    { hour24: 17, label: "5 م" },
+    { hour24: 18, label: "6 م" },
+    { hour24: 19, label: "7 م" },
+    { hour24: 20, label: "8 م" },
+  ];
+
   return (
     <div
-      style={{
-        gridColumn: "1 / 2",
-        gridRow: "2",
-        position: "relative",
-        backgroundColor: "#ffffff",
-        zIndex: 10,
-      }}
+      className="relative border-l border-gray-200 bg-white"
+      style={{ gridRow: "1 / -1", gridColumn: 1, zIndex: 10 }}
     >
-      {Array.from({ length: 12 }, (_, i) => i + 9).map((hour) => (
+      {hours.map((hour) => (
         <div
-          key={hour}
-          className="absolute right-0 left-0 text-[10px] text-gray-500 pr-1 flex items-start border-t border-gray-200"
+          key={hour.hour24}
+          className="absolute right-0 left-0 flex items-start border-t border-gray-200"
           style={{
-            top: `${(hour - 9) * 60}px`,
+            top: `${(hour.hour24 - 9) * 60}px`,
             height: "60px",
-            paddingTop: "2px",
           }}
         >
-          {hour.toString().padStart(2, "0")}:00
+          <span className="text-[11px] text-gray-400 font-medium pr-2 pt-1 select-none">
+            {hour.label}
+          </span>
         </div>
       ))}
     </div>
   );
 }
-
 // ============================================================================
 // Sub-component: CalendarDayGrid
 // ============================================================================
 
-function CalendarDayGrid({ dayIndex }: { dayIndex: number }) {
+// ============================================================================
+// Sub-component: CalendarDayGrid (شبكة محسّنة + رقعة شطرنج)
+// ============================================================================
+
+function CalendarDayGrid({
+  dayIndex,
+  isToday,
+}: {
+  dayIndex: number;
+  isToday: boolean;
+}) {
+  // نمط رقعة الشطرنج: الأعمدة الزوجية لها خلفية مختلفة قليلاً
+  const isEvenColumn = dayIndex % 2 === 0;
+
   return (
     <div
-      style={{
-        gridColumn: `${dayIndex + 2} / ${dayIndex + 3}`,
-        gridRow: "2",
-        position: "relative",
-        borderRight: "1px solid #f3f4f6",
-      }}
+      className={`
+        relative border-l border-gray-200 last:border-l-0
+        ${isToday ? "bg-blue-50/30" : isEvenColumn ? "bg-gray-50/30" : "bg-white"}
+      `}
+      style={{ gridRow: "1 / -1", gridColumn: dayIndex + 2 }}
     >
+      {/* خطوط الساعات - أكثر وضوحاً */}
       {Array.from({ length: 12 }, (_, i) => i + 9).map((hour) => (
         <div
-          key={hour}
-          className="absolute left-0 right-0 border-t border-dashed border-gray-100"
-          style={{ top: `${(hour - 9) * 60}px`, height: "0" }}
-        />
+          key={`hour-${hour}`}
+          className="absolute left-0 right-0"
+          style={{ top: `${(hour - 9) * 60}px` }}
+        >
+          {/* خط الساعة الرئيسي */}
+          <div className="absolute left-0 right-0 border-t border-gray-300" />
+        </div>
       ))}
+
+      {/* خطوط نصف الساعة - أخف */}
       {Array.from({ length: 11 }, (_, i) => i + 9).map((hour) => (
         <div
           key={`half-${hour}`}
-          className="absolute left-0 right-0 border-t border-dotted border-gray-50"
-          style={{
-            top: `${(hour - 9) * 60 + 30}px`,
-            height: "0",
-          }}
-        />
+          className="absolute left-0 right-0"
+          style={{ top: `${(hour - 9) * 60 + 30}px` }}
+        >
+          <div className="absolute left-0 right-0 border-t border-dashed border-gray-200" />
+        </div>
       ))}
+
+      {/* حدود عمودية رفيعة بين الأيام (يمين العمود فقط) */}
+      <div className="absolute top-0 bottom-0 right-0 w-px bg-gray-200" />
     </div>
   );
 }
 
 // ============================================================================
-// Sub-component: CalendarAppointmentCard
+// Sub-component: CalendarAppointmentCard (محسّن مع تكديس)
 // ============================================================================
 
 interface CalendarAppointmentCardProps {
   session: Session;
-  left: string;
+  colLeft: string;
   colWidth: string;
+  stackIndex: number; // موقع البطاقة في الـ stack
+  totalInStack: number; // إجمالي البطاقات في الـ stack
   getPatientData: (patientId: string) => Patient | undefined;
   onClick: (session: Session) => void;
 }
 
 function CalendarAppointmentCard({
   session,
-  left,
+  colLeft,
   colWidth,
+  stackIndex,
+  totalInStack,
   getPatientData,
   onClick,
 }: CalendarAppointmentCardProps) {
@@ -1324,50 +2115,174 @@ function CalendarAppointmentCard({
   const statusDisplay = getSessionStatusDisplay(session.status);
   const StatusIcon = statusDisplay.icon;
   const patient = getPatientData(session.patientId);
+  const paymentDisplay = getPaymentMethodDisplay(session);
+
+  // حساب العرض والموقع مع التكديس
+  // عندما يكون هناك عدة بطاقات، نقلص العرض ونحرك كل بطاقة قليلاً
+  const gap = 2; // px
+  const totalWidth = `calc(${colWidth} - 6px)`; // العرض الكامل مع هامش صغير
+  const cardWidth =
+    totalInStack > 1
+      ? `calc((${colWidth} - 6px - ${(totalInStack - 1) * gap}px) / ${totalInStack})`
+      : `calc(${colWidth} - 6px)`;
+  const offsetX =
+    totalInStack > 1
+      ? `calc(${stackIndex} * (${cardWidth} + ${gap}px))`
+      : "0px";
+
+  // ألوان أكثر بروزاً حسب الحالة
+  const getCardColors = () => {
+    switch (session.status) {
+      case "completed":
+        return {
+          bg: "#DCFCE7",
+          border: "#22C55E",
+          text: "#166534",
+          badge: "#16A34A",
+        };
+      case "in-progress":
+        return {
+          bg: "#FEF3C7",
+          border: "#F59E0B",
+          text: "#92400E",
+          badge: "#D97706",
+        };
+      case "scheduled":
+        return {
+          bg: "#DBEAFE",
+          border: "#3B82F6",
+          text: "#1E40AF",
+          badge: "#2563EB",
+        };
+      case "cancelled":
+        return {
+          bg: "#F3F4F6",
+          border: "#9CA3AF",
+          text: "#4B5563",
+          badge: "#6B7280",
+        };
+      case "no-show":
+        return {
+          bg: "#FFEDD5",
+          border: "#F97316",
+          text: "#9A3412",
+          badge: "#EA580C",
+        };
+      default:
+        return {
+          bg: "#F3F4F6",
+          border: "#9CA3AF",
+          text: "#4B5563",
+          badge: "#6B7280",
+        };
+    }
+  };
+
+  const colors = getCardColors();
+  const isCompact = height < 45;
 
   return (
     <div
-      onClick={() => onClick(session)}
-      className="absolute rounded-lg cursor-pointer transition-all hover:shadow-md hover:scale-[1.02] active:scale-95 overflow-hidden"
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick(session);
+      }}
+      className="absolute rounded-lg cursor-pointer overflow-hidden
+                 transition-all duration-200 pointer-events-auto select-none"
       style={{
-        left,
+        right: `calc(${colLeft} + ${offsetX} + 2px)`,
         top: `${top}px`,
-        height: `${height}px`,
-        width: `calc(${colWidth} - 8px)`,
-        marginLeft: "4px",
-        marginRight: "4px",
-        backgroundColor: "white",
-        borderRight: `3px solid ${statusDisplay.color}`,
-        boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-        zIndex: 10,
-        padding: "6px 8px",
+        height: `${Math.max(height, 22)}px`,
+        width: cardWidth,
+        backgroundColor: colors.bg,
+        borderRight: `4px solid ${colors.border}`,
+        borderTop: `1px solid ${adjustColor(colors.border, 40)}`,
+        borderBottom: `1px solid ${adjustColor(colors.border, 40)}`,
+        borderLeft: `1px solid ${adjustColor(colors.border, 40)}`,
+        boxShadow: `0 1px 3px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.4)`,
+        zIndex: 10 + stackIndex,
+        padding: isCompact ? "2px 4px" : "4px 6px",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = `0 4px 12px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.4)`;
+        e.currentTarget.style.transform = "scale(1.03)";
+        e.currentTarget.style.zIndex = "30";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = `0 1px 3px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.4)`;
+        e.currentTarget.style.transform = "scale(1)";
+        e.currentTarget.style.zIndex = String(10 + stackIndex);
       }}
     >
-      <div className="flex items-center gap-1.5 mb-1">
-        <StatusIcon
-          size={12}
-          style={{ color: statusDisplay.color }}
-          className="flex-shrink-0"
-        />
-        <span
-          className="text-xs font-semibold text-gray-800 truncate"
-          style={{ fontSize: "11px" }}
-        >
-          {patient?.fullName || session.patientSnapshot?.name}
-        </span>
-      </div>
-      <div
-        className="text-[10px] text-gray-500 mb-0.5"
-        style={{ fontSize: "10px" }}
-      >
-        {formatTime(start)} - {formatTime(end)}
-      </div>
-      <div
-        className="text-[10px] text-gray-600 truncate"
-        style={{ fontSize: "10px" }}
-      >
-        {session.plannedProcedure || session.performedProcedure || ""}
-      </div>
+      {isCompact ? (
+        // عرض مكثف للبطاقات الصغيرة
+        <div className="flex items-center gap-1 h-full min-w-0">
+          <div
+            className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+            style={{ backgroundColor: colors.badge }}
+          />
+          <span
+            className="text-[10px] font-semibold truncate"
+            style={{ color: colors.text }}
+          >
+            {patient?.fullName || session.patientSnapshot?.name}
+          </span>
+        </div>
+      ) : (
+        // عرض كامل
+        <div className="h-full flex flex-col justify-between min-w-0">
+          {/* اسم المريض */}
+          <div className="flex items-center gap-1 min-w-0">
+            <div
+              className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-0.5"
+              style={{ backgroundColor: colors.badge }}
+            />
+            <span
+              className="text-[11px] font-bold truncate leading-tight"
+              style={{ color: colors.text }}
+            >
+              {patient?.fullName || session.patientSnapshot?.name}
+            </span>
+          </div>
+
+          {/* الوقت والإجراء (إذا كانت البطاقة كبيرة بما يكفي) */}
+          {height > 55 && (
+            <>
+              <div
+                className="text-[10px] font-medium truncate"
+                style={{ color: `${colors.text}99` }}
+              >
+                {formatTime(start)} - {formatTime(end)}
+              </div>
+              <div
+                className="text-[10px] truncate"
+                style={{ color: `${colors.text}CC` }}
+              >
+                {session.plannedProcedure || session.performedProcedure || ""}
+              </div>
+            </>
+          )}
+
+          {/* مؤشر الدفع (أسفل البطاقة) */}
+          {height > 40 && (
+            <div className="flex items-center justify-end">
+              <div
+                className="w-4 h-4 rounded-full flex items-center justify-center"
+                style={{
+                  backgroundColor: paymentDisplay.bgColor,
+                  opacity: 0.9,
+                }}
+                title={paymentDisplay.label}
+              >
+                {React.createElement(paymentDisplay.icon, {
+                  size: 9,
+                  style: { color: paymentDisplay.color },
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -1399,6 +2314,7 @@ function MobileCalendar({
   selectedCalendarDay,
   mobileCalendarSubView,
   weekDays,
+  calendarWeekSessions,
   today,
   currentTimeRef,
   getCurrentTimeTop,
@@ -1450,6 +2366,10 @@ function MobileCalendar({
           onCalendarDayNavigate={onCalendarDayNavigate}
           getPatientData={getPatientData}
           onSessionSelect={onSessionSelect}
+          // 🆕 تمرير الخصائص المفقودة
+          weekDays={weekDays}
+          today={today}
+          onCalendarDaySelect={onCalendarDaySelect}
         />
       ) : (
         <MobileWeekView
@@ -1475,6 +2395,10 @@ function MobileCalendar({
 // Sub-component: MobileDayView
 // ============================================================================
 
+// ============================================================================
+// Sub-component: MobileDayView (محسّن)
+// ============================================================================
+
 interface MobileDayViewProps {
   selectedCalendarDay: string;
   sessionsForCalendarDay: (dateStr: string) => Session[];
@@ -1483,6 +2407,10 @@ interface MobileDayViewProps {
   onCalendarDayNavigate: (direction: "prev" | "next") => void;
   getPatientData: (patientId: string) => Patient | undefined;
   onSessionSelect: (session: Session) => void;
+  // 🆕 خصائص جديدة مطلوبة
+  weekDays?: Date[];
+  today?: Date;
+  onCalendarDaySelect?: (dateStr: string) => void;
 }
 
 function MobileDayView({
@@ -1493,33 +2421,150 @@ function MobileDayView({
   onCalendarDayNavigate,
   getPatientData,
   onSessionSelect,
+  weekDays,
+  today,
+  onCalendarDaySelect,
 }: MobileDayViewProps) {
   const daySessions = sessionsForCalendarDay(selectedCalendarDay);
 
+  // 🆕 حالة وإيماءات السحب
+  const touchStartX = useRef<number | null>(null);
+  const swipeThreshold = 50; // الحد الأدنى للسحب (بكسل)
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartX.current - touchEndX;
+
+    if (Math.abs(diff) > swipeThreshold) {
+      if (diff > 0) {
+        // سحب لليسار -> اليوم التالي
+        onCalendarDayNavigate("next");
+      } else {
+        // سحب لليمين -> اليوم السابق
+        onCalendarDayNavigate("prev");
+      }
+    }
+
+    touchStartX.current = null;
+  };
+
+  // 🆕 حساب الأيام للشريط الأفقي
+  const dayStripDays = useMemo(() => {
+    // إذا تم تمرير weekDays، استخدمها (للتكامل مع عرض الأسبوع)
+    if (weekDays && weekDays.length > 0) return weekDays;
+
+    // إنشاء 7 أيام حول اليوم المحدد
+    const days: Date[] = [];
+    const selected = new Date(selectedCalendarDay);
+    for (let i = -3; i <= 3; i++) {
+      const d = new Date(selected);
+      d.setDate(selected.getDate() + i);
+      days.push(d);
+    }
+    return days;
+  }, [selectedCalendarDay, weekDays]);
+
+  const todayStr = today
+    ? today.toISOString().split("T")[0]
+    : new Date().toISOString().split("T")[0];
+
   return (
     <>
-      {/* Day navigation */}
+      {/* 🆕 شريط الأيام الأفقي للتنقل السريع */}
+      {dayStripDays.length > 0 && (
+        <div className="flex items-center gap-1 px-2 py-2 border-b border-gray-200 bg-white overflow-x-auto scrollbar-hide">
+          {dayStripDays.map((day) => {
+            const dateStr = day.toISOString().split("T")[0];
+            const isSelected = dateStr === selectedCalendarDay;
+            const isToday = dateStr === todayStr;
+            const sessionCount = sessionsForCalendarDay(dateStr).length;
+
+            return (
+              <button
+                key={dateStr}
+                onClick={() => onCalendarDaySelect?.(dateStr)}
+                className={`
+                  flex-shrink-0 flex flex-col items-center justify-center
+                  w-12 h-14 rounded-xl text-xs transition-all duration-200
+                  ${
+                    isSelected
+                      ? "bg-gray-800 text-white shadow-md scale-105"
+                      : isToday
+                        ? "bg-blue-50 text-blue-600 border-2 border-blue-300"
+                        : "bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100"
+                  }
+                `}
+              >
+                <span className="text-[10px] font-medium">
+                  {getShortDayName(dateStr)}
+                </span>
+                <span className="text-sm font-bold leading-tight">
+                  {day.getDate()}
+                </span>
+                {sessionCount > 0 && (
+                  <span
+                    className={`
+                      text-[9px] leading-none mt-0.5
+                      ${isSelected ? "text-white/80" : "text-gray-400"}
+                    `}
+                  >
+                    {sessionCount}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Day navigation header مع زر اليوم */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white">
         <button
           onClick={() => onCalendarDayNavigate("prev")}
           className="p-2 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition"
+          aria-label="اليوم السابق"
         >
           <ChevronRight size={18} className="text-gray-600" />
         </button>
-        <h3 className="text-base font-bold text-gray-800">
-          {getDayName(selectedCalendarDay)}{" "}
-          {formatDisplayDate(selectedCalendarDay)}
-        </h3>
+
+        <div className="flex items-center gap-2">
+          <h3 className="text-base font-bold text-gray-800">
+            {getDayName(selectedCalendarDay)}{" "}
+            {formatDisplayDate(selectedCalendarDay)}
+          </h3>
+          {/* 🆕 زر العودة لليوم */}
+          {selectedCalendarDay !== todayStr && onCalendarDaySelect && (
+            <button
+              onClick={() => onCalendarDaySelect(todayStr)}
+              className="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-600 font-medium hover:bg-blue-100 transition"
+            >
+              اليوم
+            </button>
+          )}
+        </div>
+
         <button
           onClick={() => onCalendarDayNavigate("next")}
           className="p-2 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition"
+          aria-label="اليوم التالي"
         >
           <ChevronLeft size={18} className="text-gray-600" />
         </button>
       </div>
 
-      {/* Vertical time grid */}
-      <div className="relative" style={{ height: "660px", overflow: "auto" }}>
+      {/* Vertical time grid - مع دعم السحب */}
+      <div
+        className="relative"
+        style={{ height: "660px", overflow: "auto" }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         <div className="flex" style={{ height: "660px", position: "relative" }}>
           <MobileTimeColumn width={50} />
           <MobileAppointmentsArea
@@ -1532,17 +2577,47 @@ function MobileDayView({
         </div>
       </div>
 
-      {/* Sessions list (agenda) */}
-      <MobileDayAgendaList
-        sessions={daySessions}
-        getPatientData={getPatientData}
-        onSessionSelect={onSessionSelect}
-      />
+      {/* 🆕 عرض أجندة مكثفة أسفل الشبكة (يظهر فقط عند وجود جلسات) */}
+      {daySessions.length > 0 && (
+        <div className="border-t border-gray-200">
+          <div className="px-4 py-2 bg-gray-50/80 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                <List size={13} className="text-gray-500" />
+                قائمة الجلسات
+              </span>
+              <span className="text-xs text-gray-500">
+                {daySessions.length} جلسات
+              </span>
+            </div>
+          </div>
+          <MobileDayAgendaList
+            sessions={daySessions}
+            getPatientData={getPatientData}
+            onSessionSelect={onSessionSelect}
+          />
+        </div>
+      )}
+
+      {/* 🆕 رسالة عند عدم وجود جلسات */}
+      {daySessions.length === 0 && (
+        <div className="py-16 text-center border-t border-gray-200">
+          <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-100 flex items-center justify-center">
+            <Calendar size={24} className="text-gray-400" />
+          </div>
+          <p className="text-sm text-gray-500 font-medium">
+            لا توجد جلسات في هذا اليوم
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            {getDayName(selectedCalendarDay)} -{" "}
+            {formatDisplayDate(selectedCalendarDay)}
+          </p>
+        </div>
+      )}
     </>
   );
 }
 
-// ============================================================================
 // Sub-component: MobileWeekView
 // ============================================================================
 
@@ -2231,7 +3306,7 @@ export function PatientsTab({
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
-  const [viewType, setViewType] = useState<ViewType>("table");
+  const [viewType, setViewType] = useState<ViewType>("agenda"); // 🆕 تعيين الأجندة كافتراضي
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() =>
     getStartOfWeek(today),
   );
@@ -2343,7 +3418,7 @@ export function PatientsTab({
   const weekDays = useMemo(() => {
     const days: Date[] = [];
     const start = new Date(currentWeekStart);
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 7; i++) {
       const d = new Date(start);
       d.setDate(start.getDate() + i);
       days.push(d);
@@ -2356,7 +3431,7 @@ export function PatientsTab({
     const start = new Date(currentWeekStart);
     start.setHours(0, 0, 0, 0);
     const end = new Date(currentWeekStart);
-    end.setDate(end.getDate() + 6);
+    end.setDate(end.getDate() + 7);
     end.setHours(23, 59, 59, 999);
     return sessions.filter((s) => {
       const time = new Date(s.startTime).getTime();
@@ -2393,12 +3468,85 @@ export function PatientsTab({
     setSelectedCalendarDay(today.toISOString().split("T")[0]);
   };
 
+  // 🆕🚀 دالة موحدة لتغيير اليوم مع تحديث الأسبوع تلقائياً
+  const changeCalendarDay = (newDateStr: string) => {
+    // تحديث اليوم المحدد في التقويم
+    setSelectedCalendarDay(newDateStr);
+
+    // التحقق مما إذا كان اليوم الجديد خارج نطاق الأسبوع الحالي
+    const newDate = new Date(newDateStr);
+    const currentStart = new Date(currentWeekStart);
+    const currentEnd = new Date(currentWeekStart);
+    currentEnd.setDate(currentEnd.getDate() + 6); // الأسبوع 7 أيام (0-6)
+    currentEnd.setHours(23, 59, 59, 999);
+
+    // إذا كان اليوم الجديد خارج الأسبوع الحالي → تحديث الأسبوع ليشمل اليوم الجديد
+    if (newDate < currentStart || newDate > currentEnd) {
+      setCurrentWeekStart(getStartOfWeek(newDate));
+    }
+
+    // مزامنة selectedDate مع selectedCalendarDay للتناسق مع الأوضاع الأخرى
+    if (viewType === "agenda" || viewType === "table") {
+      setSelectedDate(newDateStr);
+    }
+  };
+
+  // 🆕 التنقل بين الأيام مع تغيير التاريخ تلقائياً (يستخدم changeCalendarDay)
+  const handleCalendarDayNavigate = (direction: "prev" | "next") => {
+    const current = new Date(selectedCalendarDay);
+    current.setDate(current.getDate() + (direction === "next" ? 1 : -1));
+    const newDateStr = current.toISOString().split("T")[0];
+    changeCalendarDay(newDateStr);
+  };
+
+  // 🆕 تغيير نوع العرض مع مزامنة التاريخ
+  const handleViewTypeChange = (type: ViewType) => {
+    if (isMobile && type !== "agenda") return;
+    // قبل التغيير، احفظ نوع العرض الحالي للمقارنة
+    const previousViewType = viewType;
+    setViewType(type);
+
+    // مزامنة التاريخ بين طرق العرض المختلفة
+    if (type === "agenda" || type === "table") {
+      // إذا كان قادماً من التقويم، استخدم آخر يوم محدد
+      if (previousViewType === "calendar") {
+        setSelectedDate(selectedCalendarDay);
+      }
+    } else if (type === "calendar") {
+      // إذا كان قادماً من الأجندة أو الجدول، استخدم selectedDate
+      if (previousViewType === "agenda" || previousViewType === "table") {
+        changeCalendarDay(selectedDate);
+      }
+    }
+  };
+
+  // 🆕 تغيير وضع العرض (يوم/شهر/كل) مع ضبط التاريخ
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode);
+
+    if (mode === "day") {
+      // استخدام اليوم المحدد في الأجندة/التقويم
+      if (selectedCalendarDay) {
+        setSelectedDate(selectedCalendarDay);
+      }
+    }
+  };
+
   // ---- Period title ----
   const getPeriodTitle = () => {
     if (viewType === "calendar") {
       const start = weekDays[0];
-      const end = weekDays[5];
+      const end = weekDays[6];
       return `${formatDisplayDate(start.toISOString().split("T")[0])} - ${formatDisplayDate(end.toISOString().split("T")[0])}`;
+    }
+    if (viewType === "agenda") {
+      if (viewMode === "all") return "جميع الجلسات - عرض الأجندة";
+      if (viewMode === "month")
+        return `أجندة ${today.toLocaleDateString("ar-SA", {
+          month: "long",
+          year: "numeric",
+        })}`;
+      return `أجندة ${getDayName(selectedDate)} - ${formatDisplayDate(selectedDate)}`;
     }
     if (viewMode === "all") return "جميع الجلسات";
     if (viewMode === "month")
@@ -2411,8 +3559,11 @@ export function PatientsTab({
 
   // ---- Excel export ----
   const handleExport = () => {
+    const sessionsToExport =
+      viewType === "calendar" ? calendarWeekSessions : displayedSessions;
+
     exportSessionsToExcel(
-      displayedSessions,
+      sessionsToExport,
       clinicName,
       clinicColor,
       getPeriodTitle(),
@@ -2420,16 +3571,13 @@ export function PatientsTab({
     );
   };
 
-  // ---- Calendar day navigation ----
-  const handleCalendarDayNavigate = (direction: "prev" | "next") => {
-    const current = new Date(selectedCalendarDay);
-    current.setDate(current.getDate() + (direction === "next" ? 1 : -1));
-    setSelectedCalendarDay(current.toISOString().split("T")[0]);
+  // ---- Current sessions for stats cards ----
+  const getCurrentDisplayedSessions = () => {
+    if (viewType === "calendar") return calendarWeekSessions;
+    return displayedSessions;
   };
 
-  // ---- Current sessions for display ----
-  const currentDisplayedSessions =
-    viewType === "table" ? displayedSessions : calendarWeekSessions;
+  const currentDisplayedSessions = getCurrentDisplayedSessions();
 
   // ============================================================================
   // Render
@@ -2446,7 +3594,7 @@ export function PatientsTab({
         onExport={handleExport}
         viewMode={viewMode}
         viewType={viewType}
-        onViewModeChange={setViewMode}
+        onViewModeChange={handleViewModeChange}
       />
 
       <PatientsStatsCards
@@ -2455,6 +3603,7 @@ export function PatientsTab({
       />
 
       <PatientsToolbar
+        isMobile={isMobile}
         clinicColor={clinicColor}
         viewType={viewType}
         viewMode={viewMode}
@@ -2468,24 +3617,16 @@ export function PatientsTab({
         onSearchChange={setSearchTerm}
         onSearchClear={() => setSearchTerm("")}
         onSortToggle={(checked) => setSortOrder(checked ? "asc" : "desc")}
-        onViewTypeChange={setViewType}
+        onViewTypeChange={handleViewTypeChange}
         canGoPrevious={
           availableDates.indexOf(selectedDate) < availableDates.length - 1
         }
         canGoNext={availableDates.indexOf(selectedDate) > 0}
       />
 
-      {viewType === "table" ? (
-        <PatientsTable
-          sessions={displayedSessions}
-          sessionsWithMobileGroups={sessionsWithMobileGroups}
-          searchTerm={searchTerm}
-          viewMode={viewMode}
-          isMobile={isMobile}
-          getPatientData={getPatientData}
-          onSessionSelect={setSelectedSession}
-        />
-      ) : (
+      {/* 🆕 عرض المحتوى حسب نوع العرض */}
+      {viewType === "calendar" ? (
+        // عرض التقويم
         <PatientsCalendar
           clinicColor={clinicColor}
           currentWeekStart={currentWeekStart}
@@ -2500,14 +3641,27 @@ export function PatientsTab({
           onPreviousWeek={goToPreviousWeek}
           onNextWeek={goToNextWeek}
           onTodayWeek={goToTodayWeek}
-          onCalendarDaySelect={setSelectedCalendarDay}
+          onCalendarDaySelect={changeCalendarDay} // 🆕 استخدام changeCalendarDay بدلاً من setSelectedCalendarDay
           onMobileSubViewChange={setMobileCalendarSubView}
           onCalendarDayNavigate={handleCalendarDayNavigate}
           getPatientData={getPatientData}
           onSessionSelect={setSelectedSession}
         />
+      ) : (
+        // عرض الجدول أو الأجندة
+        <PatientsTable
+          sessions={displayedSessions}
+          sessionsWithMobileGroups={sessionsWithMobileGroups}
+          searchTerm={searchTerm}
+          viewMode={viewMode}
+          viewType={viewType}
+          isMobile={isMobile}
+          getPatientData={getPatientData}
+          onSessionSelect={setSelectedSession}
+        />
       )}
 
+      {/* 🆕 نافذة تفاصيل الجلسة */}
       {selectedSession && (
         <SessionDetailModal
           session={selectedSession}
