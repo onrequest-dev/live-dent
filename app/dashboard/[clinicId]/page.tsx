@@ -77,16 +77,15 @@ export default function DashboardPage() {
     fetchAllData();
   }, []);
 
-  // ✅ عرض شاشة التحميل
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <ToothLoader />
-        </div>
+if (isLoading) {
+  return (
+    <div className="flex items-center justify-center h-64">
+      <div className="text-center scale-75"> {/* تصغير الحجم بنسبة 75% */}
+        <ToothLoader />
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   // ✅ عرض رسالة خطأ
   if (error && !clinicData) {

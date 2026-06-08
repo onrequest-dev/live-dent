@@ -51,9 +51,9 @@ const ToothLoader = () => {
             />
           </g>
         </svg>
-        <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 text-gray-600 font-medium tracking-widest text-sm">
-          ... جاري التحميل
-        </div>
+<div className="absolute -bottom-12 left-1/2 -translate-x-1/2 text-gray-600 font-medium tracking-normal text-sm whitespace-nowrap">
+  جاري التحميل
+</div>
       </div>
     </div>
   );
