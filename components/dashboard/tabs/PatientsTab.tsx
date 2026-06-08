@@ -338,58 +338,68 @@ function PatientsHeader({
       {/* ============================================================ */}
       {/* الصف الأول: العنوان الرئيسي + أزرار التحكم                      */}
       {/* ============================================================ */}
-      <div className="flex items-start justify-between gap-3">
-        {/* العنوان والفترة */}
-        <div className="min-w-0 flex-1">
-          <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 truncate">
-            جدول المرضى
-            <span className="text-sm font-normal text-gray-500 mr-2 hidden sm:inline">
-              - {clinicName}
-            </span>
-          </h1>
-          <p className="text-gray-500 text-xs sm:text-sm mt-0.5 truncate">
-            {periodTitle}
-          </p>
-        </div>
+      {/* ============================================================ */}
+{/* الصف الأول: العنوان الرئيسي + أزرار التحكم                      */}
+{/* ============================================================ */}
+<div className="flex items-center justify-between gap-3">
+  {/* العنوان والفترة - مخفي على الهاتف، يظهر على التابلت وسطح المكتب */}
+  <div className="min-w-0 flex-1 hidden sm:block">
+    <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 truncate">
+      جدول المرضى
+      <span className="text-sm font-normal text-gray-500 mr-2 hidden sm:inline">
+        - {clinicName}
+      </span>
+    </h1>
+    <p className="text-gray-500 text-xs sm:text-sm mt-0.5 truncate">
+      {periodTitle}
+    </p>
+  </div>
 
-        {/* أزرار التحكم (سطح المكتب) */}
-        <div className="hidden sm:flex items-center gap-3 flex-shrink-0">
-          <ViewTypeSwitcher
-            clinicColor={clinicColor}
-            viewType={viewType}
-            onViewTypeChange={handleViewTypeChange}
-          />
-          {/* زر التحديث */}
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={onRefresh}
-            className="flex items-center gap-2 px-5 py-3 rounded-full text-white text-sm font-semibold transition-all duration-200 shadow-sm"
-            style={{
-              backgroundColor: clinicColor,
-              boxShadow: `0 2px 8px ${clinicColor}30`,
-            }}
-          >
-            <RefreshCcw size={16} />
-            <span>تحديث</span>
-          </motion.button>
+  {/* عنوان مبسط للهاتف فقط - يظهر بدلاً من العنوان الكامل */}
+  {/* <div className="min-w-0 sm:hidden">
+    <h1 className="text-base font-bold text-gray-800 truncate">
+      المرضى
+    </h1>
+  </div> */}
 
-          {/* زر التصدير */}
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={onExport}
-            className="flex items-center gap-2 px-5 py-3 rounded-full text-white text-sm font-semibold transition-all duration-200 shadow-sm"
-            style={{
-              backgroundColor: clinicColor,
-              boxShadow: `0 2px 8px ${clinicColor}30`,
-            }}
-          >
-            <Download size={16} />
-            <span>Excel</span>
-          </motion.button>
-        </div>
-      </div>
+  {/* أزرار التحكم (سطح المكتب) */}
+  <div className="hidden sm:flex items-center gap-3 flex-shrink-0">
+    <ViewTypeSwitcher
+      clinicColor={clinicColor}
+      viewType={viewType}
+      onViewTypeChange={handleViewTypeChange}
+    />
+    {/* زر التحديث */}
+    <motion.button
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={onRefresh}
+      className="flex items-center gap-2 px-5 py-3 rounded-full text-white text-sm font-semibold transition-all duration-200 shadow-sm"
+      style={{
+        backgroundColor: clinicColor,
+        boxShadow: `0 2px 8px ${clinicColor}30`,
+      }}
+    >
+      <RefreshCcw size={16} />
+      <span>تحديث</span>
+    </motion.button>
+
+    {/* زر التصدير */}
+    <motion.button
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={onExport}
+      className="flex items-center gap-2 px-5 py-3 rounded-full text-white text-sm font-semibold transition-all duration-200 shadow-sm"
+      style={{
+        backgroundColor: clinicColor,
+        boxShadow: `0 2px 8px ${clinicColor}30`,
+      }}
+    >
+      <Download size={16} />
+      <span>Excel</span>
+    </motion.button>
+  </div>
+</div>
 
       {/* ============================================================ */}
       {/* الصف الثاني: شريط إحصائيات مبسط (سطح المكتب فقط) + أزرار الجوال */}
@@ -1345,87 +1355,84 @@ function PatientsTable({
 
   return (
     <>
-      {/* Desktop Table - يظهر فقط على سطح المكتب في وضعي الجدول والأجندة */}
-      <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        {viewType === "agenda" ? (
-          // 🆕 عرض الأجندة لسطح المكتب
-          <DesktopAgendaView
-            sessions={sessions}
-            getPatientData={getPatientData}
-            onSessionSelect={onSessionSelect}
-          />
-        ) : (
-          // عرض الجدول التقليدي مع رأس ثابت
-          <div
-            className="flex flex-col"
-            style={{ maxHeight: "calc(100vh - 170px)" }}
-          >
-            {/* رأس الجدول - ثابت في الأعلى */}
-            <div className="flex-shrink-0 bg-gray-50/80 backdrop-blur-sm border-b border-gray-200 shadow-sm">
-              <table className="w-full">
-                <thead>
-                  <tr>
-                    <th className="py-3 px-0 w-1.5"></th>
-                    <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700 whitespace-nowrap">
-                      اليوم والتاريخ
-                    </th>
-                    <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700">
-                      الاسم
-                    </th>
-                    <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700 whitespace-nowrap">
-                      الرقم
-                    </th>
-                    <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700 whitespace-nowrap hidden sm:table-cell">
-                      العمر
-                    </th>
-                    <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700 whitespace-nowrap hidden sm:table-cell">
-                      الجنس
-                    </th>
-                    <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700 max-w-xs">
-                      الجلسة
-                    </th>
-                    <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700 whitespace-nowrap">
-                      الوقت
-                    </th>
-                    <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700 whitespace-nowrap">
-                      التكلفة
-                    </th>
-                    <th className="py-3 px-3 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">
-                      الدفع
-                    </th>
-                    <th className="py-3 px-3 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">
-                      الحالة
-                    </th>
-                  </tr>
-                </thead>
-              </table>
-            </div>
+{/* Desktop Table - يظهر فقط على سطح المكتب في وضعي الجدول والأجندة */}
+<div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+  {viewType === "agenda" ? (
+    // عرض الأجندة لسطح المكتب
+    <DesktopAgendaView
+      sessions={sessions}
+      getPatientData={getPatientData}
+      onSessionSelect={onSessionSelect}
+    />
+  ) : (
+    // عرض الجدول التقليدي مع رأس ثابت - جدول واحد متماسك
+    <div
+      className="flex flex-col"
+      style={{ maxHeight: "calc(100vh - 170px)" }}
+    >
+      {/* حاوية التمرير تشمل الرأس والمحتوى */}
+      <div className="flex-1 overflow-auto">
+        <table className="w-full border-collapse">
+          {/* رأس الجدول - sticky ليبقى ظاهراً أثناء التمرير */}
+          <thead className="sticky top-0 z-20">
+            <tr className="bg-gray-50/95 backdrop-blur-sm shadow-sm">
+              <th className="py-3 px-0 w-1.5 sticky left-0 bg-gray-50/95"></th>
+              <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700 whitespace-nowrap bg-gray-50/95">
+                اليوم والتاريخ
+              </th>
+              <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700 bg-gray-50/95">
+                الاسم
+              </th>
+              <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700 whitespace-nowrap bg-gray-50/95">
+                الرقم
+              </th>
+              <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700 whitespace-nowrap hidden sm:table-cell bg-gray-50/95">
+                العمر
+              </th>
+              <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700 whitespace-nowrap hidden sm:table-cell bg-gray-50/95">
+                الجنس
+              </th>
+              <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700 max-w-xs bg-gray-50/95">
+                الجلسة
+              </th>
+              <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700 whitespace-nowrap bg-gray-50/95">
+                الوقت
+              </th>
+              <th className="py-3 px-3 text-right text-xs font-semibold text-gray-700 whitespace-nowrap bg-gray-50/95">
+                التكلفة
+              </th>
+              <th className="py-3 px-3 text-center text-xs font-semibold text-gray-700 whitespace-nowrap bg-gray-50/95">
+                الدفع
+              </th>
+              <th className="py-3 px-3 text-center text-xs font-semibold text-gray-700 whitespace-nowrap bg-gray-50/95">
+                الحالة
+              </th>
+            </tr>
+          </thead>
 
-            {/* محتوى الجدول - قابل للتمرير */}
-            <div className="flex-1 overflow-auto">
-              <table className="w-full">
-                <tbody>
-                  {sessions.map((session) => (
-                    <DesktopTableRow
-                      key={session.id}
-                      session={session}
-                      getPatientData={getPatientData}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Footer - ثابت في الأسفل */}
-            <div className="flex-shrink-0">
-              <TableFooter
-                sessionsCount={sessions.length}
-                totalCost={totalCost}
+          {/* جسم الجدول */}
+          <tbody>
+            {sessions.map((session) => (
+              <DesktopTableRow
+                key={session.id}
+                session={session}
+                getPatientData={getPatientData}
               />
-            </div>
-          </div>
-        )}
+            ))}
+          </tbody>
+        </table>
       </div>
+
+      {/* Footer - ثابت في الأسفل */}
+      <div className="flex-shrink-0 border-t border-gray-200">
+        <TableFooter
+          sessionsCount={sessions.length}
+          totalCost={totalCost}
+        />
+      </div>
+    </div>
+  )}
+</div>
 
       {/* Mobile View - يظهر على الهاتف فقط */}
       <div className="md:hidden bg-white rounded-xl shadow-sm border border-gray-100 overflow-visible">
@@ -3638,7 +3645,11 @@ function ModalInfoRow({
 // Excel Export Utility
 // ============================================================================
 
-function exportSessionsToExcel(
+// ============================================================================
+// Excel Export Utility
+// ============================================================================
+
+function exportToExcel(
   sessions: Session[],
   clinicName: string,
   clinicColor: string,
@@ -3646,13 +3657,23 @@ function exportSessionsToExcel(
   getPatientData: (patientId: string) => Patient | undefined,
 ) {
   const primaryColor = clinicColor.replace("#", "");
+
+  // إنشاء ورقة عمل جديدة
   const wb = XLSX.utils.book_new();
+
+  // البيانات الأساسية
   const excelData: any[][] = [];
 
+  // صف العنوان الرئيسي
   excelData.push([clinicName]);
+
+  // إضافة معلومات الفترة
   excelData.push([periodTitle]);
+
+  // صف عناوين الأعمدة
   excelData.push([
-    "اليوم والتاريخ",
+    "اليوم",
+    "التاريخ",
     "الاسم",
     "الرقم",
     "العمر",
@@ -3661,12 +3682,13 @@ function exportSessionsToExcel(
     "الوقت",
     "التكلفة",
     "الدفع",
-    "الحالة",
+    "حالة الجلسة",
   ]);
 
   sessions.forEach((session) => {
     const dateStr = getDateString(session.startTime);
-    const combined = `${getDayName(dateStr)} ${formatDisplayDate(dateStr)}`;
+    const dayName = getDayName(dateStr);
+    const formattedDate = formatDisplayDate(dateStr);
     const patient = getPatientData(session.patientId);
     const genderArabic =
       patient?.gender === "male"
@@ -3676,8 +3698,10 @@ function exportSessionsToExcel(
           : "-";
     const paymentDisplay = getPaymentMethodDisplay(session);
     const statusDisplay = getSessionStatusDisplay(session.status);
+
     excelData.push([
-      combined,
+      dayName,
+      formattedDate,
       patient?.fullName || session.patientSnapshot?.name || "-",
       patient?.phone || session.patientSnapshot?.phone || "-",
       patient?.age || "-",
@@ -3690,50 +3714,55 @@ function exportSessionsToExcel(
     ]);
   });
 
-  const totalCost = sessions.reduce((sum, s) => sum + (s.sessionCost || 0), 0);
+  const totalCost = sessions.reduce(
+    (sum, s) => sum + (s.sessionCost || 0),
+    0,
+  );
   const paidCount = sessions.filter((s) => s.isPaid).length;
   const unpaidCount = sessions.filter((s) => !s.isPaid).length;
+  const footerText = `تم إنشاء هذا الجدول بواسطة نظام LiveDent`;
 
   excelData.push([]);
-  excelData.push(["", "", "", "", "", "", "", "", "الإجمالي:", totalCost, ""]);
-  excelData.push(["", "", "", "", "", "", "", "", "مدفوع:", paidCount, "جلسة"]);
   excelData.push([
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "غير مدفوع:",
-    unpaidCount,
-    "جلسة",
+    "", "", "", "", "", "", "", "", "الإجمالي:", totalCost, "",
+  ]);
+  excelData.push([
+    "", "", "", "", "", "", "", "", "مدفوع:", paidCount, "جلسة",
+  ]);
+  excelData.push([
+    "", "", "", "", "", "", "", "", "غير مدفوع:", unpaidCount, "جلسة",
   ]);
   excelData.push([]);
-  excelData.push([`تم إنشاء هذا الجدول بواسطة نظام LiveDent`]);
+  excelData.push([footerText]);
 
+  // تحويل البيانات إلى ورقة عمل
   const ws = XLSX.utils.aoa_to_sheet(excelData);
 
+  // تهيئة مصفوفة الدمج
   if (!ws["!merges"]) ws["!merges"] = [];
-  ws["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 9 } });
-  ws["!merges"].push({ s: { r: 1, c: 0 }, e: { r: 1, c: 9 } });
+
+  // دمج خلايا العنوان
+  ws["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 10 } });
+  ws["!merges"].push({ s: { r: 1, c: 0 }, e: { r: 1, c: 10 } });
   ws["!merges"].push({
     s: { r: excelData.length - 1, c: 0 },
-    e: { r: excelData.length - 1, c: 9 },
+    e: { r: excelData.length - 1, c: 10 },
   });
 
-  const range = XLSX.utils.decode_range(ws["!ref"] || "A1:J1");
+  const range = XLSX.utils.decode_range(ws["!ref"] || "A1:K1");
   const darkerColor = adjustColor(clinicColor, -30).replace("#", "");
 
+  // تطبيق التنسيقات
   for (let R = range.s.r; R <= range.e.r; ++R) {
     for (let C = range.s.c; C <= range.e.c; ++C) {
       const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
       if (!ws[cellAddress]) ws[cellAddress] = { t: "s", v: "" };
       if (!ws[cellAddress].s) ws[cellAddress].s = {};
+
       const cell = ws[cellAddress];
       const rowData = excelData[R];
 
+      // تنسيق صف العنوان الرئيسي
       if (R === 0) {
         cell.s = {
           font: { bold: true, sz: 22, color: { rgb: "FFFFFF" } },
@@ -3746,67 +3775,110 @@ function exportSessionsToExcel(
             right: { style: "thick", color: { rgb: primaryColor } },
           },
         };
-      } else if (R === 1) {
+      }
+      // تنسيق صف الفترة
+      else if (R === 1) {
         cell.s = {
           font: { bold: true, sz: 13, color: { rgb: primaryColor } },
           fill: { fgColor: { rgb: "F8FAFC" }, patternType: "solid" },
           alignment: { horizontal: "center", vertical: "center" },
         };
-      } else if (R === 2) {
+      }
+      // تنسيق صف العناوين
+      else if (R === 2) {
         cell.s = {
           font: { bold: true, sz: 14, color: { rgb: "FFFFFF" } },
           fill: { fgColor: { rgb: darkerColor }, patternType: "solid" },
           alignment: { horizontal: "center", vertical: "center" },
         };
-      } else if (
+      }
+      // تنسيق صفوف البيانات
+      else if (
         R > 2 &&
         rowData &&
         rowData[0] !== "" &&
         !rowData[8]?.toString().includes("الإجمالي") &&
         !rowData[8]?.toString().includes("مدفوع")
       ) {
+        const isEvenRow = (R - 3) % 2 === 0;
+
         cell.s = {
           font: { sz: 11, color: { rgb: "1F2937" } },
+          fill: {
+            fgColor: { rgb: isEvenRow ? "FFFFFF" : "F8FAFC" },
+            patternType: "solid",
+          },
           alignment: {
-            horizontal: C === 2 ? "left" : "center",
+            horizontal: C === 3 ? "left" : "center",
             vertical: "center",
           },
         };
-        if (C === 7) cell.s.font = { ...cell.s.font, bold: true };
+
+        // تنسيق عمود الاسم
+        if (C === 2) {
+          cell.s.font = { ...cell.s.font, bold: true, sz: 12, color: { rgb: "111827" } };
+        }
+
+        // تنسيق عمود التكلفة
         if (C === 8) {
-          const pay = rowData[8];
-          if (pay === "غير مدفوع")
-            cell.s.font = { bold: true, color: { rgb: "DC2626" } };
-          else if (pay === "نقداً")
-            cell.s.font = { bold: true, color: { rgb: "059669" } };
-          else if (pay === "بطاقة")
-            cell.s.font = { bold: true, color: { rgb: "2563EB" } };
-          else if (pay === "تحويل")
-            cell.s.font = { bold: true, color: { rgb: "7C3AED" } };
+          cell.s.font = { ...cell.s.font, bold: true };
         }
+
+        // تنسيق عمود الدفع
         if (C === 9) {
-          const status = rowData[9];
-          if (status === "مكتمل")
-            cell.s.font = { bold: true, color: { rgb: "059669" } };
-          else if (status === "مجدول")
-            cell.s.font = { bold: true, color: { rgb: "2563EB" } };
-          else if (status === "ملغي")
-            cell.s.font = { bold: true, color: { rgb: "6B7280" } };
-          else if (status === "لم يحضر")
-            cell.s.font = { bold: true, color: { rgb: "EA580C" } };
-          else if (status === "قيد التنفيذ")
-            cell.s.font = { bold: true, color: { rgb: "D97706" } };
+          const pay = rowData[9];
+          if (pay === "غير مدفوع") {
+            cell.s.fill = { fgColor: { rgb: "FEE2E2" }, patternType: "solid" };
+            cell.s.font = { bold: true, sz: 11, color: { rgb: "DC2626" } };
+          } else if (pay === "نقداً") {
+            cell.s.fill = { fgColor: { rgb: "D1FAE5" }, patternType: "solid" };
+            cell.s.font = { bold: true, sz: 11, color: { rgb: "059669" } };
+          } else if (pay === "بطاقة") {
+            cell.s.fill = { fgColor: { rgb: "DBEAFE" }, patternType: "solid" };
+            cell.s.font = { bold: true, sz: 11, color: { rgb: "2563EB" } };
+          } else if (pay === "تحويل") {
+            cell.s.fill = { fgColor: { rgb: "EDE9FE" }, patternType: "solid" };
+            cell.s.font = { bold: true, sz: 11, color: { rgb: "7C3AED" } };
+          } else if (pay === "مدفوع") {
+            cell.s.fill = { fgColor: { rgb: "D1FAE5" }, patternType: "solid" };
+            cell.s.font = { bold: true, sz: 11, color: { rgb: "059669" } };
+          }
         }
-      } else if (rowData && rowData[8] === "الإجمالي:") {
+
+        // تنسيق عمود الحالة
+        if (C === 10) {
+          const status = rowData[10];
+          if (status === "مكتمل") {
+            cell.s.fill = { fgColor: { rgb: "D1FAE5" }, patternType: "solid" };
+            cell.s.font = { bold: true, sz: 11, color: { rgb: "059669" } };
+          } else if (status === "مجدول") {
+            cell.s.fill = { fgColor: { rgb: "DBEAFE" }, patternType: "solid" };
+            cell.s.font = { bold: true, sz: 11, color: { rgb: "2563EB" } };
+          } else if (status === "ملغي") {
+            cell.s.fill = { fgColor: { rgb: "F3F4F6" }, patternType: "solid" };
+            cell.s.font = { bold: true, sz: 11, color: { rgb: "6B7280" } };
+          } else if (status === "لم يحضر") {
+            cell.s.fill = { fgColor: { rgb: "FFEDD5" }, patternType: "solid" };
+            cell.s.font = { bold: true, sz: 11, color: { rgb: "EA580C" } };
+          } else if (status === "قيد التنفيذ") {
+            cell.s.fill = { fgColor: { rgb: "FEF3C7" }, patternType: "solid" };
+            cell.s.font = { bold: true, sz: 11, color: { rgb: "D97706" } };
+          }
+        }
+      }
+      // تنسيق صف الإجمالي
+      else if (rowData && rowData[8] === "الإجمالي:") {
         cell.s = {
           font: { bold: true, sz: 13, color: { rgb: "FFFFFF" } },
           fill: { fgColor: { rgb: primaryColor }, patternType: "solid" },
-          alignment: { horizontal: C === 8 ? "right" : "center" },
+          alignment: {
+            horizontal: C === 8 ? "right" : "center",
+            vertical: "center",
+          },
         };
-      } else if (
-        rowData &&
-        (rowData[8] === "مدفوع:" || rowData[8] === "غير مدفوع:")
-      ) {
+      }
+      // تنسيق صفوف المدفوع/غير مدفوع
+      else if (rowData && (rowData[8] === "مدفوع:" || rowData[8] === "غير مدفوع:")) {
         const isPaidRow = rowData[8] === "مدفوع:";
         cell.s = {
           font: {
@@ -3818,19 +3890,35 @@ function exportSessionsToExcel(
             fgColor: { rgb: isPaidRow ? "D1FAE5" : "FEE2E2" },
             patternType: "solid",
           },
+          alignment: {
+            horizontal: C === 8 ? "right" : "center",
+            vertical: "center",
+          },
         };
-      } else if (R === excelData.length - 1) {
+      }
+      // تنسيق سطر التوقيع
+      else if (R === excelData.length - 1) {
         cell.s = {
           font: { italic: true, sz: 10, color: { rgb: "6B7280" } },
+          alignment: { horizontal: "center", vertical: "center" },
         };
       }
     }
   }
 
-  ws["!rows"] = [{ hpt: 45 }, { hpt: 30 }, { hpt: 35 }];
-  for (let i = 3; i <= range.e.r; i++) ws["!rows"][i] = { hpt: 28 };
+  // تعيين ارتفاع الصفوف
+  ws["!rows"] = [];
+  ws["!rows"][0] = { hpt: 45 };
+  ws["!rows"][1] = { hpt: 30 };
+  ws["!rows"][2] = { hpt: 35 };
+  for (let i = 3; i <= range.e.r; i++) {
+    ws["!rows"][i] = { hpt: 28 };
+  }
+
+  // تعيين عرض الأعمدة
   ws["!cols"] = [
-    { wch: 22 },
+    { wch: 14 },
+    { wch: 16 },
     { wch: 30 },
     { wch: 18 },
     { wch: 10 },
@@ -3841,10 +3929,17 @@ function exportSessionsToExcel(
     { wch: 16 },
     { wch: 16 },
   ];
+
+  // تعيين اتجاه RTL
   ws["!rtl"] = true;
 
+  // إضافة الورقة للمصنف
   XLSX.utils.book_append_sheet(wb, ws, "جدول المرضى");
+
+  // اسم الملف
   const fileName = `جدول_المرضى_${clinicName}_${new Date().toISOString().split("T")[0]}.xlsx`;
+
+  // حفظ الملف
   XLSX.writeFile(wb, fileName);
 }
 
@@ -3990,6 +4085,7 @@ export function PatientsTab({
   const [searchFilterType, setSearchFilterType] = useState<
     "all" | "patient" | "procedure" | "date" | "status" | "payment"
   >("all");
+  
 
   const isMobile = useIsMobile();
   const { currentTimeRef, getCurrentTimeTop } = useCurrentTimeIndicator();
@@ -4252,19 +4348,18 @@ export function PatientsTab({
     return `${getDayName(selectedDate)} - ${formatDisplayDate(selectedDate)}`;
   };
 
-  // ---- Excel export ----
-  const handleExport = () => {
-    const sessionsToExport =
-      viewType === "calendar" ? calendarWeekSessions : displayedSessions;
+const handleExport = () => {
+  const sessionsToExport =
+    viewType === "calendar" ? calendarWeekSessions : displayedSessions;
 
-    exportSessionsToExcel(
-      sessionsToExport,
-      clinicName,
-      clinicColor,
-      getPeriodTitle(),
-      getPatientData,
-    );
-  };
+  exportToExcel(
+    sessionsToExport,
+    clinicName,
+    clinicColor,
+    getPeriodTitle(),
+    getPatientData,
+  );
+};
 
   // ---- Refresh handler ----
   const handleRefresh = () => {
