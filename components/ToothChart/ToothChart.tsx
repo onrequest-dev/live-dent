@@ -13,6 +13,64 @@ import {
   ChevronRight,
 } from "lucide-react";
 
+
+// components/ToothChart/ToothChart.tsx
+// ... في بداية الملف، بعد التعريفات
+
+// البيانات الافتراضية للشارت
+const DEFAULT_TEETH_DATA: ToothData[] = [
+  // الضواحك والقواطع العلوية اليمنى (1-8)
+  { id: 1, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
+  { id: 2, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
+  { id: 3, procedure: "decayed", color: "#EF4444", treatments: ["إزالة التسوس", "حشوة مؤقتة", "", "", "", "", "", "", "", ""], notes: "يحتاج متابعة بعد أسبوع" },
+  { id: 4, procedure: "filled", color: "#3B82F6", treatments: ["حشوة دائمة", "", "", "", "", "", "", "", "", ""], notes: "" },
+  { id: 5, procedure: "crown", color: "#F59E0B", treatments: ["تحضير السن", "طبعات", "تركيب تاج مؤقت", "تركيب تاج دائم", "", "", "", "", "", ""], notes: "تاج زركونيا" },
+  { id: 6, procedure: "root-canal", color: "#8B4513", treatments: ["فتح اللب", "تنظيف القنوات", "حشو القنوات", "", "", "", "", "", "", ""], notes: "3 قنوات" },
+  { id: 7, procedure: "implant", color: "#10B981", treatments: ["زرع", "انتظار الالتحام", "تركيب الدعامة", "تركيب التاج", "", "", "", "", "", ""], notes: "زرعة ألمانية" },
+  { id: 8, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
+  
+  // القواطع العلوية الأمامية (9-10)
+  { id: 9, procedure: "custom", customProcedure: "تبييض بالليزر", color: "#DC2626", treatments: ["جلسة تبييض 1", "جلسة تبييض 2", "", "", "", "", "", "", "", ""], notes: "نتيجة ممتازة" },
+  { id: 10, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
+  
+  // القواطع العلوية الأمامية (11-12)
+  { id: 11, procedure: "filled", color: "#3B82F6", treatments: ["حشوة تجميلية", "", "", "", "", "", "", "", "", ""], notes: "" },
+  { id: 12, procedure: "crown", color: "#F59E0B", treatments: ["تاج إيماكس", "", "", "", "", "", "", "", "", ""], notes: "تاج تجميلي" },
+  
+  // الضواحك والقواطع العلوية اليسرى (13-16)
+  { id: 13, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
+  { id: 14, procedure: "decayed", color: "#EF4444", treatments: ["كشف تسوس", "", "", "", "", "", "", "", "", ""], notes: "تسوس بسيط" },
+  { id: 15, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
+  { id: 16, procedure: "missing", color: "#9CA3AF", treatments: ["خلع", "", "", "", "", "", "", "", "", ""], notes: "تم الخلع منذ 3 أشهر" },
+  
+  // الضواحك والقواطع السفلية اليسرى (17-24)
+  { id: 17, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
+  { id: 18, procedure: "filled", color: "#3B82F6", treatments: ["حشوة أملغم", "", "", "", "", "", "", "", "", ""], notes: "حشوة قديمة" },
+  { id: 19, procedure: "root-canal", color: "#8B4513", treatments: ["معالجة لبية", "حشو قنوات", "", "", "", "", "", "", "", ""], notes: "" },
+  { id: 20, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
+  { id: 21, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
+  { id: 22, procedure: "decayed", color: "#EF4444", treatments: ["تسوس بين الأسنان", "", "", "", "", "", "", "", "", ""], notes: "يحتاج أشعة" },
+  { id: 23, procedure: "crown", color: "#F59E0B", treatments: ["تاج معدني سيراميك", "", "", "", "", "", "", "", "", ""], notes: "" },
+  { id: 24, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
+  
+  // القواطع السفلية الأمامية (25-26)
+  { id: 25, procedure: "filled", color: "#3B82F6", treatments: ["حشوة", "", "", "", "", "", "", "", "", ""], notes: "" },
+  { id: 26, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
+  
+  // القواطع السفلية الأمامية (27-28)
+  { id: 27, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
+  { id: 28, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
+  
+  // الضواحك والقواطع السفلية اليمنى (29-32)
+  { id: 29, procedure: "implant", color: "#10B981", treatments: ["زرعة", "تركيب تاج", "", "", "", "", "", "", "", ""], notes: "زرعة سويسرية" },
+  { id: 30, procedure: "decayed", color: "#EF4444", treatments: ["تسوس عميق", "", "", "", "", "", "", "", "", ""], notes: "قد يحتاج معالجة لبية" },
+  { id: 31, procedure: "filled", color: "#3B82F6", treatments: ["حشوة", "", "", "", "", "", "", "", "", ""], notes: "" },
+  { id: 32, procedure: "crown", color: "#F59E0B", treatments: ["تاج", "", "", "", "", "", "", "", "", ""], notes: "" },
+];
+
+
+
+
 // ============================================================
 // أنواع البيانات
 // ============================================================
@@ -114,13 +172,16 @@ export function ToothChart({
   primaryColor = "#007bff",
 }: ToothChartProps) {
   const [teethData, setTeethData] = useState<ToothData[]>(
-    initialTeethData || createAllTeethData()
+    initialTeethData || DEFAULT_TEETH_DATA
   );
   const [selectedToothId, setSelectedToothId] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  
+  // 👈 إضافة مرجع للوحة المعلومات
+  const infoPanelRef = useRef<HTMLDivElement>(null);
 
   // كشف حجم الشاشة
   useEffect(() => {
@@ -138,6 +199,21 @@ export function ToothChart({
       setTeethData(initialTeethData);
     }
   }, [initialTeethData]);
+
+  // 👈 إضافة تأثير للتمرير التلقائي عند اختيار سن في وضع الهاتف
+  useEffect(() => {
+    if (isMobile && selectedToothId && infoPanelRef.current) {
+      // تأخير بسيط للتأكد من تحميل العنصر في DOM (خاصة مع AnimatePresence)
+      const timer = setTimeout(() => {
+        infoPanelRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
+      }, 150); // تأخير قصير للسماح بـ AnimatePresence بالبدء
+      
+      return () => clearTimeout(timer);
+    }
+  }, [selectedToothId, isMobile]);
 
   // الحصول على بيانات السن المحدد
   const selectedTooth = selectedToothId 
@@ -252,10 +328,11 @@ export function ToothChart({
             />
           </div>
 
-          {/* لوحة المعلومات */}
+          {/* 👈 لوحة المعلومات - تمت إضافة ref للتمرير إليها */}
           <AnimatePresence>
             {selectedTooth && (
               <motion.div
+                ref={infoPanelRef}  // 👈 إسناد المرجع هنا
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
@@ -271,9 +348,9 @@ export function ToothChart({
             )}
           </AnimatePresence>
 
-          {/* رسالة عند عدم اختيار سن */}
+          {/* رسالة عند عدم اختيار سن - تمت إضافة ref هنا أيضاً */}
           {!selectedTooth && (
-            <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center">
+            <div ref={infoPanelRef} className="bg-white rounded-2xl border border-gray-100 p-8 text-center">
               <div className="w-12 h-12 mx-auto rounded-full bg-gray-50 flex items-center justify-center mb-3">
                 <ChevronRight size={20} className="text-gray-300" />
               </div>
@@ -281,56 +358,56 @@ export function ToothChart({
             </div>
           )}
         </div>
-) : (
-  /* تخطيط سطح المكتب: الشارت على اليسار، المعلومات على اليمين */
-  <div className="flex gap-6 items-start">
-    {/* الشارت - يسار (أصغر) */}
-    <div className="bg-white rounded-2xl border border-gray-100 p-4" style={{ width: "420px", flexShrink: 0 }}>
-      <ToothChartSVG
-        teethData={teethData}
-        selectedToothId={selectedToothId}
-        onToothClick={handleToothClick}
-        editable={editable}
-        primaryColor={primaryColor}
-      />
-    </div>
-
-    {/* لوحة المعلومات - يمين */}
-    <div className="flex-1 min-w-0">
-      <AnimatePresence mode="wait">
-        {selectedTooth ? (
-          <motion.div
-            key="panel"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-          >
-            <ToothInfoPanel
-              tooth={selectedTooth}
-              onUpdate={handleUpdateTooth}
-              primaryColor={primaryColor}
+      ) : (
+        /* تخطيط سطح المكتب: الشارت على اليسار، المعلومات على اليمين */
+        <div className="flex gap-6 items-start">
+          {/* الشارت - يسار (أصغر) */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-4" style={{ width: "420px", flexShrink: 0 }}>
+            <ToothChartSVG
+              teethData={teethData}
+              selectedToothId={selectedToothId}
+              onToothClick={handleToothClick}
               editable={editable}
-              isMobile={false}
+              primaryColor={primaryColor}
             />
-          </motion.div>
-        ) : (
-          <motion.div
-            key="empty"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="bg-white rounded-2xl border border-gray-100 p-8 text-center flex flex-col items-center justify-center min-h-[400px]"
-          >
-            <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mb-4">
-              <Stethoscope size={28} className="text-gray-300" />
-            </div>
-            <p className="text-gray-500 font-medium mb-1">لوحة معلومات السن</p>
-            <p className="text-sm text-gray-400">اختر سناً من الرسم لعرض وتعديل معلوماته</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  </div>
-)}
+          </div>
+
+          {/* لوحة المعلومات - يمين */}
+          <div className="flex-1 min-w-0">
+            <AnimatePresence mode="wait">
+              {selectedTooth ? (
+                <motion.div
+                  key="panel"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                >
+                  <ToothInfoPanel
+                    tooth={selectedTooth}
+                    onUpdate={handleUpdateTooth}
+                    primaryColor={primaryColor}
+                    editable={editable}
+                    isMobile={false}
+                  />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="empty"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="bg-white rounded-2xl border border-gray-100 p-8 text-center flex flex-col items-center justify-center min-h-[400px]"
+                >
+                  <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mb-4">
+                    <Stethoscope size={28} className="text-gray-300" />
+                  </div>
+                  <p className="text-gray-500 font-medium mb-1">لوحة معلومات السن</p>
+                  <p className="text-sm text-gray-400">اختر سناً من الرسم لعرض وتعديل معلوماته</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
