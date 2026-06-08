@@ -6,38 +6,70 @@ export default function NotFound() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-blue-50 to-white p-6">
       {/* SVG سن بعيون حزينة */}
       <div className="mb-8 text-gray-500">
-        <svg 
-          xmlns="http://www.w3.org/2000/svg" 
-          width="140" 
-          height="140" 
-          viewBox="0 0 32 32" 
-          fill="none" 
-          stroke="currentColor" 
-          strokeWidth="1.5" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"
+        <svg
+          viewBox="0 0 6000 6000"
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-full h-full"
         >
-          {/* السن الأساسي */}
-          <path d="M16 7.5c-1.432 -.781 -3.444 -2 -5.333 -2c-2.8 0 -5.334 1.663 -5.334 6.667c0 6.532 1.408 11.213 3.561 14.05c.764 1.008 2.627 .694 3.423 -.315c.53 -.673 1.092 -1.918 1.683 -3.735c.389 -.77 1.189 -1.505 2 -1.5c.803 0 1.613 .737 2 1.5c.591 1.817 1.152 3.062 1.683 3.735c.796 1.012 2.66 1.324 3.423 .316c2.153 -2.836 3.561 -7.517 3.561 -14.05c0 -4.987 -2.544 -6.667 -5.334 -6.667c-1.896 0 -3.896 1.216 -5.333 2z" />
-          
-          {/* بقعة تسوس */}
-          <circle cx="14" cy="12" r="2" fill="#8B4513" stroke="none" opacity="0.6" />
-          <circle cx="18" cy="17" r="1.5" fill="#654321" stroke="none" opacity="0.5" />
-          
-          {/* العين اليسرى - حزينة */}
-          <circle cx="10.5" cy="15" r="1.5" fill="currentColor" stroke="none" />
-          
-          {/* حاجب العين اليسرى - مائل للحزن */}
-          <path d="M8.5 13.5 L12 13" stroke="currentColor" strokeWidth="1.2" fill="none" />
-          
-          {/* العين اليمنى - حزينة */}
-          <circle cx="19" cy="15" r="1.5" fill="currentColor" stroke="none" />
-          
-          {/* حاجب العين اليمنى - مائل للحزن */}
-          <path d="M18 13 L21.5 13.5" stroke="currentColor" strokeWidth="1.2" fill="none" />
-          
-          {/* فم حزين */}
-          <path d="M13 20 Q15 18.5 17 20" stroke="currentColor" strokeWidth="1.2" fill="none" />
+          <g transform="scale(1, -1) translate(0, -6000)">
+            {/* السن الرئيسية */}
+            <path
+              d="M1336 4749 c-65 -16 -153 -69 -202 -121 -117 -125 -139 -302 -59 -464 41 -83 97 -139 184 -181 51 -25 66 -28 166 -28 98 0 116 3 167 27 195 91 284 317 207 524 -31 83 -140 192 -224 224 -67 25 -179 35 -239 19z M3775 4749 c-99 -13 -234 -51 -377 -105 -115 -45 -129 -48 -218 -48 -85 0 -113 5 -271 52 -256 75 -306 85 -454 85 -155 1 -262 -22 -389 -82 -95 -44 -206 -125 -206 -149 0 -10 5 -46 10 -82 26 -183 -61 -370 -216 -462 -48 -29 -53 -36 -59 -77 -10 -67 -7 -316 5 -412 31 -250 96 -472 199 -678 l51 -101 0 -177 c0 -261 31 -449 115 -700 168 -506 458 -759 653 -570 75 73 121 171 177 382 77 285 88 322 116 384 61 134 148 201 263 201 77 0 129 -24 183 -83 72 -78 101 -153 177 -452 60 -239 89 -309 163 -402 40 -50 122 -93 177 -93 127 0 277 149 398 393 103 209 171 441 213 735 17 114 17 114 86 220 314 482 453 1125 334 1538 -89 305 -302 527 -604 630 -166 56 -352 75 -526 53z"
+              fill="#0043fa6e"
+            />
+            
+            {/* الدائرة الصغيرة */}
+            <path
+              d="M4808 2297 c-59 -23 -124 -64 -153 -99 -108 -128 -107 -307 1 -427 65 -72 129 -103 224 -109 131 -7 242 54 305 169 24 45 30 69 33 142 4 82 3 91 -27 152 -35 70 -87 122 -159 157 -56 27 -171 34 -224 15z"
+              fill="#b80920a2"
+            />
+
+            {/* العيون بشكل هلال حزين - تم تعديل الدوران ليكون عمودي على الشاشة */}
+            <g>
+              {/* العين اليسرى - هلال حزين */}
+              <path
+                d="M2350 3820 Q2650 4000 2950 3820"
+                fill="none"
+                stroke="rgba(255, 255, 255, 0.8)"
+                strokeWidth="100"
+                strokeLinecap="round"
+                transform="rotate(200, 2650, 3820)"
+              />
+
+              {/* العين اليمنى - هلال حزين */}
+              <path
+                d="M3350 3820 Q3650 4000 3950 3820"
+                fill="none"
+                stroke="rgba(255, 255, 255, 0.8)"
+                strokeWidth="100"
+                strokeLinecap="round"
+                transform="rotate(160, 3650, 3820)"
+              />
+            </g>
+
+            {/* علامة الخطأ (X) في المنتصف */}
+            <g transform="translate(1420, 4350)">
+              {/* خلفية دائرية حمراء لعلامة الخطأ */}
+              <circle cx="0" cy="0" r="400" fill="#ef4444" />
+              
+              {/* علامة X - خط مائل / */}
+              <line
+                x1="-200" y1="-200"
+                x2="200" y2="200"
+                stroke="white"
+                strokeWidth="80"
+                strokeLinecap="round"
+              />
+              {/* علامة X - خط مائل \ */}
+              <line
+                x1="200" y1="-200"
+                x2="-200" y2="200"
+                stroke="white"
+                strokeWidth="80"
+                strokeLinecap="round"
+              />
+            </g>
+          </g>
         </svg>
       </div>
       
@@ -50,25 +82,25 @@ export default function NotFound() {
       </p>
 
             {/* زر الرجوع للصفحة الرئيسية */}
-<Link 
-  href="/" 
-  className="bg-gradient-to-r from-yellow-500 to-yellow-400 text-[#0A1628] px-6 py-3 rounded-lg font-medium text-sm hover:from-yellow-400 hover:to-yellow-300 transition-all duration-300 shadow-lg shadow-yellow-500/20 inline-flex items-center gap-2 hover:scale-105"
->
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    width="16" 
-    height="16" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2.5" 
-    strokeLinecap="round" 
-    strokeLinejoin="round"
-  >
-    <path d="M19 12H5M12 19l-7-7 7-7"/>
-  </svg>
-  العودة للصفحة الرئيسية
-</Link>
+        <a 
+          href="/" 
+          className="text-[#2558ff] px-6 py-2.5 rounded-lg font-medium text-sm hover:bg-blue-50 transition-all duration-300 inline-flex items-center gap-2"
+        >
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            width="16" 
+            height="16" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2.5" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+          >
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          العودة للصفحة الرئيسية
+        </a>
     </div>
   );
 }

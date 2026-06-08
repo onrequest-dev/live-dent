@@ -332,6 +332,7 @@ export function ToothChart({
           <AnimatePresence>
             {selectedTooth && (
               <motion.div
+                key={selectedToothId}
                 ref={infoPanelRef}  // 👈 إسناد المرجع هنا
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -377,7 +378,7 @@ export function ToothChart({
             <AnimatePresence mode="wait">
               {selectedTooth ? (
                 <motion.div
-                  key="panel"
+                  key={selectedToothId}
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
