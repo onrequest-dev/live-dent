@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
-import { ToothData, PROCEDURE_COLORS } from "./ToothChart";
+import { ToothData } from "./ToothChart";
 
 interface ToothChartSVGProps {
   teethData: ToothData[];
@@ -21,26 +21,58 @@ export function ToothChartSVG({
 }: ToothChartSVGProps) {
   const svgRef = useRef<HTMLDivElement>(null);
 
-  // تحديث ألوان الأسنان عند تغيير البيانات
+  // تحديث ألوان الأسنان والنصوص عند تغيير البيانات
   useEffect(() => {
     teethData.forEach((tooth) => {
       const toothElement = document.getElementById(`Tooth${tooth.id}`);
       if (toothElement) {
+        // تحديث لون السن
         toothElement.setAttribute("fill", tooth.color);
         
-        // إضافة تأثير التحديد
+        // تأثير التحديد - حدود متوهجة + ظل
         if (selectedToothId === tooth.id) {
-          toothElement.setAttribute("stroke", primaryColor);
+          toothElement.setAttribute("stroke", "#1F2937");
           toothElement.setAttribute("stroke-width", "3");
-          toothElement.setAttribute("filter", "drop-shadow(0 0 6px rgba(0,123,255,0.4))");
+          toothElement.setAttribute("filter", "url(#glow)");
+          toothElement.style.transition = "all 0.3s ease";
         } else {
           toothElement.setAttribute("stroke", "#D1D5DB");
           toothElement.setAttribute("stroke-width", "1");
           toothElement.setAttribute("filter", "none");
         }
       }
+
+      // تحديث نص الإجراء في dmftLabels
+      const txtElement = document.getElementById(`txtTooth${tooth.id}`);
+      if (txtElement) {
+        const procedureText = tooth.customProcedure || 
+          (tooth.procedure !== "sound" ? getProcedureLabel(tooth.procedure) : "");
+        txtElement.textContent = procedureText;
+        
+        // تنسيق النص
+        txtElement.setAttribute("fill", tooth.procedure === "sound" ? "#9CA3AF" : "#374151");
+        txtElement.setAttribute("font-size", selectedToothId === tooth.id ? "13px" : "10px");
+        txtElement.setAttribute("font-weight", selectedToothId === tooth.id ? "bold" : "normal");
+        
+        if (selectedToothId === tooth.id && procedureText) {
+          txtElement.setAttribute("fill", "#1F2937");
+        }
+      }
     });
-  }, [teethData, selectedToothId, primaryColor]);
+  }, [teethData, selectedToothId]);
+
+  // الحصول على تسمية الإجراء
+  function getProcedureLabel(procedure: string): string {
+    const labels: Record<string, string> = {
+      decayed: "تسوس",
+      filled: "حشوة",
+      crown: "تاج",
+      "root-canal": "معالجة",
+      implant: "زرعة",
+      missing: "مفقود",
+    };
+    return labels[procedure] || "";
+  }
 
   // إضافة مستمعي الأحداث
   useEffect(() => {
@@ -83,6 +115,24 @@ export function ToothChartSVG({
           margin: "0 auto",
         }}
       >
+{/* تعريف الفلاتر */}
+<defs>
+  {/* فلتر تكبير مع ظل */}
+  <filter id="scale-up" x="-30%" y="-30%" width="160%" height="160%">
+    {/* تكبير باستخدام feColorMatrix */}
+    <feGaussianBlur stdDeviation="1" result="blur" />
+    <feColorMatrix 
+      in="blur" 
+      type="matrix" 
+      values="1.1 0 0 0 0
+              0 1.1 0 0 0
+              0 0 1.1 0 0
+              0 0 0 1 0" 
+      result="scaled"
+    />
+    <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#000" floodOpacity="0.3" />
+  </filter>
+</defs>
 <g id="toothLabels" transform="translate(40, -5)">
 
 	{/* الفك العلوي - الجهة اليمنى (1-8) */}
@@ -136,7 +186,7 @@ export function ToothChartSVG({
 	<text id="lbl32" transform="matrix(1 0 0 1 82 402)" fontFamily="'Avenir-Heavy'" fontSize="18px">32</text>
 
 </g>
-<g id="dmftLabels">
+{/* <g id="dmftLabels" transform="translate(30, -5)">
 	<text id="txtTooth32" transform="matrix(1 0 0 1 5.0001 386.3778)" font-family="'MyriadPro-Regular'" font-size="16px"></text>
 	<text id="txtTooth31" transform="matrix(1 0 0 1 0.9998 449.7374)" font-family="'MyriadPro-Regular'" font-size="16px"></text>
 	<text id="txtTooth30" transform="matrix(1 0 0 1 9.6668 513.5912)" font-family="'MyriadPro-Regular'" font-size="16px"></text>
@@ -165,10 +215,10 @@ export function ToothChartSVG({
 	<text id="txtTooth7" transform="matrix(1 0 0 1 114.3296 51.5455)" font-family="'MyriadPro-Regular'" font-size="16px"></text>
 	<text id="txtTooth6" transform="matrix(1 0 0 1 72.0002 91.2056)" font-family="'MyriadPro-Regular'" font-size="16px"></text>
 	<text id="txtTooth5" transform="matrix(1 0 0 1 48.5357 127.8719)" font-family="'MyriadPro-Regular'" font-size="16px"></text>
-	<text id="txtTooth3" transform="matrix(1 0 0 1 -15 212.3336)" font-family="'MyriadPro-Regular'" font-size="16px"></text>
+	<text id="txtTooth3" transform="matrix(1 0 0 1 10 212.3336)" font-family="'MyriadPro-Regular'" font-size="16px"></text>
 	<text id="txtTooth2" transform="matrix(1 0 0 1 3.25 260.1059)" font-family="'MyriadPro-Regular'" font-size="16px"></text>
 	<text id="txtTooth1" transform="matrix(1 0 0 1 5.0001 338.4393)" font-family="'MyriadPro-Regular'" font-size="16px"></text>
-</g>
+</g> */}
 <g id="Spots">
 	<polygon id="Tooth32" fill="#FFFFFF" data-key="32" points="66.7,369.7 59,370.3 51,373.7 43.7,384.3 42.3,392 38.7,406 41,415.3 44.3,420.3 
 		47.3,424 51.7,424.3 57.7,424 62.3,422.7 66.7,422.7 71,424.3 76.3,422.7 80.7,419.3 84.7,412.3 85.3,405 87.3,391.7 85,380 
@@ -453,8 +503,11 @@ export function ToothChartSVG({
 		<path id="XMLID_6_" fill="#010101" d="M47.9,271.6c1.3-4.4,3-8.8,4.9-13c1.6,0.1,2.4,2.2,2,3.7c-0.4,1.6-1.5,2.9-2,4.4
 			c-0.6,1.5-0.3,3.6,1.1,4.2c2.7,1.1,4.3,4.2,3.8,7.1c-1,1-2.2-0.9-2.6-2.2C54.3,272.8,50.8,270.2,47.9,271.6z"/>
 	</g>
+	
 </g>
-</svg>
+
+      </svg>
     </div>
   );
 }
+
