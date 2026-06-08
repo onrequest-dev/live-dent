@@ -29,17 +29,15 @@ export function ToothChartSVG({
         // تحديث لون السن
         toothElement.setAttribute("fill", tooth.color);
         
-        // تأثير التحديد - حدود متوهجة + ظل
-        if (selectedToothId === tooth.id) {
-          toothElement.setAttribute("stroke", "#1F2937");
-          toothElement.setAttribute("stroke-width", "3");
-          toothElement.setAttribute("filter", "url(#glow)");
-          toothElement.style.transition = "all 0.3s ease";
-        } else {
-          toothElement.setAttribute("stroke", "#D1D5DB");
-          toothElement.setAttribute("stroke-width", "1");
-          toothElement.setAttribute("filter", "none");
-        }
+		if (selectedToothId === tooth.id) {
+		toothElement.setAttribute("opacity", "1");
+		toothElement.setAttribute("stroke", "#1F2937");
+		toothElement.setAttribute("stroke-width", "3");
+		toothElement.setAttribute("filter", "url(#highlight)");
+		} else {
+		toothElement.setAttribute("opacity", "0.4");
+		toothElement.setAttribute("filter", "none");
+		}
       }
 
       // تحديث نص الإجراء في dmftLabels
@@ -115,11 +113,9 @@ export function ToothChartSVG({
           margin: "0 auto",
         }}
       >
-{/* تعريف الفلاتر */}
 <defs>
-  {/* فلتر تكبير مع ظل */}
+  {/* فلتر التكبير مع ظل */}
   <filter id="scale-up" x="-30%" y="-30%" width="160%" height="160%">
-    {/* تكبير باستخدام feColorMatrix */}
     <feGaussianBlur stdDeviation="1" result="blur" />
     <feColorMatrix 
       in="blur" 
@@ -131,6 +127,11 @@ export function ToothChartSVG({
       result="scaled"
     />
     <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#000" floodOpacity="0.3" />
+  </filter>
+  
+  {/* فلتر التمييز الجديد */}
+  <filter id="highlight" x="-20%" y="-20%" width="140%" height="140%">
+    <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="#ffffff" floodOpacity="0.5" />
   </filter>
 </defs>
 <g id="toothLabels" transform="translate(40, -5)">

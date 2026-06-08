@@ -1281,26 +1281,26 @@ export function MainTab({
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {isMobile && isMobileDrawerOpen && selectedPatient && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
-              onClick={() => {
-                setIsMobileDrawerOpen(false);
-                setSelectedPatient(null);
-              }}
-            />
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed inset-x-0 bottom-0 z-50 max-h-[90vh] overflow-y-auto rounded-t-3xl"
-            >
+<AnimatePresence>
+  {isMobile && isMobileDrawerOpen && selectedPatient && (
+    <>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+        onClick={() => {
+          setIsMobileDrawerOpen(false);
+          setSelectedPatient(null);
+        }}
+      />
+      <motion.div
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        className="fixed inset-0 z-50 overflow-y-auto bg-white"
+      >
               <PatientDetailsCard
                 onEditPatient={() => {
                   setEditingPatient(selectedPatient);

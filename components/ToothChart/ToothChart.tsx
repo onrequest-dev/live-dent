@@ -22,7 +22,7 @@ const DEFAULT_TEETH_DATA: ToothData[] = [
   // الضواحك والقواطع العلوية اليمنى (1-8)
   { id: 1, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
   { id: 2, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
-  { id: 3, procedure: "decayed", color: "#EF4444", treatments: ["إزالة التسوس", "حشوة مؤقتة", "", "", "", "", "", "", "", ""], notes: "يحتاج متابعة بعد أسبوع" },
+  { id: 3, procedure: "decayed", color: "#bcef44", treatments: ["إزالة التسوس", "حشوة مؤقتة", "", "", "", "", "", "", "", ""], notes: "يحتاج متابعة بعد أسبوع" },
   { id: 4, procedure: "filled", color: "#3B82F6", treatments: ["حشوة دائمة", "", "", "", "", "", "", "", "", ""], notes: "" },
   { id: 5, procedure: "crown", color: "#F59E0B", treatments: ["تحضير السن", "طبعات", "تركيب تاج مؤقت", "تركيب تاج دائم", "", "", "", "", "", ""], notes: "تاج زركونيا" },
   { id: 6, procedure: "root-canal", color: "#8B4513", treatments: ["فتح اللب", "تنظيف القنوات", "حشو القنوات", "", "", "", "", "", "", ""], notes: "3 قنوات" },
@@ -39,7 +39,7 @@ const DEFAULT_TEETH_DATA: ToothData[] = [
   
   // الضواحك والقواطع العلوية اليسرى (13-16)
   { id: 13, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
-  { id: 14, procedure: "decayed", color: "#EF4444", treatments: ["كشف تسوس", "", "", "", "", "", "", "", "", ""], notes: "تسوس بسيط" },
+  { id: 14, procedure: "decayed", color: "#bcef44", treatments: ["كشف تسوس", "", "", "", "", "", "", "", "", ""], notes: "تسوس بسيط" },
   { id: 15, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
   { id: 16, procedure: "missing", color: "#9CA3AF", treatments: ["خلع", "", "", "", "", "", "", "", "", ""], notes: "تم الخلع منذ 3 أشهر" },
   
@@ -49,7 +49,7 @@ const DEFAULT_TEETH_DATA: ToothData[] = [
   { id: 19, procedure: "root-canal", color: "#8B4513", treatments: ["معالجة لبية", "حشو قنوات", "", "", "", "", "", "", "", ""], notes: "" },
   { id: 20, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
   { id: 21, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
-  { id: 22, procedure: "decayed", color: "#EF4444", treatments: ["تسوس بين الأسنان", "", "", "", "", "", "", "", "", ""], notes: "يحتاج أشعة" },
+  { id: 22, procedure: "decayed", color: "#bcef44", treatments: ["تسوس بين الأسنان", "", "", "", "", "", "", "", "", ""], notes: "يحتاج أشعة" },
   { id: 23, procedure: "crown", color: "#F59E0B", treatments: ["تاج معدني سيراميك", "", "", "", "", "", "", "", "", ""], notes: "" },
   { id: 24, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
   
@@ -63,7 +63,7 @@ const DEFAULT_TEETH_DATA: ToothData[] = [
   
   // الضواحك والقواطع السفلية اليمنى (29-32)
   { id: 29, procedure: "implant", color: "#10B981", treatments: ["زرعة", "تركيب تاج", "", "", "", "", "", "", "", ""], notes: "زرعة سويسرية" },
-  { id: 30, procedure: "decayed", color: "#EF4444", treatments: ["تسوس عميق", "", "", "", "", "", "", "", "", ""], notes: "قد يحتاج معالجة لبية" },
+  { id: 30, procedure: "decayed", color: "#bcef44", treatments: ["تسوس عميق", "", "", "", "", "", "", "", "", ""], notes: "قد يحتاج معالجة لبية" },
   { id: 31, procedure: "filled", color: "#3B82F6", treatments: ["حشوة", "", "", "", "", "", "", "", "", ""], notes: "" },
   { id: 32, procedure: "crown", color: "#F59E0B", treatments: ["تاج", "", "", "", "", "", "", "", "", ""], notes: "" },
 ];
@@ -111,7 +111,7 @@ export interface ToothChartProps {
 
 export const PROCEDURES: { type: ProcedureType; label: string; color: string }[] = [
   { type: "sound", label: "سليم", color: "#FFFFFF" },
-  { type: "decayed", label: "متسوس", color: "#EF4444" },
+  { type: "decayed", label: "متسوس", color: "#bcef44" },
   { type: "filled", label: "محشو", color: "#3B82F6" },
   { type: "crown", label: "تاج", color: "#F59E0B" },
   { type: "root-canal", label: "معالجة لبية", color: "#8B4513" },
@@ -122,7 +122,7 @@ export const PROCEDURES: { type: ProcedureType; label: string; color: string }[]
 
 export const PROCEDURE_COLORS: Record<ProcedureType, string> = {
   sound: "#FFFFFF",
-  decayed: "#EF4444",
+  decayed: "#bcef44",
   filled: "#3B82F6",
   crown: "#F59E0B",
   "root-canal": "#8B4513",

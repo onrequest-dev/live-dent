@@ -298,38 +298,37 @@ export function ToothInfoPanel({
               )}
             </AnimatePresence>
           </div>
-
-<div className="flex items-center gap-2 mt-1 p-2">
-  <div className="flex items-center gap-1 flex-nowrap overflow-x-auto scrollbar-hide p-1">
+<div className="flex items-center gap-2 mt-1 px-0 py-2 overflow-x-auto scrollbar-hide">
+  <div className="flex items-center gap-0.5 flex-nowrap">
     {AVAILABLE_COLORS.map((c, i) => (
-      <button
-        key={i}
-        onClick={() => handleColorSelect(c.color)}
-        disabled={!editable}
-        title={c.label}
-        className={`
-          relative h-5 w-7 rounded-md transition-all duration-200 flex-shrink-0
-          active:scale-90 touch-manipulation
-          disabled:opacity-40 disabled:cursor-not-allowed
-          ${
-            selectedColor === c.color
-              ? "ring-2 ring-gray-800 ring-offset-1 shadow-md"
-              : "ring-1 ring-gray-200 active:ring-gray-400"
-          }
-        `}
-        style={{
-          backgroundColor: c.color,
-          border: "none",
-          padding: 0,
-          cursor: editable ? "pointer" : "not-allowed",
-        }}
-      >
-        {selectedColor === c.color && (
-          <span className="absolute inset-0 flex items-center justify-center">
-            <Check className="text-white drop-shadow-sm w-3 h-3" strokeWidth={3} />
-          </span>
-        )}
-      </button>
+<button
+  key={i}
+  onClick={() => handleColorSelect(c.color)}
+  disabled={!editable}
+  title={c.label}
+  className={`
+    relative h-5 w-7 rounded-md transition-all duration-200 flex-shrink-0
+    active:scale-90 touch-manipulation
+    disabled:opacity-40 disabled:cursor-not-allowed
+    ${
+      selectedColor === c.color
+        ? "shadow-md"
+        : "ring-1 ring-gray-200 active:ring-gray-400"
+    }
+  `}
+  style={{
+    backgroundColor: c.color,
+    border: "none",
+    padding: 0,
+    cursor: editable ? "pointer" : "not-allowed",
+  }}
+>
+  {selectedColor === c.color && (
+    <span className="absolute inset-0 flex items-center justify-center">
+      <Check className="text-white drop-shadow-sm w-3 h-3" strokeWidth={3} />
+    </span>
+  )}
+</button>
     ))}
 
     {/* خيار بدون لون */}
@@ -344,8 +343,8 @@ export function ToothInfoPanel({
         bg-white border border-dashed
         ${
           selectedColor === "#FFFFFF"
-            ? "border-gray-800 ring-2 ring-gray-800 ring-offset-1"
-            : "border-gray-300 active:border-gray-500"
+        ? "shadow-md"  
+        : "ring-1 ring-gray-200 active:ring-gray-400"
         }
       `}
       style={{
