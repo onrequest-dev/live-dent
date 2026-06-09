@@ -1402,6 +1402,18 @@ function UnsavedChangesModal({
   onCancel: () => void;
   primaryColor: string;
 }) {
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = () => {
+    setIsSaving(true);
+    onSave(); // استدعاء فوري بدون انتظار
+    
+    // التحميل الوهمي يشتغل في الخلفية فقط للشكل
+    setTimeout(() => {
+      setIsSaving(false);
+    }, 5000);
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -1409,41 +1421,89 @@ function UnsavedChangesModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-          onClick={onCancel} // إغلاق عند النقر خارج المودال
+          onClick={isSaving ? undefined : onCancel}
         >
           <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
             className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full text-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <AlertCircle size={40} className="mx-auto mb-3 text-amber-500" />
-            <h3 className="font-bold text-gray-900 mb-2">تغييرات غير محفوظة</h3>
-            <p className="text-sm text-gray-500 mb-5">
+            {/* أيقونة التحذير مع تأثير نبض */}
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", damping: 12, stiffness: 200, delay: 0.1 }}
+              className="relative inline-block mb-3"
+            >
+              <div className="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center mx-auto">
+                <AlertCircle size={28} className="text-amber-500" />
+              </div>
+              <motion.div
+                animate={{ scale: [1, 1.3, 1], opacity: [0.4, 0, 0.4] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute inset-0 rounded-full border-2 border-amber-400"
+              />
+            </motion.div>
+
+            <h3 className="font-bold text-lg text-gray-900 mb-2">تغييرات غير محفوظة</h3>
+            <p className="text-sm text-gray-500 mb-6 leading-relaxed">
               لديك تعديلات على الشارت السني، هل تريد حفظها قبل المغادرة؟
             </p>
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={onSave}
-                className="w-full py-2.5 rounded-xl text-white font-medium"
+
+            <div className="flex flex-col gap-2.5">
+              {/* زر الحفظ مع التحميل الوهمي */}
+              <motion.button
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleSave}
+                disabled={isSaving}
+                className="w-full py-3 rounded-xl text-white font-medium relative overflow-hidden disabled:opacity-90 transition-all"
                 style={{ backgroundColor: primaryColor }}
               >
-                حفظ التغييرات
-              </button>
-              <button
+                {isSaving ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    جاري الحفظ...
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                      <polyline points="17 21 17 13 7 13 7 21" />
+                      <polyline points="7 3 7 8 15 8" />
+                    </svg>
+                    حفظ التغييرات
+                  </span>
+                )}
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.01, backgroundColor: "#f9fafb" }}
+                whileTap={{ scale: 0.98 }}
                 onClick={onDiscard}
-                className="w-full py-2.5 rounded-xl border border-gray-200 text-gray-700 font-medium hover:bg-gray-50"
+                disabled={isSaving}
+                className="w-full py-3 rounded-xl border-2 border-gray-100 text-gray-700 font-medium hover:bg-gray-50 transition-all disabled:opacity-50"
               >
                 تجاهل التغييرات
-              </button>
-              <button
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={onCancel}
-                className="w-full py-2 rounded-xl text-gray-500 text-sm hover:text-gray-700"
+                disabled={isSaving}
+                className="w-full py-2.5 rounded-xl text-gray-400 text-sm font-medium hover:text-gray-600 transition-colors disabled:opacity-50"
               >
                 متابعة التعديل
-              </button>
+              </motion.button>
             </div>
           </motion.div>
         </motion.div>

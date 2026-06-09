@@ -175,12 +175,16 @@ export function ToothInfoPanel({
 
   // ========== اختيار اللون ==========
 
-  const handleColorSelect = (color: string) => {
-    setSelectedColor(color);
-    if (procedureInput.trim()) {
-      saveProcedure(procedureInput, color);
-    }
-  };
+const handleColorSelect = (color: string) => {
+  setSelectedColor(color);
+  
+  // حفظ اللون دائماً، حتى لو لم يكن هناك إجراء مكتوب
+  onUpdate({
+    ...tooth,
+    color,
+    // نحتفظ بالإجراء الحالي إذا كان موجوداً، وإلا نبقيه كما هو
+  });
+};
 
   // ========== حفظ الإجراء ==========
 
@@ -259,44 +263,65 @@ export function ToothInfoPanel({
 
           {/* حقل إدخال الإجراء */}
           <div className="relative" ref={suggestionsRef}>
-            <input
-              ref={procedureInputRef}
-              type="text"
-              value={procedureInput}
-              onChange={(e) => handleProcedureInputChange(e.target.value)}
-              onKeyDown={handleProcedureKeyDown}
-              onFocus={() => {
-                if (procedureInput.trim()) {
-                  handleProcedureInputChange(procedureInput);
-                }
-              }}
-              disabled={!editable}
-              placeholder="اكتب اسم الإجراء..."
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            />
+<input
+  ref={procedureInputRef}
+  type="search"
+  value={procedureInput}
+  onChange={(e) => handleProcedureInputChange(e.target.value)}
+  onKeyDown={handleProcedureKeyDown}
+  onFocus={() => {
+    if (procedureInput.trim()) {
+      handleProcedureInputChange(procedureInput);
+    }
+  }}
+  onBlur={() => {
+    // عند الخروج من الحقل، احفظ الإجراء إذا كان مكتوباً
+    if (procedureInput.trim()) {
+      saveProcedure(procedureInput, selectedColor);
+    }
+    setShowSuggestions(false);
+  }}
+  disabled={!editable}
+  placeholder="اكتب اسم الإجراء..."
+  // ===== أضف هذه الخصائص لمنع اقتراحات النظام =====
+  autoComplete="off"
+  autoCorrect="off"
+  spellCheck={false}
+  // هذه هي المفاتيح الأساسية لمنع شريط الاقتراحات
+  enterKeyHint="done"
 
-            {/* اقتراحات التنبؤ */}
-            <AnimatePresence>
-              {showSuggestions && editable && (
-                <motion.div
-                  initial={{ opacity: 0, y: -5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -5 }}
-                  className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-50"
-                >
-                  {filteredSuggestions.map((suggestion, i) => (
-                    <button
-                      key={i}
-                      onClick={() => handleSuggestionSelect(suggestion)}
-                      className="w-full px-4 py-2.5 text-right text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2 border-b border-gray-50 last:border-0"
-                    >
-                      <span className="text-gray-300 text-xs w-5">{i + 1}</span>
-                      {suggestion}
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
+  // =============================================
+  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+/>
+
+           {/* اقتراحات التنبؤ */}
+<AnimatePresence>
+  {showSuggestions && editable && (
+    <motion.div
+      initial={{ opacity: 0, y: isMobile ? 5 : -5 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: isMobile ? 5 : -5 }}
+      className={`
+        absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-50
+        ${isMobile ? 'bottom-full mb-1' : 'top-full mt-1'}
+      `}
+    >
+      {(isMobile ? [...filteredSuggestions].reverse() : filteredSuggestions)
+        .map((suggestion, i) => (
+          <button
+            key={i}
+            onClick={() => handleSuggestionSelect(suggestion)}
+            className="w-full px-4 py-2.5 text-right text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2 border-b border-gray-50 last:border-0"
+          >
+            <span className="text-gray-300 text-xs w-5">
+              {isMobile ? filteredSuggestions.length - i : i + 1}
+            </span>
+            {suggestion}
+          </button>
+        ))}
+    </motion.div>
+  )}
+</AnimatePresence>
           </div>
 <div className="flex items-center gap-2 mt-1 px-0 py-2 overflow-x-auto scrollbar-hide">
   <div className="flex items-center gap-0.5 flex-nowrap">
