@@ -43,7 +43,7 @@ import {
   generateWhatsAppMessage,
   openWhatsAppChat,
 } from "@/lib/services/communication";
-import { Clinic, Patient, PatientCase, Session } from "@/types";
+import { Clinic, Patient, PatientCase, Session, ToothEntry } from "@/types";
 import { createPatient, updatePatient } from "@/client/helpers/patient";
 import {
   createSession,
@@ -54,7 +54,8 @@ import { ToastContainer, useToast } from "./Toast";
 import { XRayViewerButton } from "../XRayViewer";
 import { useModalBackHandler } from "@/hooks/useModalBackHandler";
 import ToothLoader from "../../loding";
-import { ToothChart, ToothData } from "../../ToothChart/ToothChart";
+import { ToothChart, ToothChartRef, ToothData } from "../../ToothChart/ToothChart";
+import { saveDentalChart } from "@/client/helpers/dental-chart";
 
 
 ////////////بيانات كذب لمكون الشارت//////////////
@@ -1202,6 +1203,7 @@ export function MainTab({
               className="flex-1 min-w-0 lg:pr-2"
             >
               <PatientDetailsCard
+                clinicId={clinicId}
                 patient={selectedPatient}
                 cases={selectedPatientCases}
                 sessions={selectedPatientSessions}
@@ -1302,6 +1304,7 @@ export function MainTab({
         className="fixed inset-0 z-50 overflow-y-auto bg-white"
       >
               <PatientDetailsCard
+              clinicId={clinicId}
                 onEditPatient={() => {
                   setEditingPatient(selectedPatient);
                   setShowEditPatientModal(true);
@@ -1385,6 +1388,69 @@ export function MainTab({
   );
 }
 
+
+function UnsavedChangesModal({
+  isOpen,
+  onSave,
+  onDiscard,
+  onCancel,
+  primaryColor,
+}: {
+  isOpen: boolean;
+  onSave: () => void;
+  onDiscard: () => void;
+  onCancel: () => void;
+  primaryColor: string;
+}) {
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+          onClick={onCancel} // إغلاق عند النقر خارج المودال
+        >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <AlertCircle size={40} className="mx-auto mb-3 text-amber-500" />
+            <h3 className="font-bold text-gray-900 mb-2">تغييرات غير محفوظة</h3>
+            <p className="text-sm text-gray-500 mb-5">
+              لديك تعديلات على الشارت السني، هل تريد حفظها قبل المغادرة؟
+            </p>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={onSave}
+                className="w-full py-2.5 rounded-xl text-white font-medium"
+                style={{ backgroundColor: primaryColor }}
+              >
+                حفظ التغييرات
+              </button>
+              <button
+                onClick={onDiscard}
+                className="w-full py-2.5 rounded-xl border border-gray-200 text-gray-700 font-medium hover:bg-gray-50"
+              >
+                تجاهل التغييرات
+              </button>
+              <button
+                onClick={onCancel}
+                className="w-full py-2 rounded-xl text-gray-500 text-sm hover:text-gray-700"
+              >
+                متابعة التعديل
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
 // ============================================================
 // مكون بطاقة تفاصيل المريض
 // ============================================================
@@ -1415,6 +1481,7 @@ interface PatientDetailsCardProps {
   onDeleteSession: (sessionId: string) => void;
   onRequestDeleteSession: (sessionId: string) => void;
   onEditPatient: () => void;
+  clinicId: string;
 }
 
 function PatientDetailsCard({
@@ -1439,13 +1506,87 @@ function PatientDetailsCard({
   onDeleteSession,
   onEditPatient,
   onRequestDeleteSession,
+  clinicId,
 }: PatientDetailsCardProps) {
   useModalBackHandler(onClose);
   const finance = calculateFinance();
   const pastSessions = sessions;
   const [selectedSession, setSelectedSession] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'appointments' | 'chart' | 'xray'>('appointments');
+  const [activeTab, setActiveTab] = useState<"appointments" | "chart" | "xray">(
+    "appointments",
+  );
   const [showXRayViewer, setShowXRayViewer] = useState(false);
+
+  // ============================================================
+  // حالات التغييرات غير المحفوظة في الشارت
+  // ============================================================
+  const [isChartDirty, setIsChartDirty] = useState(false);
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+  const pendingActionRef = useRef<(() => void) | null>(null);
+  const chartRef = useRef<ToothChartRef>(null);
+
+  // دالة مساعدة لمحاولة تنفيذ إجراء مع التحقق من التغييرات
+  const withUnsavedCheck = useCallback(
+    (action: () => void) => {
+      if (activeTab === "chart" && isChartDirty) {
+        pendingActionRef.current = action;
+        setShowUnsavedModal(true);
+      } else {
+        action();
+      }
+    },
+    [activeTab, isChartDirty],
+  );
+
+  // معالج الإغلاق
+  const handleClose = useCallback(() => {
+    withUnsavedCheck(() => {
+      onClose();
+    });
+  }, [withUnsavedCheck, onClose]);
+
+  // معالج التبديل إلى تبويب آخر
+  const handleTabChange = useCallback(
+    (tab: "appointments" | "chart" | "xray") => {
+      withUnsavedCheck(() => {
+        setActiveTab(tab);
+      });
+    },
+    [withUnsavedCheck],
+  );
+
+  // حفظ ثم متابعة الإجراء
+  const handleSaveAndProceed = async () => {
+    if (chartRef.current) {
+      try {
+        await chartRef.current.save();
+        setIsChartDirty(false);
+        pendingActionRef.current?.();
+      } catch (error) {
+        console.error("فشل حفظ الشارت:", error);
+        return; // لا نغلق المودال في حالة فشل الحفظ
+      }
+    } else {
+      pendingActionRef.current?.();
+    }
+    setShowUnsavedModal(false);
+    pendingActionRef.current = null;
+  };
+
+  // تجاهل التغييرات والمتابعة
+  const handleDiscardAndProceed = () => {
+    setIsChartDirty(false);
+    pendingActionRef.current?.();
+    setShowUnsavedModal(false);
+    pendingActionRef.current = null;
+  };
+
+  // إلغاء وإغلاق المودال
+  const handleCancelModal = () => {
+    pendingActionRef.current = null;
+    setShowUnsavedModal(false);
+  };
+
   // فرز الجلسات من الأحدث إلى الأقدم
   const sortedSessions = [...pastSessions].sort(
     (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime(),
@@ -1495,117 +1636,132 @@ function PatientDetailsCard({
   return (
     <>
       <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm sm:shadow-md border border-gray-100 overflow-hidden">
-
-                {/* ============================================================ */}
+        {/* ============================================================ */}
         {/* شريط التبويبات - ثابت في الأعلى */}
         {/* ============================================================ */}
-<div className="flex items-center border-b border-gray-200 bg-gray-50/50 overflow-x-auto scrollbar-hide min-h-[48px] sm:min-h-0">
-  {/* تبويب المواعيد */}
-<button
-  onClick={() => setActiveTab('appointments')}
-  className={`
+        <div className="flex items-center border-b border-gray-200 bg-gray-50/50 overflow-x-auto scrollbar-hide min-h-[48px] sm:min-h-0">
+          {/* تبويب المواعيد */}
+          <button
+            onClick={() => handleTabChange("appointments")}
+            className={`
     relative flex items-center gap-2 px-4 sm:px-5 py-6 sm:py-3 
     text-sm sm:text-base font-medium transition-all duration-200
     whitespace-nowrap flex-shrink-0
-    ${activeTab === 'appointments' 
-      ? 'text-gray-900 bg-white border-b-2' 
-      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100 border-b-2 border-transparent'
+    ${
+      activeTab === "appointments"
+        ? "text-gray-900 bg-white border-b-2"
+        : "text-gray-500 hover:text-gray-700 hover:bg-gray-100 border-b-2 border-transparent"
     }
   `}
-  style={activeTab === 'appointments' ? { 
-    borderBottomColor: primaryColor,
-    color: primaryColor
-  } : {}}
->
-  <Calendar size={16} className="sm:w-[18px] sm:h-[18px]" />
-  <span>المواعيد</span>
-  {sessions.length > 0 && (
-    <span className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-600 ml-1">
-      {sessions.length}
-    </span>
-  )}
-</button>
+            style={
+              activeTab === "appointments"
+                ? {
+                    borderBottomColor: primaryColor,
+                    color: primaryColor,
+                  }
+                : {}
+            }
+          >
+            <Calendar size={16} className="sm:w-[18px] sm:h-[18px]" />
+            <span>المواعيد</span>
+            {sessions.length > 0 && (
+              <span className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-600 ml-1">
+                {sessions.length}
+              </span>
+            )}
+          </button>
 
-  {/* تبويب الشارت */}
-  <button
-    onClick={() => setActiveTab('chart')}
-    className={`
+          {/* تبويب الشارت */}
+          <button
+            onClick={() => handleTabChange("chart")}
+            className={`
       relative flex items-center gap-2 px-4 sm:px-5 py-5 sm:py-3 
       text-sm sm:text-base font-medium transition-all duration-200
       whitespace-nowrap flex-shrink-0
-      ${activeTab === 'chart' 
-        ? 'text-gray-900 bg-white border-b-2' 
-        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100 border-b-2 border-transparent'
+      ${
+        activeTab === "chart"
+          ? "text-gray-900 bg-white border-b-2"
+          : "text-gray-500 hover:text-gray-700 hover:bg-gray-100 border-b-2 border-transparent"
       }
     `}
-    style={activeTab === 'chart' ? { 
-      borderBottomColor: primaryColor,
-      color: primaryColor
-    } : {}}
-  >
-    <Stethoscope size={16} className="sm:w-[18px] sm:h-[18px]" />
-    <span>الشارت</span>
-  </button>
+            style={
+              activeTab === "chart"
+                ? {
+                    borderBottomColor: primaryColor,
+                    color: primaryColor,
+                  }
+                : {}
+            }
+          >
+            <Stethoscope size={16} className="sm:w-[18px] sm:h-[18px]" />
+            <span>الشارت</span>
+          </button>
 
-  {/* تبويب الأشعة */}
-  <XRayViewerButton
-    patientId={patient.id}
-    patientName={patient.fullName}
-    primaryColor={primaryColor}
-    isMobile={isMobile}
-    className={`
+          {/* تبويب الأشعة */}
+          <XRayViewerButton
+            patientId={patient.id}
+            patientName={patient.fullName}
+            primaryColor={primaryColor}
+            isMobile={isMobile}
+            // onClick={() => handleTabChange("xray")}
+            className={`
       relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-5 sm:py-3 
       text-xs sm:text-sm font-medium transition-all duration-300
       whitespace-nowrap flex-shrink-0 rounded-t-xl
-      ${activeTab === 'xray' 
-        ? 'bg-white text-gray-900 shadow-sm z-10' 
-        : 'text-gray-400 hover:text-gray-600 hover:bg-white/60'
+      ${
+        activeTab === "xray"
+          ? "bg-white text-gray-900 shadow-sm z-10"
+          : "text-gray-400 hover:text-gray-600 hover:bg-white/60"
       }
     `}
-    style={activeTab === 'xray' ? { 
-      boxShadow: '0 -2px 8px rgba(0,0,0,0.03), 0 -1px 3px rgba(0,0,0,0.02)',
-      borderBottomColor: primaryColor,
-      color: primaryColor
-    } : { 
-      boxShadow: 'none',
-      borderBottomColor: 'transparent',
-      color: undefined
-    } as React.CSSProperties}
-  >
-    <svg 
-      viewBox="0 0 24 24" 
-      width="14" 
-      height="14" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round"
-      className="sm:w-[16px] sm:h-[16px]"
-    >
-      <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-    </svg>
-    <span>الأشعة</span>
-  </XRayViewerButton>
+            style={
+              activeTab === "xray"
+                ? {
+                    boxShadow:
+                      "0 -2px 8px rgba(0,0,0,0.03), 0 -1px 3px rgba(0,0,0,0.02)",
+                    borderBottomColor: primaryColor,
+                    color: primaryColor,
+                  }
+                : ({
+                    boxShadow: "none",
+                    borderBottomColor: "transparent",
+                    color: undefined,
+                  } as React.CSSProperties)
+            }
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="sm:w-[16px] sm:h-[16px]"
+            >
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+            </svg>
+            <span>الأشعة</span>
+          </XRayViewerButton>
 
-  {/* زر الإغلاق */}
-  <div className="flex-1" />
-  <button
-    onClick={onClose}
-    className="flex items-center gap-1.5 px-3 sm:px-4 py-5 sm:py-3 text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
-    title="إغلاق"
-  >
-    <X size={18} className="sm:w-[20px] sm:h-[20px]" />
-  </button>
-</div>
+          {/* زر الإغلاق */}
+          <div className="flex-1" />
+          <button
+            onClick={handleClose}
+            className="flex items-center gap-1.5 px-3 sm:px-4 py-5 sm:py-3 text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
+            title="إغلاق"
+          >
+            <X size={18} className="sm:w-[20px] sm:h-[20px]" />
+          </button>
+        </div>
         {/* ============================================================ */}
         {/* محتوى التبويبات مع أنيميشن */}
         {/* ============================================================ */}
         <div className="p-4 sm:p-4">
           <AnimatePresence mode="wait">
-            
             {/* تبويب المواعيد */}
-            {activeTab === 'appointments' && (
+            {activeTab === "appointments" && (
               <motion.div
                 key="appointments"
                 initial={{ opacity: 0, y: 10 }}
@@ -1614,28 +1770,30 @@ function PatientDetailsCard({
                 transition={{ duration: 0.2 }}
                 className="space-y-4 sm:space-y-6"
               >
+                {/* Header - معلومات أساسية */}
+                <div className="relative p-4 pt-1 sm:p-6 sm:pt-2 border-b border-gray-100">
+                  {/* الاسم ورقم الهاتف وعدد الجلسات */}
+                  <div className="flex flex-col gap-3 mt-1 sm:mt-2">
+                    {/* معلومات المريض */}
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+                            {patient.fullName}
+                          </h2>
+                        </div>
 
-                        {/* Header - معلومات أساسية */}
-        <div className="relative p-4 pt-1 sm:p-6 sm:pt-2 border-b border-gray-100">
-          {/* الاسم ورقم الهاتف وعدد الجلسات */}
-          <div className="flex flex-col gap-3 mt-1 sm:mt-2">
-            {/* معلومات المريض */}
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-                    {patient.fullName}
-                  </h2>
-                </div>
-
-                <div className="flex items-center gap-3 sm:gap-4 text-gray-600">
-                  <span className="flex items-center gap-1 sm:gap-1.5">
-                    <Phone size={14} className="sm:w-4 sm:h-4 text-gray-400" />
-                    <span dir="ltr" className="text-xs sm:text-sm">
-                      {patient.phone}
-                    </span>
-                    {/* زر واتساب مدمج */}
-                    {/* <button
+                        <div className="flex items-center gap-3 sm:gap-4 text-gray-600">
+                          <span className="flex items-center gap-1 sm:gap-1.5">
+                            <Phone
+                              size={14}
+                              className="sm:w-4 sm:h-4 text-gray-400"
+                            />
+                            <span dir="ltr" className="text-xs sm:text-sm">
+                              {patient.phone}
+                            </span>
+                            {/* زر واتساب مدمج */}
+                            {/* <button
                       onClick={(e) => {
                         e.stopPropagation();
                         onWhatsApp(patient);
@@ -1653,389 +1811,393 @@ function PatientDetailsCard({
                         <path d="M19.077 4.928C17.191 3.041 14.683 2 12.006 2 6.498 2 2.017 6.477 2.012 11.984c-.001 1.76.46 3.478 1.335 4.992L2 21.991l5.172-1.356c1.46.796 3.104 1.215 4.828 1.216h.004c5.508 0 9.99-4.478 9.995-9.984.002-2.667-1.035-5.175-2.922-7.064zm-7.071 15.355h-.003c-1.507 0-2.985-.405-4.273-1.169l-.306-.181-3.069.805.819-2.991-.202-.32a8.268 8.268 0 0 1-1.267-4.439c.003-4.572 3.724-8.29 8.301-8.29 2.216.001 4.299.865 5.866 2.432a8.238 8.238 0 0 1 2.428 5.873c-.003 4.572-3.724 8.29-8.297 8.29zm4.551-6.208c-.25-.125-1.476-.728-1.705-.812-.229-.083-.396-.124-.562.125-.167.25-.647.812-.793.978-.146.167-.292.187-.542.062-.25-.124-1.054-.389-2.008-1.24-.742-.662-1.243-1.48-1.389-1.729-.146-.25-.015-.385.11-.509.112-.112.25-.292.375-.438.125-.146.167-.25.25-.417.083-.167.042-.313-.021-.438-.062-.125-.562-1.355-.771-1.855-.203-.486-.409-.42-.562-.427-.144-.007-.308-.009-.473-.009-.166 0-.437.063-.666.313-.229.25-.874.854-.874 2.083s.895 2.416 1.02 2.583c.125.166 1.761 2.688 4.267 3.77.596.257 1.062.411 1.425.526.599.19 1.144.163 1.575.099.48-.072 1.476-.604 1.684-1.187.208-.583.208-1.083.146-1.187-.062-.104-.229-.167-.479-.292z" />
                       </svg>
                     </button> */}
-                  </span>
-                  <span className="flex items-center gap-1 sm:gap-1.5">
-                    <Calendar
-                      size={14}
-                      className="sm:w-4 sm:h-4 text-gray-400"
-                    />
-                    <span className="text-xs sm:text-sm">
-                      {sessions.length} جلسة
-                    </span>
-                  </span>
-                </div>
-              </div>
-
-              {/* الأزرار للشاشات الكبيرة */}
-              <div className="hidden sm:flex items-center gap-2">
-                <button
-                  onClick={onEditPatient}
-                  className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-gray-100 text-gray-700 font-medium text-xs sm:text-sm transition-all hover:bg-gray-200 active:scale-95"
-                  title="تعديل بيانات المريض"
-                >
-                  <Edit size={14} className="sm:w-4 sm:h-4" />
-                  <span>تعديل</span>
-                </button>
-
-                <button
-                  onClick={onAddAppointment}
-                  className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full text-white font-medium text-xs sm:text-sm transition-all hover:shadow-md active:scale-95"
-                  style={{ background: primaryColor }}
-                >
-                  <Plus size={14} className="sm:w-[18px] sm:h-[18px]" />
-                  <span>موعد جديد</span>
-                </button>
-              </div>
-            </div>
-
-            {/* سطر الأزرار للهاتف */}
-            <div className="flex sm:hidden items-center gap-2 w-full">
-              <button
-                onClick={onEditPatient}
-                className="flex items-center gap-1.5 px-3 py-2.5 rounded-full bg-gray-100 text-gray-700 font-medium text-xs transition-all hover:bg-gray-200 active:scale-95 flex-1 justify-center"
-              >
-                <Edit size={14} />
-                <span>تعديل</span>
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAddAppointment();
-                }}
-                className="flex items-center gap-1.5 px-3 py-2.5 rounded-full text-white font-medium text-xs transition-all hover:shadow-md active:scale-95 flex-1 justify-center"
-                style={{ background: primaryColor }}
-              >
-                <Plus size={14} />
-                <span>موعد جديد</span>
-              </button>
-            </div>
-          </div>
-        </div>
-          {/* العمر والجنس وسنة الميلاد */}
-          <div className="space-y-3 sm:space-y-4">
-            {/* العمر والجنس وسنة الميلاد */}
-            <div className="flex flex-wrap items-center gap-3 sm:gap-6">
-              {patient.age && (
-                <>
-                  <div className="flex items-center gap-1">
-                    <span className="text-[11px] sm:text-xs text-gray-500">
-                      العمر:
-                    </span>
-                    <span className="text-[11px] sm:text-xs font-medium text-gray-900">
-                      {patient.age} سنة
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-[11px] sm:text-xs text-gray-500">
-                      سنة الميلاد:
-                    </span>
-                    <span className="text-[11px] sm:text-xs font-medium text-gray-900">
-                      {calculateBirthYear(patient.age)} تقريباً
-                    </span>
-                  </div>
-                </>
-              )}
-              <div className="flex items-center gap-1">
-                <span className="text-[11px] sm:text-xs text-gray-500">
-                  الجنس:
-                </span>
-                <span
-                  className={`text-[11px] sm:text-xs font-medium px-1.5 py-0.5 rounded-full ${
-                    patient.gender === "male"
-                      ? "bg-blue-50 text-blue-700"
-                      : "bg-pink-50 text-pink-700"
-                  }`}
-                >
-                  {patient.gender === "male" ? "ذكر" : "أنثى"}
-                </span>
-              </div>
-            </div>
-
-            {/* معلومات إضافية */}
-            <div className="flex flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-2 pt-2 sm:pt-3 border-t border-gray-100">
-              {/* الإجراء المخطط */}
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <Stethoscope
-                  size={13}
-                  className="sm:w-[14px] sm:h-[14px] text-gray-400"
-                />
-                <span className="text-[11px] sm:text-xs text-gray-500">
-                  الإجراء المخطط:
-                </span>
-                <span className="text-xs sm:text-sm font-medium text-gray-900">
-                  {patient.plannedProcedure || "غير محدد"}
-                </span>
-              </div>
-
-              {/* السعر الإجمالي */}
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <span className="text-[11px] sm:text-xs text-gray-500">
-                  السعر الإجمالي:
-                </span>
-                <span className="text-xs sm:text-sm font-semibold text-gray-900">
-                  {patient.totalPrice
-                    ? `${formatCurrency(parseFloat(patient.totalPrice))}`
-                    : formatCurrency(finance.totalCost)}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* ملاحظات إن وجدت */}
-          {patient.notes && (
-            <div className="p-3 sm:p-4 bg-gray-50 rounded-xl sm:rounded-2xl border border-gray-100">
-              <p className="text-xs sm:text-sm text-gray-600">
-                {patient.notes}
-              </p>
-            </div>
-          )}
-
-          {/* المواعيد */}
-          {sortedSessions.length > 0 ? (
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-3 text-sm sm:text-base">
-                المواعيد
-              </h3>
-
-              {/* ============================================================ */}
-              {/* عرض الجدول للشاشات الكبيرة فقط */}
-              {/* ============================================================ */}
-              <div className="hidden lg:block border border-gray-200 rounded-xl overflow-x-auto">
-                <div className="min-w-[900px] lg:min-w-full">
-                  {/* رأس الجدول */}
-                  <div className="grid grid-cols-[100px_1.5fr_1fr_100px_100px_100px_100px] bg-gray-50 px-4 py-3 border-b border-gray-200">
-                    <div className="text-xs sm:text-sm font-medium text-gray-500 text-right">
-                      الحالة
-                    </div>
-                    <div className="text-xs sm:text-sm font-medium text-gray-500 text-right">
-                      الإجراء
-                    </div>
-                    <div className="text-xs sm:text-sm font-medium text-gray-500 text-right">
-                      التاريخ
-                    </div>
-                    <div className="text-xs sm:text-sm font-medium text-gray-500 text-right">
-                      الوقت
-                    </div>
-                    <div className="text-xs sm:text-sm font-medium text-gray-500 text-right">
-                      الإجمالي
-                    </div>
-                    <div className="text-xs sm:text-sm font-medium text-gray-500 text-right">
-                      حالة الدفع
-                    </div>
-                    <div className="text-xs sm:text-sm font-medium text-gray-500 text-right">
-                      إجراءات
-                    </div>
-                  </div>
-
-                  {/* صفوف الجدول */}
-                  <div className="divide-y divide-gray-100">
-                    {sortedSessions.map((session) => {
-                      const statusBadge = getSessionStatusBadge(session.status);
-                      return (
-                        <div
-                          key={session.id}
-                          className="grid grid-cols-[100px_1.5fr_1fr_100px_100px_100px_100px] px-4 py-2.5 items-center hover:bg-gray-50/50 cursor-pointer transition-colors"
-                          onClick={() => setSelectedSession(session)}
-                        >
-                          {/* حالة الجلسة */}
-                          <div className="flex items-center gap-2">
-                            <div
-                              className={`w-2 h-2 rounded-full ${statusBadge.dotColor} flex-shrink-0`}
+                          </span>
+                          <span className="flex items-center gap-1 sm:gap-1.5">
+                            <Calendar
+                              size={14}
+                              className="sm:w-4 sm:h-4 text-gray-400"
                             />
-                            <span
-                              className={`text-xs sm:text-sm ${statusBadge.textColor} truncate`}
-                            >
-                              {statusBadge.label}
+                            <span className="text-xs sm:text-sm">
+                              {sessions.length} جلسة
                             </span>
-                          </div>
-
-                          {/* الإجراء */}
-                          <div
-                            className="text-xs sm:text-sm text-gray-900 font-medium truncate"
-                            title={
-                              session.performedProcedure ||
-                              session.plannedProcedure ||
-                              "جلسة"
-                            }
-                          >
-                            {session.performedProcedure ||
-                              session.plannedProcedure ||
-                              "جلسة"}
-                          </div>
-
-                          {/* التاريخ */}
-                          <div className="text-xs sm:text-sm text-gray-600 truncate">
-                            {formatDate(session.startTime)}
-                          </div>
-
-                          {/* الوقت */}
-                          <div className="text-xs sm:text-sm text-gray-600 truncate">
-                            {formatTime(session.startTime)}
-                          </div>
-
-                          {/* الإجمالي */}
-                          <div className="text-xs sm:text-sm font-semibold text-gray-900 truncate">
-                            {formatCurrency(session.sessionCost)}
-                          </div>
-
-                          {/* حالة الدفع */}
-                          <div className="text-xs sm:text-sm text-gray-600 truncate">
-                            {session.isPaid ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-50 text-green-700 text-[11px] sm:text-xs font-medium">
-                                <CheckCircle size={11} />
-                                مدفوع
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-50 text-red-700 text-[11px] sm:text-xs font-medium">
-                                <AlertCircle size={11} />
-                                غير مدفوع
-                              </span>
-                            )}
-                          </div>
-
-                          {/* أزرار الإجراءات */}
-                          <div className="flex items-center justify-end gap-1.5 sm:gap-2">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onEditSession(session);
-                              }}
-                              className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors flex-shrink-0"
-                              title="تعديل الجلسة"
-                            >
-                              <Edit
-                                size={14}
-                                className="sm:w-4 sm:h-4 text-gray-600"
-                              />
-                            </button>
-
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onRequestDeleteSession(session.id);
-                              }}
-                              className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-red-50 hover:bg-red-100 transition-colors flex-shrink-0"
-                              title="حذف الجلسة"
-                            >
-                              <Trash2
-                                size={14}
-                                className="sm:w-4 sm:h-4 text-red-600"
-                              />
-                            </button>
-                          </div>
+                          </span>
                         </div>
-                      );
-                    })}
+                      </div>
+
+                      {/* الأزرار للشاشات الكبيرة */}
+                      <div className="hidden sm:flex items-center gap-2">
+                        <button
+                          onClick={onEditPatient}
+                          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-gray-100 text-gray-700 font-medium text-xs sm:text-sm transition-all hover:bg-gray-200 active:scale-95"
+                          title="تعديل بيانات المريض"
+                        >
+                          <Edit size={14} className="sm:w-4 sm:h-4" />
+                          <span>تعديل</span>
+                        </button>
+
+                        <button
+                          onClick={onAddAppointment}
+                          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full text-white font-medium text-xs sm:text-sm transition-all hover:shadow-md active:scale-95"
+                          style={{ background: primaryColor }}
+                        >
+                          <Plus size={14} className="sm:w-[18px] sm:h-[18px]" />
+                          <span>موعد جديد</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* سطر الأزرار للهاتف */}
+                    <div className="flex sm:hidden items-center gap-2 w-full">
+                      <button
+                        onClick={onEditPatient}
+                        className="flex items-center gap-1.5 px-3 py-2.5 rounded-full bg-gray-100 text-gray-700 font-medium text-xs transition-all hover:bg-gray-200 active:scale-95 flex-1 justify-center"
+                      >
+                        <Edit size={14} />
+                        <span>تعديل</span>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onAddAppointment();
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-2.5 rounded-full text-white font-medium text-xs transition-all hover:shadow-md active:scale-95 flex-1 justify-center"
+                        style={{ background: primaryColor }}
+                      >
+                        <Plus size={14} />
+                        <span>موعد جديد</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-
-              {/* ============================================================ */}
-              {/* عرض البطاقات للشاشات الصغيرة (الجوال والتابلت) */}
-              {/* ============================================================ */}
-              <div className="flex flex-col gap-2 sm:gap-3 lg:hidden">
-                {sortedSessions.map((session) => {
-                  const statusBadge = getSessionStatusBadge(session.status);
-                  return (
-                    <div
-                      key={session.id}
-                      className="bg-gray-50 rounded-xl sm:rounded-2xl p-3 sm:p-4 cursor-pointer hover:bg-gray-100 transition-colors border border-gray-100"
-                      onClick={() => setSelectedSession(session)}
-                    >
-                      {/* الصف الأول: حالة الجلسة + التاريخ */}
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-1.5">
-                          <div
-                            className={`w-2 h-2 rounded-full ${statusBadge.dotColor} flex-shrink-0`}
-                          />
-                          <span
-                            className={`text-[11px] sm:text-xs font-medium px-2 py-0.5 rounded-full ${statusBadge.bgColor} ${statusBadge.textColor}`}
-                          >
-                            {statusBadge.label}
-                          </span>
-                        </div>
-                        <span className="text-[11px] sm:text-xs text-gray-500">
-                          {formatDate(session.startTime)}
-                        </span>
-                      </div>
-
-                      {/* الصف الثاني: الإجراء + الوقت */}
-                      <div className="flex items-center justify-between mb-2">
-                        <span
-                          className="text-xs sm:text-sm font-medium text-gray-900 truncate max-w-[60%]"
-                          title={
-                            session.performedProcedure ||
-                            session.plannedProcedure ||
-                            "جلسة"
-                          }
-                        >
-                          {session.performedProcedure ||
-                            session.plannedProcedure ||
-                            "جلسة"}
-                        </span>
-                        <span className="text-[11px] sm:text-xs text-gray-500">
-                          {formatTime(session.startTime)}
-                        </span>
-                      </div>
-
-                      {/* الصف الثالث: التكلفة + حالة الدفع + الأزرار */}
-                      <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs sm:text-sm font-semibold text-gray-900">
-                            {formatCurrency(session.sessionCost)}
-                          </span>
-                          {session.isPaid ? (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-green-50 text-green-700 text-[10px] sm:text-[11px] font-medium">
-                              <CheckCircle size={10} />
-                              مدفوع
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-50 text-red-700 text-[10px] sm:text-[11px] font-medium">
-                              <AlertCircle size={10} />
-                              غير مدفوع
-                            </span>
-                          )}
-                        </div>
-
-                        {/* أزرار الإجراءات */}
+                {/* العمر والجنس وسنة الميلاد */}
+                <div className="space-y-3 sm:space-y-4">
+                  {/* العمر والجنس وسنة الميلاد */}
+                  <div className="flex flex-wrap items-center gap-3 sm:gap-6">
+                    {patient.age && (
+                      <>
                         <div className="flex items-center gap-1">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onEditSession(session);
-                            }}
-                            className="p-1.5 rounded-lg bg-white hover:bg-gray-200 transition-colors flex-shrink-0 shadow-sm"
-                            title="تعديل الجلسة"
-                          >
-                            <Edit size={13} className="text-gray-600" />
-                          </button>
+                          <span className="text-[11px] sm:text-xs text-gray-500">
+                            العمر:
+                          </span>
+                          <span className="text-[11px] sm:text-xs font-medium text-gray-900">
+                            {patient.age} سنة
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[11px] sm:text-xs text-gray-500">
+                            سنة الميلاد:
+                          </span>
+                          <span className="text-[11px] sm:text-xs font-medium text-gray-900">
+                            {calculateBirthYear(patient.age)} تقريباً
+                          </span>
+                        </div>
+                      </>
+                    )}
+                    <div className="flex items-center gap-1">
+                      <span className="text-[11px] sm:text-xs text-gray-500">
+                        الجنس:
+                      </span>
+                      <span
+                        className={`text-[11px] sm:text-xs font-medium px-1.5 py-0.5 rounded-full ${
+                          patient.gender === "male"
+                            ? "bg-blue-50 text-blue-700"
+                            : "bg-pink-50 text-pink-700"
+                        }`}
+                      >
+                        {patient.gender === "male" ? "ذكر" : "أنثى"}
+                      </span>
+                    </div>
+                  </div>
 
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onRequestDeleteSession(session.id);
-                            }}
-                            className="p-1.5 rounded-lg bg-white hover:bg-red-50 transition-colors flex-shrink-0 shadow-sm"
-                            title="حذف الجلسة"
-                          >
-                            <Trash2 size={13} className="text-red-600" />
-                          </button>
+                  {/* معلومات إضافية */}
+                  <div className="flex flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-2 pt-2 sm:pt-3 border-t border-gray-100">
+                    {/* الإجراء المخطط */}
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <Stethoscope
+                        size={13}
+                        className="sm:w-[14px] sm:h-[14px] text-gray-400"
+                      />
+                      <span className="text-[11px] sm:text-xs text-gray-500">
+                        الإجراء المخطط:
+                      </span>
+                      <span className="text-xs sm:text-sm font-medium text-gray-900">
+                        {patient.plannedProcedure || "غير محدد"}
+                      </span>
+                    </div>
+
+                    {/* السعر الإجمالي */}
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <span className="text-[11px] sm:text-xs text-gray-500">
+                        السعر الإجمالي:
+                      </span>
+                      <span className="text-xs sm:text-sm font-semibold text-gray-900">
+                        {patient.totalPrice
+                          ? `${formatCurrency(parseFloat(patient.totalPrice))}`
+                          : formatCurrency(finance.totalCost)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ملاحظات إن وجدت */}
+                {patient.notes && (
+                  <div className="p-3 sm:p-4 bg-gray-50 rounded-xl sm:rounded-2xl border border-gray-100">
+                    <p className="text-xs sm:text-sm text-gray-600">
+                      {patient.notes}
+                    </p>
+                  </div>
+                )}
+
+                {/* المواعيد */}
+                {sortedSessions.length > 0 ? (
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-3 text-sm sm:text-base">
+                      المواعيد
+                    </h3>
+
+                    {/* ============================================================ */}
+                    {/* عرض الجدول للشاشات الكبيرة فقط */}
+                    {/* ============================================================ */}
+                    <div className="hidden lg:block border border-gray-200 rounded-xl overflow-x-auto">
+                      <div className="min-w-[900px] lg:min-w-full">
+                        {/* رأس الجدول */}
+                        <div className="grid grid-cols-[100px_1.5fr_1fr_100px_100px_100px_100px] bg-gray-50 px-4 py-3 border-b border-gray-200">
+                          <div className="text-xs sm:text-sm font-medium text-gray-500 text-right">
+                            الحالة
+                          </div>
+                          <div className="text-xs sm:text-sm font-medium text-gray-500 text-right">
+                            الإجراء
+                          </div>
+                          <div className="text-xs sm:text-sm font-medium text-gray-500 text-right">
+                            التاريخ
+                          </div>
+                          <div className="text-xs sm:text-sm font-medium text-gray-500 text-right">
+                            الوقت
+                          </div>
+                          <div className="text-xs sm:text-sm font-medium text-gray-500 text-right">
+                            الإجمالي
+                          </div>
+                          <div className="text-xs sm:text-sm font-medium text-gray-500 text-right">
+                            حالة الدفع
+                          </div>
+                          <div className="text-xs sm:text-sm font-medium text-gray-500 text-right">
+                            إجراءات
+                          </div>
+                        </div>
+
+                        {/* صفوف الجدول */}
+                        <div className="divide-y divide-gray-100">
+                          {sortedSessions.map((session) => {
+                            const statusBadge = getSessionStatusBadge(
+                              session.status,
+                            );
+                            return (
+                              <div
+                                key={session.id}
+                                className="grid grid-cols-[100px_1.5fr_1fr_100px_100px_100px_100px] px-4 py-2.5 items-center hover:bg-gray-50/50 cursor-pointer transition-colors"
+                                onClick={() => setSelectedSession(session)}
+                              >
+                                {/* حالة الجلسة */}
+                                <div className="flex items-center gap-2">
+                                  <div
+                                    className={`w-2 h-2 rounded-full ${statusBadge.dotColor} flex-shrink-0`}
+                                  />
+                                  <span
+                                    className={`text-xs sm:text-sm ${statusBadge.textColor} truncate`}
+                                  >
+                                    {statusBadge.label}
+                                  </span>
+                                </div>
+
+                                {/* الإجراء */}
+                                <div
+                                  className="text-xs sm:text-sm text-gray-900 font-medium truncate"
+                                  title={
+                                    session.performedProcedure ||
+                                    session.plannedProcedure ||
+                                    "جلسة"
+                                  }
+                                >
+                                  {session.performedProcedure ||
+                                    session.plannedProcedure ||
+                                    "جلسة"}
+                                </div>
+
+                                {/* التاريخ */}
+                                <div className="text-xs sm:text-sm text-gray-600 truncate">
+                                  {formatDate(session.startTime)}
+                                </div>
+
+                                {/* الوقت */}
+                                <div className="text-xs sm:text-sm text-gray-600 truncate">
+                                  {formatTime(session.startTime)}
+                                </div>
+
+                                {/* الإجمالي */}
+                                <div className="text-xs sm:text-sm font-semibold text-gray-900 truncate">
+                                  {formatCurrency(session.sessionCost)}
+                                </div>
+
+                                {/* حالة الدفع */}
+                                <div className="text-xs sm:text-sm text-gray-600 truncate">
+                                  {session.isPaid ? (
+                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-50 text-green-700 text-[11px] sm:text-xs font-medium">
+                                      <CheckCircle size={11} />
+                                      مدفوع
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-50 text-red-700 text-[11px] sm:text-xs font-medium">
+                                      <AlertCircle size={11} />
+                                      غير مدفوع
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* أزرار الإجراءات */}
+                                <div className="flex items-center justify-end gap-1.5 sm:gap-2">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onEditSession(session);
+                                    }}
+                                    className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors flex-shrink-0"
+                                    title="تعديل الجلسة"
+                                  >
+                                    <Edit
+                                      size={14}
+                                      className="sm:w-4 sm:h-4 text-gray-600"
+                                    />
+                                  </button>
+
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onRequestDeleteSession(session.id);
+                                    }}
+                                    className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-red-50 hover:bg-red-100 transition-colors flex-shrink-0"
+                                    title="حذف الجلسة"
+                                  >
+                                    <Trash2
+                                      size={14}
+                                      className="sm:w-4 sm:h-4 text-red-600"
+                                    />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          ) : (
-            /* حالة عدم وجود جلسات */
-            <div className="text-center py-8 sm:py-10">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-3 rounded-full bg-gray-50 flex items-center justify-center">
-                <History
-                  size={20}
-                  className="sm:w-[22px] sm:h-[22px] text-gray-300"
-                />
-              </div>
+
+                    {/* ============================================================ */}
+                    {/* عرض البطاقات للشاشات الصغيرة (الجوال والتابلت) */}
+                    {/* ============================================================ */}
+                    <div className="flex flex-col gap-2 sm:gap-3 lg:hidden">
+                      {sortedSessions.map((session) => {
+                        const statusBadge = getSessionStatusBadge(
+                          session.status,
+                        );
+                        return (
+                          <div
+                            key={session.id}
+                            className="bg-gray-50 rounded-xl sm:rounded-2xl p-3 sm:p-4 cursor-pointer hover:bg-gray-100 transition-colors border border-gray-100"
+                            onClick={() => setSelectedSession(session)}
+                          >
+                            {/* الصف الأول: حالة الجلسة + التاريخ */}
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-1.5">
+                                <div
+                                  className={`w-2 h-2 rounded-full ${statusBadge.dotColor} flex-shrink-0`}
+                                />
+                                <span
+                                  className={`text-[11px] sm:text-xs font-medium px-2 py-0.5 rounded-full ${statusBadge.bgColor} ${statusBadge.textColor}`}
+                                >
+                                  {statusBadge.label}
+                                </span>
+                              </div>
+                              <span className="text-[11px] sm:text-xs text-gray-500">
+                                {formatDate(session.startTime)}
+                              </span>
+                            </div>
+
+                            {/* الصف الثاني: الإجراء + الوقت */}
+                            <div className="flex items-center justify-between mb-2">
+                              <span
+                                className="text-xs sm:text-sm font-medium text-gray-900 truncate max-w-[60%]"
+                                title={
+                                  session.performedProcedure ||
+                                  session.plannedProcedure ||
+                                  "جلسة"
+                                }
+                              >
+                                {session.performedProcedure ||
+                                  session.plannedProcedure ||
+                                  "جلسة"}
+                              </span>
+                              <span className="text-[11px] sm:text-xs text-gray-500">
+                                {formatTime(session.startTime)}
+                              </span>
+                            </div>
+
+                            {/* الصف الثالث: التكلفة + حالة الدفع + الأزرار */}
+                            <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs sm:text-sm font-semibold text-gray-900">
+                                  {formatCurrency(session.sessionCost)}
+                                </span>
+                                {session.isPaid ? (
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-green-50 text-green-700 text-[10px] sm:text-[11px] font-medium">
+                                    <CheckCircle size={10} />
+                                    مدفوع
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-50 text-red-700 text-[10px] sm:text-[11px] font-medium">
+                                    <AlertCircle size={10} />
+                                    غير مدفوع
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* أزرار الإجراءات */}
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onEditSession(session);
+                                  }}
+                                  className="p-1.5 rounded-lg bg-white hover:bg-gray-200 transition-colors flex-shrink-0 shadow-sm"
+                                  title="تعديل الجلسة"
+                                >
+                                  <Edit size={13} className="text-gray-600" />
+                                </button>
+
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onRequestDeleteSession(session.id);
+                                  }}
+                                  className="p-1.5 rounded-lg bg-white hover:bg-red-50 transition-colors flex-shrink-0 shadow-sm"
+                                  title="حذف الجلسة"
+                                >
+                                  <Trash2 size={13} className="text-red-600" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  /* حالة عدم وجود جلسات */
+                  <div className="text-center py-8 sm:py-10">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-3 rounded-full bg-gray-50 flex items-center justify-center">
+                      <History
+                        size={20}
+                        className="sm:w-[22px] sm:h-[22px] text-gray-300"
+                      />
+                    </div>
                     <p className="text-xs sm:text-sm text-gray-500">
                       لا توجد جلسات
                     </p>
@@ -2045,7 +2207,7 @@ function PatientDetailsCard({
             )}
 
             {/* تبويب الشارت */}
-            {activeTab === 'chart' && (
+            {activeTab === "chart" && (
               <motion.div
                 key="chart"
                 initial={{ opacity: 0, y: 10 }}
@@ -2054,15 +2216,14 @@ function PatientDetailsCard({
                 transition={{ duration: 0.2 }}
               >
                 <ToothChart
+                  ref={chartRef}
                   patientId={patient.id}
+                  clinicId={patient.clinicId} // ✅ تمرير clinicId
                   patientName={patient.fullName}
                   primaryColor={primaryColor}
                   editable={true}
-                  onSave={async (teethData) => {
-                    // حفظ بيانات الأسنان
-                    console.log("Saving teeth data:", teethData);
-                    // await savePatientTeethData(patient.id, teethData);
-                  }}
+                  // onSave لم نعد بحاجة إليه إذا أردنا السلوك الداخلي
+                  onDirtyChange={setIsChartDirty}
                 />
               </motion.div>
             )}
@@ -2099,6 +2260,15 @@ function PatientDetailsCard({
           }}
         />
       )}
+
+      {/* مودال التغييرات غير المحفوظة */}
+      <UnsavedChangesModal
+        isOpen={showUnsavedModal}
+        onSave={handleSaveAndProceed}
+        onDiscard={handleDiscardAndProceed}
+        onCancel={handleCancelModal}
+        primaryColor={primaryColor}
+      />
     </>
   );
 }
