@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import { PWAInstallPrompt } from "@/components/dashboard/PWAInstallPrompt";
 import DoubleClickToExit from "@/contexts/DoubleClickToExit";
 import ToothLoader from "../../components/loding";
+import UpdateModal from "@/components/UpdateModal";
 
 // أقصى عدد من الصفحات للاحتفاظ بها في الذاكرة
 const MAX_CACHED_PAGES = 6;
@@ -192,6 +193,7 @@ export default function DashboardLayout({
     <DoubleClickToExit message="اضغط مرتين للخروج من التطبيق" timeout={2000}>
       <ClinicProvider clinicId={clinicId}>
         <DashboardContent>{children}</DashboardContent>
+        <UpdateModal />
       </ClinicProvider>
     </DoubleClickToExit>
   );
