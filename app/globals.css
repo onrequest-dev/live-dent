@@ -718,3 +718,42 @@ textarea,
   background-color: #d1d5db;
   border-radius: 8px;
 }
+
+/* Disable zooming (pinch/double-tap) on touch devices */
+html, body, button, input, textarea, select, a {
+  touch-action: manipulation;
+  -ms-touch-action: manipulation;
+}
+
+/* Prevent double-tap zoom on iOS Safari (works in many cases) */
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+    html,
+    body {
+      touch-action: manipulation;
+      /* helps prevent double-tap zoom and pinch handling */
+      -ms-touch-action: manipulation;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      /* remove tap highlight */
+    }
+html,
+body {
+  touch-action: pan-x pan-y;
+  /* يسمح بالتمرير فقط بدون تكبير */
+  -webkit-text-size-adjust: 100%;
+  /* يمنع تكبير النص تلقائياً */
+}
+
+/* لمنع التكبير المزدوج */
+* {
+  touch-action: manipulation;
+  /* يمنع التكبير بالنقر المزدوج */
+}

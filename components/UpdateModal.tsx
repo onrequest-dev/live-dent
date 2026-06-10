@@ -78,7 +78,7 @@ const UpdateModal = () => {
             </li>
             <li className="flex items-start text-sm text-[#2c2c2e]">
               <span className="text-blue-500 font-bold ml-2">•</span>
-              إضافة تقويم وأجندة
+              إضافة تقويم وأجندة في وضع سطح المكتب
             </li>
           </ul>
         </div>

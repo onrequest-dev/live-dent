@@ -184,8 +184,40 @@ export function MainTab({
   const primaryColor = clinicData?.settings.primaryColor || "#007bff";
   const secondaryColor = clinicData?.settings.secondaryColor || "#6c757d";
 
-  const [patients, setPatients] = useState<Patient[]>(initialPatients);
-  const [sessions, setSessions] = useState<Session[]>(initialSessions);
+const [patients, setPatients] = useState<Patient[]>(() => {
+  // دمج البيانات الأولية مع المخزنة في sessionStorage
+  const storedNewPatients = sessionStorage.getItem("newpatients");
+  if (storedNewPatients) {
+    try {
+      const newPatients: Patient[] = JSON.parse(storedNewPatients);
+      if (Array.isArray(newPatients) && newPatients.length > 0) {
+        sessionStorage.removeItem("newpatients"); // تنظيف فوري
+        return [...initialPatients, ...newPatients];
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  return initialPatients;
+});
+
+const [sessions, setSessions] = useState<Session[]>(() => {
+  const storedNewSessions = sessionStorage.getItem("newsessions");
+  if (storedNewSessions) {
+    try {
+      const newSessions: Session[] = JSON.parse(storedNewSessions);
+      if (Array.isArray(newSessions) && newSessions.length > 0) {
+        sessionStorage.removeItem("newsessions"); // تنظيف فوري
+        return [...initialSessions, ...newSessions];
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  return initialSessions;
+});
+
+
   const [cases, setCases] = useState<PatientCase[]>(initialCases);
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -237,11 +269,11 @@ export function MainTab({
     } catch (e) {}
   }, [isCollapsed]);
 
-  useEffect(() => {
-    setPatients(initialPatients);
-    setSessions(initialSessions);
-    setCases(initialCases);
-  }, [initialPatients, initialSessions, initialCases]);
+  // useEffect(() => {
+  //   setPatients(initialPatients);
+  //   setSessions(initialSessions);
+  //   setCases(initialCases);
+  // }, [initialPatients, initialSessions, initialCases]);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -645,50 +677,56 @@ export function MainTab({
           {/* سطح المكتب: كل العناصر في سطر واحد                            */}
           {/* ============================================================ */}
           <div className="hidden lg:flex items-center gap-3">
+            {/* الصف الثاني: الفلترين مع دائرة فوق المحدد */}
+            <div className="relative flex items-center bg-gray-100 p-1 rounded-full flex-shrink-0">
+              {/* زر: مرضى اليوم */}
+              <div className="relative flex-1">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowTodayOnly(true)}
+                  className={`w-full flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full font-medium text-[11px] sm:text-xs transition-all duration-200 ${
+                    showTodayOnly === true
+                      ? "text-white"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                  style={{
+                    backgroundColor:
+                      showTodayOnly === true ? primaryColor : "transparent",
+                  }}
+                >
+                  <Calendar
+                    size={13}
+                    className="sm:w-[14px] sm:h-[14px] flex-shrink-0"
+                  />
+                  <span className="whitespace-nowrap">مرضى اليوم</span>
+                </motion.button>
+              </div>
 
-              {/* الصف الثاني: الفلترين مع دائرة فوق المحدد */}
-<div className="relative flex items-center bg-gray-100 p-1 rounded-full flex-shrink-0">
-  
-  {/* زر: مرضى اليوم */}
-  <div className="relative flex-1">
-    <motion.button
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={() => setShowTodayOnly(true)}
-      className={`w-full flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full font-medium text-[11px] sm:text-xs transition-all duration-200 ${
-        showTodayOnly === true
-          ? "text-white"
-          : "text-gray-500 hover:text-gray-700"
-      }`}
-      style={{
-        backgroundColor: showTodayOnly === true ? primaryColor : "transparent",
-      }}
-    >
-      <Calendar size={13} className="sm:w-[14px] sm:h-[14px] flex-shrink-0" />
-      <span className="whitespace-nowrap">مرضى اليوم</span>
-    </motion.button>
-  </div>
-
-  {/* زر: جميع المرضى */}
-  <div className="relative flex-1">
-    <motion.button
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={() => setShowTodayOnly(false)}
-      className={`w-full flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full font-medium text-[11px] sm:text-xs transition-all duration-200 ${
-        showTodayOnly === false
-          ? "text-white"
-          : "text-gray-500 hover:text-gray-700"
-      }`}
-      style={{
-        backgroundColor: showTodayOnly === false ? primaryColor : "transparent",
-      }}
-    >
-      <Users size={13} className="sm:w-[14px] sm:h-[14px] flex-shrink-0" />
-      <span className="whitespace-nowrap">جميع المرضى</span>
-    </motion.button>
-  </div>
-</div>
+              {/* زر: جميع المرضى */}
+              <div className="relative flex-1">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowTodayOnly(false)}
+                  className={`w-full flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full font-medium text-[11px] sm:text-xs transition-all duration-200 ${
+                    showTodayOnly === false
+                      ? "text-white"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                  style={{
+                    backgroundColor:
+                      showTodayOnly === false ? primaryColor : "transparent",
+                  }}
+                >
+                  <Users
+                    size={13}
+                    className="sm:w-[14px] sm:h-[14px] flex-shrink-0"
+                  />
+                  <span className="whitespace-nowrap">جميع المرضى</span>
+                </motion.button>
+              </div>
+            </div>
             {/* حقل البحث - يملأ المساحة المتبقية */}
             <div className="relative flex-1">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -768,53 +806,56 @@ export function MainTab({
               </div>
             </div>
 
-{/* الصف الثاني: الفلترين مع دائرة فوق المحدد */}
-<div className="relative flex items-center bg-gray-100 p-1 rounded-full mt-2">
-  
-  {/* زر: مرضى اليوم */}
-  <div className="relative flex-1">
+            {/* الصف الثاني: الفلترين مع دائرة فوق المحدد */}
+            <div className="relative flex items-center bg-gray-100 p-1 rounded-full mt-2">
+              {/* زر: مرضى اليوم */}
+              <div className="relative flex-1">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowTodayOnly(true)}
+                  className={`w-full flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full font-medium text-[11px] sm:text-xs transition-all duration-200 ${
+                    showTodayOnly === true
+                      ? "text-white"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                  style={{
+                    backgroundColor:
+                      showTodayOnly === true ? primaryColor : "transparent",
+                  }}
+                >
+                  <Calendar
+                    size={13}
+                    className="sm:w-[14px] sm:h-[14px] flex-shrink-0"
+                  />
+                  <span className="whitespace-nowrap">مرضى اليوم</span>
+                </motion.button>
+              </div>
 
-    <motion.button
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={() => setShowTodayOnly(true)}
-      className={`w-full flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full font-medium text-[11px] sm:text-xs transition-all duration-200 ${
-        showTodayOnly === true
-          ? "text-white"
-          : "text-gray-500 hover:text-gray-700"
-      }`}
-      style={{
-        backgroundColor: showTodayOnly === true ? primaryColor : "transparent",
-      }}
-    >
-      <Calendar size={13} className="sm:w-[14px] sm:h-[14px] flex-shrink-0" />
-      <span className="whitespace-nowrap">مرضى اليوم</span>
-    </motion.button>
-  </div>
-
-
-
-  {/* زر: جميع المرضى */}
-  <div className="relative flex-1">
-
-    <motion.button
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={() => setShowTodayOnly(false)}
-      className={`w-full flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full font-medium text-[11px] sm:text-xs transition-all duration-200 ${
-        showTodayOnly === false
-          ? "text-white"
-          : "text-gray-500 hover:text-gray-700"
-      }`}
-      style={{
-        backgroundColor: showTodayOnly === false ? primaryColor : "transparent",
-      }}
-    >
-      <Users size={13} className="sm:w-[14px] sm:h-[14px] flex-shrink-0" />
-      <span className="whitespace-nowrap">جميع المرضى</span>
-    </motion.button>
-  </div>
-</div>
+              {/* زر: جميع المرضى */}
+              <div className="relative flex-1">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowTodayOnly(false)}
+                  className={`w-full flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full font-medium text-[11px] sm:text-xs transition-all duration-200 ${
+                    showTodayOnly === false
+                      ? "text-white"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                  style={{
+                    backgroundColor:
+                      showTodayOnly === false ? primaryColor : "transparent",
+                  }}
+                >
+                  <Users
+                    size={13}
+                    className="sm:w-[14px] sm:h-[14px] flex-shrink-0"
+                  />
+                  <span className="whitespace-nowrap">جميع المرضى</span>
+                </motion.button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1263,28 +1304,28 @@ export function MainTab({
         )}
       </AnimatePresence>
 
-<AnimatePresence>
-  {isMobile && isMobileDrawerOpen && selectedPatient && (
-    <>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
-        onClick={() => {
-          setIsMobileDrawerOpen(false);
-          setSelectedPatient(null);
-        }}
-      />
-      <motion.div
-        initial={{ y: "100%" }}
-        animate={{ y: 0 }}
-        exit={{ y: "100%" }}
-        transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="fixed inset-0 z-50 overflow-y-auto bg-white"
-      >
+      <AnimatePresence>
+        {isMobile && isMobileDrawerOpen && selectedPatient && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+              onClick={() => {
+                setIsMobileDrawerOpen(false);
+                setSelectedPatient(null);
+              }}
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed inset-0 z-50 overflow-y-auto bg-white"
+            >
               <PatientDetailsCard
-              clinicId={clinicId}
+                clinicId={clinicId}
                 onEditPatient={() => {
                   setEditingPatient(selectedPatient);
                   setShowEditPatientModal(true);
