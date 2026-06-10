@@ -274,6 +274,13 @@ const handleColorSelect = (color: string) => {
       handleProcedureInputChange(procedureInput);
     }
   }}
+  onBlur={() => {
+    // عند الخروج من الحقل، احفظ الإجراء إذا كان مكتوباً
+    if (procedureInput.trim()) {
+      saveProcedure(procedureInput, selectedColor);
+    }
+    setShowSuggestions(false);
+  }}
   disabled={!editable}
   placeholder="اكتب اسم الإجراء..."
   // ===== أضف هذه الخصائص لمنع اقتراحات النظام =====
