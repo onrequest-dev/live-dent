@@ -184,6 +184,16 @@ export function MainTab({
   const primaryColor = clinicData?.settings.primaryColor || "#007bff";
   const secondaryColor = clinicData?.settings.secondaryColor || "#6c757d";
 
+const mergeUniqueById = <T extends { id: string }>(items: T[]) => {
+  const map = new Map<string, T>();
+  items.forEach((item) => {
+    if (!map.has(item.id)) {
+      map.set(item.id, item);
+    }
+  });
+  return Array.from(map.values());
+};
+
 const [patients, setPatients] = useState<Patient[]>(() => {
   // دمج البيانات الأولية مع المخزنة في sessionStorage
   const storedNewPatients = sessionStorage.getItem("newpatients");
@@ -191,14 +201,14 @@ const [patients, setPatients] = useState<Patient[]>(() => {
     try {
       const newPatients: Patient[] = JSON.parse(storedNewPatients);
       if (Array.isArray(newPatients) && newPatients.length > 0) {
-        sessionStorage.removeItem("newpatients"); // تنظيف فوري
-        return [...initialPatients, ...newPatients];
+        // sessionStorage.removeItem("newpatients"); // تنظيف فوري
+        return mergeUniqueById([...initialPatients, ...newPatients]);
       }
     } catch (e) {
       console.error(e);
     }
   }
-  return initialPatients;
+  return mergeUniqueById(initialPatients);
 });
 
 const [sessions, setSessions] = useState<Session[]>(() => {
@@ -207,14 +217,14 @@ const [sessions, setSessions] = useState<Session[]>(() => {
     try {
       const newSessions: Session[] = JSON.parse(storedNewSessions);
       if (Array.isArray(newSessions) && newSessions.length > 0) {
-        sessionStorage.removeItem("newsessions"); // تنظيف فوري
-        return [...initialSessions, ...newSessions];
+        // sessionStorage.removeItem("newsessions"); // تنظيف فوري
+        return mergeUniqueById([...initialSessions, ...newSessions]);
       }
     } catch (e) {
       console.error(e);
     }
   }
-  return initialSessions;
+  return mergeUniqueById(initialSessions);
 });
 
 
@@ -1909,7 +1919,7 @@ function PatientDetailsCard({
                           title="تعديل بيانات المريض"
                         >
                           <Edit size={14} className="sm:w-4 sm:h-4" />
-                          <span>تعديل</span>
+                          <span>تعديل بيانات المريض</span>
                         </button>
 
                         <button

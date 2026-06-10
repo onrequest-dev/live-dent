@@ -20,7 +20,8 @@ export async function switchClinic(targetClinicId: string) {
                 error: data.error || 'فشل تبديل العيادة',
             };
         }
-
+        sessionStorage.removeItem("newsessions"); 
+        sessionStorage.removeItem("newpatients"); 
         return {
             success: true,
             data: data,
