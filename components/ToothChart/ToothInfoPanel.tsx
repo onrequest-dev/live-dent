@@ -244,14 +244,14 @@ const handleColorSelect = (color: string) => {
             </div>
           )}
         </div>
-        {hasProcedure && editable && (
+        {/* {hasProcedure && editable && (
           <button
             onClick={handleResetProcedure}
             className="text-xs text-gray-400 hover:text-red-500 transition-colors px-3 py-1.5 rounded-lg hover:bg-red-50"
           >
             إعادة تعيين
           </button>
-        )}
+        )} */}
       </div>
 
       <div className="p-5 space-y-5">
@@ -407,7 +407,7 @@ const handleColorSelect = (color: string) => {
                   {index + 1}
                 </span>
                 <input
-                  type="text"
+                  type="search"
                   value={treatment}
                   onChange={(e) => {
                     const newTreatments = [...localTreatments];

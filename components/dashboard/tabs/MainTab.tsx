@@ -645,21 +645,50 @@ export function MainTab({
           {/* سطح المكتب: كل العناصر في سطر واحد                            */}
           {/* ============================================================ */}
           <div className="hidden lg:flex items-center gap-3">
-            {/* زر إضافة مريض جديد */}
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => setShowNewPatientModal(true)}
-              className="flex items-center gap-2 px-5 py-3 rounded-full font-medium text-sm text-white transition-all duration-200 flex-shrink-0 shadow-sm"
-              style={{
-                background: primaryColor,
-                boxShadow: `0 2px 8px ${primaryColor}35`,
-              }}
-            >
-              <UserPlus size={18} className="flex-shrink-0" />
-              <span className="whitespace-nowrap">مريض جديد</span>
-            </motion.button>
 
+              {/* الصف الثاني: الفلترين مع دائرة فوق المحدد */}
+<div className="relative flex items-center bg-gray-100 p-1 rounded-full flex-shrink-0">
+  
+  {/* زر: مرضى اليوم */}
+  <div className="relative flex-1">
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={() => setShowTodayOnly(true)}
+      className={`w-full flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full font-medium text-[11px] sm:text-xs transition-all duration-200 ${
+        showTodayOnly === true
+          ? "text-white"
+          : "text-gray-500 hover:text-gray-700"
+      }`}
+      style={{
+        backgroundColor: showTodayOnly === true ? primaryColor : "transparent",
+      }}
+    >
+      <Calendar size={13} className="sm:w-[14px] sm:h-[14px] flex-shrink-0" />
+      <span className="whitespace-nowrap">مرضى اليوم</span>
+    </motion.button>
+  </div>
+
+  {/* زر: جميع المرضى */}
+  <div className="relative flex-1">
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={() => setShowTodayOnly(false)}
+      className={`w-full flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full font-medium text-[11px] sm:text-xs transition-all duration-200 ${
+        showTodayOnly === false
+          ? "text-white"
+          : "text-gray-500 hover:text-gray-700"
+      }`}
+      style={{
+        backgroundColor: showTodayOnly === false ? primaryColor : "transparent",
+      }}
+    >
+      <Users size={13} className="sm:w-[14px] sm:h-[14px] flex-shrink-0" />
+      <span className="whitespace-nowrap">جميع المرضى</span>
+    </motion.button>
+  </div>
+</div>
             {/* حقل البحث - يملأ المساحة المتبقية */}
             <div className="relative flex-1">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -675,57 +704,20 @@ export function MainTab({
               />
             </div>
 
-            {/* حاوية الفلاتر المجمعة */}
-            <div className="flex items-center gap-0.5 bg-gray-100 p-1 rounded-full flex-shrink-0 ">
-              {/* فلتر 1: اليوم / الكل */}
-              <motion.button
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => setShowTodayOnly(!showTodayOnly)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-full font-medium text-sm transition-all duration-200 ${
-                  showTodayOnly
-                    ? " text-gray-900 "
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                {!showTodayOnly ? (
-                  <Calendar size={15} className="flex-shrink-0 text-blue-600" />
-                ) : (
-                  <Users size={15} className="flex-shrink-0" />
-                )}
-                <span className="whitespace-nowrap">
-                  {!showTodayOnly ? "مرضى اليوم" : "جميع المرضى"}
-                </span>
-              </motion.button>
-
-              {/* فاصل رأسي رفيع */}
-              <div className="w-px  h-5 bg-gray-300 mx-0.5" />
-
-              {/* فلتر 2: ترتيب (شكلي فقط) */}
-              <motion.button
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.97 }}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-full font-medium text-sm transition-all duration-200 text-gray-500 hover:text-gray-700"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="15"
-                  height="15"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="flex-shrink-0"
-                >
-                  <path d="M3 6h18" />
-                  <path d="M6 12h12" />
-                  <path d="M10 18h4" />
-                </svg>
-                <span className="whitespace-nowrap">الأحدث</span>
-                <ChevronRight size={13} className="flex-shrink-0 rotate-90" />
-              </motion.button>
-            </div>
+            {/* زر إضافة مريض جديد */}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setShowNewPatientModal(true)}
+              className="flex items-center gap-2 px-5 py-3 rounded-full font-medium text-sm text-white transition-all duration-200 flex-shrink-0 shadow-sm"
+              style={{
+                background: primaryColor,
+                boxShadow: `0 2px 8px ${primaryColor}35`,
+              }}
+            >
+              <UserPlus size={18} className="flex-shrink-0" />
+              <span className="whitespace-nowrap">مريض جديد</span>
+            </motion.button>
           </div>
 
           {/* ============================================================ */}
@@ -776,65 +768,53 @@ export function MainTab({
               </div>
             </div>
 
-            {/* الصف الثاني: الفلترين في حاوية واحدة مقسمة */}
-            <div
-              className="flex items-center gap-0.5 bg-gray-100 p-1 rounded-full mt-2"
-              style={{ width: "calc(100% - 8px)" }}
-            >
-              {/* فلتر 1: اليوم / الكل */}
-              <motion.button
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => setShowTodayOnly(!showTodayOnly)}
-                className={`flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full font-medium text-[11px] sm:text-xs transition-all duration-200 flex-1 ${
-                  showTodayOnly
-                    ? " text-gray-900 "
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                {!showTodayOnly ? (
-                  <Calendar
-                    size={13}
-                    className="sm:w-[14px] sm:h-[14px] flex-shrink-0 text-blue-600"
-                  />
-                ) : (
-                  <Users
-                    size={13}
-                    className="sm:w-[14px] sm:h-[14px] flex-shrink-0"
-                  />
-                )}
-                <span className="whitespace-nowrap">
-                  {!showTodayOnly ? "اليوم" : "الكل"}
-                </span>
-              </motion.button>
+{/* الصف الثاني: الفلترين مع دائرة فوق المحدد */}
+<div className="relative flex items-center bg-gray-100 p-1 rounded-full mt-2">
+  
+  {/* زر: مرضى اليوم */}
+  <div className="relative flex-1">
 
-              {/* فاصل رأسي رفيع */}
-              <div className="w-px h-4 bg-gray-300" />
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={() => setShowTodayOnly(true)}
+      className={`w-full flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full font-medium text-[11px] sm:text-xs transition-all duration-200 ${
+        showTodayOnly === true
+          ? "text-white"
+          : "text-gray-500 hover:text-gray-700"
+      }`}
+      style={{
+        backgroundColor: showTodayOnly === true ? primaryColor : "transparent",
+      }}
+    >
+      <Calendar size={13} className="sm:w-[14px] sm:h-[14px] flex-shrink-0" />
+      <span className="whitespace-nowrap">مرضى اليوم</span>
+    </motion.button>
+  </div>
 
-              {/* فلتر 2: ترتيب (شكلي فقط) */}
-              <motion.button
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.97 }}
-                className="flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full font-medium text-[11px] sm:text-xs transition-all duration-200 text-gray-500 hover:text-gray-700 flex-1"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="13"
-                  height="13"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="sm:w-[14px] sm:h-[14px] flex-shrink-0"
-                >
-                  <path d="M3 6h18" />
-                  <path d="M6 12h12" />
-                  <path d="M10 18h4" />
-                </svg>
-                <span className="whitespace-nowrap">الأحدث</span>
-              </motion.button>
-            </div>
+
+
+  {/* زر: جميع المرضى */}
+  <div className="relative flex-1">
+
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={() => setShowTodayOnly(false)}
+      className={`w-full flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full font-medium text-[11px] sm:text-xs transition-all duration-200 ${
+        showTodayOnly === false
+          ? "text-white"
+          : "text-gray-500 hover:text-gray-700"
+      }`}
+      style={{
+        backgroundColor: showTodayOnly === false ? primaryColor : "transparent",
+      }}
+    >
+      <Users size={13} className="sm:w-[14px] sm:h-[14px] flex-shrink-0" />
+      <span className="whitespace-nowrap">جميع المرضى</span>
+    </motion.button>
+  </div>
+</div>
           </div>
         </div>
 
@@ -944,7 +924,7 @@ export function MainTab({
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
-                          transition={{ delay: index * 0.02 }}
+                          transition={{ delay: index * 0 }}
                           onClick={() => handlePatientSelect(patient)}
                           className={`px-4 sm:px-5 py-3 sm:py-4 cursor-pointer transition-colors duration-150 border-b border-gray-50 last:border-b-0
                             ${isSelected ? "bg-blue-50/60" : "hover:bg-gray-50/80"}`}
@@ -1845,32 +1825,28 @@ function PatientDetailsCard({
 
                         <div className="flex items-center gap-3 sm:gap-4 text-gray-600">
                           <span className="flex items-center gap-1 sm:gap-1.5">
-                            <Phone
-                              size={14}
-                              className="sm:w-4 sm:h-4 text-gray-400"
-                            />
-                            <span dir="ltr" className="text-xs sm:text-sm">
-                              {patient.phone}
-                            </span>
-                            {/* زر واتساب مدمج */}
-                            {/* <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onWhatsApp(patient);
-                      }}
-                      className=" inline-flex items-center justify-center rounded-lg  bg-green-50 text-green-600 hover:bg-green-100 transition-colors active:scale-95 flex-shrink-0"
-                      title="واتساب"
-                    >
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="12"
-                        height="12"
-                        fill="currentColor"
-                        className="w-full h-full"
-                      >
-                        <path d="M19.077 4.928C17.191 3.041 14.683 2 12.006 2 6.498 2 2.017 6.477 2.012 11.984c-.001 1.76.46 3.478 1.335 4.992L2 21.991l5.172-1.356c1.46.796 3.104 1.215 4.828 1.216h.004c5.508 0 9.99-4.478 9.995-9.984.002-2.667-1.035-5.175-2.922-7.064zm-7.071 15.355h-.003c-1.507 0-2.985-.405-4.273-1.169l-.306-.181-3.069.805.819-2.991-.202-.32a8.268 8.268 0 0 1-1.267-4.439c.003-4.572 3.724-8.29 8.301-8.29 2.216.001 4.299.865 5.866 2.432a8.238 8.238 0 0 1 2.428 5.873c-.003 4.572-3.724 8.29-8.297 8.29zm4.551-6.208c-.25-.125-1.476-.728-1.705-.812-.229-.083-.396-.124-.562.125-.167.25-.647.812-.793.978-.146.167-.292.187-.542.062-.25-.124-1.054-.389-2.008-1.24-.742-.662-1.243-1.48-1.389-1.729-.146-.25-.015-.385.11-.509.112-.112.25-.292.375-.438.125-.146.167-.25.25-.417.083-.167.042-.313-.021-.438-.062-.125-.562-1.355-.771-1.855-.203-.486-.409-.42-.562-.427-.144-.007-.308-.009-.473-.009-.166 0-.437.063-.666.313-.229.25-.874.854-.874 2.083s.895 2.416 1.02 2.583c.125.166 1.761 2.688 4.267 3.77.596.257 1.062.411 1.425.526.599.19 1.144.163 1.575.099.48-.072 1.476-.604 1.684-1.187.208-.583.208-1.083.146-1.187-.062-.104-.229-.167-.479-.292z" />
-                      </svg>
-                    </button> */}
+<button
+  onClick={(e) => {
+    e.stopPropagation();
+    onWhatsApp(patient);
+  }}
+  className="inline-flex items-center justify-center gap-1 sm:gap-1.5 rounded-full bg-green-50 text-green-600 hover:bg-green-100 transition-colors active:scale-95 px-3 py-1.5"
+  title="واتساب"
+>
+  <svg
+    viewBox="0 0 24 24"
+    width="18"
+    height="18"
+    fill="currentColor"
+    className="flex-shrink-0"
+  >
+    <path d="M19.077 4.928C17.191 3.041 14.683 2 12.006 2 6.498 2 2.017 6.477 2.012 11.984c-.001 1.76.46 3.478 1.335 4.992L2 21.991l5.172-1.356c1.46.796 3.104 1.215 4.828 1.216h.004c5.508 0 9.99-4.478 9.995-9.984.002-2.667-1.035-5.175-2.922-7.064zm-7.071 15.355h-.003c-1.507 0-2.985-.405-4.273-1.169l-.306-.181-3.069.805.819-2.991-.202-.32a8.268 8.268 0 0 1-1.267-4.439c.003-4.572 3.724-8.29 8.301-8.29 2.216.001 4.299.865 5.866 2.432a8.238 8.238 0 0 1 2.428 5.873c-.003 4.572-3.724 8.29-8.297 8.29zm4.551-6.208c-.25-.125-1.476-.728-1.705-.812-.229-.083-.396-.124-.562.125-.167.25-.647.812-.793.978-.146.167-.292.187-.542.062-.25-.124-1.054-.389-2.008-1.24-.742-.662-1.243-1.48-1.389-1.729-.146-.25-.015-.385.11-.509.112-.112.25-.292.375-.438.125-.146.167-.25.25-.417.083-.167.042-.313-.021-.438-.062-.125-.562-1.355-.771-1.855-.203-.486-.409-.42-.562-.427-.144-.007-.308-.009-.473-.009-.166 0-.437.063-.666.313-.229.25-.874.854-.874 2.083s.895 2.416 1.02 2.583c.125.166 1.761 2.688 4.267 3.77.596.257 1.062.411 1.425.526.599.19 1.144.163 1.575.099.48-.072 1.476-.604 1.684-1.187.208-.583.208-1.083.146-1.187-.062-.104-.229-.167-.479-.292z" />
+  </svg>
+  <span dir="ltr" className="text-xs sm:text-sm font-medium">
+    {patient.phone}
+  </span>
+</button>
+
                           </span>
                           <span className="flex items-center gap-1 sm:gap-1.5">
                             <Calendar
