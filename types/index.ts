@@ -102,6 +102,34 @@ export interface Session {
   };
 }
 
+
+
+// بيانات سن واحد في الشارت (يخزن فقط إذا كان لديه معلومات)
+export interface ToothEntry {
+  toothNumber: number;              // رقم السن (1-32)
+  procedure: string;        // نوع الإجراء
+  customProcedure?: string;         // اسم الإجراء المخصص (فقط إذا كان procedure = "custom")
+  color: string;                    // لون السن في الشارت (كود HEX)
+  treatments?: string[];            // الأعمال المنفذة (فقط العناصر غير الفارغة)
+  notes?: string;                   // ملاحظات عن هذا السن
+}
+
+// الشارت السني الكامل للمريض
+export interface DentalChart {
+  id: string;                       // معرف فريد للشارت (UUID)
+  patientId: string;                // معرف المريض
+  clinicId: string;                 // معرف العيادة
+  teeth: ToothEntry[];              // مصفوفة الأسنان التي لديها معلومات فقط (وليس كل الـ 32)
+  lastUpdated: Date;                // تاريخ آخر تحديث للشارت
+}
+
+
+
+
+
+
+
+
 // =====================================================================
 
 // 4️⃣ الحالة العلاجية (PatientCase) - الملف الطبي الكامل لمشكلة أسنان محددة

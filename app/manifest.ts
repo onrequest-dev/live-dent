@@ -5,8 +5,8 @@ export const dynamic = 'force-dynamic';
 
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
     const cookieStore = cookies();
-    const primary_color = cookieStore.get('primary_color')?.value || "#b08b46";
-    const secondary_color = cookieStore.get('secondary_color')?.value || "#00305f";
+    const primary_color = cookieStore.get('primary_color')?.value || "##528ff7";
+    const secondary_color = cookieStore.get('secondary_color')?.value || "#528ff7";
   return {
     name: 'Live-dent',
     short_name: 'LiveDent',
