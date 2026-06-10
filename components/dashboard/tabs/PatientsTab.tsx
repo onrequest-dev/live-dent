@@ -295,6 +295,10 @@ interface PatientsHeaderProps {
 // Component: PatientsHeader - مبسط ونظيف
 // ============================================================================
 
+// ============================================================================
+// Component: PatientsHeader - تصميم ذكي وموفر للمساحة
+// ============================================================================
+
 interface PatientsHeaderProps {
   clinicName: string;
   clinicColor: string;
@@ -304,7 +308,6 @@ interface PatientsHeaderProps {
   viewMode: ViewMode;
   viewType: ViewType;
   onViewModeChange: (mode: ViewMode) => void;
-  // 🆕 خصائص إحصائية مبسطة
   totalSessions: number;
   totalCost: number;
   paidCost: number;
@@ -321,9 +324,7 @@ function PatientsHeader({
   periodTitle,
   onRefresh,
   onExport,
-  viewMode,
   viewType,
-  onViewModeChange,
   totalSessions,
   totalCost,
   paidCost,
@@ -331,207 +332,244 @@ function PatientsHeader({
   paymentFilter,
   onPaymentFilterChange,
   handleViewTypeChange,
-  isMobile,
 }: PatientsHeaderProps) {
-  return (
-    <div className="space-y-3 sm:space-y-4">
-      {/* ============================================================ */}
-      {/* الصف الأول: العنوان الرئيسي + أزرار التحكم                      */}
-      {/* ============================================================ */}
-      {/* ============================================================ */}
-{/* الصف الأول: العنوان الرئيسي + أزرار التحكم                      */}
-{/* ============================================================ */}
-<div className="flex items-center justify-between gap-3">
-  {/* العنوان والفترة - مخفي على الهاتف، يظهر على التابلت وسطح المكتب */}
-  <div className="min-w-0 flex-1 hidden sm:block">
-    <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 truncate">
-      جدول المرضى
-      <span className="text-sm font-normal text-gray-500 mr-2 hidden sm:inline">
-        - {clinicName}
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // إغلاق القائمة عند النقر خارجها
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    if (isMenuOpen) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isMenuOpen]);
+
+  // إغلاق القائمة عند الضغط على Escape
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsMenuOpen(false);
+    };
+    if (isMenuOpen) document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isMenuOpen]);
+
+  // مكون كرت الإحصائية
+  const StatCard = ({ 
+    label, 
+    value, 
+    color, 
+    isActive, 
+    onClick 
+  }: { 
+    label: string; 
+    value: number; 
+    color: string; 
+    isActive?: boolean; 
+    onClick?: () => void;
+  }) => (
+    <button
+      onClick={onClick}
+      className={`
+        flex flex-col items-center justify-center px-2 py-1.5 rounded-lg text-center
+        transition-all duration-200 min-w-0
+        ${onClick ? 'cursor-pointer hover:shadow-sm' : 'cursor-default'}
+        ${isActive 
+          ? 'bg-gray-100 ring-1 ring-gray-300' 
+          : 'bg-white/80 hover:bg-gray-50'
+        }
+      `}
+    >
+      <span className="text-[10px] text-gray-500 truncate">{label}</span>
+      <span className={`text-sm font-bold truncate`} style={{ color }}>
+        {value.toLocaleString()}
+        <span className="text-[10px] font-normal opacity-60 mr-0.5">$</span>
       </span>
-    </h1>
-    <p className="text-gray-500 text-xs sm:text-sm mt-0.5 truncate">
-      {periodTitle}
-    </p>
-  </div>
+    </button>
+  );
 
-  {/* عنوان مبسط للهاتف فقط - يظهر بدلاً من العنوان الكامل */}
-  {/* <div className="min-w-0 sm:hidden">
-    <h1 className="text-base font-bold text-gray-800 truncate">
-      المرضى
-    </h1>
-  </div> */}
-
-  {/* أزرار التحكم (سطح المكتب) */}
-  <div className="hidden sm:flex items-center gap-3 flex-shrink-0">
-    <ViewTypeSwitcher
-      clinicColor={clinicColor}
-      viewType={viewType}
-      onViewTypeChange={handleViewTypeChange}
-    />
-    {/* زر التحديث */}
-    <motion.button
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      onClick={onRefresh}
-      className="flex items-center gap-2 px-5 py-3 rounded-full text-white text-sm font-semibold transition-all duration-200 shadow-sm"
-      style={{
-        backgroundColor: clinicColor,
-        boxShadow: `0 2px 8px ${clinicColor}30`,
-      }}
-    >
-      <RefreshCcw size={16} />
-      <span>تحديث</span>
-    </motion.button>
-
-    {/* زر التصدير */}
-    <motion.button
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      onClick={onExport}
-      className="flex items-center gap-2 px-5 py-3 rounded-full text-white text-sm font-semibold transition-all duration-200 shadow-sm"
-      style={{
-        backgroundColor: clinicColor,
-        boxShadow: `0 2px 8px ${clinicColor}30`,
-      }}
-    >
-      <Download size={16} />
-      <span>Excel</span>
-    </motion.button>
-  </div>
-</div>
-
+  return (
+    <div className="space-y-2 sm:space-y-3">
       {/* ============================================================ */}
-      {/* الصف الثاني: شريط إحصائيات مبسط (سطح المكتب فقط) + أزرار الجوال */}
+      {/* الصف الأول: العنوان + أزرار التحكم                              */}
       {/* ============================================================ */}
       <div className="flex items-center justify-between gap-3">
-        {/* الإحصائيات المبسطة - تظهر في سطح المكتب فقط */}
-        <div className="hidden sm:flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-gray-600 overflow-x-auto scrollbar-hide">
-          {/* إجمالي الجلسات */}
-          <div className="flex items-center gap-1.5 whitespace-nowrap">
-            <div
-              className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-              style={{ backgroundColor: clinicColor }}
-            />
-            <span className="text-gray-900">جلسات:</span>
-            <span className="font-bold text-gray-800">{totalSessions}</span>
-          </div>
-
-          {/* فاصل */}
-          <span className="text-gray-300 select-none">·</span>
-
-          {/* إجمالي التكلفة */}
-          <div className="flex items-center gap-1.5 whitespace-nowrap">
-            <Receipt size={12} className="text-gray-400 flex-shrink-0" />
-            <span className="font-bold text-gray-900">
-              {totalCost.toLocaleString()}
-            </span>
-            <span className="text-gray-800 text-xs">$</span>
-          </div>
-
-          {/* فاصل */}
-          <span className="text-gray-300 select-none">·</span>
-
-          {/* مدفوع - زر فلتر مصغر */}
-          <button
-            onClick={() =>
-              onPaymentFilterChange(paymentFilter === "paid" ? "all" : "paid")
-            }
-            className={`flex items-center gap-1 whitespace-nowrap transition-all duration-200 px-1.5 py-0.5 rounded ${
-              paymentFilter === "paid"
-                ? "bg-teal-50 text-teal-700 font-semibold"
-                : "text-gray-500 hover:text-teal-600"
-            }`}
-          >
-            <CheckCircle size={11} className="flex-shrink-0" />
-            <span className="font-medium">{paidCost.toLocaleString()}</span>
-            <span className="text-gray-400 text-xs">$</span>
-          </button>
-
-          {/* فاصل */}
-          <span className="text-gray-300 select-none">·</span>
-
-          {/* غير مدفوع - زر فلتر مصغر */}
-          <button
-            onClick={() =>
-              onPaymentFilterChange(
-                paymentFilter === "unpaid" ? "all" : "unpaid",
-              )
-            }
-            className={`flex items-center gap-1 whitespace-nowrap transition-all duration-200 px-1.5 py-0.5 rounded ${
-              paymentFilter === "unpaid"
-                ? "bg-amber-50 text-amber-700 font-semibold"
-                : "text-gray-500 hover:text-amber-600"
-            }`}
-          >
-            <XCircle size={11} className="flex-shrink-0" />
-            <span className="font-medium">{unpaidCost.toLocaleString()}</span>
-            <span className="text-gray-400 text-xs">$</span>
-          </button>
-
-          {/* مؤشر الفلتر النشط */}
-          {paymentFilter !== "all" && (
-            <button
-              onClick={() => onPaymentFilterChange("all")}
-              className="text-xs text-gray-500 hover:text-gray-700 whitespace-nowrap flex items-center gap-1"
-            >
-              <X size={10} />
-              <span>إلغاء</span>
-            </button>
-          )}
+        {/* العنوان */}
+        <div className="min-w-0 flex-1">
+{/* العنوان */}
+<div className="min-w-0 flex-1">
+  {/* عنوان مبسط للموبايل */}
+  <h1 className="sm:hidden text-base font-bold text-gray-800 truncate">
+    المرضى
+  </h1>
+  
+  {/* عنوان كامل للشاشات الكبيرة */}
+  <h1 className="hidden sm:block text-base sm:text-lg font-bold text-gray-800 truncate">
+    المرضى
+    <span className="text-sm font-normal text-gray-500 mr-2">
+      - {clinicName}
+    </span>
+  </h1>
+  
+  {/* الفترة - تظهر فقط على الشاشات الكبيرة */}
+  <p className="hidden sm:block text-gray-400 text-xs mt-0.5 truncate">
+    {periodTitle}
+  </p>
+</div>
         </div>
 
-        {/* ملخص مبسط للجوال (نص صغير فقط) */}
-        <div className="flex sm:hidden items-center gap-2 text-xs text-gray-600">
-          <span className="font-bold text-gray-800">{totalSessions}</span>
-          <span className="text-gray-900">جلسة</span>
-          <span className="text-gray-300">·</span>
-          <span className="font-bold text-gray-800">
-            {totalCost.toLocaleString()}
-          </span>
-          <span className="text-gray-400 text-xs">$</span>
-        </div>
-
-        {/* أزرار التحكم (الجوال فقط) */}
-        <div className="flex sm:hidden items-center gap-2 flex-shrink-0">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+        {/* أزرار سطح المكتب */}
+        <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
+          <ViewTypeSwitcher
+            clinicColor={clinicColor}
+            viewType={viewType}
+            onViewTypeChange={handleViewTypeChange}
+          />
+          
+          <button
             onClick={onRefresh}
-            className="flex items-center gap-2 px-4 py-2 rounded-full text-white text-sm font-semibold transition-all duration-200 shadow-sm"
-            style={{
-              backgroundColor: clinicColor,
-              boxShadow: `0 2px 8px ${clinicColor}30`,
-            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-white text-xs font-medium
+                     hover:opacity-90 active:scale-95 transition-all"
+            style={{ backgroundColor: clinicColor }}
           >
-            <RefreshCcw size={16} />
+            <RefreshCcw size={14} />
             <span>تحديث</span>
-          </motion.button>
+          </button>
 
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          <button
             onClick={onExport}
-            className="flex items-center gap-2 px-4 py-2 rounded-full text-white text-sm font-semibold transition-all duration-200 shadow-sm"
-            style={{
-              backgroundColor: clinicColor,
-              boxShadow: `0 2px 8px ${clinicColor}30`,
-            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-white text-xs font-medium
+                     hover:opacity-90 active:scale-95 transition-all"
+            style={{ backgroundColor: clinicColor }}
           >
-            <Download size={16} />
+            <Download size={14} />
             <span>Excel</span>
-          </motion.button>
+          </button>
+        </div>
+
+        {/* زر القائمة للموبايل (ثلاث نقاط) */}
+        <div className="flex sm:hidden relative" ref={menuRef}>
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="p-1.5 rounded-lg active:bg-gray-200 transition-colors"
+          >
+            <div className="flex flex-col gap-1">
+              <div className="w-1 h-1 rounded-full bg-gray-600" />
+              <div className="w-1 h-1 rounded-full bg-gray-600" />
+              <div className="w-1 h-1 rounded-full bg-gray-600" />
+            </div>
+          </button>
+
+          {/* القائمة المنسدلة */}
+          {isMenuOpen && (
+            <div className="absolute left-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-200 py-1 z-50 overflow-hidden">
+              <button
+                onClick={() => { onRefresh(); setIsMenuOpen(false); }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+              >
+                <RefreshCcw size={16} className="text-gray-500" />
+                <span>تحديث البيانات</span>
+              </button>
+              <button
+                onClick={() => { onExport(); setIsMenuOpen(false); }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+              >
+                <Download size={16} className="text-gray-500" />
+                <span>تصدير Excel</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* ============================================================ */}
-      {/* خط فاصل رفيع */}
-      {/* ============================================================ */}
-      <div className="border-b border-gray-100" />
+{/* ============================================================ */}
+{/* الصف الثاني: كروت الإحصائيات                                    */}
+{/* ============================================================ */}
+
+{/* نسخة الموبايل - 4 كروت في صفين */}
+<div className="grid grid-cols-4 gap-1.5 sm:hidden">
+  <div className="bg-white/60 backdrop-blur-sm rounded-xl p-2 text-center border border-gray-100">
+    <div className="text-[8px] text-gray-500">جلسات</div>
+    <div className="text-[10px] font-bold text-gray-800 mt-0.5">
+      {totalSessions}
     </div>
+  </div>
+  
+  <div className="bg-white/60 backdrop-blur-sm rounded-xl p-2 text-center border border-gray-100">
+    <div className="text-[8px] text-gray-500">الإجمالي</div>
+    <div className="text-[10px] font-bold text-gray-800 mt-0.5">
+      {totalCost.toLocaleString()}
+      <span className="text-[10px] font-normal text-gray-400 mr-0.5">$</span>
+    </div>
+  </div>
+  
+  <div className="bg-white/60 backdrop-blur-sm rounded-xl p-2 text-center border border-gray-100">
+    <div className="text-[8px] text-teal-600">مدفوع</div>
+    <div className="text-[10px] font-bold text-teal-600 mt-0.5">
+      {paidCost.toLocaleString()}
+      <span className="text-[10px] font-normal text-teal-400 mr-0.5">$</span>
+    </div>
+  </div>
+  
+  <div className="bg-white/60 backdrop-blur-sm rounded-xl p-2 text-center border border-gray-100">
+    <div className="text-[8px] text-amber-600">متبقي</div>
+    <div className="text-[10px] font-bold text-amber-600 mt-0.5">
+      {unpaidCost.toLocaleString()}
+      <span className="text-[10px] font-normal text-amber-400 mr-0.5">$</span>
+    </div>
+  </div>
+</div>
+
+{/* نسخة سطح المكتب - كروت واضحة في صف واحد */}
+<div className="hidden sm:flex items-center gap-2">
+  <div className="flex items-center gap-3 bg-white/40 backdrop-blur-sm rounded-xl px-4 py-2.5 border border-gray-200/60 shadow-sm">
+    {/* كرت الجلسات */}
+    <div className="flex items-center gap-2.5">
+      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: clinicColor }} />
+      <span className="text-sm text-gray-500">جلسات</span>
+      <span className="text-base font-bold text-gray-800" dir="ltr">{totalSessions}</span>
+    </div>
+    
+    <div className="w-px h-6 bg-gray-200" />
+    
+    {/* كرت الإجمالي */}
+    <div className="flex items-center gap-2.5">
+      <span className="text-sm text-gray-500">الإجمالي</span>
+      <span className="text-base font-bold text-gray-800" dir="ltr">
+        {totalCost.toLocaleString('en-US')}
+        <span className="text-xs font-normal text-gray-400 ml-1">$</span>
+      </span>
+    </div>
+    
+    <div className="w-px h-6 bg-gray-200" />
+    
+    {/* كرت المدفوع */}
+    <div className="flex items-center gap-2.5">
+      <span className="text-sm text-teal-600">مدفوع</span>
+      <span className="text-base font-bold text-teal-600" dir="ltr">
+        {paidCost.toLocaleString('en-US')}
+        <span className="text-xs font-normal text-teal-400 ml-1">$</span>
+      </span>
+    </div>
+    
+    <div className="w-px h-6 bg-gray-200" />
+    
+    {/* كرت المتبقي */}
+    <div className="flex items-center gap-2.5">
+      <span className="text-sm text-amber-600">متبقي</span>
+      <span className="text-base font-bold text-amber-600" dir="ltr">
+        {unpaidCost.toLocaleString('en-US')}
+        <span className="text-xs font-normal text-amber-400 ml-1">$</span>
+      </span>
+    </div>
+  </div>
+</div>
+
+      </div>
   );
-}
-// ============================================================================
+}// ============================================================================
 // Component: PatientsStatsCards - مع دعم وضع التقويم
 // ============================================================================
 
@@ -565,9 +603,11 @@ export function PatientsStatsBar({
   const totalCount = paidSessionsCount + unpaidSessionsCount;
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div >
+
+      
       {/* الكل */}
-      <button
+      {/* <button
         onClick={() => onPaymentFilterChange("all")}
         className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all
           ${
@@ -577,10 +617,10 @@ export function PatientsStatsBar({
           }`}
       >
         الكل {totalCount}
-      </button>
+      </button> */}
 
       {/* مدفوع */}
-      <button
+      {/* <button
         onClick={() =>
           onPaymentFilterChange(paymentFilter === "paid" ? "all" : "paid")
         }
@@ -592,10 +632,10 @@ export function PatientsStatsBar({
           }`}
       >
         مدفوع {paidSessionsCount}
-      </button>
+      </button> */}
 
       {/* غير مدفوع */}
-      <button
+      {/* <button
         onClick={() =>
           onPaymentFilterChange(paymentFilter === "unpaid" ? "all" : "unpaid")
         }
@@ -607,17 +647,17 @@ export function PatientsStatsBar({
           }`}
       >
         غير مدفوع {unpaidSessionsCount}
-      </button>
+      </button> */}
 
       {/* زر المسح */}
-      {paymentFilter !== "all" && (
+      {/* {paymentFilter !== "all" && (
         <button
           onClick={() => onPaymentFilterChange("all")}
           className="p-1.5 rounded-full text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-all"
         >
           <X size={12} />
         </button>
-      )}
+      )} */}
     </div>
   );
 }
@@ -1027,93 +1067,224 @@ const FilterPopover = () => {
   );
 
   return (
-    <div
-      className="relative"
-      ref={filterRef}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      {/* زر الفلتر */}
-      <button
-        onClick={() => {
-          if (isMobile) {
-            setIsFilterOpen(!isFilterOpen);
-          } else {
-            // في سطح المكتب: النقر يفتح/يغلق أيضاً (بالإضافة إلى hover)
-            setIsFilterOpen(!isFilterOpen);
-          }
-        }}
-        className={`
-            relative flex items-center gap-2 px-3 py-2.5 rounded-full font-medium text-sm
-            transition-all duration-200 whitespace-nowrap
+<div
+  className="relative"
+  ref={filterRef}
+  onMouseEnter={handleMouseEnter}
+  onMouseLeave={handleMouseLeave}
+>
+  {/* زر الفلتر */}
+  <button
+    onClick={() => setIsFilterOpen(!isFilterOpen)}
+    className={`
+      relative flex items-center gap-2 px-3 py-2.5 rounded-full font-medium text-sm
+      transition-all duration-200 whitespace-nowrap
+      ${
+        isFilterOpen || activeFiltersCount > 0
+          ? "bg-gray-800 text-white shadow-md"
+          : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-sm"
+      }
+    `}
+    aria-expanded={isFilterOpen}
+    aria-haspopup="true"
+  >
+    <Filter size={15} className="flex-shrink-0" />
+    <span className="hidden sm:inline">الفلاتر</span>
+    {activeFiltersCount > 0 && (
+      <span className="w-5 h-5 rounded-full bg-white text-gray-800 text-xs font-bold flex items-center justify-center">
+        {activeFiltersCount}
+      </span>
+    )}
+  </button>
+
+  {/* عرض القائمة حسب الجهاز */}
+  {isFilterOpen && (
+    <>
+      {isMobile ? (
+        // Popup مركزي أنيق للموبايل
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* خلفية داكنة تمنع التفاعل */}
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setIsFilterOpen(false)}
+          />
+          
+          {/* نافذة منبثقة في المنتصف */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm max-h-[85vh] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* رأس النافذة */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <h3 className="text-base font-bold text-gray-800">خيارات العرض</h3>
+              <button
+                onClick={() => setIsFilterOpen(false)}
+                className="p-1.5 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
+              >
+                <X size={18} className="text-gray-500" />
+              </button>
+            </div>
+
+            {/* محتوى النافذة - بدون سكرول عمودي */}
+            <div className="p-5 space-y-5">
+  {/* قسم الفترة الزمنية */}
+  <div>
+    <label className="block text-xs font-semibold text-gray-500 mb-2">
+      الفترة الزمنية
+    </label>
+    <div className="grid grid-cols-3 gap-2">
+      {[
+        { value: "all", label: "الكل", icon: List },
+        { value: "month", label: "الشهر", icon: Calendar },
+        { value: "day", label: "يوم", icon: CalendarDays },
+      ].map((option) => (
+        <button
+          key={option.value}
+          onClick={() => {
+            handleViewModeSelect(option.value as ViewMode);
+            if (isMobile) setIsFilterOpen(false);
+          }}
+          className={`
+            relative flex flex-col items-center gap-2 py-2.5 px-2 rounded-xl text-xs font-medium
+            transition-all duration-200 overflow-hidden
             ${
-              isFilterOpen || activeFiltersCount > 0
-                ? "bg-gray-800 text-white shadow-md"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-sm"
+              viewMode === option.value
+                ? "bg-gray-900 text-white shadow-lg shadow-gray-900/20"
+                : "bg-gray-50/80 text-gray-500 hover:bg-gray-100 hover:text-gray-700 hover:shadow-sm"
             }
           `}
-        aria-expanded={isFilterOpen}
-        aria-haspopup="true"
-      >
-        <Filter size={15} className="flex-shrink-0" />
-        <span className="hidden sm:inline">الفلاتر</span>
-        {activeFiltersCount > 0 && (
-          <span className="w-5 h-5 rounded-full bg-white text-gray-800 text-xs font-bold flex items-center justify-center">
-            {activeFiltersCount}
-          </span>
-        )}
-      </button>
-
-      {/* عرض القائمة حسب الجهاز */}
-      {isFilterOpen && (
-        <>
-          {isMobile ? (
-            // Modal مركزي في الجوال مع خلفية شفافة
-            <>
-              {/* خلفية داكنة */}
-              <div
-                className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
-                onClick={() => setIsFilterOpen(false)}
-              />
-              {/* المحتوى في الأسفل (Bottom Sheet) */}
-              <motion.div
-                initial={{ y: "100%" }}
-                animate={{ y: 0 }}
-                exit={{ y: "100%" }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-                className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-xl max-h-[80vh] overflow-hidden"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {/* مقبض السحب */}
-                <div className="flex justify-center pt-3 pb-1">
-                  <div className="w-10 h-1 rounded-full bg-gray-300" />
-                </div>
-                <div className="p-4 overflow-y-auto max-h-[calc(80vh-2rem)]">
-                  {filterContent}
-                </div>
-              </motion.div>
-            </>
-          ) : (
-            // قائمة منسدلة لسطح المكتب - تظهر لليسار (RTL: لليمين)
-            <motion.div
-              initial={{ opacity: 0, y: -8, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -8, scale: 0.95 }}
-              transition={{ duration: 0.15, ease: "easeOut" }}
-              className="absolute left-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-xl border border-gray-200 p-3 z-50"
-              // left-0 يجعل القائمة تتمدد لليمين في اتجاه RTL
-              style={{
-                maxWidth: "calc(100vw - 2rem)",
-              }}
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
-            >
-              {filterContent}
-            </motion.div>
+        >
+          {viewMode === option.value && (
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-white/20" />
           )}
-        </>
-      )}
+          <option.icon size={17} strokeWidth={viewMode === option.value ? 2 : 1.5} />
+          <span>{option.label}</span>
+        </button>
+      ))}
     </div>
+  </div>
+
+  {/* قسم حالة الدفع */}
+  <div>
+    <label className="block text-xs font-semibold text-gray-500 mb-2">
+      حالة الدفع
+    </label>
+    <div className="grid grid-cols-3 gap-2">
+      {[
+        { value: "all", label: "الكل", icon: List, color: "#6B7280" },
+        { value: "paid", label: "مدفوع", icon: CheckCircle, color: "#0D9488" },
+        { value: "unpaid", label: "غير مدفوع", icon: XCircle, color: "#D97706" },
+      ].map((option) => (
+        <button
+          key={option.value}
+          onClick={() => {
+            handlePaymentFilterSelect(option.value as "all" | "paid" | "unpaid");
+            if (isMobile) setIsFilterOpen(false);
+          }}
+          className={`
+            relative flex flex-col items-center gap-2 py-2.5 px-2 rounded-xl text-xs font-medium
+            transition-all duration-200 overflow-hidden
+            ${
+              paymentFilter === option.value
+                ? "bg-gray-900 text-white shadow-lg shadow-gray-900/20"
+                : "bg-gray-50/80 text-gray-500 hover:bg-gray-100 hover:text-gray-700 hover:shadow-sm"
+            }
+          `}
+        >
+          {paymentFilter === option.value && (
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-white/20" />
+          )}
+          <option.icon 
+            size={17} 
+            strokeWidth={paymentFilter === option.value ? 2 : 1.5}
+            style={{ color: paymentFilter === option.value ? "white" : option.color }} 
+          />
+          <span>{option.label}</span>
+        </button>
+      ))}
+    </div>
+  </div>
+
+  {/* قسم الترتيب */}
+  <div>
+    <label className="block text-xs font-semibold text-gray-500 mb-2">
+      ترتيب حسب التاريخ
+    </label>
+    <div className="grid grid-cols-2 gap-2">
+      {[
+        { value: "desc", label: "الأحدث أولاً" },
+        { value: "asc", label: "الأقدم أولاً" },
+      ].map((option) => (
+        <button
+          key={option.value}
+          onClick={() => {
+            handleSortSelect(option.value === "asc");
+            if (isMobile) setIsFilterOpen(false);
+          }}
+          className={`
+            relative flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-medium
+            transition-all duration-200 overflow-hidden
+            ${
+              sortOrder === option.value
+                ? "bg-gray-900 text-white shadow-lg shadow-gray-900/20"
+                : "bg-gray-50/80 text-gray-500 hover:bg-gray-100 hover:text-gray-700 hover:shadow-sm"
+            }
+          `}
+        >
+          {sortOrder === option.value && (
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-white/20" />
+          )}
+          <ArrowUpDown size={14} strokeWidth={sortOrder === option.value ? 2 : 1.5} />
+          <span>{option.label}</span>
+        </button>
+      ))}
+    </div>
+  </div>
+</div>
+
+            {/* زر إعادة التعيين */}
+            {(paymentFilter !== "all" || viewMode !== "all") && (
+              <div className="px-5 py-3 border-t border-gray-100">
+                <button
+                  onClick={() => {
+                    handleResetFilters();
+                    setIsFilterOpen(false);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl 
+                           text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 
+                           active:bg-red-200 transition-colors"
+                >
+                  <RefreshCcw size={14} />
+                  <span>إعادة تعيين الفلاتر</span>
+                </button>
+              </div>
+            )}
+          </motion.div>
+        </div>
+      ) : (
+        // قائمة منسدلة لسطح المكتب - تبقى كما هي
+        <motion.div
+          initial={{ opacity: 0, y: -8, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -8, scale: 0.95 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
+          className="absolute left-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-xl border border-gray-200 p-3 z-50"
+          style={{
+            maxWidth: "calc(100vw - 2rem)",
+          }}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+        >
+          {filterContent}
+        </motion.div>
+      )}
+    </>
+  )}
+</div>
   );
 };
 
@@ -1209,41 +1380,41 @@ const FilterPopover = () => {
       {/* ============================================================ */}
       {/* الجوال والتابلت: صف واحد أو صفين حسب الحاجة                    */}
       {/* ============================================================ */}
-      <div className="flex lg:hidden items-center gap-2">
-        {/* حقل البحث - مخفي في التقويم */}
-        {!isCalendarMode && (
-          <div className="relative flex-1">
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <Search
-                size={14}
-                className="text-gray-400 sm:w-[16px] sm:h-[16px]"
-              />
-            </div>
-            <input
-              type="text"
-              placeholder="بحث..."
-              value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full pr-8 sm:pr-10 pl-8 py-2.5 sm:py-3 bg-gray-100 rounded-full text-gray-900 placeholder-gray-400 text-sm border-0 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
-              style={{ "--tw-ring-color": clinicColor } as React.CSSProperties}
-            />
-            {searchTerm && (
-              <button
-                onClick={onSearchClear}
-                className="absolute inset-y-0 left-0 pl-2 flex items-center text-gray-400 hover:text-gray-600"
-              >
-                <X size={14} className="sm:w-[16px] sm:h-[16px]" />
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* التنقل اليومي + الفلتر الموحد */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          <DayNavigation />
-          {!isCalendarMode && <FilterPopover />}
+<div className="flex lg:hidden flex-col gap-2">
+  {/* السطر الأول: حقل البحث + الفلتر */}
+  <div className="flex items-center gap-2">
+    {/* حقل البحث - مخفي في التقويم */}
+    {!isCalendarMode && (
+      <div className="relative flex-1">
+        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+          <Search size={14} className="text-gray-400" />
         </div>
+        <input
+          type="text"
+          placeholder="بحث..."
+          value={searchTerm}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="w-full pr-8 pl-8 py-2.5 bg-gray-100 rounded-full text-gray-900 placeholder-gray-400 text-sm border-0 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+          style={{ "--tw-ring-color": clinicColor } as React.CSSProperties}
+        />
+        {searchTerm && (
+          <button
+            onClick={onSearchClear}
+            className="absolute inset-y-0 left-0 pl-2 flex items-center text-gray-400 hover:text-gray-600"
+          >
+            <X size={14} />
+          </button>
+        )}
       </div>
+    )}
+
+    {/* الفلتر الموحد */}
+    {!isCalendarMode && <FilterPopover />}
+  </div>
+
+  {/* السطر الثاني: التنقل اليومي - يملأ عرض الشاشة */}
+  {isDayMode && <DayNavigation />}
+</div>
     </div>
   );
 }
@@ -3515,101 +3686,145 @@ function SessionDetailModal({
   const dateStr = getDateString(session.startTime);
 
   return (
-    <motion.div
-      className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/50 backdrop-blur-sm"
+<motion.div
+  className="fixed inset-0 z-50 flex items-center justify-center p-4"
+  onClick={onClose}
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  exit={{ opacity: 0 }}
+  transition={{ duration: 0.15 }}
+>
+  {/* خلفية داكنة شفافة */}
+  <motion.div
+    className="absolute inset-0 backdrop-blur-[2px]"
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+  />
+
+  {/* البطاقة المنبثقة */}
+  <motion.div
+    className="relative bg-white w-[calc(100%-2rem)] max-w-sm rounded-3xl shadow-2xl overflow-hidden text-gray-900"
+    onClick={(e) => e.stopPropagation()}
+    dir="rtl"
+    initial={{ scale: 0.85, opacity: 0, y: 10 }}
+    animate={{ scale: 1, opacity: 1, y: 0 }}
+    exit={{ scale: 0.9, opacity: 0, y: 10 }}
+    transition={{ 
+      type: "spring", 
+      damping: 25, 
+      stiffness: 350,
+      mass: 0.6
+    }}
+  >
+  {/* Header */}
+  <div className="relative px-5 pt-5 pb-4">
+    <button
       onClick={onClose}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
+      className="absolute left-3 top-4 w-8 h-8 rounded-full bg-gray-100/80 flex items-center justify-center 
+                 text-gray-400 hover:text-gray-600 hover:bg-gray-200 active:scale-95 transition-all z-10"
     >
-      <motion.div
-        className="bg-white w-full md:max-w-md rounded-t-2xl md:rounded-2xl shadow-xl overflow-hidden text-gray-900"
-        onClick={(e) => e.stopPropagation()}
-        dir="rtl"
-        initial={{ y: 300, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 300, opacity: 0 }}
-        transition={{ duration: 0.3, ease: "easeOut" }}
+      <X size={15} />
+    </button>
+
+    {/* وسوم الحالة والدفع */}
+    <div className="flex items-center gap-2 mb-3 pr-1">
+      <span
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium"
+        style={{
+          backgroundColor: statusDisplay.bgColor,
+          color: statusDisplay.color,
+        }}
       >
-        {/* Header */}
-        <div className="relative p-4 pt-8 border-b border-gray-100">
-          <button
-            onClick={onClose}
-            className="absolute left-2 top-2 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X size={18} />
-          </button>
-          <h3 className="text-lg font-bold text-gray-900 pr-2">
-            {patient?.fullName || session.patientSnapshot?.name}
-          </h3>
-        </div>
+        <StatusIcon size={13} />
+        {statusDisplay.label}
+      </span>
+      <span
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium"
+        style={{
+          backgroundColor: paymentDisplay.bgColor,
+          color: paymentDisplay.color,
+        }}
+      >
+        <PaymentIcon size={13} />
+        {paymentDisplay.label}
+      </span>
+    </div>
 
-        {/* Content */}
-        <div className="p-4 space-y-3 text-sm">
-          <ModalInfoRow icon={Calendar} label="التاريخ والوقت">
-            {getDayName(dateStr)} {formatDisplayDate(dateStr)} ·{" "}
+    <h3 className="text-lg font-bold text-gray-900 pr-1 leading-tight">
+      {patient?.fullName || session.patientSnapshot?.name}
+    </h3>
+  </div>
+
+  {/* Content */}
+  <div className="px-5 pb-4 space-y-3">
+    
+    {/* بطاقة معلومات الجلسة */}
+    <div className="bg-gray-50/80 rounded-2xl p-4 space-y-3">
+      <ModalInfoRow icon={Calendar} label="التاريخ والوقت">
+        <div className="flex flex-col gap-0.5 text-left">
+          <span className="text-xs font-medium text-gray-900">
+            {getDayName(dateStr)} {formatDisplayDate(dateStr)}
+          </span>
+          <span className="text-[11px] text-gray-500">
             {formatTime(session.startTime)}
-          </ModalInfoRow>
-          <ModalInfoRow icon={Phone} label="رقم الهاتف" dir="ltr">
-            {patient?.phone || session.patientSnapshot?.phone || "-"}
-          </ModalInfoRow>
-          <ModalInfoRow icon={User} label="المعلومات الشخصية">
-            {patient?.age || "-"} سنة · {genderArabic}
-          </ModalInfoRow>
-          <ModalInfoRow icon={Stethoscope} label="الإجراء">
-            {session.plannedProcedure || session.performedProcedure || "-"}
-          </ModalInfoRow>
-          <ModalInfoRow
-            icon={Hash}
-            label="التكلفة"
-            valueColor={session.isPaid ? "#059669" : "#DC2626"}
-            bold
-          >
-            {session.sessionCost?.toLocaleString()} $
-          </ModalInfoRow>
-
-          {/* Status & Payment */}
-          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-            <div className="flex items-center gap-2">
-              <div
-                className="w-6 h-6 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: statusDisplay.bgColor }}
-              >
-                <StatusIcon size={14} style={{ color: statusDisplay.color }} />
-              </div>
-              <span>{statusDisplay.label}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div
-                className="w-6 h-6 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: paymentDisplay.bgColor }}
-              >
-                <PaymentIcon
-                  size={14}
-                  style={{ color: paymentDisplay.color }}
-                />
-              </div>
-              <span>{paymentDisplay.label}</span>
-            </div>
-          </div>
+          </span>
         </div>
+      </ModalInfoRow>
 
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="mt-2 mb-4 mx-4 w-[calc(100%-2rem)] py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
-        >
-          إغلاق
-        </button>
-      </motion.div>
-    </motion.div>
+      <div className="border-t border-gray-200/60" />
+
+      <ModalInfoRow icon={Stethoscope} label="الإجراء">
+        <span className="text-xs font-medium text-gray-900 text-left line-clamp-2">
+          {session.plannedProcedure || session.performedProcedure || "-"}
+        </span>
+      </ModalInfoRow>
+
+      <div className="border-t border-gray-200/60" />
+
+      <ModalInfoRow
+        icon={Hash}
+        label="التكلفة"
+        valueColor={session.isPaid ? "#059669" : "#DC2626"}
+        bold
+      >
+        {session.sessionCost?.toLocaleString()} $
+      </ModalInfoRow>
+    </div>
+
+    {/* بطاقة معلومات المريض */}
+    <div className="bg-blue-50/50 rounded-2xl p-4 space-y-3">
+      <ModalInfoRow icon={Phone} label="رقم الهاتف" dir="ltr">
+        <span className="text-xs font-medium text-gray-900">
+          {patient?.phone || session.patientSnapshot?.phone || "-"}
+        </span>
+      </ModalInfoRow>
+
+      <div className="border-t border-blue-100/60" />
+
+      <ModalInfoRow icon={User} label="المعلومات الشخصية">
+        <span className="text-xs font-medium text-gray-900">
+          {patient?.age || "-"} سنة · {genderArabic}
+        </span>
+      </ModalInfoRow>
+    </div>
+
+  </div>
+
+  {/* Footer */}
+  <div className="px-5 pb-5 pt-1">
+    <button
+      onClick={onClose}
+      className="w-full py-3 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700 rounded-2xl 
+                 text-sm font-medium transition-all active:scale-[0.98]"
+    >
+      إغلاق
+    </button>
+  </div>
+</motion.div>
+</motion.div>
   );
 }
-
-// ============================================================================
-// Sub-component: ModalInfoRow
-// ============================================================================
 
 interface ModalInfoRowProps {
   icon: React.ElementType;
@@ -3622,21 +3837,23 @@ interface ModalInfoRowProps {
 
 function ModalInfoRow({
   icon: Icon,
+  label,
   children,
   dir,
   valueColor,
   bold,
 }: ModalInfoRowProps) {
   return (
-    <div className="flex items-center gap-2">
-      <Icon size={16} className="text-gray-400" />
-      <span
-        dir={dir}
-        className={bold ? "font-bold" : ""}
-        style={valueColor ? { color: valueColor } : undefined}
-      >
-        {children}
-      </span>
+    <div className="flex items-center gap-2.5">
+      <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center flex-shrink-0 shadow-sm">
+        <Icon size={13} className="text-gray-500" />
+      </div>
+      <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+        <span className="text-[11px] text-gray-500 flex-shrink-0">{label}</span>
+        <div dir={dir} className="text-right" style={valueColor ? { color: valueColor } : undefined}>
+          {children}
+        </div>
+      </div>
     </div>
   );
 }
