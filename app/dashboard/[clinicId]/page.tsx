@@ -80,7 +80,7 @@ export default function DashboardPage() {
 if (isLoading) {
   return (
     <div className="flex items-center justify-center h-64">
-      <div className="text-center scale-75"> {/* تصغير الحجم بنسبة 75% */}
+      <div className="text-center scale-50"> {/* تصغير الحجم بنسبة 75% */}
         <ToothLoader />
       </div>
     </div>
