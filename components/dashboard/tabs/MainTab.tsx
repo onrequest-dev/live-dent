@@ -1964,12 +1964,17 @@ function PatientDetailsCard({
                     {/* السعر الإجمالي */}
                     <div className="flex items-center gap-1.5 sm:gap-2">
                       <span className="text-[11px] sm:text-xs text-gray-500">
-                        السعر الإجمالي:
+                        السعر المتفق عليه:
                       </span>
                       <span className="text-xs sm:text-sm font-semibold text-gray-900">
-                        {patient.totalPrice
-                          ? `${formatCurrency(parseFloat(patient.totalPrice))}`
-                          : formatCurrency(finance.totalCost)}
+                        {patient.totalPrice ? formatCurrency(parseFloat(patient.totalPrice)) : 'غير محدد'}
+                      </span>
+
+                      <span className="text-[11px] sm:text-xs text-gray-500">
+                        إجمالي الجلسات:
+                      </span>
+                      <span className="text-xs sm:text-sm font-semibold text-gray-900">
+                        {formatCurrency(finance.totalCost)}
                       </span>
                     </div>
                   </div>
@@ -2425,7 +2430,7 @@ function EditSessionModal({
 
   const isLoading = isSaving || isDeleting;
   const [sessionCostDisplay, setSessionCostDisplay] = useState(
-    formData.sessionCost?.toString() || "",
+    formData.sessionCost?.toString() || "0",
   );
   return (
     <>
@@ -3749,7 +3754,7 @@ function NewAppointmentModal({
         startTime: appointmentDate,
         endTime,
         procedure: formData.procedure || "كشف",
-        cost: formData.cost,
+        cost: parseFloat(formData.cost) || 0,
         caseId: formData.caseId || undefined,
         notes: formData.notes || undefined,
       });
@@ -4390,7 +4395,7 @@ function EditPatientModal({
                 </div>
                 <div className="w-1/3">
                   <label className="block text-sm font-semibold text-gray-900 mb-2">
-                    السعر الإجمالي
+                    المُتفق عليه
                   </label>
                   <div className="relative">
                     <input
