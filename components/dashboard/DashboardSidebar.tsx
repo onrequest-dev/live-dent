@@ -1,42 +1,40 @@
 // components/dashboard/DashboardSidebar.tsx
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useParams, useSearchParams, useRouter } from 'next/navigation';
-import Image from 'next/image'; 
-import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import Link from "next/link";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
+import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
-  Users,
   Building2,
   UserCircle,
-  MessageSquareText,
   ChevronLeft,
   ChevronRight,
-  LogOut,
   Settings,
   Menu,
   X,
-} from 'lucide-react';
-import { Clinic } from '@/types';
-import { AccountSwitcher } from './AccountSwitcher';
+  TableProperties,
+} from "lucide-react";
+import { Clinic } from "@/types";
+
 
 // ✅ ترتيب الأيقونات للقائمة السفلية (من اليمين لليسار)
 const bottomNavItems = [
-  { tab: 'cv', label: 'CV الطبيب', icon: UserCircle },
-  { tab: 'clinic', label: 'العيادة', icon: Building2 },
-  { tab: 'main', label: 'الرئيسية', icon: LayoutDashboard, featured: true },
-  { tab: 'patients', label: 'المرضى', icon: Users },
-  { tab: 'settings', label: 'الإعدادات', icon: Settings },
+  { tab: "cv", label: "CV الطبيب", icon: UserCircle },
+  { tab: "clinic", label: "العيادة", icon: Building2 },
+  { tab: "main", label: "الرئيسية", icon: LayoutDashboard, featured: true },
+  { tab: "patients", label: "المرضى", icon: TableProperties },
+  { tab: "settings", label: "الإعدادات", icon: Settings },
 ];
 
 const menuItems = [
-  { tab: 'main', label: 'الرئيسية', icon: LayoutDashboard },
-  { tab: 'patients', label: 'جدول المرضى', icon: Users },
-  { tab: 'clinic', label: 'معلومات العيادة', icon: Building2 },
-  { tab: 'cv', label: 'CV الطبيب', icon: UserCircle },
-  { tab: 'settings', label: 'الإعدادات', icon: Settings }, 
+  { tab: "main", label: "الرئيسية", icon: LayoutDashboard },
+  { tab: "patients", label: "جدول المرضى", icon: TableProperties },
+  { tab: "clinic", label: "معلومات العيادة", icon: Building2 },
+  { tab: "cv", label: "CV الطبيب", icon: UserCircle },
+  { tab: "settings", label: "الإعدادات", icon: Settings },
 ];
 
 interface DashboardSidebarProps {
@@ -44,17 +42,23 @@ interface DashboardSidebarProps {
 }
 
 // مكون Skeleton للتحميل
-const SidebarSkeleton = ({ isCollapsed, isMobile }: { isCollapsed: boolean; isMobile: boolean }) => {
+const SidebarSkeleton = ({
+  isCollapsed,
+  isMobile,
+}: {
+  isCollapsed: boolean;
+  isMobile: boolean;
+}) => {
   return (
     <motion.div
       initial={false}
-      animate={{ 
-        width: isMobile ? '100%' : (isCollapsed ? 90 : 300),
+      animate={{
+        width: isMobile ? "100%" : isCollapsed ? 90 : 300,
       }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
       className={`
         h-screen bg-white shadow-2xl flex flex-col relative border-l-4 border-gray-200
-        ${isMobile ? 'fixed top-0 right-0 z-40 w-full max-w-[300px]' : ''}
+        ${isMobile ? "fixed top-0 right-0 z-40 w-full max-w-[300px]" : ""}
       `}
     >
       <div className="p-6 border-b border-gray-100">
@@ -81,7 +85,7 @@ const SidebarSkeleton = ({ isCollapsed, isMobile }: { isCollapsed: boolean; isMo
             key={i}
             className={`
               flex items-center gap-3 px-4 py-3.5 rounded-xl
-              ${(isCollapsed && !isMobile) ? 'justify-center' : ''}
+              ${isCollapsed && !isMobile ? "justify-center" : ""}
             `}
           >
             <div className="w-5 h-5 bg-gray-200 rounded animate-pulse" />
@@ -98,7 +102,7 @@ const SidebarSkeleton = ({ isCollapsed, isMobile }: { isCollapsed: boolean; isMo
             key={i}
             className={`
               flex items-center gap-3 px-4 py-3 w-full rounded-xl
-              ${(isCollapsed && !isMobile) ? 'justify-center' : ''}
+              ${isCollapsed && !isMobile ? "justify-center" : ""}
             `}
           >
             <div className="w-5 h-5 bg-gray-200 rounded animate-pulse" />
@@ -117,22 +121,28 @@ export function DashboardSidebar({ clinicData }: DashboardSidebarProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const clinicId = params?.clinicId as string;
-  const currentTab = searchParams.get('tab') || 'main';
-  
+  const currentTab = searchParams.get("tab") || "main";
+
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [autoCollapse, setAutoCollapse] = useState(true);
 
+  // ✅ الحالة المتفائلة لتغيير التبويب فور النقر
+  const [optimisticTab, setOptimisticTab] = useState<string | null>(null);
+
+  // ✅ التبويب النشط للـ UI (المتفائل إذا كان موجوداً، وإلا الحقيقي)
+  const activeTabForUI = optimisticTab ?? currentTab;
+
   useEffect(() => {
-    const savedSettings = localStorage.getItem('dashboard_settings');
+    const savedSettings = localStorage.getItem("dashboard_settings");
     if (savedSettings) {
       try {
         const settings = JSON.parse(savedSettings);
         setAutoCollapse(settings.autoCollapse ?? true);
       } catch (error) {
-        console.error('خطأ في قراءة الإعدادات:', error);
+        console.error("خطأ في قراءة الإعدادات:", error);
       }
     }
   }, []);
@@ -142,25 +152,36 @@ export function DashboardSidebar({ clinicData }: DashboardSidebarProps) {
       setAutoCollapse(event.detail.autoCollapse);
     };
 
-    window.addEventListener('settingsChanged', handleSettingsChange as EventListener);
+    window.addEventListener(
+      "settingsChanged",
+      handleSettingsChange as EventListener,
+    );
     return () => {
-      window.removeEventListener('settingsChanged', handleSettingsChange as EventListener);
+      window.removeEventListener(
+        "settingsChanged",
+        handleSettingsChange as EventListener,
+      );
     };
   }, []);
 
   useEffect(() => {
     setMounted(true);
-    
+
     const checkMobile = () => {
       const width = window.innerWidth;
       setIsMobile(width < 768);
     };
-    
+
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
+
+  // ✅ مزامنة الحالة المتفائلة مع الحالة الحقيقية بعد اكتمال التنقل
+  useEffect(() => {
+    setOptimisticTab(currentTab);
+  }, [currentTab]);
 
   useEffect(() => {
     if (isMobile) {
@@ -172,9 +193,15 @@ export function DashboardSidebar({ clinicData }: DashboardSidebarProps) {
     }
   }, [currentTab, autoCollapse, isMobile]);
 
-  const handlePatientsClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    router.push(`/dashboard/${clinicId}?tab=patients`);
+  // ✅ دالة تنقل موحدة مع تحديث فوري للواجهة
+  const navigateToTab = (tab: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
+    // تحديث الحالة المتفائلة فوراً
+    setOptimisticTab(tab);
+    // التنقل الفعلي
+    router.push(`/dashboard/${clinicId}?tab=${tab}`);
   };
 
   if (!mounted) return null;
@@ -194,8 +221,10 @@ export function DashboardSidebar({ clinicData }: DashboardSidebarProps) {
       );
     }
 
-    const skeletonContent = <SidebarSkeleton isCollapsed={isCollapsed} isMobile={isMobile} />;
-    
+    const skeletonContent = (
+      <SidebarSkeleton isCollapsed={isCollapsed} isMobile={isMobile} />
+    );
+
     if (isMobile && isMobileOpen) {
       return (
         <>
@@ -218,165 +247,174 @@ export function DashboardSidebar({ clinicData }: DashboardSidebarProps) {
   const primaryColor = clinicData.settings.primaryColor;
   const secondaryColor = clinicData.settings.secondaryColor;
 
-// ✨ شريط التنقل السفلي للهاتف - تصميم أنيق وناعم
-const MobileBottomNav = () => (
-  <motion.nav
-    initial={{ y: 100, opacity: 0 }}
-    animate={{ y: 0, opacity: 1 }}
-    transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-    className="fixed bottom-4 left-4 right-4 z-50 md:hidden"
-  >
-    <div className="relative">
-<div 
-  className="
-    rounded-[32px] 
-    shadow-[0_8px_32px_-8px_rgba(0,0,0,0.12)]
-    border border-white/50
-    p-1.5
-  "
-  style={{
-    background: `linear-gradient(180deg, rgba(255, 255, 255, 0.27) 0%, ${primaryColor}08 50%, rgba(255, 255, 255, 0.34) 100%)`,
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
-  }}
->
-        <div className="absolute -top-[2px] left-1/2 -translate-x-1/2 w-2/3 h-[3px] rounded-full"
-          style={{ 
-            background: `linear-gradient(90deg, transparent 0%, ${primaryColor}90 10%, ${primaryColor} 50%, ${primaryColor}90 90%, transparent 100%)` 
+  // ✨ شريط التنقل السفلي للهاتف - تصميم أنيق وناعم
+  const MobileBottomNav = () => (
+    <nav className="fixed bottom-4 left-4 right-4 z-50 md:hidden">
+      <div className="relative">
+        <div
+          className="
+            rounded-[32px] 
+            shadow-[0_8px_32px_-8px_rgba(0,0,0,0.12)]
+            border border-white/50
+            p-1.5
+          "
+          style={{
+            background: `linear-gradient(180deg, rgba(255, 255, 255, 0.27) 0%, ${primaryColor}08 50%, rgba(255, 255, 255, 0.34) 100%)`,
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
           }}
-        />
-        
-        <div className="flex items-center justify-around px-1">
-          {bottomNavItems.map((item) => {
-            const isActive = currentTab === item.tab;
-            const Icon = item.icon;
-            const isFeatured = item.featured;
+        >
+          <div
+            className="absolute -top-[2px] left-1/2 -translate-x-1/2 w-2/3 h-[3px] rounded-full"
+            style={{
+              background: `linear-gradient(90deg, transparent 0%, ${primaryColor}90 10%, ${primaryColor} 50%, ${primaryColor}90 90%, transparent 100%)`,
+            }}
+          />
 
-            const IconWrapper = ({ children }: { children: React.ReactNode }) => (
-              <div className="relative flex flex-col items-center justify-center">
-                {children}
-              </div>
-            );
+          <div className="flex items-center justify-around px-1">
+            {bottomNavItems.map((item) => {
+              const isActive = activeTabForUI === item.tab;
+              const Icon = item.icon;
+              const isFeatured = item.featured;
 
-            const content = (
-              <>
-                {!isFeatured ? (
-                  <motion.div
-                    whileTap={{ scale: 0.9 }}
-                    whileHover={{ scale: 1.05 }}
-                    className="relative flex items-center justify-center w-12 h-12"
-                  >
-                    {isActive && (
-                      <motion.div
-                        layoutId="mobileActiveBg"
-                        className="absolute inset-0 rounded-2xl"
-                        style={{ 
-                          background: `linear-gradient(135deg, ${primaryColor}15, ${primaryColor}08)` 
-                        }}
-                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                      />
-                    )}
-                    
-                    <Icon 
-                      size={21} 
-                      className="relative z-10 transition-all duration-300"
-                      style={{ 
-                        color: isActive ? primaryColor : '#475569', // ✅ لون داكن للأيقونات غير النشطة
-                      }}
-                      strokeWidth={isActive ? 2.2 : 1.8}
-                    />
-                    
-                    {isActive && (
-                      <motion.div
-                        layoutId="mobileActiveDot"
-                        className="absolute -bottom-0.5 w-1 h-1 rounded-full"
-                        style={{ backgroundColor: primaryColor }}
-                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                      />
-                    )}
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    whileTap={{ scale: 0.92 }}
-                    className="relative flex items-center justify-center -mt-6"
-                  >
+              const IconWrapper = ({
+                children,
+              }: {
+                children: React.ReactNode;
+              }) => (
+                <div className="relative flex flex-col items-center justify-center">
+                  {children}
+                </div>
+              );
+
+              const content = (
+                <>
+                  {!isFeatured ? (
                     <motion.div
-                      whileHover={{ 
-                        scale: 1.08,
-                        boxShadow: `0 12px 28px ${primaryColor}35`
-                      }}
-                      className="
-                        w-[52px] h-[52px] rounded-[20px] flex items-center justify-center
-                        shadow-[0_8px_24px_-6px_rgba(0,0,0,0.15)]
-                        transition-all duration-300
-                        border-[3px] border-white
-                      "
-                      style={{
-                        background: isActive 
-                          ? `linear-gradient(135deg, ${primaryColor}, ${primaryColor}dd)` 
-                          : `linear-gradient(135deg, #ffffff, #f8fafc)`,
-                        boxShadow: isActive 
-                          ? `0 12px 28px ${primaryColor}40, 0 0 0 4px ${primaryColor}20`
-                          : `0 8px 24px -6px rgba(0,0,0,0.12), 0 0 0 2px ${primaryColor}15`,
-                      }}
+                      whileTap={{ scale: 0.9 }}
+                      whileHover={{ scale: 1.05 }}
+                      className="relative flex items-center justify-center w-12 h-12"
                     >
-                      <Icon 
-                        size={23} 
-                        className="transition-all duration-300"
-                        style={{ 
-                          color: isActive ? '#ffffff' : primaryColor,
-                        }}
-                        strokeWidth={2.2}
-                      />
-                    </motion.div>
-                  </motion.div>
-                )}
-              </>
-            );
+                      {isActive && (
+                        <motion.div
+                          layoutId="mobileActiveBg"
+                          className="absolute inset-0 rounded-2xl"
+                          style={{
+                            background: `linear-gradient(135deg, ${primaryColor}15, ${primaryColor}08)`,
+                          }}
+                          transition={{
+                            type: "spring",
+                            stiffness: 380,
+                            damping: 30,
+                          }}
+                        />
+                      )}
 
-            if (item.tab === 'patients') {
+                      <Icon
+                        size={21}
+                        className="relative z-10 transition-all duration-300"
+                        style={{
+                          color: isActive ? primaryColor : "#475569",
+                        }}
+                        strokeWidth={isActive ? 2.2 : 1.8}
+                      />
+
+                      {isActive && (
+                        <motion.div
+                          layoutId="mobileActiveDot"
+                          className="absolute -bottom-0.5 w-1 h-1 rounded-full"
+                          style={{ backgroundColor: primaryColor }}
+                          transition={{
+                            type: "spring",
+                            stiffness: 500,
+                            damping: 30,
+                          }}
+                        />
+                      )}
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      whileTap={{ scale: 0.92 }}
+                      className="relative flex items-center justify-center -mt-6"
+                    >
+                      <motion.div
+                        whileHover={{
+                          scale: 1.08,
+                          boxShadow: `0 12px 28px ${primaryColor}35`,
+                        }}
+                        className="
+                          w-[52px] h-[52px] rounded-[20px] flex items-center justify-center
+                          shadow-[0_8px_24px_-6px_rgba(0,0,0,0.15)]
+                          transition-all duration-300
+                          border-[3px] border-white
+                        "
+                        style={{
+                          background: isActive
+                            ? `linear-gradient(135deg, ${primaryColor}, ${primaryColor}dd)`
+                            : `linear-gradient(135deg, #ffffff, #f8fafc)`,
+                          boxShadow: isActive
+                            ? `0 12px 28px ${primaryColor}40, 0 0 0 4px ${primaryColor}20`
+                            : `0 8px 24px -6px rgba(0,0,0,0.12), 0 0 0 2px ${primaryColor}15`,
+                        }}
+                      >
+                        <Icon
+                          size={23}
+                          className="transition-all duration-300"
+                          style={{
+                            color: isActive ? "#ffffff" : primaryColor,
+                          }}
+                          strokeWidth={2.2}
+                        />
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </>
+              );
+
+              if (item.tab === "patients") {
+                return (
+                  <a
+                    key={item.tab}
+                    href={`/dashboard/${clinicId}?tab=patients`}
+                    onClick={(e) => navigateToTab("patients", e)}
+                    className="flex-1 flex justify-center"
+                  >
+                    <IconWrapper>{content}</IconWrapper>
+                  </a>
+                );
+              }
+
               return (
                 <a
                   key={item.tab}
-                  href={`/dashboard/${clinicId}?tab=patients`}
-                  onClick={handlePatientsClick}
+                  href={`/dashboard/${clinicId}?tab=${item.tab}`}
+                  onClick={(e) => navigateToTab(item.tab, e)}
                   className="flex-1 flex justify-center"
                 >
                   <IconWrapper>{content}</IconWrapper>
                 </a>
               );
-            }
-
-            return (
-              <Link
-                key={item.tab}
-                href={`/dashboard/${clinicId}?tab=${item.tab}`}
-                className="flex-1 flex justify-center"
-              >
-                <IconWrapper>{content}</IconWrapper>
-              </Link>
-            );
-          })}
+            })}
+          </div>
         </div>
+
+        <div className="h-[env(safe-area-inset-bottom,8px)]" />
       </div>
-      
-      <div className="h-[env(safe-area-inset-bottom,8px)]" />
-    </div>
-  </motion.nav>
-);
+    </nav>
+  );
 
   // عرض القائمة الجانبية للشاشات الكبيرة
   const sidebarContent = (
     <motion.div
       initial={false}
-      animate={{ 
-        width: isMobile ? '100%' : (isCollapsed ? 90 : 300),
-        x: isMobile && !isMobileOpen ? '-100%' : 0
+      animate={{
+        width: isMobile ? "100%" : isCollapsed ? 90 : 300,
+        x: isMobile && !isMobileOpen ? "-100%" : 0,
       }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
       className={`
         h-screen bg-white shadow-2xl flex flex-col relative border-l-4
-        ${isMobile ? 'fixed top-0 right-0 z-40 w-full max-w-[300px]' : ''}
+        ${isMobile ? "fixed top-0 right-0 z-40 w-full max-w-[300px]" : ""}
       `}
       style={{ borderLeftColor: primaryColor }}
     >
@@ -392,13 +430,15 @@ const MobileBottomNav = () => (
         style={{ color: primaryColor }}
       >
         <motion.div
-          animate={{ rotate: isMobile ? 0 : (isCollapsed ? 180 : 0) }}
+          animate={{ rotate: isMobile ? 0 : isCollapsed ? 180 : 0 }}
           transition={{ duration: 0.3 }}
         >
           {isMobile ? (
             <X size={18} />
+          ) : isCollapsed ? (
+            <ChevronRight size={18} />
           ) : (
-            isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />
+            <ChevronLeft size={18} />
           )}
         </motion.div>
       </button>
@@ -415,30 +455,34 @@ const MobileBottomNav = () => (
               className="space-y-3"
             >
               <div className="flex items-center gap-3">
-                <motion.div 
+                <motion.div
                   className="relative w-12 h-12 rounded-xl flex items-center justify-center shadow-md overflow-hidden bg-white"
                   whileHover={{ scale: 1.05 }}
                   transition={{ type: "spring", stiffness: 400, damping: 10 }}
                 >
-                  {clinicData.logo?.startsWith('/') || clinicData.logo?.startsWith('http') ? (
+                  {clinicData.logo?.startsWith("/") ||
+                  clinicData.logo?.startsWith("http") ? (
                     <div className="relative w-full h-full p-1.5">
-                      <Image 
-                        src={clinicData.logo} 
+                      <Image
+                        src={clinicData.logo}
                         alt={clinicData.name}
                         fill
                         className="object-contain"
                         sizes="48px"
                         priority
-                      /> 
-                      
+                      />
                     </div>
                   ) : (
-                    <span className="text-3xl">{clinicData.logo || '🦷'}</span>
+                    <span className="text-3xl">{clinicData.logo || "🦷"}</span>
                   )}
                 </motion.div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-800">{clinicData.name}</h2>
-                  <p className="text-sm text-gray-500">{clinicData.doctorProfile.fullName}</p>
+                  <h2 className="text-lg font-bold text-gray-800">
+                    {clinicData.name}
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    {clinicData.doctorProfile.fullName}
+                  </p>
                 </div>
               </div>
             </motion.div>
@@ -451,15 +495,16 @@ const MobileBottomNav = () => (
               transition={{ duration: 0.3 }}
               className="flex justify-center"
             >
-              <motion.div 
+              <motion.div
                 className="relative w-11 h-11 rounded-xl flex items-center justify-center shadow-md overflow-hidden bg-white"
                 whileHover={{ scale: 1.1 }}
                 transition={{ type: "spring", stiffness: 400, damping: 10 }}
               >
-                {clinicData.logo?.startsWith('/') || clinicData.logo?.startsWith('http') ? (
+                {clinicData.logo?.startsWith("/") ||
+                clinicData.logo?.startsWith("http") ? (
                   <div className="relative w-full h-full p-1.5">
-                    <Image 
-                      src={clinicData.logo} 
+                    <Image
+                      src={clinicData.logo}
                       alt={clinicData.name}
                       fill
                       className="object-contain"
@@ -468,7 +513,7 @@ const MobileBottomNav = () => (
                     />
                   </div>
                 ) : (
-                  <span className="text-2xl">{clinicData.logo || '🦷'}</span>
+                  <span className="text-2xl">{clinicData.logo || "🦷"}</span>
                 )}
               </motion.div>
             </motion.div>
@@ -478,16 +523,16 @@ const MobileBottomNav = () => (
 
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {menuItems.map((item) => {
-          const isActive = currentTab === item.tab;
+          const isActive = activeTabForUI === item.tab;
           const Icon = item.icon;
 
-          if (item.tab === 'patients') {
+          if (item.tab === "patients") {
             return (
               <a
                 key={item.tab}
                 href={`/dashboard/${clinicId}?tab=patients`}
-                onClick={handlePatientsClick}
-                style={{ textDecoration: 'none' }}
+                onClick={(e) => navigateToTab("patients", e)}
+                style={{ textDecoration: "none" }}
               >
                 <motion.div
                   whileHover={{ x: -4 }}
@@ -495,12 +540,14 @@ const MobileBottomNav = () => (
                   className={`
                     flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium
                     transition-all duration-200 relative
-                    ${(isCollapsed && !isMobile) ? 'justify-center' : ''}
+                    ${isCollapsed && !isMobile ? "justify-center" : ""}
                   `}
                   style={{
-                    color: isActive ? primaryColor : '#64748b',
-                    backgroundColor: isActive ? '#ffffff' : 'transparent',
-                    boxShadow: isActive ? `0 4px 12px ${primaryColor}20` : 'none',
+                    color: isActive ? primaryColor : "#64748b",
+                    backgroundColor: isActive ? "#ffffff" : "transparent",
+                    boxShadow: isActive
+                      ? `0 4px 12px ${primaryColor}20`
+                      : "none",
                   }}
                 >
                   {isActive && (
@@ -513,9 +560,9 @@ const MobileBottomNav = () => (
                       transition={{ duration: 0.2 }}
                     />
                   )}
-                  
-                  <Icon size={(isCollapsed && !isMobile) ? 22 : 20} />
-                  
+
+                  <Icon size={isCollapsed && !isMobile ? 22 : 20} />
+
                   <AnimatePresence mode="wait">
                     {(!isCollapsed || isMobile) && (
                       <motion.span
@@ -533,21 +580,25 @@ const MobileBottomNav = () => (
             );
           }
 
-          const href = `/dashboard/${clinicId}?tab=${item.tab}`;
           return (
-            <Link key={item.tab} href={href}>
+            <a
+              key={item.tab}
+              href={`/dashboard/${clinicId}?tab=${item.tab}`}
+              onClick={(e) => navigateToTab(item.tab, e)}
+              style={{ textDecoration: "none" }}
+            >
               <motion.div
                 whileHover={{ x: -4 }}
                 whileTap={{ scale: 0.97 }}
                 className={`
                   flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium
                   transition-all duration-200 relative
-                  ${(isCollapsed && !isMobile) ? 'justify-center' : ''}
+                  ${isCollapsed && !isMobile ? "justify-center" : ""}
                 `}
                 style={{
-                  color: isActive ? primaryColor : '#64748b',
-                  backgroundColor: isActive ? '#ffffff' : 'transparent',
-                  boxShadow: isActive ? `0 4px 12px ${primaryColor}20` : 'none',
+                  color: isActive ? primaryColor : "#64748b",
+                  backgroundColor: isActive ? "#ffffff" : "transparent",
+                  boxShadow: isActive ? `0 4px 12px ${primaryColor}20` : "none",
                 }}
               >
                 {isActive && (
@@ -560,9 +611,9 @@ const MobileBottomNav = () => (
                     transition={{ duration: 0.2 }}
                   />
                 )}
-                
-                <Icon size={(isCollapsed && !isMobile) ? 22 : 20} />
-                
+
+                <Icon size={isCollapsed && !isMobile ? 22 : 20} />
+
                 <AnimatePresence mode="wait">
                   {(!isCollapsed || isMobile) && (
                     <motion.span
@@ -576,7 +627,7 @@ const MobileBottomNav = () => (
                   )}
                 </AnimatePresence>
               </motion.div>
-            </Link>
+            </a>
           );
         })}
       </nav>
@@ -612,7 +663,7 @@ const MobileBottomNav = () => (
     <>
       {/* الشاشات الكبيرة: القائمة الجانبية */}
       {!isMobile && sidebarContent}
-      
+
       {/* الهاتف: شريط سفلي + القائمة الجانبية عند الفتح */}
       {isMobile && (
         <>

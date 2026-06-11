@@ -30,7 +30,7 @@ import { updateClinic } from '@/client/helpers/clinic';
 import { WorkingHours } from '@/types';
 import { handleUploadImage } from '@/client/helpers/upload_image';
 import { HexColorPicker } from 'react-colorful';
-
+import ToothLoader from '../../loding';
 // ============================================================
 // أيام الأسبوع
 // ============================================================
@@ -354,9 +354,7 @@ export function ClinicInfoTab({ clinicData, onClinicUpdate }: ClinicInfoTabProps
     return (
       <div className="min-h-screen flex items-center justify-center" dir="rtl">
         <div className="text-center">
-          <div className="w-16 h-16 rounded-full border-4 border-t-transparent animate-spin mx-auto mb-4"
-               style={{ borderColor: '#007bff', borderTopColor: 'transparent' }} />
-          <p className="text-gray-900 font-medium">جاري تحميل البيانات...</p>
+          <ToothLoader />
         </div>
       </div>
     );

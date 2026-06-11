@@ -24,9 +24,13 @@ export default function RootLayout({
   
   return (
     <html lang="en">
-      <body className={inter.className}>{children}
-      <Backgroundjob/>
-      <RemoveContextMenu />
+      <head>
+        <link rel="apple-touch-icon" href="/icon-180x180.png" />
+      </head>
+      <body className={inter.className}>
+        {children}
+        <Backgroundjob />
+        <RemoveContextMenu />
       </body>
     </html>
   );

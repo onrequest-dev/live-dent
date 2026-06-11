@@ -28,9 +28,18 @@ export async function createSession(
             };
         }
 
+        // ✅ استخراج كائن الجلسة بنفس الشكل تماماً
+        const session = data.data || data;
+
+        // ✅ تحديث مصفوفة newsessions في sessionStorage
+        const stored = sessionStorage.getItem('newsessions');
+        const newSessions: Session[] = stored ? JSON.parse(stored) : [];
+        newSessions.push(session);
+        sessionStorage.setItem('newsessions', JSON.stringify(newSessions));
+
         return {
             success: true,
-            data: data.data || data,
+            data: session,
         };
     } catch (error) {
         console.error('Create session error:', error);

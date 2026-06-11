@@ -2,6 +2,7 @@
 import { X, Calendar, Clock, CreditCard, FileText, Tag, AlertCircle, Edit, Trash2 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useModalBackHandler } from '@/hooks/useModalBackHandler';
 
 interface ExpandedSessionCardProps {
   session: any;
@@ -29,6 +30,7 @@ export function ExpandedSessionCard({
   onDeleteSession,
 }: ExpandedSessionCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
+  useModalBackHandler(onClose);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
