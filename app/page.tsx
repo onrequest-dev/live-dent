@@ -1,384 +1,310 @@
-// 'use client';
-
-// import { motion, useInView, useMotionValue, useTransform } from 'framer-motion';
-// import { useRef, useState, useEffect } from 'react';
-// import {
-//   Users,
-//   Calendar,
-//   CreditCard,
-//   Clock,
-//   FileText,
-//   IdCard,
-//   FileSpreadsheet,
-//   MessageCircle,
-//   BarChart3,
-//   Smartphone,
-//   CheckCircle2,
-//   Sparkles,
-//   ArrowLeft,
-//   ChevronLeft,
-//   ChevronRight,
-// } from 'lucide-react';
-// // import { FaTelegramPlane, FaWhatsapp, FaYoutube, FaInstagram } from 'react-icons/fa';
-// import { DoctorsShowcase } from '@/components/ui/DoctorsShowcase';
-// import { HeroParallax } from '@/components/ui/hero-parallax';
-// import CardStack from '@/components/ui/stack-card';
-// import { PortfolioGallery } from '@/components/ui/portfolio-gallery';
-// import { WhyChooseUs } from '@/components/ui/why-choose-us'
-// import { FutureFeatures } from '@/components/ui/future-features'
-// import { OnRequestAbout } from '@/components/ui/onrequest-about'
-// import { LiveDentFooter } from '@/components/ui/livedent-footer'
-// // ... (باقي المكونات المساعدة تبقى كما هي)
-
-// export default function Home() {
-
-//   return (
-//     <div className="min-h-screen bg-[#0A1628] relative" dir="rtl">
-//       {/* زوايا ذهبية */}
-//       <div className="absolute top-0 left-0 w-80 h-80 pointer-events-none" style={{ background: 'radial-gradient(circle at 0% 0%, rgba(255,215,0,0.12) 0%, rgba(255,200,0,0.04) 40%, transparent 70%)' }} />
-//       <div className="absolute top-0 left-0 w-48 h-48 pointer-events-none" style={{ background: 'linear-gradient(135deg, rgba(255,215,0,0.25) 0%, transparent 100%)', clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />
-//       <div className="absolute bottom-0 right-0 w-80 h-80 pointer-events-none" style={{ background: 'radial-gradient(circle at 100% 100%, rgba(255,215,0,0.12) 0%, rgba(255,200,0,0.04) 40%, transparent 70%)' }} />
-//       <div className="absolute bottom-0 right-0 w-48 h-48 pointer-events-none" style={{ background: 'linear-gradient(315deg, rgba(255,215,0,0.25) 0%, transparent 100%)', clipPath: 'polygon(100% 100%, 0 100%, 100% 0)' }} />
-
-
-//       <div className="fixed inset-0 bg-gradient-to-b from-[#0A1628]/60 via-transparent to-[#0A1628]/60 pointer-events-none" style={{ zIndex: 1 }} />
-
-//       <div className="relative" style={{ zIndex: 2 }}>
-
-//         {/* Hero Parallax مع المحتوى النصي الأصلي */}
-//         <div className="relative">
-//           <HeroParallax />
-//         </div>
-
-//         {/* Feature Card Stack */}
-//         <CardStack />
-//         {/* pn2 section */}
-
-//         <section className="py-16 relative overflow-hidden bg-gradient-to-br from-[#0A1628] via-[#0D1F3A] to-[#0A1628]">
-//           <PortfolioGallery />
-//         </section>
-
-//         <WhyChooseUs />
-//         {/* <FutureFeatures /> */}
-//         <OnRequestAbout />
-//         {/* <DoctorsShowcase /> */}
-
-//         {/* Footer */}
-//         <footer className="border-t border-yellow-500/10 py-8">
-//           <LiveDentFooter />
-//         </footer>
-//       </div>
-//     </div>
-//   );
-// }
-
-
-
-
-
-
-
-
-
-// livedent/app/page.tsx
+//livedent/app/page.tsx
 'use client';
 
 import Image from 'next/image';
-import { motion, useInView } from 'framer-motion';
+import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { useRef, useState, useEffect } from 'react';
 import {
-  Users,
-  Calendar,
-  CreditCard,
-  Clock,
-  FileText,
-  IdCard,
-  Bell,
-  FileSpreadsheet,
-  MessageSquare,
-  MessageCircle,
-  BarChart3,
+  Globe,
+  Palette,
   Smartphone,
-  CheckCircle2,
+  IdCard,
+  FileText,
+  Layout,
   Sparkles,
   ArrowLeft,
+  X,
+  Database,      // للتخزين السحابي
+  Calendar,      // للجدول والأجندة
+  FileSpreadsheet, // للتصدير إلى Excel
+  Search,        // للبحث المتطور
+  Bell,          // للتنبيهات
+  Activity,      // بدلاً من Tooth (لشارت الأسنان)
+  Camera,       // للصور والأشعة
+  Download,      // للتحميل
+  Shield,        // للحماية
+  BarChart,      // للتحليلات
+  Clock,         // للمواعيد
+  Users,         // للمرضى
 } from 'lucide-react';
 import { FaTelegramPlane, FaWhatsapp, FaYoutube, FaInstagram } from 'react-icons/fa';
 
 // ==========================================
-// مكون الجزيئات الذهبية المبسط
+// نظام الألوان الموحد
 // ==========================================
-const GoldenParticles = () => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
-  const particlesRef = useRef<Particle[]>([]);
-  const dimensionsRef = useRef({ width: 0, height: 0 });
-
-  const PARTICLE_COUNT = 80;
-  const MAX_DISTANCE = 150;
-
-  class Particle {
-    x: number;
-    y: number;
-    vx: number;
-    vy: number;
-    size: number;
-    
-    constructor(width: number, height: number) {
-      this.x = Math.random() * width;
-      this.y = Math.random() * height;
-      this.vx = (Math.random() - 0.5) * 0.3;
-      this.vy = (Math.random() - 0.5) * 0.3;
-      this.size = Math.random() * 2.5 + 1;
-    }
-
-    update(width: number, height: number) {
-      this.x += this.vx;
-      this.y += this.vy;
-
-      const margin = 30;
-      if (this.x < margin || this.x > width - margin) {
-        this.vx *= -0.9;
-        this.x = Math.max(margin, Math.min(width - margin, this.x));
-      }
-      if (this.y < margin || this.y > height - margin) {
-        this.vy *= -0.9;
-        this.y = Math.max(margin, Math.min(height - margin, this.y));
-      }
-
-      // حركة عشوائية خفيفة
-      if (Math.random() < 0.01) {
-        this.vx += (Math.random() - 0.5) * 0.1;
-        this.vy += (Math.random() - 0.5) * 0.1;
-      }
-
-      const maxSpeed = 1.2;
-      const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
-      if (speed > maxSpeed) {
-        this.vx = (this.vx / speed) * maxSpeed;
-        this.vy = (this.vy / speed) * maxSpeed;
-      }
-    }
-  }
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d', { alpha: true });
-    if (!ctx) return;
-
-    const updateDimensions = () => {
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      dimensionsRef.current = { width, height };
-      canvas.width = width;
-      canvas.height = height;
-      
-      particlesRef.current = [];
-      for (let i = 0; i < PARTICLE_COUNT; i++) {
-        particlesRef.current.push(new Particle(width, height));
-      }
-    };
-
-    updateDimensions();
-    window.addEventListener('resize', updateDimensions);
-
-    const draw = () => {
-      if (!ctx || !canvas) return;
-      
-      const { width, height } = dimensionsRef.current;
-      ctx.clearRect(0, 0, width, height);
-      
-      // تحديث الجزيئات
-      particlesRef.current.forEach(particle => {
-        particle.update(width, height);
-      });
-      
-      // رسم الوصلات بين الجزيئات
-      for (let i = 0; i < particlesRef.current.length; i++) {
-        for (let j = i + 1; j < particlesRef.current.length; j++) {
-          const p1 = particlesRef.current[i];
-          const p2 = particlesRef.current[j];
-          const dx = p1.x - p2.x;
-          const dy = p1.y - p2.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          
-          if (distance < MAX_DISTANCE) {
-            const opacity = (1 - distance / MAX_DISTANCE) * 0.08;
-            
-            ctx.beginPath();
-            ctx.moveTo(p1.x, p1.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.strokeStyle = `rgba(212, 175, 55, ${opacity})`;
-            ctx.lineWidth = 0.5;
-            ctx.stroke();
-          }
-        }
-      }
-      
-      // رسم الجزيئات
-      particlesRef.current.forEach(particle => {
-        // توهج
-        const gradient = ctx.createRadialGradient(
-          particle.x, particle.y, 0,
-          particle.x, particle.y, particle.size * 3
-        );
-        gradient.addColorStop(0, `rgba(212, 175, 55, 0.4)`);
-        gradient.addColorStop(0.5, `rgba(212, 175, 55, 0.1)`);
-        gradient.addColorStop(1, 'rgba(212, 175, 55, 0)');
-        
-        ctx.beginPath();
-        ctx.arc(particle.x, particle.y, particle.size * 2, 0, Math.PI * 2);
-        ctx.fillStyle = gradient;
-        ctx.fill();
-        
-        // النواة
-        ctx.beginPath();
-        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-        ctx.fillStyle = '#D4AF37';
-        ctx.shadowColor = '#D4AF37';
-        ctx.shadowBlur = 8;
-        ctx.fill();
-        ctx.shadowBlur = 0;
-      });
-      
-      animationRef.current = requestAnimationFrame(draw);
-    };
-
-    draw();
-
-    return () => {
-      window.removeEventListener('resize', updateDimensions);
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, []);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className="fixed inset-0 pointer-events-none"
-      style={{ zIndex: 0 }}
-    />
-  );
+const COLORS = {
+  primary: '#0043fa',
+  primaryLight: '#0043fa15',
+  primaryMedium: '#0043fa30',
+  background: '#d2e9ff',
+  surface: '#ffffff',
+  text: '#0f172a',
+  textSecondary: '#475569',
+  border: '#e8ecf1',
+  glassBg: 'rgba(255, 255, 255, 0.7)',
+  glassBorder: 'rgba(255, 255, 255, 0.5)',
 };
 
-// مكون القسم المتحرك
-const AnimatedSection = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => {
+// ==========================================
+// مكون SVG الأسنان مع أنيميشن متقدم
+// ==========================================
+const DentalSVG = ({ className = "", direction = "right", size = "normal" }: { 
+  className?: string; 
+  direction?: "left" | "right"; 
+  size?: "small" | "normal" | "large" 
+}) => {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-50px" });
-  
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
+
+  const sizeClasses = {
+    small: "w-48 h-48 md:w-64 md:h-64",
+    normal: "w-64 h-64 md:w-80 md:h-80",
+    large: "w-80 h-80 md:w-96 md:h-96",
+  };
+
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 30 }}
-      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-      transition={{ duration: 0.6, delay, ease: "easeOut" }}
+      initial={{ 
+        opacity: 0,
+        x: direction === "right" ? 150 : -150,
+        rotate: direction === "right" ? 20 : -20,
+        scale: 0.5,
+        filter: "blur(10px)",
+      }}
+      animate={isInView ? { 
+        opacity: 0.12,
+        x: 0,
+        rotate: 0,
+        scale: 1,
+        filter: "blur(0px)",
+      } : {}}
+      transition={{ 
+        duration: 1.8,
+        ease: [0.25, 0.46, 0.45, 0.94],
+        opacity: { duration: 1.2 },
+        filter: { duration: 1.5 },
+      }}
+      className={`absolute ${sizeClasses[size]} ${className} pointer-events-none select-none`}
+    >
+      <svg
+        viewBox="0 0 6000 6000"
+        xmlns="http://www.w3.org/2000/svg"
+        className="w-full h-full"
+      >
+        <g transform="scale(1, -1) translate(0, -6000)">
+          <path
+            d="M1336 4749 c-65 -16 -153 -69 -202 -121 -117 -125 -139 -302 -59 -464 41 -83 97 -139 184 -181 51 -25 66 -28 166 -28 98 0 116 3 167 27 195 91 284 317 207 524 -31 83 -140 192 -224 224 -67 25 -179 35 -239 19z M3775 4749 c-99 -13 -234 -51 -377 -105 -115 -45 -129 -48 -218 -48 -85 0 -113 5 -271 52 -256 75 -306 85 -454 85 -155 1 -262 -22 -389 -82 -95 -44 -206 -125 -206 -149 0 -10 5 -46 10 -82 26 -183 -61 -370 -216 -462 -48 -29 -53 -36 -59 -77 -10 -67 -7 -316 5 -412 31 -250 96 -472 199 -678 l51 -101 0 -177 c0 -261 31 -449 115 -700 168 -506 458 -759 653 -570 75 73 121 171 177 382 77 285 88 322 116 384 61 134 148 201 263 201 77 0 129 -24 183 -83 72 -78 101 -153 177 -452 60 -239 89 -309 163 -402 40 -50 122 -93 177 -93 127 0 277 149 398 393 103 209 171 441 213 735 17 114 17 114 86 220 314 482 453 1125 334 1538 -89 305 -302 527 -604 630 -166 56 -352 75 -526 53z"
+            fill={COLORS.primary}
+          />
+          <path
+            d="M4808 2297 c-59 -23 -124 -64 -153 -99 -108 -128 -107 -307 1 -427 65 -72 129 -103 224 -109 131 -7 242 54 305 169 24 45 30 69 33 142 4 82 3 91 -27 152 -35 70 -87 122 -159 157 -56 27 -171 34 -224 15z"
+            fill={COLORS.primary}
+          />
+        </g>
+      </svg>
+    </motion.div>
+  );
+};
+
+// ==========================================
+// مكون القسم مع أنيميشن متقدم
+// ==========================================
+const AnimatedSection = ({ 
+  children, 
+  delay = 0, 
+  className = "",
+  direction = "up" 
+}: { 
+  children: React.ReactNode; 
+  delay?: number; 
+  className?: string;
+  direction?: "up" | "left" | "right";
+}) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-80px" });
+  
+  const directionVariants = {
+    up: { y: 40, x: 0 },
+    left: { x: 60, y: 0 },
+    right: { x: -60, y: 0 },
+  };
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ 
+        opacity: 0,
+        ...directionVariants[direction],
+        filter: "blur(4px)",
+      }}
+      animate={isInView ? { 
+        opacity: 1, 
+        y: 0, 
+        x: 0,
+        filter: "blur(0px)",
+      } : {}}
+      transition={{ 
+        duration: 0.8, 
+        delay, 
+        ease: [0.25, 0.46, 0.45, 0.94],
+        filter: { duration: 0.6 },
+      }}
+      className={className}
     >
       {children}
     </motion.div>
   );
 };
 
-// بطاقة الميزة
-const FeatureCard = ({ icon: Icon, title, description }: any) => {
-  const [isHovered, setIsHovered] = useState(false);
-  
+// ==========================================
+// بطاقة الخدمة بتصميم زجاجي
+// ==========================================
+const ServiceCard = ({ icon: Icon, title, description, index }: { 
+  icon: any; 
+  title: string; 
+  description: string;
+  index: number;
+}) => {
   return (
     <motion.div
-      whileHover={{ y: -8, scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      onHoverStart={() => setIsHovered(true)}
-      onHoverEnd={() => setIsHovered(false)}
-      className="relative bg-[#0F1F35] backdrop-blur-sm rounded-xl p-6 border cursor-pointer transition-all duration-300 group"
-      style={{
-        borderColor: isHovered ? 'rgba(234, 179, 8, 0.6)' : 'rgba(234, 179, 8, 0.2)',
-        boxShadow: isHovered ? '0 0 30px rgba(234, 179, 8, 0.15), 0 10px 25px -5px rgba(0,0,0,0.3)' : '0 4px 6px -1px rgba(0,0,0,0.1)'
-      }}
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: index * 0.1 }}
+      viewport={{ once: true, margin: "-50px" }}
+      className="relative group"
     >
-      <motion.div
-        animate={{ rotate: isHovered ? 360 : 0 }}
-        transition={{ duration: 0.6, ease: "easeInOut" }}
-        className="w-12 h-12 rounded-lg flex items-center justify-center mb-4 bg-gradient-to-br from-yellow-500 to-yellow-400 relative z-10"
-      >
-        <Icon className="text-[#0A1628]" size={24} />
-      </motion.div>
-      <h3 className="text-lg font-bold text-white mb-2 relative z-10">{title}</h3>
-      <p className="text-gray-400 text-sm leading-relaxed relative z-10">{description}</p>
-      
-      {/* تأثير التوهج عند التحويم */}
-      <motion.div
-        className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-        style={{
-          background: 'radial-gradient(circle at center, rgba(234, 179, 8, 0.1) 0%, transparent 70%)'
+      <div 
+        className="relative p-8 rounded-3xl transition-all duration-500 overflow-hidden"
+        style={{ 
+          // تأثير البلور (Glassmorphism)
+          backgroundColor: 'rgba(255, 255, 255, 0.25)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          border: '1px solid rgba(255, 255, 255, 0.3)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.05)',
         }}
-      />
+      >
+        {/* أيقونة الخلفية الكبيرة - في الزاوية اليمنى السفلى */}
+        <div 
+          className="absolute pointer-events-none"
+          style={{ 
+            bottom: '-20px',   // جزء منها خارج الكرت
+            right: '-20px',    // جزء منها خارج الكرت
+            opacity: 0.06,     // غير ظاهرة بشكل كامل (جداً شفافة)
+            zIndex: 0,
+            transform: 'rotate(5deg)', // ميلان بسيط للجمالية
+          }}
+        >
+          <Icon size={140} strokeWidth={1} style={{ color: COLORS.primary }} />
+        </div>
+
+        {/* المحتوى الرئيسي - ترتيب أفقي (النص والأيقونة بجانب بعض) */}
+        <div className="relative z-10 flex items-start gap-4">
+          {/* أيقونة البطاقة الصغيرة */}
+          <div 
+            className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+            style={{ 
+              background: `linear-gradient(135deg, ${COLORS.primary}15, ${COLORS.primary}05)`,
+              border: `1px solid ${COLORS.primary}20`,
+            }}
+          >
+            <Icon size={24} style={{ color: COLORS.primary }} strokeWidth={1.5} />
+          </div>
+
+          {/* النص */}
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold mb-2" style={{ color: COLORS.text }}>
+              {title}
+            </h3>
+            <p className="text-sm leading-relaxed" style={{ color: COLORS.textSecondary }}>
+              {description}
+            </p>
+          </div>
+        </div>
+
+        {/* خط سفلي أنيق */}
+        <div 
+          className="absolute bottom-0 left-8 right-8 h-px transition-all duration-500"
+          style={{ 
+            background: `linear-gradient(to right, transparent, ${COLORS.primary}20, transparent)`,
+          }}
+        />
+      </div>
     </motion.div>
   );
 };
 
-// شريط التنقل المبسط
-const Navigation = () => {
-  const [isScrolled, setIsScrolled] = useState(false);
+// ==========================================
+// مكون عرض الصورة الموسعة
+// ==========================================
+const ImageModal = ({ image, onClose }: { image: { src: string; alt: string; title: string } | null; onClose: () => void }) => {
+  return (
+    <AnimatePresence>
+      {image && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.9)' }}
+          onClick={onClose}
+        >
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0, y: 50 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.8, opacity: 0, y: 50 }}
+            transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="relative max-w-5xl w-full max-h-[90vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={onClose}
+              className="absolute -top-12 right-0 text-white/80 hover:text-white transition-colors"
+            >
+              <X size={28} />
+            </button>
+            <div className="relative w-full aspect-[16/10] rounded-2xl overflow-hidden">
+              <Image
+                src={image.src}
+                alt={image.alt}
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
+            <p className="text-white/90 text-center mt-4 text-lg font-medium">{image.title}</p>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+// ==========================================
+// شريط التقدم عند التمرير
+// ==========================================
+const ScrollProgress = () => {
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 30);
+      const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
+      const currentProgress = (window.scrollY / totalScroll) * 100;
+      setProgress(currentProgress);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const scrollToSection = (sectionId: string) => {
-    const section = document.getElementById(sectionId);
-    if (section) {
-      section.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
   return (
-    <motion.nav
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.5 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? 'bg-[#0A1628]/95 backdrop-blur-md shadow-lg shadow-yellow-500/5' : 'bg-transparent'
-      }`}
-    >
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="flex items-center justify-between h-16">
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex items-center gap-2 cursor-pointer"
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          >
-            <div className="relative w-8 h-8">
-              <Image
-                src="/logo.png"
-                alt="LiveDent"
-                fill
-                className="object-contain"
-              />
-            </div>
-            <span className="text-xl font-bold text-white">LiveDent</span>
-          </motion.div>
-
-          <div className="flex items-center gap-4">
-            <motion.a
-              href='/Requestcopy'
-              whileHover={{ scale: 1.05, boxShadow: "0 0 20px rgba(234, 179, 8, 0.4)" }}
-              whileTap={{ scale: 0.95 }}
-              className="bg-gradient-to-r from-yellow-500 to-yellow-400 text-[#0A1628] px-5 py-2 rounded-lg font-medium text-sm hover:from-yellow-400 hover:to-yellow-300 transition-all duration-300 shadow-lg shadow-yellow-500/20"
-            >
-              ابدأ الآن
-            </motion.a>
-          </div>
-        </div>
-      </div>
-    </motion.nav>
+    <motion.div
+      initial={{ scaleX: 0 }}
+      animate={{ scaleX: progress / 100 }}
+      className="fixed top-0 left-0 right-0 h-[2px] z-50 origin-left"
+      style={{ backgroundColor: COLORS.primary }}
+    />
   );
 };
 
@@ -387,449 +313,457 @@ const Navigation = () => {
 // ==========================================
 const SocialContact = () => {
   const socialLinks = [
-    {
-      icon: FaTelegramPlane,
-      href: "https://t.me/OnRequest_dev",
-      color: "#0088cc",
-      hoverColor: "#00a8f0",
-      label: "تلغرام",
-    },
-    {
-      icon: FaWhatsapp,
-      href: "https://wa.me/79610195064",
-      color: "#25D366",
-      hoverColor: "#2fe673",
-      label: "واتساب",
-    },
-    {
-      icon: FaYoutube,
-      href: "https://youtube.com/@OnRequest_dev",
-      color: "#FF0000",
-      hoverColor: "#ff3333",
-      label: "يوتيوب",
-    },
-    {
-      icon: FaInstagram,
-      href: "https://www.instagram.com/onrequest.dev",
-      color: "#E4405F",
-      hoverColor: "#e95a75",
-      label: "انستغرام",
-    },
+    { icon: FaTelegramPlane, href: "https://t.me/OnRequest_dev", label: "تلغرام" },
+    { icon: FaWhatsapp, href: "https://wa.me/79610195064", label: "واتساب" },
+    { icon: FaYoutube, href: "https://youtube.com/@OnRequest_dev", label: "يوتيوب" },
+    { icon: FaInstagram, href: "https://www.instagram.com/livedent.official", label: "انستغرام" },
   ];
 
   return (
-    <div className="py-8" dir="ltr">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+    <div className="py-8">
+      <div className="text-center">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 10 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-6"
+          className="flex items-center justify-center gap-3 mb-6"
         >
-          <h3 className="text-white text-lg font-semibold mb-2">تواصل معنا</h3>
-          <div className="w-12 h-0.5 bg-gradient-to-r from-yellow-500 to-yellow-400 mx-auto rounded-full" />
+          <div className="h-px w-8" style={{ backgroundColor: COLORS.primary }} />
+          <span className="text-sm font-medium" style={{ color: COLORS.textSecondary }}>
+            تواصل معنا
+          </span>
+          <div className="h-px w-8" style={{ backgroundColor: COLORS.primary }} />
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="flex justify-center items-center gap-4 sm:gap-6"
-        >
+        <div className="flex justify-center items-center gap-3">
           {socialLinks.map((social, index) => (
             <motion.a
               key={index}
               href={social.href}
               target="_blank"
               rel="noopener noreferrer"
-              whileHover={{ y: -5, scale: 1.15 }}
+              whileHover={{ y: -4, scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ 
-                duration: 0.3, 
-                delay: index * 0.1,
+                duration: 0.4, 
+                delay: index * 0.08,
                 type: "spring",
                 stiffness: 200 
               }}
-              className="relative group"
+              className="w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300"
+              style={{ 
+                backgroundColor: `${COLORS.primary}08`,
+                border: `1px solid ${COLORS.primary}15`,
+                color: COLORS.primary 
+              }}
               title={social.label}
             >
-              {/* توهج خارجي */}
-              <motion.div
-                className="absolute -inset-3 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 blur-xl"
-                style={{
-                  background: social.color,
-                  opacity: 0
-                }}
-                animate={{ opacity: [0, 0.15, 0] }}
-                transition={{ repeat: Infinity, duration: 2, delay: index * 0.3 }}
-              />
-              
-              {/* الدائرة الخارجية */}
-              <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#0F1F35]/80 backdrop-blur-sm border border-yellow-500/20 flex items-center justify-center overflow-hidden transition-all duration-300 group-hover:border-yellow-500/40">
-                {/* تأثير التدرج عند التحويم */}
-                <div 
-                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-300"
-                  style={{
-                    background: `radial-gradient(circle at center, ${social.color}20, transparent 70%)`
-                  }}
-                />
-                
-                {/* الأيقونة */}
-                <social.icon 
-                  className="relative z-10 text-lg sm:text-xl transition-all duration-300 group-hover:scale-110"
-                  style={{ 
-                    color: social.color,
-                    filter: 'drop-shadow(0 0 4px rgba(212, 175, 55, 0.3))'
-                  }}
-                />
-                
-                {/* إطار ذهبي دقيق */}
-                <div className="absolute inset-0 rounded-full border border-yellow-500/10 group-hover:border-yellow-500/30 transition-all duration-300" />
-              </div>
+              <social.icon size={18} />
             </motion.a>
           ))}
-        </motion.div>
-
-        {/* خط فاصل جميل */}
-        <motion.div
-          initial={{ scaleX: 0 }}
-          whileInView={{ scaleX: 1 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="mt-6 mx-auto max-w-xs"
-        >
-          <div className="h-px bg-gradient-to-r from-transparent via-yellow-500/30 to-transparent" />
-        </motion.div>
+        </div>
       </div>
     </div>
   );
 };
 
-
+// ==========================================
+// الصفحة الرئيسية
+// ==========================================
 export default function Home() {
-  const [activeFeature, setActiveFeature] = useState<number | null>(null);
-  
-const features = [
-  { icon: Users, title: "إدارة المرضى", description: "سجل طبي إلكتروني متكامل لكل مريض" },
-  { icon: Calendar, title: "جدولة المواعيد", description: "نظام ذكي لجدولة مواعيد المرضى" },
-  { icon: CreditCard, title: "إدارة المدفوعات", description: "تتبع المدفوعات لكل موعد بشكل مخصص" },
-  { icon: Clock, title: "تنظيم الدوام", description: "إدارة أوقات العمل والإجازات بمرونة تامة" },
-  { icon: FileText, title: "صفحة تعريفية", description: "تعرض خدمات العيادة وتعزز من ظهورها الإلكتروني" },
-  { icon: IdCard, title: "كرت المريض", description: "بطاقة رقمية لكل مريض تحتوي على بياناته الكاملة" },
-  { icon: FileSpreadsheet, title: "تصدير البيانات", description: "تحويل بيانات المرضى لملف Excel بشكل مباشر وسهل" },
-  { icon: MessageCircle, title: "تقليل الاستفسارات", description: " تقليل استفسارات المرضى عبر معلومات واضحة ومتكاملة" },
-  { icon: BarChart3, title: "لوحة تحكم متكاملة", description: "لإدارة جميع بيانات المرضى وتسهيل البحث والتعديل" },
-  { icon: Smartphone, title: "CV مخصص للطبيب", description: "CV مخصص للطبيب ليعرض اختصاصه وخبراته ومهاراته" },
+  const [selectedImage, setSelectedImage] = useState<{ src: string; alt: string; title: string } | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    setIsLoaded(true);
+  }, []);
+
+const services = [
+  { 
+    icon: Globe, 
+    title: "نركز على البساطة", 
+    description: "واجهة مستخدم نظيفة وبديهية، صُممت بعناية لتجعل إدارة عيادتك سلسة وممتعة دون أي تعقيد" 
+  },
+  { 
+    icon: Palette, 
+    title: "ظهورك الإلكتروني", 
+    description: "نعزز حضورك الرقمي بصفحة تعريفية احترافية تعكس هوية عيادتك وتجذب المرضى المحتملين" 
+  },
+  { 
+    icon: Layout, 
+    title: "لوحة تحكم ذكية", 
+    description: "تحكم كامل ومرن بجميع جوانب عيادتك من خلال واجهة واحدة منظمة وسهلة الاستخدام" 
+  },
+  { 
+    icon: Smartphone, 
+    title: "تجربة متكاملة", 
+    description: "متوافق مع جميع الأجهزة والمنصات، يعمل بسلاسة على هاتفك وحاسوبك وجهازك اللوحي" 
+  },
+  { 
+    icon: IdCard, 
+    title: "ملف مريض شامل", 
+    description: "بطاقة رقمية متكاملة لكل مريض تحتوي على التاريخ الطبي والمواعيد والمدفوعات" 
+  },
+  { 
+    icon: FileText, 
+    title: "سيرة ذاتية متميزة", 
+    description: "صفحة CV احترافية للطبيب تعرض مؤهلاته وخبراته بأسلوب عصري وجذاب" 
+  },
+  // الخدمات الجديدة
+  { 
+    icon: Database, 
+    title: "تخزين سحابي آمن", 
+    description: "بيانات مخزنة سحابياً ومحمية من الضباع، مع تشفير متقدم وأمان على مستوى المؤسسات" 
+  },
+  { 
+    icon: Calendar, 
+    title: "جدول مواعيد ذكي", 
+    description: "جدول وأجندة ومخطط أسبوعي لمواعيد المرضى، مع عرض تقويمي متكامل وسهل الاستخدام" 
+  },
+  { 
+    icon:  Activity, 
+    title: "ملف طبي متكامل", 
+    description: "كافة تفاصيل المرضى بين يديك، من صور المواعيد إلى شارت الأسنان وصور الأشعة" 
+  },
+  { 
+    icon: FileSpreadsheet, 
+    title: "تقارير احترافية", 
+    description: "تصدير إلى Excel بنقرة واحدة، مع تقارير مفصلة عن المرضى والمواعيد والمدفوعات" 
+  },
+  { 
+    icon: Search, 
+    title: "بحث متطور", 
+    description: "نظام بحث ذكي ومتقدم للوصول السريع لأي مريض أو موعد أو وثيقة طبية" 
+  },
+  { 
+    icon: Bell, 
+    title: "تنبيهات ذكية", 
+    description: "مساعد تنبئ تلقائي ذكي وتنبيه تلقائي للمرضى عبر واتساب" 
+  },
+  { 
+    icon: Download, 
+    title: "دعم متعدد المنصات", 
+    description: "نعمل على جميع الأنظمة: Android و iOS و Windows، يمكنك التحميل بنقرة واحدة" 
+  },
+  { 
+    icon: Shield, 
+    title: "مزامنة و حماية متقدمة", 
+    description: "من حساب واحد قم بعرض معلوماتك على لا بتوب عيادتك و هاتفك في نفس الوقت مع حماية متقدمة لبياناتك" 
+  },
 ];
 
-  const stats = [
-    { value: "+500", label: "عيادة تستخدم النظام" },
-    { value: "+50,000", label: "مريض مسجل" },
-    { value: "98%", label: "نسبة رضا العملاء" },
-    { value: "24/7", label: "دعم فني متواصل" },
+  const images = [
+    { src: "/imglan/i6.webp", alt: "لوحة التحكم الرئيسية", title: "لوحة تحكم متكاملة غاية في البساطة لعرض المرضى و المواعيد وكافة التفاصيل" },
+    { src: "/imglan/i7.webp", alt: "شارت سني لكل مريض", title: "شارت سني ديناميكي يعرض اعمال كل سن " },
+    { src: "/imglan/i5.webp", alt: "صور الاشعة", title: "ارفع صور الاشعة وعاينها واجعل كل ارشيف مريضك بمكان واحد" },
+    { src: "/imglan/i8.webp", alt: "جدول الجلسات ", title: "راجع كل جلسات عيادتك وابحث عن المريض لتعرض كافة جلساته ومدفوعاته" },
+    { src: "/imglan/i9.webp", alt: "الاجندة ", title: "اعرض مرضى كل يوم بشكل منفصل وادرس جدولك الزمني" },
+    { src: "/imglan/i10.webp", alt: "الجدول الاسبوعي", title: "كن على دراية بمتى سيكون لديك ضغط في العمل ومتى ستكون متفرغا" },
+    { src: "/imglan/i11.webp", alt: "سيرة ثاتية لك وصفحة لجدول عيادتك", title: "تمييز عن البقية وشارك برستيجك الخاص مع مرضاك" },
   ];
 
   return (
-    <div className="min-h-screen bg-[#0A1628] relative" dir="rtl">
-      {/* Golden Gradient Corners */}
-      <div 
-        className="absolute top-0 left-0 w-80 h-80 pointer-events-none"
-        style={{
-          background: 'radial-gradient(circle at 0% 0%, rgba(255, 215, 0, 0.12) 0%, rgba(255, 200, 0, 0.04) 40%, transparent 70%)'
-        }}
-      />
-      <div 
-        className="absolute top-0 left-0 w-48 h-48 pointer-events-none"
-        style={{
-          background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.25) 0%, transparent 100%)',
-          clipPath: 'polygon(0 0, 100% 0, 0 100%)'
-        }}
-      />
-      
-      <div 
-        className="absolute bottom-0 right-0 w-80 h-80 pointer-events-none"
-        style={{
-          background: 'radial-gradient(circle at 100% 100%, rgba(255, 215, 0, 0.12) 0%, rgba(255, 200, 0, 0.04) 40%, transparent 70%)'
-        }}
-      />
-      <div 
-        className="absolute bottom-0 right-0 w-48 h-48 pointer-events-none"
-        style={{
-          background: 'linear-gradient(315deg, rgba(255, 215, 0, 0.25) 0%, transparent 100%)',
-          clipPath: 'polygon(100% 100%, 0 100%, 100% 0)'
-        }}
-      />
+    <div 
+      className="min-h-screen relative" 
+      style={{ 
+        backgroundColor: COLORS.background,
+        fontFamily: "'Cairo', 'IBM Plex Sans Arabic', system-ui, sans-serif",
+      }}
+      dir="rtl"
+    >
+      {/* شريط التقدم */}
+      <ScrollProgress />
 
-      {/* الجزيئات الذهبية */}
-      <GoldenParticles />
+      {/* صورة موسعة */}
+      <ImageModal image={selectedImage} onClose={() => setSelectedImage(null)} />
 
-      {/* طبقة تحسين الوضوح */}
-      <div className="fixed inset-0 bg-gradient-to-b from-[#0A1628]/60 via-transparent to-[#0A1628]/60 pointer-events-none" style={{ zIndex: 1 }} />
+      {/* Hero Section */}
+      <section className="relative min-h-screen flex items-center overflow-hidden">
+        {/* SVG Background - يظهر في جميع الأجهزة */}
+        <DentalSVG direction="left" size="large" className="top-10 -right-32 md:-right-48 opacity-[0.08]" />
+        <DentalSVG direction="right" size="small" className="bottom-20 -left-16 md:-left-32 opacity-[0.06]" />
 
-      {/* المحتوى */}
-      <div className="relative" style={{ zIndex: 2 }}>
-        <Navigation />
-
-        {/* Hero Section */}
-        <section className="relative pt-24 pb-12 overflow-hidden">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <div className="flex flex-col lg:flex-row gap-10 items-center">
-              <motion.div
-                initial={{ opacity: 0, x: -30 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.7 }}
-                className="flex-1 text-center lg:text-right"
+        {/* أنيميشن الدخول للصفحة */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={isLoaded ? { opacity: 1 } : {}}
+          transition={{ duration: 0.8 }}
+          className="w-full"
+        >
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-20 relative z-10">
+            {/* شعار */}
+            <AnimatedSection delay={0.2} direction="up">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.5, rotate: -10 }}
+                animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                transition={{ 
+                  duration: 0.8, 
+                  delay: 0.3,
+                  type: "spring",
+                  stiffness: 150,
+                }}
+                className="relative w-24 h-24 mx-auto mb-10"
               >
-                <motion.div 
-                  whileHover={{ scale: 1.1, rotate: -5 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                  className="relative w-24 h-24 mx-auto lg:mx-0 mb-6 cursor-pointer"
-                >
-                  <Image
-                    src="/logo.png"
-                    alt="LiveDent"
-                    fill
-                    className="object-contain"
-                    priority
-                  />
-                </motion.div>
-                
-                <motion.h1 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
-                >
-                  <span className="text-white">نظام </span>
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-200">LiveDent</span>
-                  <br />
-                  <span className="text-white">لإدارة عيادات الأسنان</span>
-                </motion.h1>
-
-                <motion.p 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                  className="text-gray-300 text-base md:text-lg mb-8 leading-relaxed max-w-xl mx-auto lg:mx-0"
-                >
-                  نظام رقمي متكامل يدير جميع جوانب عيادة الأسنان بكل سهولة واحترافية
-                </motion.p>
-
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 }}
-                  className="flex flex-wrap gap-4 justify-center lg:justify-start"
-                >
-                  <motion.a
-                    href="/Requestcopy"
-                    whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(234, 179, 8, 0.5)" }}
-                    whileTap={{ scale: 0.95 }}
-                    className="group relative bg-gradient-to-r from-yellow-500 to-yellow-400 text-[#0A1628] px-8 py-4 rounded-xl font-bold shadow-lg hover:from-yellow-400 hover:to-yellow-300 transition-all duration-300 inline-flex items-center gap-3 overflow-hidden"
-                  >
-                    <span className="relative z-10">ابدأ تجربتك</span>
-                    <motion.div
-                      animate={{ x: [0, 5, 0] }}
-                      transition={{ repeat: Infinity, duration: 1.5 }}
-                      className="relative z-10"
-                    >
-                      <ArrowLeft size={20} />
-                    </motion.div>
-                    <div className="absolute inset-0 bg-gradient-to-r from-yellow-300 to-yellow-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  </motion.a>
-                </motion.div>
-
+                <div 
+                  className="absolute inset-0 rounded-full opacity-20"
+                  style={{ 
+                    background: `radial-gradient(circle, ${COLORS.primary}, transparent)`,
+                    filter: 'blur(20px)',
+                  }}
+                />
+                <Image
+                  src="/logo.png"
+                  alt="LiveDent"
+                  fill
+                  className="object-contain relative z-10"
+                  priority
+                />
               </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.7, delay: 0.2 }}
-                className="flex-1"
-              >
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                  className="relative group cursor-pointer"
-                >
-                  <Image
-                    src="/pn1.png"
-                    alt="LiveDent Dashboard"
-                    width={1000}
-                    height={400}
-                    className="w-full h-auto rounded-lg"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0A1628] via-transparent to-transparent opacity-40 rounded-lg" />
-                  <motion.div 
-                    className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"
-                    animate={{ opacity: [0, 0.1, 0] }}
-                    transition={{ repeat: Infinity, duration: 3 }}
-                  />
-                </motion.div>
-              </motion.div>
-            </div>
-          </div>
-        </section>
-
-        {/* Features Section */}
-        <section id="features" className="py-16">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <AnimatedSection>
-              <div className="text-center mb-10">
-                <motion.div 
-                  whileHover={{ scale: 1.05 }}
-                  className="inline-flex items-center gap-2 bg-yellow-500/10 rounded-full px-4 py-1.5 mb-4 border border-yellow-500/20 cursor-pointer"
-                >
-                  <Sparkles className="text-yellow-400" size={14} />
-                  <span className="text-yellow-400 text-sm font-medium">مميزات متكاملة</span>
-                </motion.div>
-                <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
-                  كل ما تحتاجه عيادتك في مكان واحد
-                </h2>
-                <p className="text-gray-400 max-w-xl mx-auto text-sm">
-                  نقدم لك منظومة متكاملة تلبي جميع احتياجات عيادة الأسنان العصرية
-                </p>
-              </div>
             </AnimatedSection>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
-              {features.slice(0, 5).map((feature, index) => (
-                <AnimatedSection key={index} delay={index * 0.05}>
-                  <div onClick={() => setActiveFeature(activeFeature === index ? null : index)}>
-                    <FeatureCard
-                      icon={feature.icon}
-                      title={feature.title}
-                      description={feature.description}
-                    />
-                  </div>
-                </AnimatedSection>
-              ))}
-            </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-4">
-              {features.slice(5, 10).map((feature, index) => (
-                <AnimatedSection key={index + 5} delay={(index + 5) * 0.05}>
-                  <div onClick={() => setActiveFeature(activeFeature === index + 5 ? null : index + 5)}>
-                    <FeatureCard
-                      icon={feature.icon}
-                      title={feature.title}
-                      description={feature.description}
-                    />
-                  </div>
-                </AnimatedSection>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Section with pn2.png */}
-        <section className="py-16 bg-black/10">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <div className="flex flex-col lg:flex-row-reverse gap-10 items-center">
-              <AnimatedSection>
-                <div className="flex-1 text-center lg:text-right">
-                  <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
-                    تحكم كامل في عيادتك
-                  </h2>
-                  <p className="text-gray-300 mb-6 leading-relaxed">
-                    مع LiveDent يمكنك إدارة جميع جوانب عيادتك من مكان واحد. تابع المواعيد، 
-                    راجع التقارير المالية، وتواصل مع مرضاك بكل سهولة.
-                  </p>
-                  
-                  <ul className="space-y-3 mb-6">
-                    {[
-                      "لوحة تحكم شاملة وسهلة الاستخدام",
-                      "جداول مرضى متكاملة بأدق التفاصيل",
-                      "تسهيل ادارة العيادة بشكل سهل وفعال",
-                      "دعم فني متواصل على مدار الساعة",
-                    ].map((item, index) => (
-                      <motion.li
-                        key={index}
-                        initial={{ opacity: 0, x: -20 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        whileHover={{ x: -5 }}
-                        className="flex items-center gap-3 text-gray-300 cursor-pointer hover:text-white transition-colors"
-                      >
-                        <motion.div
-                          whileHover={{ rotate: 360 }}
-                          transition={{ duration: 0.6 }}
-                        >
-                          <CheckCircle2 className="text-yellow-400 flex-shrink-0" size={18} />
-                        </motion.div>
-                        <span className="text-sm">{item}</span>
-                      </motion.li>
-                    ))}
-                  </ul>
-                </div>
-              </AnimatedSection>
-
-              <AnimatedSection delay={0.2}>
-                <motion.div 
-                  whileHover={{ scale: 1.02, rotate: 1 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                  className="flex-1 cursor-pointer"
-                >
-                  <div className="relative group">
-                    <Image
-                      src="/pn2.png"
-                      alt="LiveDent Features"
-                      width={400}
-                      height={550}
-                      className="w-full h-auto rounded-lg"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0A1628] via-transparent to-transparent opacity-40 rounded-lg" />
-                    <motion.div 
-                      className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"
-                      animate={{ opacity: [0, 0.1, 0] }}
-                      transition={{ repeat: Infinity, duration: 3 }}
-                    />
-                  </div>
-                </motion.div>
-              </AnimatedSection>
-            </div>
-          </div>
-        </section>
-                    
-        {/* Footer */}
-        <footer className="border-t border-yellow-500/10 py-8">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <motion.div 
-                whileHover={{ scale: 1.05 }}
-                className="flex items-center gap-2 cursor-pointer"
+{/* العنوان الرئيسي */}
+<motion.h1 
+  initial={{ opacity: 0, y: 10 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.5, delay: 0.1 }}
+  className="font-bold text-center leading-tight text-xl sm:text-2xl md:text-3xl lg:text-5xl mb-4 md:mb-6"
+  style={{ color: COLORS.text }}
+>
+  <span style={{ color: COLORS.text }}>نظـام </span>
+  <span style={{ color: COLORS.text }}>إدارة مدفوعـات </span>
+  <span style={{ color: COLORS.text }}>ومواعــيد</span>
+  <br />
+  <span style={{ color: COLORS.text }}>عيــــــــــــــــــــادات</span>
+  <br />
+  <span className="inline-flex items-center gap-0 flex-wrap justify-center">
+    <span style={{ color: COLORS.text }}>الأسنـــــــــــــ</span>
+    <motion.div 
+      whileHover={{ scale: 1.15, rotate: 5 }} 
+      transition={{ type: "spring", stiffness: 300 }} 
+      className="relative mx-0 inline-flex items-center justify-center pointer-events-none w-8 h-8 sm:w-10 sm:h-10 md:w-16 md:h-16 lg:w-20 lg:h-20"
+    >
+      <img 
+        src="/icon-192x192.png" 
+        alt="LiveDent" 
+        className="w-full h-full object-contain pointer-events-none"
+        style={{ filter: `drop-shadow(0 0 15px ${COLORS.primary}80)` }}
+      />
+    </motion.div>
+    <span style={{ color: COLORS.text }}>ــــــــــــــــــــان</span>
+  </span>
+</motion.h1>
+            {/* الوصف */}
+            <AnimatedSection delay={0.8} direction="up">
+              <motion.p 
+                className="text-lg md:text-xl text-center mb-10 max-w-2xl mx-auto leading-relaxed"
+                style={{ color: COLORS.textSecondary }}
               >
-                <div className="relative w-7 h-7">
-                  <Image src="/logo.png" alt="LiveDent" fill className="object-contain" />
-                </div>
-                <span className="text-lg font-bold text-white">LiveDent</span>
-              </motion.div>
-              
-              <p className="text-gray-500 text-sm text-center">
-                © 2026 LiveDent. جميع الحقوق محفوظة
-              </p>
-              
-              <div className="flex gap-6">
-                <motion.a 
-                  href="#" 
-                  whileHover={{ scale: 1.1, color: '#FBBF24' }}
-                  className="text-gray-400 hover:text-yellow-400 text-sm transition-colors"
+                حل رقمي متكامل ومبتكر لإدارة عيادتك بكل احترافية، يجمع بين البساطة والقوة في منصة واحدة
+              </motion.p>
+            </AnimatedSection>
+
+            {/* زر البداية */}
+            <AnimatedSection delay={1.1} direction="up">
+  <motion.div className="flex justify-center">
+    <motion.a
+      href="/Requestcopy"
+      whileHover={{ scale: 1.03, y: -2 }}
+      whileTap={{ scale: 0.97 }}
+      className="relative group"
+    >
+      {/* تأثير التوهج خلف الزر */}
+      <div 
+        style={{ backgroundColor: COLORS.primary }}
+      />
+      
+      {/* الزر الرئيسي - قلب مفرغ (شفاف) مع إطار */}
+      <div 
+        className="relative px-10 py-4 rounded-2xl font-semibold text-lg inline-flex items-center gap-3 transition-all duration-300 backdrop-blur-sm"
+        style={{ 
+          backgroundColor: 'transparent',
+          border: `2px solid ${COLORS.primary}`,
+          color: COLORS.primary,
+        }}
+      >
+        <span>أطلب نسختك الآن</span>
+        <motion.div
+          animate={{ x: [0, 6, 0] }}
+          transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+        >
+          <ArrowLeft size={20} style={{ color: COLORS.primary }} />
+        </motion.div>
+      </div>
+    </motion.a>
+  </motion.div>
+</AnimatedSection>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* Services Section */}
+      <section className="relative py-24 overflow-hidden">
+        <DentalSVG direction="right" size="large" className="top-20 -left-32 md:-left-48 opacity-[0.06]" />
+
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 relative z-10">
+          <AnimatedSection className="text-center mb-16" direction="up">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="inline-flex items-center gap-2 rounded-full px-5 py-2 mb-6"
+              style={{ backgroundColor: COLORS.primaryLight, border: `1px solid ${COLORS.primary}15` }}
+            >
+              <Sparkles size={16} style={{ color: COLORS.primary }} />
+              <span className="text-sm font-medium" style={{ color: COLORS.primary }}>مميزاتنا</span>
+            </motion.div>
+            
+            <motion.h2 
+              className="text-3xl md:text-4xl font-bold mb-4"
+              style={{ color: COLORS.text }}
+            >
+              أدوات متكاملة لعيادتك
+            </motion.h2>
+            
+            <motion.p 
+              className="text-lg max-w-xl mx-auto"
+              style={{ color: COLORS.textSecondary }}
+            >
+              كل ما تحتاجه لإدارة عيادتك بكفاءة عالية في منصة واحدة
+            </motion.p>
+          </AnimatedSection>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {services.map((service, index) => (
+              <ServiceCard
+                key={index}
+                index={index}
+                icon={service.icon}
+                title={service.title}
+                description={service.description}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Gallery Section */}
+      <section className="relative py-24 overflow-hidden" style={{ backgroundColor: COLORS.surface }}>
+  <DentalSVG direction="left" size="normal" className="top-16 -right-24 md:-right-40 opacity-[0.05]" />
+
+  <div className="max-w-6xl mx-auto px-4 sm:px-6 relative z-10">
+    <AnimatedSection className="text-center mb-16" direction="up">
+      <motion.h2 
+        className="text-3xl md:text-4xl font-bold mb-4"
+        style={{ color: COLORS.text }}
+      >
+        لمحة من النظام
+      </motion.h2>
+      <motion.p 
+        className="text-lg"
+        style={{ color: COLORS.textSecondary }}
+      >
+        اضغط على الصورة للمعاينة الكاملة
+      </motion.p>
+    </AnimatedSection>
+
+    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+      {images.map((image, index) => (
+        <AnimatedSection key={index} delay={index * 0.1} direction="up">
+          <motion.div
+            whileTap={{ scale: 0.98 }}
+            transition={{ duration: 0.3 }}
+            className="cursor-pointer group"
+            onClick={() => setSelectedImage(image)}
+          >
+            <div 
+              className="rounded-2xl overflow-hidden transition-all duration-500 ease-out hover:shadow-xl hover:-translate-y-1"
+              style={{ 
+                backgroundColor: COLORS.background,
+                border: `1px solid ${COLORS.border}`,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+              }}
+            >
+              {/* Label مع تحسينات */}
+              <div className="px-5 pt-5 pb-0">
+                <h3 
+                  className="font-semibold text-base mb-3 transition-all duration-300 group-hover:text-primary"
+                  style={{ color: COLORS.text }}
                 >
-                  سياسة الخصوصية
-                </motion.a>
-                <motion.a 
-                  href="#" 
-                  whileHover={{ scale: 1.1, color: '#FBBF24' }}
-                  className="text-gray-400 hover:text-yellow-400 text-sm transition-colors"
-                >
-                  الشروط والأحكام
-                </motion.a>
+                  {image.title}
+                </h3>
+              </div>
+              
+              {/* حاوية الصورة - بدون hover مزعج */}
+              <div className="relative aspect-[4/3] overflow-hidden mx-5 mb-5 rounded-xl">
+                <Image
+                  src={image.src}
+                  alt={image.alt}
+                  fill
+                  className="object-cover transition-transform duration-1000 ease-out group-hover:scale-105"
+                  loading="lazy"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                />
+                
+                {/* Overlay بسيط وأنيق */}
+                <div 
+                  className="absolute inset-0 opacity-0 transition-all duration-500 ease-out group-hover:opacity-100"
+                  style={{ 
+                    background: `linear-gradient(to top, ${COLORS.primary}30, transparent)`,
+                  }}
+                />
               </div>
             </div>
+          </motion.div>
+        </AnimatedSection>
+      ))}
+    </div>
+  </div>
+</section>
+
+      {/* Footer */}
+      <footer className="py-10" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              className="flex items-center gap-2"
+            >
+              <div className="relative w-8 h-8">
+                <Image src="/logo.png" alt="LiveDent" fill className="object-contain" />
+              </div>
+              <span className="text-lg font-bold" style={{ color: COLORS.text }}>LiveDent</span>
+            </motion.div>
+            
+            <p className="text-sm" style={{ color: COLORS.textSecondary }}>
+              © 2026 LiveDent. جميع الحقوق محفوظة
+            </p>
+            
+            <div className="flex gap-6">
+              <motion.a 
+                href="#" 
+                whileHover={{ color: COLORS.primary }}
+                className="text-sm transition-colors"
+                style={{ color: COLORS.textSecondary }}
+              >
+                سياسة الخصوصية
+              </motion.a>
+              <motion.a 
+                href="#" 
+                whileHover={{ color: COLORS.primary }}
+                className="text-sm transition-colors"
+                style={{ color: COLORS.textSecondary }}
+              >
+                الشروط والأحكام
+              </motion.a>
+            </div>
           </div>
-        </footer>
-        <SocialContact />
-      </div>
+          
+          <SocialContact />
+        </div>
+      </footer>
     </div>
   );
 }
