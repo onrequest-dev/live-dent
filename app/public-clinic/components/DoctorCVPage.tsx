@@ -464,22 +464,26 @@ export default function DoctorCVPage({ clinic }: DoctorCVPageProps) {
               
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {/* الهاتف */}
-                {/* <motion.a
-                  href={`tel:+966112345678`}
-                  whileTap={{ scale: 0.98 }}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
-                >
-                  <IconWrapper color={primaryColor}>
-                    <Phone size={18} />
-                  </IconWrapper>
-                  <div>
-                    <p className={textStyles.label}>اتصل بنا</p>
-                    <p className="text-white/80 text-sm" dir="ltr">011 234 5678</p>
-                  </div>
-                </motion.a> */}
+{doctor.contactEmail && (
+  <motion.a
+    href={`https://wa.me/${doctor.contactEmail.replace(/[^0-9]/g, '')}`}
+    target="_blank"
+    rel="noopener noreferrer"
+    whileTap={{ scale: 0.98 }}
+    className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
+  >
+    <IconWrapper color={primaryColor}>
+      <Phone size={18} />
+    </IconWrapper>
+    <div>
+      <p className={textStyles.label}>رقم الواتساب:</p>
+      <p className="text-white/80 text-sm truncate">{doctor.contactEmail}</p>
+    </div>
+  </motion.a>
+)}
 
                 {/* البريد الإلكتروني */}
-                <motion.a
+                {/* <motion.a
                   href={`mailto:${doctor.contactEmail}`}
                   whileTap={{ scale: 0.98 }}
                   className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
@@ -488,10 +492,9 @@ export default function DoctorCVPage({ clinic }: DoctorCVPageProps) {
                     <Mail size={18} />
                   </IconWrapper>
                   <div className="min-w-0">
-                    <p className={textStyles.label}>البريد الإلكتروني</p>
-                    <p className="text-white/80 text-sm truncate">{doctor.contactEmail}</p>
+
                   </div>
-                </motion.a>
+                </motion.a> */}
 
                 {/* العنوان */}
                 <motion.div
