@@ -2,7 +2,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import RemoveContextMenu from "@/components/removeContexetMenu";
+// import RemoveContextMenu from "@/components/removeContexetMenu";
 import Backgroundjob from "@/components/backgroundjob";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -30,7 +30,7 @@ export default function RootLayout({
       <body className={inter.className}>
         {children}
         <Backgroundjob />
-        <RemoveContextMenu />
+        {/* <RemoveContextMenu /> */}
       </body>
     </html>
   );

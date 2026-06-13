@@ -879,7 +879,7 @@ const [sessions, setSessions] = useState<Session[]>(() => {
             } ${isCollapsed ? "w-16 sm:w-20" : ""}`}
             style={
               selectedPatient && !isCollapsed
-                ? { width: `${listWidth}px` }
+                ? { width: `${listWidth}px` , maxWidth: "300px" }
                 : undefined
             }
           >

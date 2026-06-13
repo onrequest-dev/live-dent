@@ -119,63 +119,77 @@ function LiveDentSubscriptionForm({
     "doctorName" | "clinicName" | "whatsapp" | null
   >(null);
 
-  // تنظيف رقم الواتساب
-  const handleWhatsappChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value;
+ // تنظيف رقم الواتساب
+const handleWhatsappChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  let value = e.target.value;
 
-    // إزالة المسافات
-    value = value.replace(/\s/g, "");
+  // إزالة المسافات
+  value = value.replace(/\s/g, "");
 
-    // إذا بدأ الرقم بـ 0، استبدله بـ +963
-    if (value.startsWith("0")) {
-      value = "+963" + value.substring(1);
-    }
+  // إذا بدأ الرقم بـ 0، استبدله بـ +963
+  if (value.startsWith("0")) {
+    value = "+963" + value.substring(1);
+  }
 
-    // إذا كان الرقم فارغاً وبدأ المستخدم بكتابة 0، اكتب +963 تلقائياً
-    if (value === "0") {
-      value = "+963";
-    }
+  // إذا كان الرقم فارغاً وبدأ المستخدم بكتابة 0، اكتب +963 تلقائياً
+  if (value === "0") {
+    value = "+963";
+  }
 
-    // منع تكرار +963
-    if (value.startsWith("+963+963")) {
-      value = value.replace("+963+963", "+963");
-    }
+  // منع تكرار +963
+  if (value.startsWith("+963+963")) {
+    value = value.replace("+963+963", "+963");
+  }
 
-    // السماح فقط بالأرقام وعلامة + في البداية
-    value = value.replace(/[^\d+]/g, "");
+  // السماح فقط بالأرقام وعلامة + في البداية
+  value = value.replace(/[^\d+]/g, "");
 
-    // التأكد من وجود + فقط في البداية
-    if (value.includes("+") && value.indexOf("+") !== 0) {
-      value = value.replace(/\+/g, "");
-      value = "+" + value;
-    }
+  // التأكد من وجود + فقط في البداية
+  if (value.includes("+") && value.indexOf("+") !== 0) {
+    value = value.replace(/\+/g, "");
+    value = "+" + value;
+  }
 
-    setWhatsapp(value);
-  };
+  setWhatsapp(value);
+};
 
-  // 2. تحسين دالة cleanPhoneNumber (اختياري لكن مفيد)
-  const cleanPhoneNumber = (phone: string): string => {
-    // إزالة كل شيء ما عدا الأرقام وعلامة +
-    let cleaned = phone.replace(/[^\d+]/g, "");
+// 2. دالة cleanPhoneNumber المعدلة
+const cleanPhoneNumber = (phone: string): string => {
+  // إزالة كل شيء ما عدا الأرقام وعلامة +
+  let cleaned = phone.replace(/[^\d+]/g, "");
 
-    // إذا كان هناك +963، نحتفظ به
-    if (cleaned.startsWith("+963")) {
+  // إذا كان الرقم يبدأ بـ + متبوعاً برمز دولة (أي شيء غير 963)، نبقيه كما هو
+  if (cleaned.startsWith("+") && !cleaned.startsWith("+963")) {
+    // إذا كان + متبوعاً بأرقام، نبقيه كما هو
+    if (cleaned.length > 1) {
       return cleaned;
     }
+  }
 
-    // إذا كان هناك + فقط، نضيف 963
-    if (cleaned.startsWith("+")) {
-      return "+963" + cleaned.substring(1);
-    }
+  // إذا كان هناك +963، نحتفظ به
+  if (cleaned.startsWith("+963")) {
+    return cleaned;
+  }
 
-    // إذا بدأ بـ 963 بدون +
-    if (cleaned.startsWith("963")) {
-      return "+" + cleaned;
-    }
+  // إذا بدأ بـ 0، نستبدله بـ +963
+  if (cleaned.startsWith("0")) {
+    return "+963" + cleaned.substring(1);
+  }
 
-    // أي حالة أخرى نضيف +963
+  // إذا بدأ بـ 963 بدون +
+  if (cleaned.startsWith("963")) {
+    return "+" + cleaned;
+  }
+
+  // إذا كان الرقم لا يبدأ بـ + ولا بـ 0 ولا بـ 963، نضيف +963
+  // هذا للتعامل مع الأرقام المحلية السورية فقط
+  if (cleaned.length > 0 && !cleaned.startsWith("+")) {
     return "+963" + cleaned;
-  };
+  }
+
+  // أي حالة أخرى نرجع الرقم كما هو
+  return cleaned;
+};
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
