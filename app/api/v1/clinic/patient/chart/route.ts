@@ -153,19 +153,19 @@ export async function GET(request: NextRequest) {
     }
     
     // التحقق من وجود المريض وانتمائه لنفس العيادة
-    const { data: patientData, error: patientError } = await supabase_server
-        .from("Patient")
-        .select("id, clinicId")
-        .eq("id", patientId)
-        .single();
+    // const { data: patientData, error: patientError } = await supabase_server
+    //     .from("Patient")
+    //     .select("id, clinicId")
+    //     .eq("id", patientId)
+    //     .single();
     
-    if (patientError || !patientData) {
-        return NextResponse.json({ error: "Patient not found" }, { status: 404 });
-    }
+    // if (patientError || !patientData) {
+    //     return NextResponse.json({ error: "Patient not found" }, { status: 404 });
+    // }
     
-    if (patientData.clinicId !== clinicId) {
-        return NextResponse.json({ error: "Patient does not belong to this clinic" }, { status: 403 });
-    }
+    // if (patientData.clinicId !== clinicId) {
+    //     return NextResponse.json({ error: "Patient does not belong to this clinic" }, { status: 403 });
+    // }
     
     // جلب Dental Chart للمريض
     const { data: chartData, error: chartError } = await supabase_server
