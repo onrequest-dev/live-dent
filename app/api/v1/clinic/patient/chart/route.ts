@@ -132,17 +132,17 @@ export async function POST(request: NextRequest) {
 
 
 export async function GET(request: NextRequest) {
-    const jwt = request.cookies.get("jwt")?.value;
-    if (!jwt) {
-        return NextResponse.json({ error: "Unauthorized - No token provided" }, { status: 401 });
-    }
+    // const jwt = request.cookies.get("jwt")?.value;
+    // if (!jwt) {
+    //     return NextResponse.json({ error: "Unauthorized - No token provided" }, { status: 401 });
+    // }
     
-    const jwt_user = decodeJWT(jwt) as ClinicEmployeeJwt | null;
-    if (!jwt_user || typeof jwt_user === "string") {
-        return NextResponse.json({ error: "Unauthorized - Invalid token" }, { status: 401 });
-    }
+    // const jwt_user = decodeJWT(jwt) as ClinicEmployeeJwt | null;
+    // if (!jwt_user || typeof jwt_user === "string") {
+    //     return NextResponse.json({ error: "Unauthorized - Invalid token" }, { status: 401 });
+    // }
     
-    const clinicId = jwt_user.clinicId;
+    // const clinicId = jwt_user.clinicId;
     
     // الحصول على patientId من query parameter
     const { searchParams } = new URL(request.url);
@@ -174,6 +174,7 @@ export async function GET(request: NextRequest) {
         .eq("patientId", patientId)
         .eq("clinicId", clinicId)
         .maybeSingle();
+        console.log("Fetched chart data:", chartData, "Error:", chartError);
     
     if (chartError) {
         // console.error("Database error:", chartError);
