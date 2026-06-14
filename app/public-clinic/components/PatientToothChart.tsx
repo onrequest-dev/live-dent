@@ -429,39 +429,39 @@ const updateToothAppearance = useCallback(() => {
   }
 }, [teethData, selectedToothId]);
 
-  // تطبيق تأثير الهوفر
-  const applyHoverEffect = useCallback(
-    (toothNumber: number | null) => {
-      // إزالة الهوفر السابق
-      if (hoveredToothRef.current !== null && hoveredToothRef.current !== selectedToothId) {
-        const prevElement = document.getElementById(`Tooth${hoveredToothRef.current}`);
-        if (prevElement) {
-          const baseOpacity = selectedToothId === null ? "0.7" : "0.4";
-          prevElement.setAttribute("opacity", baseOpacity);
-          prevElement.setAttribute("fill-opacity", baseOpacity);
-          prevElement.setAttribute("stroke-opacity", baseOpacity);
-          prevElement.setAttribute("stroke", "#C0C0C0");
-          prevElement.setAttribute("stroke-width", "1.5");
-          prevElement.setAttribute("filter", "none");
-        }
+// تطبيق تأثير الهوفر - مع حواف أكثر وضوحاً
+const applyHoverEffect = useCallback(
+  (toothNumber: number | null) => {
+    // إزالة الهوفر السابق
+    if (hoveredToothRef.current !== null && hoveredToothRef.current !== selectedToothId) {
+      const prevElement = document.getElementById(`Tooth${hoveredToothRef.current}`);
+      if (prevElement) {
+        const baseOpacity = selectedToothId === null ? "0.85" : "0.5";
+        prevElement.setAttribute("opacity", baseOpacity);
+        prevElement.setAttribute("fill-opacity", baseOpacity);
+        prevElement.setAttribute("stroke-opacity", "1");
+        prevElement.setAttribute("stroke", "#374151");
+        prevElement.setAttribute("stroke-width", "2");
+        prevElement.setAttribute("filter", "none");
       }
+    }
 
-      // تطبيق الهوفر الجديد
-      if (toothNumber !== null && toothNumber !== selectedToothId) {
-        const element = document.getElementById(`Tooth${toothNumber}`);
-        if (element) {
-          element.setAttribute("opacity", "1");
-          element.setAttribute("fill-opacity", "1");
-          element.setAttribute("stroke-opacity", "1");
-          element.setAttribute("stroke", "#1F2937");
-          element.setAttribute("stroke-width", "2.5");
-          element.setAttribute("filter", "url(#hover-shadow)");
-        }
+    // تطبيق الهوفر الجديد
+    if (toothNumber !== null && toothNumber !== selectedToothId) {
+      const element = document.getElementById(`Tooth${toothNumber}`);
+      if (element) {
+        element.setAttribute("opacity", "1");
+        element.setAttribute("fill-opacity", "1");
+        element.setAttribute("stroke-opacity", "1");
+        element.setAttribute("stroke", "#111827"); // أسود غامق جداً للهوفر
+        element.setAttribute("stroke-width", "3");
+        element.setAttribute("filter", "url(#hover-shadow)");
       }
-      hoveredToothRef.current = toothNumber;
-    },
-    [selectedToothId]
-  );
+    }
+    hoveredToothRef.current = toothNumber;
+  },
+  [selectedToothId]
+);
 
   // تهيئة افتراضية
   useEffect(() => {
@@ -520,29 +520,29 @@ const updateToothAppearance = useCallback(() => {
       }
     };
 
-    const handleMouseOut = (e: MouseEvent) => {
-      const target = e.target as SVGElement;
-      const toothId = target.id;
+const handleMouseOut = (e: MouseEvent) => {
+  const target = e.target as SVGElement;
+  const toothId = target.id;
 
-      if (toothId.startsWith("Tooth") && target.closest("#Spots")) {
-        const toothNumber = parseInt(toothId.replace("Tooth", ""));
-        if (!isNaN(toothNumber) && toothNumber !== selectedToothId) {
-          const element = document.getElementById(`Tooth${toothNumber}`);
-          if (element) {
-            const baseOpacity = selectedToothId === null ? "0.7" : "0.4";
-            element.setAttribute("opacity", baseOpacity);
-            element.setAttribute("fill-opacity", baseOpacity);
-            element.setAttribute("stroke-opacity", baseOpacity);
-            element.setAttribute("stroke", "#C0C0C0");
-            element.setAttribute("stroke-width", "1.5");
-            element.setAttribute("filter", "none");
-          }
-          if (hoveredToothRef.current === toothNumber) {
-            hoveredToothRef.current = null;
-          }
-        }
+  if (toothId.startsWith("Tooth") && target.closest("#Spots")) {
+    const toothNumber = parseInt(toothId.replace("Tooth", ""));
+    if (!isNaN(toothNumber) && toothNumber !== selectedToothId) {
+      const element = document.getElementById(`Tooth${toothNumber}`);
+      if (element) {
+        const baseOpacity = selectedToothId === null ? "0.85" : "0.5";
+        element.setAttribute("opacity", baseOpacity);
+        element.setAttribute("fill-opacity", baseOpacity);
+        element.setAttribute("stroke-opacity", "1");
+        element.setAttribute("stroke", "#374151");
+        element.setAttribute("stroke-width", "2");
+        element.setAttribute("filter", "none");
       }
-    };
+      if (hoveredToothRef.current === toothNumber) {
+        hoveredToothRef.current = null;
+      }
+    }
+  }
+};
 
     const svgElement = svgRef.current?.querySelector("svg");
     if (svgElement) {
@@ -693,7 +693,7 @@ const updateToothAppearance = useCallback(() => {
   fontWeight="500"
   opacity="0.8"
 >
-  انقر على السن لمعاينة الأعمال
+  انقر على السن الملون لمعاينة الاعمال
 </text>
       </svg>
     </div>
@@ -736,9 +736,6 @@ function PatientToothInfoCard({
       <div className="p-5 space-y-5">
         {!hasAnyData && (
           <div className="text-center py-6">
-            <div className="w-12 h-12 mx-auto rounded-full bg-green-50 flex items-center justify-center mb-3">
-              <span className="text-2xl">✅</span>
-            </div>
             <p className="text-sm font-medium text-green-700">سن سليم</p>
             <p className="text-xs text-green-600 mt-1">لا توجد أي إجراءات أو أعمال على هذا السن</p>
           </div>
