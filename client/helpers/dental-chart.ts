@@ -17,6 +17,36 @@ interface ApiErrorResponse {
   details?: string;
 }
 
+
+
+/**
+ * جلب بيانات الشارت السني من السيرفر مباشرة (يتجاوز التخزين المحلي)
+ * مناسبة لعرض بيانات المريض في الصفحة العامة حيث نريد دائماً أحدث البيانات
+ */
+export async function fetchDentalChartFromServer(patientId: string): Promise<DentalChart | null> {
+  try {
+    const response = await fetch(`/api/v1/clinic/patient/chart?patientId=${patientId}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const errorData: ApiErrorResponse = await response.json();
+      if (response.status === 404) throw new Error("المريض غير موجود");
+      if (response.status === 403) throw new Error("المريض لا ينتمي لهذه العيادة");
+      if (response.status === 401) throw new Error("غير مصرح - يرجى تسجيل الدخول");
+      throw new Error(errorData.error || "فشل في جلب بيانات Dental Chart");
+    }
+
+    const result: DentalChartResponse = await response.json();
+
+    return result.data;
+  } catch (error) {
+    if (error instanceof Error) throw error;
+    throw new Error("حدث خطأ غير متوقع أثناء جلب Dental Chart");
+  }
+}
 /**
  * جلب Dental Chart لمريض معين
  * - يبحث أولاً في IndexedDB

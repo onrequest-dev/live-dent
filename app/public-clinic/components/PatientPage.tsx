@@ -4,7 +4,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion ,AnimatePresence} from "framer-motion";
 import { useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import {
@@ -21,7 +21,7 @@ import {
   CreditCard,
 } from "lucide-react";
 import { Clinic, Patient, Session } from "@/types";
-
+import { PatientToothChart } from "./PatientToothChart";
 // تنسيق التاريخ مع اسم اليوم
 const formatDateWithDay = (date: Date | string) => {
   const d = typeof date === "string" ? new Date(date) : date;
@@ -210,7 +210,7 @@ export default function PatientPage({
       setIsDownloading(false);
     }
   };
-
+  const [showDentalChart, setShowDentalChart] = useState(false);
   return (
     <div
       className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 py-6 px-4"
@@ -218,37 +218,55 @@ export default function PatientPage({
     >
       <div className="max-w-md mx-auto">
         {/* أزرار التحكم */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-3 mb-6"
-        >
-          <button
-            onClick={downloadCard}
-            disabled={isDownloading}
-            className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-medium text-white shadow-lg transition-all disabled:opacity-50 hover:shadow-xl transform hover:-translate-y-0.5"
-            style={{
-              background: `linear-gradient(135deg, ${primaryColor} 0%)`,
-            }}
-          >
-            <Download size={20} className="animate-pulse" />
-            <span>{isDownloading ? "جاري التحميل..." : "تحميل الكرت"}</span>
-          </button>
+{/* أزرار التحكم */}
+<motion.div
+  initial={{ opacity: 0, y: -20 }}
+  animate={{ opacity: 1, y: 0 }}
+  className="flex flex-col gap-3 mb-6"  // غيّر إلى flex-col
+>
+  {/* الصف الأول: الأزرار الموجودة */}
+  <div className="flex items-center gap-3">
+    <button
+      onClick={downloadCard}
+      disabled={isDownloading}
+      className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-medium text-white shadow-lg transition-all disabled:opacity-50 hover:shadow-xl transform hover:-translate-y-0.5"
+      style={{
+        background: `linear-gradient(135deg, ${primaryColor} 0%)`,
+      }}
+    >
+      <Download size={20} className="animate-pulse" />
+      <span>{isDownloading ? "جاري التحميل..." : "تحميل الكرت"}</span>
+    </button>
 
-          <Link
-            href={`/public-clinic/${clinic.id}`}
-            className="p-3.5 rounded-2xl bg-white shadow-md hover:shadow-lg transition-all border border-gray-100"
-          >
-            <Building2 size={20} style={{ color: primaryColor }} />
-          </Link>
+    <Link
+      href={`/public-clinic/${clinic.id}`}
+      className="p-3.5 rounded-2xl bg-white shadow-md hover:shadow-lg transition-all border border-gray-100"
+    >
+      <Building2 size={20} style={{ color: primaryColor }} />
+    </Link>
 
-          <Link
-            href={`/public-clinic/${clinic.id}/doctor-cv`}
-            className="p-3.5 rounded-2xl bg-white shadow-md hover:shadow-lg transition-all border border-gray-100"
-          >
-            <Stethoscope size={20} style={{ color: primaryColor }} />
-          </Link>
-        </motion.div>
+    <Link
+      href={`/public-clinic/${clinic.id}/doctor-cv`}
+      className="p-3.5 rounded-2xl bg-white shadow-md hover:shadow-lg transition-all border border-gray-100"
+    >
+      <Stethoscope size={20} style={{ color: primaryColor }} />
+    </Link>
+  </div>
+
+  {/* ====== الزر الجديد: عرض الشارت السني ====== */}
+  <button
+    onClick={() => setShowDentalChart(!showDentalChart)}
+    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-medium text-white shadow-lg transition-all hover:shadow-xl"
+    style={{
+      background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`,
+    }}
+  >
+    <span className="text-xl">🦷</span>
+    <span>
+      {showDentalChart ? "إخفاء الشارت السني" : "عرض الشارت السني"}
+    </span>
+  </button>
+</motion.div>
 
         {/* الكرت */}
         <div
@@ -597,6 +615,27 @@ export default function PatientPage({
             </div>
           </div>
         </div>
+
+        {/* الشارت السني للمريض */}
+<AnimatePresence>
+  {showDentalChart && (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: 0.4 }}
+      className="mt-4 overflow-hidden"
+    >
+      <div className="bg-white rounded-3xl shadow-2xl p-4">
+        <PatientToothChart
+          patientId={patient.id}
+          patientName={patient.fullName}
+          primaryColor={primaryColor}
+        />
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
 
         {/* رسالة تلميح */}
         <motion.p
