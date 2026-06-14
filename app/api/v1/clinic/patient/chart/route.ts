@@ -172,7 +172,6 @@ export async function GET(request: NextRequest) {
         .from("DentalChart")
         .select("*")
         .eq("patientId", patientId)
-        .eq("clinicId", clinicId)
         .maybeSingle();
         console.log("Fetched chart data:", chartData, "Error:", chartError);
     
