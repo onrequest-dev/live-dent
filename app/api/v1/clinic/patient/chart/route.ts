@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     if (!chartData.teeth || chartData.teeth.length === 0) {
         return NextResponse.json({ error: "Teeth data is required and must be a non-empty array" }, { status: 400 });
     }
-    console.log(chartData.teeth)
+    // console.log(chartData.teeth)
     
     // Verify the patient exists and belongs to this clinic
     const { data: patientData, error: patientError } = await supabase_server
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
         .maybeSingle();  // Returns null if not found
     
     if (existingError) {
-        console.error("Error checking existing chart:", existingError);
+        // console.error("Error checking existing chart:", existingError);
         return NextResponse.json({ error: "Database error while checking existing chart" }, { status: 500 });
     }
     
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
             .single();
         
         if (error) {
-            console.error("Update error:", error);
+            // console.error("Update error:", error);
             return NextResponse.json({ 
                 error: "Failed to update dental chart",
                 details: error.message 
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
             .single();
         
         if (error) {
-            console.error("Insert error:", error);
+            // console.error("Insert error:", error);
             return NextResponse.json({ 
                 error: "Failed to create dental chart",
                 details: error.message 
@@ -176,7 +176,7 @@ export async function GET(request: NextRequest) {
         .maybeSingle();
     
     if (chartError) {
-        console.error("Database error:", chartError);
+        // console.error("Database error:", chartError);
         return NextResponse.json({ 
             error: "Failed to fetch dental chart",
             details: chartError.message 
