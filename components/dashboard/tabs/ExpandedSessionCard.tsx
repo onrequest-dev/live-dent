@@ -140,43 +140,43 @@ export function ExpandedSessionCard({
                 </div>
               </div>
               
-              {/* الجزء الأيمن - أيقونات الإجراءات */}
-              <div className="flex items-center gap-2">
-                {onEditSession && (
-                  <button
-                    onClick={() => {
-                      onEditSession(session);
-                      onClose();
-                    }}
-                    className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all hover:shadow-sm"
-                    aria-label="تعديل الجلسة"
-                    title="تعديل الجلسة"
-                  >
-                    <Edit size={18} className="text-gray-600" />
-                  </button>
-                )}
-                {onDeleteSession && (
-                  <button
-                    onClick={() => {
-                      onDeleteSession(session.id);
-                      onClose();
-                    }}
-                    className="w-9 h-9 rounded-full bg-red-50 hover:bg-red-100 flex items-center justify-center transition-all hover:shadow-sm"
-                    aria-label="حذف الجلسة"
-                    title="حذف الجلسة"
-                  >
-                    <Trash2 size={18} className="text-red-600" />
-                  </button>
-                )}
-                <button
-                  onClick={onClose}
-                  className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all hover:shadow-sm"
-                  aria-label="إغلاق"
-                  title="إغلاق"
-                >
-                  <X size={18} className="text-gray-600" />
-                </button>
-              </div>
+{/* الجزء الأيمن - أيقونات الإجراءات */}
+<div className="flex items-center gap-2">
+  {onEditSession && (
+    <button
+      onClick={() => {
+        onEditSession(session);
+        onClose();
+      }}
+      className="w-9 h-9 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all hover:shadow-sm"
+      aria-label="تعديل الجلسة"
+      title="تعديل الجلسة"
+    >
+      <Edit size={18} className="text-gray-600 icon-native" />
+    </button>
+  )}
+  {onDeleteSession && (
+    <button
+      onClick={() => {
+        onDeleteSession(session.id);
+        onClose();
+      }}
+      className="w-9 h-9 rounded-xl bg-red-50 hover:bg-red-100 flex items-center justify-center transition-all hover:shadow-sm"
+      aria-label="حذف الجلسة"
+      title="حذف الجلسة"
+    >
+      <Trash2 size={18} className="text-red-600" />
+    </button>
+  )}
+  <button
+    onClick={onClose}
+    className="w-9 h-9 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all hover:shadow-sm"
+    aria-label="إغلاق"
+    title="إغلاق"
+  >
+    <X size={18} className="text-gray-600" />
+  </button>
+</div>
             </div>
           </div>
 

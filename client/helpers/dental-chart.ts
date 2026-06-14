@@ -17,26 +17,14 @@ interface ApiErrorResponse {
   details?: string;
 }
 
+
+
 /**
- * جلب Dental Chart لمريض معين
- * - يبحث أولاً في IndexedDB
- * - إن لم يجده يجلبه من الخادم ويخزنه محلياً
+ * جلب بيانات الشارت السني من السيرفر مباشرة (يتجاوز التخزين المحلي)
+ * مناسبة لعرض بيانات المريض في الصفحة العامة حيث نريد دائماً أحدث البيانات
  */
-export async function fetchDentalChart(patientId: string): Promise<DentalChart | null> {
+export async function fetchDentalChartFromServer(patientId: string): Promise<DentalChart | null> {
   try {
-    // 1. البحث في قاعدة البيانات المحلية
-    const localCharts = await chartDB.charts
-      .where('patientId')
-      .equals(patientId)
-      .toArray();
-
-    // إذا وجدنا سجلاً واحداً على الأقل نُرجع بياناته (قد يكون غير متزامن لكنّه أحدث ما لدينا)
-    if (localCharts.length > 0) {
-      // نُرجع أول نتيجة (في الحالة الطبيعية يجب ألا يكون هناك أكثر من رسمة لكل مريض)
-      return localCharts[0].chart;
-    }
-
-    // 2. لم نجده محلياً → نجلبه من الخادم
     const response = await fetch(`/api/v1/clinic/patient/chart?patientId=${patientId}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
@@ -53,23 +41,97 @@ export async function fetchDentalChart(patientId: string): Promise<DentalChart |
 
     const result: DentalChartResponse = await response.json();
 
-    if (result.data) {
-      // 3. نخزّن البيانات في IndexedDB مع وضعها كـ synced
-      await chartDB.charts.put({
-        id: result.data.id,
-        patientId: result.data.patientId,
-        chart: result.data,
-        synced: true,
-      });
-    }
-
-    return result.data; // قد يكون null إذا لم توجد رسمة
+    return result.data;
   } catch (error) {
     if (error instanceof Error) throw error;
     throw new Error("حدث خطأ غير متوقع أثناء جلب Dental Chart");
   }
 }
+/**
+ * جلب Dental Chart لمريض معين
+ * - يبحث أولاً في IndexedDB
+ * - إن لم يجده يجلبه من الخادم ويخزنه محلياً
+ */
+// Simple in‑memory cache with 30‑second TTL
+const networkCache = new Map<
+  string,
+  { data: DentalChart | null; timestamp: number }
+>();
+const CACHE_TTL_MS = 30 * 1000; // 30 seconds
 
+export async function fetchDentalChart(
+  patientId: string
+): Promise<DentalChart | null> {
+  try {
+    // 1. Check in‑memory cache first (network priority)
+    const cached = networkCache.get(patientId);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      return cached.data; // may be null if no chart exists
+    }
+
+    // 2. Fetch from network
+    const response = await fetch(
+      `/api/v1/clinic/patient/chart?patientId=${patientId}`,
+      {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      }
+    );
+
+    if (!response.ok) {
+      const errorData: ApiErrorResponse = await response.json();
+      if (response.status === 404) throw new Error("المريض غير موجود");
+      if (response.status === 403)
+        throw new Error("المريض لا ينتمي لهذه العيادة");
+      if (response.status === 401)
+        throw new Error("غير مصرح - يرجى تسجيل الدخول");
+      throw new Error(errorData.error || "فشل في جلب بيانات Dental Chart");
+    }
+
+    const result: DentalChartResponse = await response.json();
+    const chartData = result.data ?? null; // ensure null if no data
+
+    // 3. Store in memory cache (including null responses)
+    networkCache.set(patientId, { data: chartData, timestamp: Date.now() });
+
+    // 4. Update IndexedDB for offline persistence (optional)
+    if (chartData) {
+      await chartDB.charts.put({
+        id: chartData.id,
+        patientId: chartData.patientId,
+        chart: chartData,
+        synced: true,
+      });
+    }
+
+    return chartData;
+  } catch (error) {
+    // Network error or other failure → fallback to local IndexedDB
+    console.warn(
+      `Network fetch failed for patient ${patientId}, falling back to local DB:`,
+      error
+    );
+    try {
+      const localCharts = await chartDB.charts
+        .where("patientId")
+        .equals(patientId)
+        .toArray();
+
+      if (localCharts.length > 0) {
+        // Also refresh the memory cache with the local data (optional)
+        const localData = localCharts[0].chart;
+        networkCache.set(patientId, { data: localData, timestamp: Date.now() });
+        return localData;
+      }
+      return null;
+    } catch (localError) {
+      // If even local DB fails, rethrow the original network error
+      if (error instanceof Error) throw error;
+      throw new Error("حدث خطأ غير متوقع أثناء جلب Dental Chart");
+    }
+  }
+}
 /**
  * إنشاء أو تحديث Dental Chart لمريض
  * - يخزن أولاً في IndexedDB بمعرف مؤقت وحالة غير متزامنة

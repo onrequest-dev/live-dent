@@ -539,7 +539,7 @@ export function DoctorCVTab({ clinicData, onProfileUpdate }: DoctorCVTabProps) {
                   <div className="space-y-2">
                     <label className={labelClassName}>
                       <Mail size={16} className="text-gray-600" />
-                      البريد الإلكتروني او رقم الهاتف 
+                      رقم الواتسآب :
                     </label>
                     <input
                       type="email"

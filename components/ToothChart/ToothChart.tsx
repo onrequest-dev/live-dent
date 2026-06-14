@@ -430,20 +430,23 @@ export const ToothChart = forwardRef<ToothChartRef, ToothChartProps>(
       text: string;
     } | null>(null);
     const [isMobile, setIsMobile] = useState(false);
+    const [isTablet, setIsTablet] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [fetchError, setFetchError] = useState<string | null>(null);
     const infoPanelRef = useRef<HTMLDivElement>(null);
 
     // كشف حجم الشاشة
-    useEffect(() => {
-      const checkMobile = () => {
-        setIsMobile(window.innerWidth < 1024);
-      };
-      checkMobile();
-      window.addEventListener("resize", checkMobile);
-      return () => window.removeEventListener("resize", checkMobile);
-    }, []);
+useEffect(() => {
+  const checkMobile = () => {
+    const width = window.innerWidth;
+    setIsMobile(width < 768);
+    setIsTablet(width >= 768 && width < 1200); // كشف التابلت
+  };
+  checkMobile();
+  window.addEventListener("resize", checkMobile);
+  return () => window.removeEventListener("resize", checkMobile);
+}, []);
 
     // جلب البيانات من API عند عدم وجود initialTeethData
     useEffect(() => {
@@ -746,19 +749,22 @@ export const ToothChart = forwardRef<ToothChartRef, ToothChartProps>(
             )}
           </div>
         ) : (
-          <div className="flex gap-6 items-start">
-            <div
-              className="bg-white rounded-2xl border border-gray-100 p-4"
-              style={{ width: "420px", flexShrink: 0 }}
-            >
-              <ToothChartSVG
-                teethData={teethData}
-                selectedToothId={selectedToothId}
-                onToothClick={handleToothClick}
-                editable={editable}
-                primaryColor={primaryColor}
-              />
-            </div>
+          <div className="flex gap-3 items-start">
+<div
+  className="bg-white rounded-2xl border border-gray-100 p-2"
+  style={{ 
+    width: isTablet ? "320px" : "380px", // أصغر في التابلت
+    flexShrink: 0 
+  }}
+>
+  <ToothChartSVG
+    teethData={teethData}
+    selectedToothId={selectedToothId}
+    onToothClick={handleToothClick}
+    editable={editable}
+    primaryColor={primaryColor}
+  />
+</div>
 
             <div className="flex-1 min-w-0">
               <AnimatePresence mode="wait">
