@@ -314,7 +314,7 @@ const ScrollProgress = () => {
 const SocialContact = () => {
   const socialLinks = [
     { icon: FaTelegramPlane, href: "https://t.me/OnRequest_dev", label: "تلغرام" },
-    { icon: FaWhatsapp, href: "https://wa.me/79610195064", label: "واتساب" },
+    { icon: FaWhatsapp, href: "https://wa.me/+963982719525", label: "واتساب" },
     { icon: FaYoutube, href: "https://youtube.com/@OnRequest_dev", label: "يوتيوب" },
     { icon: FaInstagram, href: "https://www.instagram.com/livedent.official", label: "انستغرام" },
   ];
