@@ -95,7 +95,7 @@ export function SettingsTab({ clinicData }: SettingsTabProps) {
 
   const clinicUrl = `${baseUrl}/public-clinic/${clinicId}`;
   const doctorCVUrl = `${baseUrl}/public-clinic/${clinicId}/doctor-cv`;
-  const whatsappUrl = `https://wa.me/79610195064`;
+  const whatsappUrl = `https://wa.me/+963982719525`;
 
   return (
     <motion.div
