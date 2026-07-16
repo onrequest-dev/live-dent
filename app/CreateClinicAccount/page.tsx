@@ -24,6 +24,8 @@ import {
   Shield,
   Smartphone,
   ChevronDown,
+  DollarSign,
+  CreditCard,
 } from "lucide-react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
@@ -225,6 +227,7 @@ interface FormData {
   graduationYear: string;
   username: string;
   password: string;
+  currency: "USD" | "SP";
 }
 
 function LiveDentRegistrationForm({
@@ -242,6 +245,7 @@ function LiveDentRegistrationForm({
     graduationYear: "",
     username: "",
     password: "",
+    currency: "USD",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -490,6 +494,10 @@ function LiveDentRegistrationForm({
       const cleanPhone = cleanPhoneNumber(formData.phoneNumber);
 
       // إنشاء رابط واتساب مباشر
+      const currencyLabel =
+        formData.currency === "USD" ? "دولار أمريكي" : "ل.س";
+      const currencySymbol = formData.currency === "USD" ? "$" : "ل.س";
+
       const whatsappMessage = `السلام عليكم \nكيف الحال د.${formData.doctorName}\nنود اعلامك بأنه قد تم انشاء حسابك على LiveDent بنجاح\n\nيمكنك الآن الدخول ل:\nhttps://live-dent.vercel.app/log-in\n\nووضع اسم المستخدم و كلمة المرور التي قمت بإنشائها سلفاً`;
       const whatsappLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(whatsappMessage)}`;
 
@@ -504,6 +512,11 @@ function LiveDentRegistrationForm({
 <b>🏥 اسم العيادة:</b> ${formData.clinicName}
 <b>📍 موقع العيادة:</b> ${formData.clinicLocation}
 <b>📱 رقم الواتساب:</b> ${formData.phoneNumber}
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+💰 <b>العملة الأساسية للعيادة:</b>
+<b>💱 العملة:</b> ${formData.currency} (${currencyLabel}) ${currencySymbol}
 
 ━━━━━━━━━━━━━━━━━━━━━━
 
@@ -1012,6 +1025,63 @@ ${whatsappLink}
                       <p className="text-gray-500 text-[10px] sm:text-xs">
                         رمز الدولة و الرقم (مهم لأنك ستتلقى رسالة القبول عليه من
                         الضروري ان يكون صحيحا)
+                      </p>
+                    </motion.div>
+
+                    {/* Currency Selection - NEW */}
+                    <motion.div
+                      variants={itemVariants}
+                      className="space-y-1.5 sm:space-y-2 pt-1"
+                    >
+                      <label className="text-white text-xs sm:text-sm font-medium flex items-center gap-2">
+                        <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-yellow-400" />
+                        العملة الأساسية للعيادة
+                      </label>
+                      <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                        <motion.button
+                          type="button"
+                          onClick={() => updateField("currency", "USD")}
+                          className={`flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl border-2 transition-all duration-200 ${
+                            formData.currency === "USD"
+                              ? "border-yellow-400 bg-yellow-500/20 text-yellow-400 shadow-lg shadow-yellow-500/20"
+                              : "border-gray-600 bg-[#1A2A44] text-gray-400 hover:border-yellow-400/50"
+                          }`}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.95 }}
+                          disabled={loading}
+                        >
+                          <DollarSign className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <span className="font-medium text-sm sm:text-base">
+                            USD
+                          </span>
+                          <span className="text-[10px] sm:text-xs opacity-60">
+                            (دولار)
+                          </span>
+                        </motion.button>
+                        <motion.button
+                          type="button"
+                          onClick={() => updateField("currency", "SP")}
+                          className={`flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl border-2 transition-all duration-200 ${
+                            formData.currency === "SP"
+                              ? "border-yellow-400 bg-yellow-500/20 text-yellow-400 shadow-lg shadow-yellow-500/20"
+                              : "border-gray-600 bg-[#1A2A44] text-gray-400 hover:border-yellow-400/50"
+                          }`}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.95 }}
+                          disabled={loading}
+                        >
+                          <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <span className="font-medium text-sm sm:text-base">
+                            SP
+                          </span>
+                          <span className="text-[10px] sm:text-xs opacity-60">
+                            (ل.س)
+                          </span>
+                        </motion.button>
+                      </div>
+                      <p className="text-gray-500 text-[10px] sm:text-xs">
+                        سيتم استخدام هذه العملة لجميع المعاملات المالية في
+                        العيادة
                       </p>
                     </motion.div>
                   </motion.div>

@@ -19,6 +19,8 @@ import {
   Send,
   CheckCircle2,
   FileText,
+  DollarSign,
+  CreditCard,
 } from "lucide-react";
 
 interface CreateClinicForm {
@@ -39,6 +41,9 @@ interface CreateClinicForm {
   credentials: {
     username: string;
     password: string;
+  };
+  settings: {
+    currency: "USD" | "SP";
   };
 }
 
@@ -68,6 +73,9 @@ export default function CreateClinicPage() {
       username: "",
       password: "",
     },
+    settings: {
+      currency: "USD",
+    },
   });
 
   const hexToRgba = (hex: string, alpha: number): string => {
@@ -96,6 +104,7 @@ export default function CreateClinicPage() {
           name: formData.clinic.name,
           address: formData.clinic.address,
           subscriptionStatus: "trial",
+          currency: formData.settings.currency,
           createdAt: new Date(),
           doctorProfile: {
             fullName: formData.doctor.fullName,
@@ -143,6 +152,7 @@ export default function CreateClinicPage() {
             contactEmail: "",
           },
           credentials: { username: "", password: "" },
+          settings: { currency: "USD" },
         });
         setCurrentStep(1);
       } else {
@@ -350,7 +360,10 @@ export default function CreateClinicPage() {
           </motion.div>
 
           {/* Step Indicator */}
-          <motion.div variants={itemVariants} className="flex justify-center gap-3">
+          <motion.div
+            variants={itemVariants}
+            className="flex justify-center gap-3"
+          >
             {[1, 2, 3].map((step) => (
               <div
                 key={step}
@@ -358,8 +371,8 @@ export default function CreateClinicPage() {
                   currentStep === step
                     ? "bg-teal-400 w-8"
                     : currentStep > step
-                    ? "bg-teal-600"
-                    : "bg-gray-600"
+                      ? "bg-teal-600"
+                      : "bg-gray-600"
                 }`}
               />
             ))}
@@ -398,13 +411,8 @@ export default function CreateClinicPage() {
                   </p>
                 </div>
                 <motion.button
-                type="submit"
-                disabled={loading}
-                  onClick={(e) => {
-                    if (loading) {
-                      e.preventDefault();
-                      return;
-                    }
+                  type="button"
+                  onClick={() => {
                     setSuccess(false);
                     setFormData({
                       clinic: { name: "", address: "" },
@@ -419,6 +427,7 @@ export default function CreateClinicPage() {
                         contactEmail: "",
                       },
                       credentials: { username: "", password: "" },
+                      settings: { currency: "USD" },
                     });
                     setCurrentStep(1);
                   }}
@@ -506,6 +515,54 @@ export default function CreateClinicPage() {
                           dir="rtl"
                         />
                       </div>
+                    </div>
+
+                    {/* Currency Selection - New Field in Step 1 */}
+                    <div className="space-y-2">
+                      <label className="text-white text-sm font-medium flex items-center gap-2">
+                        <DollarSign className="w-4 h-4 text-teal-400" />
+                        العملة الأساسية *
+                      </label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <motion.button
+                          type="button"
+                          onClick={() =>
+                            handleChange("settings", "currency", "USD")
+                          }
+                          className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 transition-all duration-200 ${
+                            formData.settings.currency === "USD"
+                              ? "border-teal-400 bg-teal-500/20 text-teal-400 shadow-lg shadow-teal-500/20"
+                              : "border-gray-600 bg-[#1A2A44] text-gray-400 hover:border-teal-400/50"
+                          }`}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          <DollarSign className="w-5 h-5" />
+                          <span className="font-medium">USD</span>
+                          <span className="text-xs opacity-60">(دولار)</span>
+                        </motion.button>
+                        <motion.button
+                          type="button"
+                          onClick={() =>
+                            handleChange("settings", "currency", "SP")
+                          }
+                          className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 transition-all duration-200 ${
+                            formData.settings.currency === "SP"
+                              ? "border-teal-400 bg-teal-500/20 text-teal-400 shadow-lg shadow-teal-500/20"
+                              : "border-gray-600 bg-[#1A2A44] text-gray-400 hover:border-teal-400/50"
+                          }`}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          <CreditCard className="w-5 h-5" />
+                          <span className="font-medium">SP</span>
+                          <span className="text-xs opacity-60">(ل.س)</span>
+                        </motion.button>
+                      </div>
+                      <p className="text-xs text-gray-500 mr-1">
+                        سيتم استخدام هذه العملة لجميع المعاملات المالية في
+                        العيادة
+                      </p>
                     </div>
                   </motion.div>
                 )}
@@ -755,7 +812,11 @@ export default function CreateClinicPage() {
                           placeholder="اسم المستخدم لتسجيل الدخول"
                           value={formData.credentials.username}
                           onChange={(e) =>
-                            handleChange("credentials", "username", e.target.value)
+                            handleChange(
+                              "credentials",
+                              "username",
+                              e.target.value,
+                            )
                           }
                           onFocus={() => setFocusedField("username")}
                           onBlur={() => setFocusedField(null)}
@@ -790,7 +851,11 @@ export default function CreateClinicPage() {
                           placeholder="كلمة المرور"
                           value={formData.credentials.password}
                           onChange={(e) =>
-                            handleChange("credentials", "password", e.target.value)
+                            handleChange(
+                              "credentials",
+                              "password",
+                              e.target.value,
+                            )
                           }
                           onFocus={() => setFocusedField("password")}
                           onBlur={() => setFocusedField(null)}
@@ -799,6 +864,26 @@ export default function CreateClinicPage() {
                           dir="ltr"
                         />
                       </div>
+                    </div>
+
+                    {/* Show selected currency in step 3 for confirmation */}
+                    <div className="bg-[#1A2A44] rounded-xl p-4 border border-teal-500/10">
+                      <p className="text-sm text-gray-400">
+                        العملة المحددة للعيادة:
+                      </p>
+                      <p className="text-lg font-semibold text-teal-400 mt-1 flex items-center gap-2">
+                        {formData.settings.currency === "USD" ? (
+                          <>
+                            <DollarSign className="w-5 h-5" />
+                            USD - دولار أمريكي
+                          </>
+                        ) : (
+                          <>
+                            <CreditCard className="w-5 h-5" />
+                            SP - ليرة سورية
+                          </>
+                        )}
+                      </p>
                     </div>
                   </motion.div>
                 )}
@@ -827,7 +912,7 @@ export default function CreateClinicPage() {
                       السابق
                     </motion.button>
                   )}
-                  
+
                   {currentStep < 3 ? (
                     <motion.button
                       type="button"
@@ -899,7 +984,7 @@ export default function CreateClinicPage() {
           width: 6px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-          background: #1A2A44;
+          background: #1a2a44;
           border-radius: 10px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
