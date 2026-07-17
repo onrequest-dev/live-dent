@@ -215,6 +215,67 @@ const [sessions, setSessions] = useState<Session[]>(() => {
     return 320;
   });
 
+const handleUpdateSessionPayment = useCallback(async (sessionId: string, isPaid: boolean) => {
+  // 💾 حفظ الحالة القديمة
+  const oldSession = sessions.find(s => s.id === sessionId);
+  if (!oldSession) return;
+  const oldIsPaid = oldSession.isPaid;
+  const oldPaidAt = oldSession.paidAt;
+  const oldPaymentMethod = oldSession.paymentMethod;
+
+  // ✅ التحديث الفوري للـ UI
+  setSessions((prev) =>
+    prev.map((s) =>
+      s.id === sessionId 
+        ? { 
+            ...s, 
+            isPaid, 
+            paidAt: isPaid ? new Date() : undefined,
+            paymentMethod: isPaid ? "cash" : undefined
+          } 
+        : s
+    )
+  );
+
+  try {
+    // 📡 إرسال الطلب إلى السيرفر
+    const result = await updateSession(sessionId, { 
+      isPaid,
+      paidAt: isPaid ? new Date() : undefined,
+      paymentMethod: isPaid ? "cash" : undefined
+    });
+    
+    if (!result.success) {
+      throw new Error(result.error || "فشل تحديث حالة الدفع");
+    }
+    
+    // ✅ نجاح: رسالة نجاح
+    addToast({
+      message: isPaid ? " تم تحديث حالة الدفع إلى مدفوع" : " تم تحديث حالة الدفع إلى غير مدفوع",
+      type: "success",
+    });
+  } catch (error: any) {
+    // ❌ فشل: نرجع الحالة القديمة + رسالة خطأ
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === sessionId 
+          ? { 
+              ...s, 
+              isPaid: oldIsPaid, 
+              paidAt: oldPaidAt,
+              paymentMethod: oldPaymentMethod
+            } 
+          : s
+      )
+    );
+    
+    addToast({
+      message: error?.message || "❌ حدث خطأ أثناء تحديث حالة الدفع",
+      type: "error",
+    });
+  }
+}, [sessions, setSessions, addToast]);
+
   const resizingRef = useRef<boolean>(false);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -466,27 +527,51 @@ const [sessions, setSessions] = useState<Session[]>(() => {
     openWhatsAppChat(patient.phone, message);
   };
 
-  const handleUpdateSessionStatus = async (
-    sessionId: string,
-    newStatus: Session["status"],
-  ) => {
-    try {
-      await api.updateSessionStatus(sessionId, newStatus);
-      setSessions((prev) =>
-        prev.map((s) => (s.id === sessionId ? { ...s, status: newStatus } : s)),
-      );
-      // لا حاجة لتحديث selectedPatientSessions يدوياً لأنه مشتق من sessions مباشرة
-      addToast({
-        message: "تم تحديث حالة الجلسة بنجاح",
-        type: "success",
-      });
-    } catch (error: any) {
-      addToast({
-        message: error?.message || "خطأ في تحديث حالة الجلسة",
-        type: "error",
-      });
+const handleUpdateSessionStatus = useCallback(async (
+  sessionId: string,
+  newStatus: Session["status"],
+) => {
+  // 💾 حفظ الحالة القديمة للتراجع في حالة الفشل
+  const oldSession = sessions.find(s => s.id === sessionId);
+  if (!oldSession) return;
+  const oldStatus = oldSession.status;
+
+  // ✅ التحديث الفوري للـ UI (المستخدم يرى التغيير فوراً)
+  setSessions((prev) =>
+    prev.map((s) =>
+      s.id === sessionId ? { ...s, status: newStatus } : s
+    )
+  );
+
+  try {
+    // 📡 إرسال الطلب إلى السيرفر
+    const result = await updateSession(sessionId, { status: newStatus });
+    
+    if (!result.success) {
+      throw new Error(result.error || "فشل تحديث الحالة");
     }
-  };
+    
+    // ✅ نجاح: رسالة نجاح
+    addToast({
+      message: newStatus === "completed" 
+        ? " تم إكمال الجلسة بنجاح" 
+        : " تم جدولة الجلسة بنجاح",
+      type: "success",
+    });
+  } catch (error: any) {
+    // ❌ فشل: نرجع الحالة القديمة + رسالة خطأ
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === sessionId ? { ...s, status: oldStatus } : s
+      )
+    );
+    
+    addToast({
+      message: error?.message || " حدث خطأ أثناء تحديث الحالة",
+      type: "error",
+    });
+  }
+}, [sessions, setSessions, addToast]);
 
   const handleEditSession = (session: Session) => {
     setEditingSession(session);
@@ -1192,6 +1277,7 @@ const [sessions, setSessions] = useState<Session[]>(() => {
                 onAddAppointment={() => setShowNewAppointmentModal(true)}
                 onWhatsApp={handleWhatsApp}
                 onUpdateSessionStatus={handleUpdateSessionStatus}
+                onUpdateSessionPayment={handleUpdateSessionPayment}
                 expandedCaseId={expandedCaseId}
                 setExpandedCaseId={setExpandedCaseId}
                 formatDate={formatDate}
@@ -1302,6 +1388,7 @@ const [sessions, setSessions] = useState<Session[]>(() => {
                 }}
                 onWhatsApp={handleWhatsApp}
                 onUpdateSessionStatus={handleUpdateSessionStatus}
+                onUpdateSessionPayment={handleUpdateSessionPayment}
                 expandedCaseId={expandedCaseId}
                 setExpandedCaseId={setExpandedCaseId}
                 formatDate={formatDate}
@@ -1504,6 +1591,7 @@ interface PatientDetailsCardProps {
   onAddAppointment: () => void;
   onWhatsApp: (patient: Patient, session?: Session) => void;
   onUpdateSessionStatus: (sessionId: string, status: Session["status"]) => void;
+  onUpdateSessionPayment: (sessionId: string, isPaid: boolean) => Promise<void>; 
   expandedCaseId: string | null;
   setExpandedCaseId: (id: string | null) => void;
   formatDate: (date: Date | string) => string;
@@ -1543,6 +1631,7 @@ function PatientDetailsCard({
   isMobile = false,
   onEditSession,
   onDeleteSession,
+  onUpdateSessionPayment,
   onEditPatient,
   onRequestDeleteSession,
   clinicId,
@@ -1632,46 +1721,27 @@ function PatientDetailsCard({
   );
 
   // دالة مساعدة لعرض حالة الجلسة بشكل موحد
-  const getSessionStatusBadge = (status: Session["status"]) => {
-    switch (status) {
-      case "scheduled":
-        return {
-          dotColor: "bg-yellow-400",
-          textColor: "text-yellow-700",
-          bgColor: "bg-yellow-50",
-          label: "مجدولة",
-        };
-      case "completed":
-        return {
-          dotColor: "bg-green-500",
-          textColor: "text-green-700",
-          bgColor: "bg-green-50",
-          label: "مكتملة",
-        };
-      case "in-progress":
-        return {
-          dotColor: "bg-blue-500",
-          textColor: "text-blue-700",
-          bgColor: "bg-blue-50",
-          label: "قيد التنفيذ",
-        };
-      case "cancelled":
-        return {
-          dotColor: "bg-red-500",
-          textColor: "text-red-700",
-          bgColor: "bg-red-50",
-          label: "ملغية",
-        };
-      case "no-show":
-        return {
-          dotColor: "bg-gray-400",
-          textColor: "text-gray-700",
-          bgColor: "bg-gray-50",
-          label: "لم يحضر",
-        };
-    }
-  };
+const getSessionStatusBadge = (status: Session["status"]) => {
+  switch (status) {
+    case "scheduled":
+      return { dotColor: "bg-yellow-400", textColor: "text-yellow-700", bgColor: "bg-yellow-50", label: "مجدولة" };
+    case "completed":
+      return { dotColor: "bg-green-500", textColor: "text-green-700", bgColor: "bg-green-50", label: "مكتملة" };
+    default:
+      // إذا كانت هناك حالة غير متوقعة، نعاملها كمجدولة
+      return { dotColor: "bg-yellow-400", textColor: "text-yellow-700", bgColor: "bg-yellow-50", label: "مجدولة" };
+  }
+};
+// دالة تبديل حالة الجلسة (تستخدم الدالة الموجودة)
+const toggleSessionStatus = useCallback((sessionId: string, currentStatus: Session["status"]) => {
+  const newStatus = currentStatus === "scheduled" ? "completed" : "scheduled";
+  onUpdateSessionStatus(sessionId, newStatus);
+}, [onUpdateSessionStatus]);
 
+// دالة تبديل حالة الدفع (تستخدم الدالة الجديدة)
+const togglePaymentStatus = useCallback((sessionId: string, currentIsPaid: boolean) => {
+  onUpdateSessionPayment(sessionId, !currentIsPaid);
+}, [onUpdateSessionPayment]);
   return (
     <>
       <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm sm:shadow-md border border-gray-100 overflow-hidden">
@@ -2037,17 +2107,21 @@ function PatientDetailsCard({
                                 className="grid grid-cols-[100px_1.5fr_1fr_100px_100px_100px_100px] px-4 py-2.5 items-center hover:bg-gray-50/50 cursor-pointer transition-colors"
                                 onClick={() => setSelectedSession(session)}
                               >
-                                {/* حالة الجلسة */}
-                                <div className="flex items-center gap-2">
-                                  <div
-                                    className={`w-2 h-2 rounded-full ${statusBadge.dotColor} flex-shrink-0`}
-                                  />
-                                  <span
-                                    className={`text-xs sm:text-sm ${statusBadge.textColor} truncate`}
-                                  >
-                                    {statusBadge.label}
-                                  </span>
-                                </div>
+{/* حالة الجلسة */}
+<div 
+  className="flex items-center gap-2 cursor-pointer group"
+  onDoubleClick={(e) => {
+    e.stopPropagation();
+    toggleSessionStatus(session.id, session.status);
+  }}
+  onClick={(e) => e.stopPropagation()} // 🔥 منع النقرة من الوصول للصف
+  title="انقر نقرتين مزدوجتين لتغيير الحالة"
+>
+  <div className={`w-2 h-2 rounded-full ${statusBadge.dotColor} flex-shrink-0 transition-colors group-hover:scale-110`} />
+  <span className={`text-xs sm:text-sm ${statusBadge.textColor} truncate transition-colors group-hover:opacity-70`}>
+    {statusBadge.label}
+  </span>
+</div>
 
                                 {/* الإجراء */}
                                 <div
@@ -2078,20 +2152,28 @@ function PatientDetailsCard({
                                   {formatCurrency(session.sessionCost)}
                                 </div>
 
-                                {/* حالة الدفع */}
-                                <div className="text-xs sm:text-sm text-gray-600 truncate">
-                                  {session.isPaid ? (
-                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-50 text-green-700 text-[11px] sm:text-xs font-medium">
-                                      <CheckCircle size={11} />
-                                      مدفوع
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-50 text-red-700 text-[11px] sm:text-xs font-medium">
-                                      <AlertCircle size={11} />
-                                      غير مدفوع
-                                    </span>
-                                  )}
-                                </div>
+{/* حالة الدفع */}
+<div 
+  className="text-xs sm:text-sm text-gray-600 truncate cursor-pointer"
+  onDoubleClick={(e) => {
+    e.stopPropagation();
+    togglePaymentStatus(session.id, session.isPaid);
+  }}
+  onClick={(e) => e.stopPropagation()} // 🔥 منع النقرة من الوصول للصف
+  title="انقر نقرتين مزدوجتين لتغيير حالة الدفع"
+>
+  {session.isPaid ? (
+    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-50 text-green-700 text-[11px] sm:text-xs font-medium transition-all hover:bg-green-100">
+      <CheckCircle size={11} />
+      مدفوع
+    </span>
+  ) : (
+    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-50 text-red-700 text-[11px] sm:text-xs font-medium transition-all hover:bg-red-100">
+      <AlertCircle size={11} />
+      غير مدفوع
+    </span>
+  )}
+</div>
 
                                 {/* أزرار الإجراءات */}
                                 <div className="flex items-center justify-end gap-1.5 sm:gap-2">
@@ -2146,16 +2228,20 @@ function PatientDetailsCard({
                           >
                             {/* الصف الأول: حالة الجلسة + التاريخ */}
                             <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-1.5">
-                                <div
-                                  className={`w-2 h-2 rounded-full ${statusBadge.dotColor} flex-shrink-0`}
-                                />
-                                <span
-                                  className={`text-[11px] sm:text-xs font-medium px-2 py-0.5 rounded-full ${statusBadge.bgColor} ${statusBadge.textColor}`}
-                                >
-                                  {statusBadge.label}
-                                </span>
-                              </div>
+                            <div 
+                              className="flex items-center gap-2 cursor-pointer px-2 py-1 -ml-2 rounded-lg hover:bg-gray-100/50 active:scale-[0.97] transition-all duration-200"
+                              onDoubleClick={(e) => {
+                                e.stopPropagation();
+                                toggleSessionStatus(session.id, session.status);
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              title="انقر نقرتين مزدوجتين لتغيير الحالة"
+                            >
+                              <div className={`w-2.5 h-2.5 rounded-full ${statusBadge.dotColor} flex-shrink-0 transition-transform duration-200 hover:scale-110`} />
+                              <span className={`text-[11px] sm:text-xs font-medium px-2.5 py-1 rounded-full ${statusBadge.bgColor} ${statusBadge.textColor} transition-all duration-200 hover:shadow-sm`}>
+                                {statusBadge.label}
+                              </span>
+                            </div>
                               <span className="text-[11px] sm:text-xs text-gray-500">
                                 {formatDate(session.startTime)}
                               </span>
@@ -2186,44 +2272,54 @@ function PatientDetailsCard({
                                 <span className="text-xs sm:text-sm font-semibold text-gray-900">
                                   {formatCurrency(session.sessionCost)}
                                 </span>
-                                {session.isPaid ? (
-                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-green-50 text-green-700 text-[10px] sm:text-[11px] font-medium">
-                                    <CheckCircle size={10} />
-                                    مدفوع
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-50 text-red-700 text-[10px] sm:text-[11px] font-medium">
-                                    <AlertCircle size={10} />
-                                    غير مدفوع
-                                  </span>
-                                )}
-                              </div>
-
-                              {/* أزرار الإجراءات */}
-                              <div className="flex items-center gap-1">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onEditSession(session);
-                                  }}
-                                  className="p-1.5 rounded-lg bg-white hover:bg-gray-200 transition-colors flex-shrink-0 shadow-sm"
-                                  title="تعديل الجلسة"
-                                >
-                                  <Edit size={13} className="text-gray-600" />
-                                </button>
-
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onRequestDeleteSession(session.id);
-                                  }}
-                                  className="p-1.5 rounded-lg bg-white hover:bg-red-50 transition-colors flex-shrink-0 shadow-sm"
-                                  title="حذف الجلسة"
-                                >
-                                  <Trash2 size={13} className="text-red-600" />
-                                </button>
-                              </div>
+                            <div
+                              className="flex items-center gap-1.5 cursor-pointer group/payment px-2.5 py-1.5 -m-1 rounded-lg hover:bg-gray-100/70 active:bg-gray-200/50 transition-all duration-200 select-none"
+                              onDoubleClick={(e) => {
+                                e.stopPropagation();
+                                togglePaymentStatus(session.id, session.isPaid);
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              title="انقر نقرتين مزدوجتين لتغيير حالة الدفع"
+                            >
+                              {session.isPaid ? (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 text-green-700 text-[10px] sm:text-[11px] font-medium border border-green-200 transition-all duration-200 group-hover/payment:scale-[1.02] group-hover/payment:shadow-sm group-hover/payment:bg-green-100">
+                                  <CheckCircle size={11} />
+                                  مدفوع
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 text-red-700 text-[10px] sm:text-[11px] font-medium border border-red-200 transition-all duration-200 group-hover/payment:scale-[1.02] group-hover/payment:shadow-sm group-hover/payment:bg-red-100">
+                                  <AlertCircle size={11} />
+                                  غير مدفوع
+                                </span>
+                              )}
                             </div>
+                          </div>
+
+                          {/* أزرار الإجراءات */}
+                          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEditSession(session);
+                              }}
+                              className="p-1.5 rounded-lg bg-white hover:bg-gray-200 transition-colors flex-shrink-0 shadow-sm"
+                              title="تعديل الجلسة"
+                            >
+                              <Edit size={13} className="text-gray-600" />
+                            </button>
+
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onRequestDeleteSession(session.id);
+                              }}
+                              className="p-1.5 rounded-lg bg-white hover:bg-red-50 transition-colors flex-shrink-0 shadow-sm"
+                              title="حذف الجلسة"
+                            >
+                              <Trash2 size={13} className="text-red-600" />
+                            </button>
+                          </div>
+                        </div>
                           </div>
                         );
                       })}
@@ -2500,9 +2596,9 @@ function EditSessionModal({
                   {[
                     { value: "scheduled", label: "مجدولة", icon: Calendar },
                     { value: "completed", label: "مكتملة", icon: CheckCircle },
-                    { value: "in-progress", label: "قيد التنفيذ", icon: Clock },
-                    { value: "cancelled", label: "ملغية", icon: XCircle },
-                    { value: "no-show", label: "لم يحضر", icon: UserX },
+                    // { value: "in-progress", label: "قيد التنفيذ", icon: Clock },
+                    // { value: "cancelled", label: "ملغية", icon: XCircle },
+                    // { value: "no-show", label: "لم يحضر", icon: UserX },
                   ].map((option) => {
                     const Icon = option.icon;
                     const isSelected = formData.status === option.value;
