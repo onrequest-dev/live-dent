@@ -2015,38 +2015,64 @@ const togglePaymentStatus = useCallback((sessionId: string, currentIsPaid: boole
                   </div>
 
                   {/* معلومات إضافية */}
-                  <div className="flex flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-2 pt-2 sm:pt-3 border-t border-gray-100">
-                    {/* الإجراء المخطط */}
-                    <div className="flex items-center gap-1.5 sm:gap-2">
-                      <Stethoscope
-                        size={13}
-                        className="sm:w-[14px] sm:h-[14px] text-gray-400"
-                      />
-                      <span className="text-[11px] sm:text-xs text-gray-500">
-                        الإجراء المخطط:
-                      </span>
-                      <span className="text-xs sm:text-sm font-medium text-gray-900">
-                        {patient.plannedProcedure || "غير محدد"}
-                      </span>
-                    </div>
+<div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-4 pt-3 sm:pt-4 border-t border-gray-100">
+  
+  {/* الإجراء المخطط */}
+  {patient.plannedProcedure && (
+    <div className="flex items-start gap-2 w-full sm:w-auto">
+      <div className="flex items-center gap-1.5 mt-0.5">
+        <Stethoscope size={14} className="text-gray-400 flex-shrink-0" />
+        <span className="text-[11px] sm:text-xs text-gray-500 whitespace-nowrap">
+          الإجراء المخطط:
+        </span>
+      </div>
+      <span 
+        className="text-xs sm:text-sm font-medium text-gray-900 leading-relaxed break-words"
+        style={{
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
+        }}
+      >
+        {patient.plannedProcedure}
+      </span>
+    </div>
+  )}
 
-                    {/* السعر الإجمالي */}
-                    <div className="flex items-center gap-1.5 sm:gap-2">
-                      <span className="text-[11px] sm:text-xs text-gray-500">
-                        السعر المتفق عليه:
-                      </span>
-                      <span className="text-xs sm:text-sm font-semibold text-gray-900">
-                        {patient.totalPrice ? formatCurrency(parseFloat(patient.totalPrice)) : 'غير محدد'} |
-                      </span>
+  {/* فصل عمودي - يظهر فقط في سطح المكتب */}
+  {patient.plannedProcedure && (
+    <div className="hidden sm:block w-px h-6 bg-gray-200 flex-shrink-0" />
+  )}
 
-                      <span className="text-[11px] sm:text-xs text-gray-500">
-                        إجمالي تكلفة الجلسات:
-                      </span>
-                      <span className="text-xs sm:text-sm font-semibold text-gray-900">
-                        {formatCurrency(finance.totalCost)}
-                      </span>
-                    </div>
-                  </div>
+  {/* السعر المتفق عليه وإجمالي التكلفة */}
+  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 w-full sm:w-auto">
+    {/* السعر المتفق عليه */}
+    <div className="flex items-center gap-1.5">
+      <span className="text-[11px] sm:text-xs text-gray-500 whitespace-nowrap">
+        السعر المتفق عليه:
+      </span>
+      <span className="text-xs sm:text-sm font-bold text-gray-900">
+        {patient.totalPrice ? formatCurrency(parseFloat(patient.totalPrice)) : (
+          <span className="text-gray-400 font-medium">غير محدد</span>
+        )}
+      </span>
+    </div>
+
+    {/* فاصل */}
+    <span className="text-gray-300 text-xs">|</span>
+
+    {/* إجمالي تكلفة الجلسات */}
+    <div className="flex items-center gap-1.5">
+      <span className="text-[11px] sm:text-xs text-gray-500 whitespace-nowrap">
+        إجمالي التكلفة:
+      </span>
+      <span className="text-xs sm:text-sm font-bold text-gray-900">
+        {formatCurrency(finance.totalCost)}
+      </span>
+    </div>
+  </div>
+</div>
                 </div>
 
                 {/* ملاحظات إن وجدت */}
@@ -2107,20 +2133,37 @@ const togglePaymentStatus = useCallback((sessionId: string, currentIsPaid: boole
                                 className="grid grid-cols-[100px_1.5fr_1fr_100px_100px_100px_100px] px-4 py-2.5 items-center hover:bg-gray-50/50 cursor-pointer transition-colors"
                                 onClick={() => setSelectedSession(session)}
                               >
-{/* حالة الجلسة */}
+{/* حالة الجلسة - Badge تفاعلي */}
 <div 
-  className="flex items-center gap-2 cursor-pointer group"
-  onDoubleClick={(e) => {
+  className="flex items-center gap-1.5 cursor-pointer group/status"
+  onClick={(e) => {
     e.stopPropagation();
     toggleSessionStatus(session.id, session.status);
   }}
-  onClick={(e) => e.stopPropagation()} // 🔥 منع النقرة من الوصول للصف
-  title="انقر نقرتين مزدوجتين لتغيير الحالة"
+  title={`انقر لتغيير الحالة (حالياً: ${statusBadge.label})`}
 >
-  <div className={`w-2 h-2 rounded-full ${statusBadge.dotColor} flex-shrink-0 transition-colors group-hover:scale-110`} />
-  <span className={`text-xs sm:text-sm ${statusBadge.textColor} truncate transition-colors group-hover:opacity-70`}>
-    {statusBadge.label}
-  </span>
+  <div 
+    className={`
+      inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full
+      transition-all duration-300
+      ${session.status === "completed" 
+        ? "bg-emerald-50 border border-emerald-200 text-emerald-700" 
+        : "bg-amber-50 border border-amber-200 text-amber-700"
+      }
+      group-hover/status:scale-[1.04] 
+      group-hover/status:shadow-md 
+      group-hover/status:brightness-105
+      active:scale-[0.95]
+    `}
+  >
+
+    {/* النص */}
+    <span className="text-[11px] sm:text-xs font-semibold">
+      {statusBadge.label}
+    </span>
+
+  </div>
+
 </div>
 
                                 {/* الإجراء */}
@@ -2152,27 +2195,43 @@ const togglePaymentStatus = useCallback((sessionId: string, currentIsPaid: boole
                                   {formatCurrency(session.sessionCost)}
                                 </div>
 
-{/* حالة الدفع */}
+{/* حالة الدفع - Badge تفاعلي */}
 <div 
-  className="text-xs sm:text-sm text-gray-600 truncate cursor-pointer"
-  onDoubleClick={(e) => {
+  className="relative cursor-pointer group/payment"
+  onClick={(e) => {
     e.stopPropagation();
     togglePaymentStatus(session.id, session.isPaid);
   }}
-  onClick={(e) => e.stopPropagation()} // 🔥 منع النقرة من الوصول للصف
-  title="انقر نقرتين مزدوجتين لتغيير حالة الدفع"
+  title={`انقر لتغيير حالة الدفع`}
 >
-  {session.isPaid ? (
-    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-50 text-green-700 text-[11px] sm:text-xs font-medium transition-all hover:bg-green-100">
-      <CheckCircle size={11} />
-      مدفوع
-    </span>
-  ) : (
-    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-50 text-red-700 text-[11px] sm:text-xs font-medium transition-all hover:bg-red-100">
-      <AlertCircle size={11} />
-      غير مدفوع
-    </span>
-  )}
+  <span 
+    className={`
+      inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
+      text-[11px] sm:text-xs font-medium
+      transition-all duration-300
+      ${session.isPaid 
+        ? "bg-emerald-100 text-emerald-700 border border-emerald-200" 
+        : "bg-rose-100 text-rose-700 border border-rose-200"
+      }
+      group-hover/payment:scale-105 
+      group-hover/payment:shadow-md
+      group-hover/payment:brightness-105
+      active:scale-95
+      relative
+    `}
+  >
+    {/* أيقونة الحالة */}
+    {session.isPaid ? (
+      <CheckCircle size={12} className="text-emerald-600" />
+    ) : (
+      <AlertCircle size={12} className="text-rose-600" />
+    )}
+    
+    {session.isPaid ? "مدفوع" : "غير مدفوع"}
+    
+    {/* شريط تقدم تحت البادج */}
+    <span className="absolute -bottom-1 left-2 right-2 h-0.5 rounded-full bg-current opacity-0 group-hover/payment:opacity-30 transition-all duration-300" />
+  </span>
 </div>
 
                                 {/* أزرار الإجراءات */}
@@ -2227,25 +2286,98 @@ const togglePaymentStatus = useCallback((sessionId: string, currentIsPaid: boole
                             onClick={() => setSelectedSession(session)}
                           >
                             {/* الصف الأول: حالة الجلسة + التاريخ */}
-                            <div className="flex items-center justify-between mb-2">
-                            <div 
-                              className="flex items-center gap-2 cursor-pointer px-2 py-1 -ml-2 rounded-lg hover:bg-gray-100/50 active:scale-[0.97] transition-all duration-200"
-                              onDoubleClick={(e) => {
-                                e.stopPropagation();
-                                toggleSessionStatus(session.id, session.status);
-                              }}
-                              onClick={(e) => e.stopPropagation()}
-                              title="انقر نقرتين مزدوجتين لتغيير الحالة"
-                            >
-                              <div className={`w-2.5 h-2.5 rounded-full ${statusBadge.dotColor} flex-shrink-0 transition-transform duration-200 hover:scale-110`} />
-                              <span className={`text-[11px] sm:text-xs font-medium px-2.5 py-1 rounded-full ${statusBadge.bgColor} ${statusBadge.textColor} transition-all duration-200 hover:shadow-sm`}>
-                                {statusBadge.label}
-                              </span>
-                            </div>
-                              <span className="text-[11px] sm:text-xs text-gray-500">
-                                {formatDate(session.startTime)}
-                              </span>
-                            </div>
+<div className="flex items-center justify-between mb-2">
+  <div 
+    className="flex items-center gap-2 cursor-pointer group/status"
+    onClick={(e) => {
+      e.stopPropagation();
+      toggleSessionStatus(session.id, session.status);
+    }}
+    title={`انقر لتغيير الحالة (حالياً: ${statusBadge.label})`}
+  >
+    <div className="relative flex items-center gap-2">
+      {/* المسار */}
+      <div 
+        className={`
+          relative w-14 h-7 rounded-full transition-all duration-300
+          ${session.status === "completed" 
+            ? "bg-emerald-400/60" 
+            : "bg-amber-400/60"
+          }
+          group-hover/status:shadow-lg
+          flex items-center justify-between px-1.5
+        `}
+      >
+        {/* أيقونة المجدول (يسار) */}
+        <span className={`
+          text-[10px] transition-all duration-300 z-10
+          ${session.status === "completed" 
+            ? "opacity-20 text-white/40" 
+            : "opacity-100 text-white"
+          }
+        `}>
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+        </span>
+
+        {/* أيقونة المكتمل (يمين) */}
+        <span className={`
+          text-[10px] transition-all duration-300 z-10
+          ${session.status === "completed" 
+            ? "opacity-100 text-white" 
+            : "opacity-20 text-white/40"
+          }
+        `}>
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </span>
+
+        {/* 🔥 الدائرة - باستخدام left بدلاً من transform */}
+        <div 
+          className={`
+            absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md 
+            transition-all duration-300 ease-in-out
+            group-hover/status:scale-105
+            flex items-center justify-center
+          `}
+          style={{
+            // ✅ استخدام left بدلاً من transform للتحكم الدقيق
+            left: session.status === "scheduled" ? "2px" : "calc(100% - 26px)"
+          }}
+        >
+          {session.status === "completed" ? (
+            <svg className="w-3 h-3 text-emerald-500" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          ) : (
+            <svg className="w-3 h-3 text-amber-500" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+          )}
+        </div>
+      </div>
+
+      {/* النص */}
+      <span className={`
+        text-xs sm:text-sm font-semibold transition-all duration-300
+        ${session.status === "completed" ? "text-emerald-700" : "text-amber-700"}
+        group-hover/status:scale-105
+        min-w-[40px]
+      `}>
+        {statusBadge.label}
+      </span>
+    </div>
+  </div>
+
+  {/* التاريخ */}
+  <span className="text-[11px] sm:text-xs text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-full flex-shrink-0">
+    {formatDate(session.startTime)}
+  </span>
+</div>
 
                             {/* الصف الثاني: الإجراء + الوقت */}
                             <div className="flex items-center justify-between mb-2">
@@ -2269,30 +2401,97 @@ const togglePaymentStatus = useCallback((sessionId: string, currentIsPaid: boole
                             {/* الصف الثالث: التكلفة + حالة الدفع + الأزرار */}
                             <div className="flex items-center justify-between pt-2 border-t border-gray-200">
                               <div className="flex items-center gap-2">
+
+<div
+  className="flex items-center gap-1.5 cursor-pointer group/payment select-none"
+  onClick={(e) => {
+    e.stopPropagation();
+    togglePaymentStatus(session.id, session.isPaid);
+  }}
+  title={`انقر لتغيير حالة الدفع (حالياً: ${session.isPaid ? 'مدفوع' : 'غير مدفوع'})`}
+>
+  {/* Toggle Switch للدفع */}
+  <div className="relative flex items-center gap-2">
+    {/* المسار */}
+    <div 
+      className={`
+        relative w-14 h-7 rounded-full transition-all duration-300
+        ${session.isPaid 
+          ? "bg-emerald-400/60" 
+          : "bg-rose-400/60"
+        }
+        group-hover/payment:shadow-lg
+        flex items-center justify-between px-1.5
+      `}
+    >
+      {/* أيقونة غير مدفوع (يسار) */}
+      <span className={`
+        text-[10px] transition-all duration-300 z-10
+        ${session.isPaid 
+          ? "opacity-20 text-white/40" 
+          : "opacity-100 text-white"
+        }
+      `}>
+        <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="8" x2="12" y2="12" />
+          <line x1="12" y1="16" x2="12.01" y2="16" />
+        </svg>
+      </span>
+
+      {/* أيقونة مدفوع (يمين) */}
+      <span className={`
+        text-[10px] transition-all duration-300 z-10
+        ${session.isPaid 
+          ? "opacity-100 text-white" 
+          : "opacity-20 text-white/40"
+        }
+      `}>
+        <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      </span>
+
+      {/* الدائرة المتحركة */}
+      <div 
+        className={`
+          absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md 
+          transition-all duration-300 ease-in-out
+          group-hover/payment:scale-105
+          flex items-center justify-center
+        `}
+        style={{
+          left: session.isPaid ? "calc(100% - 26px)" : "2px"
+        }}
+      >
+        {session.isPaid ? (
+          <svg className="w-3 h-3 text-emerald-500" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        ) : (
+          <svg className="w-3 h-3 text-rose-500" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+        )}
+      </div>
+    </div>
+
+    {/* النص بجانب التبديل */}
+    <span className={`
+      text-xs sm:text-sm font-semibold transition-all duration-300
+      ${session.isPaid ? "text-emerald-700" : "text-rose-700"}
+      group-hover/payment:scale-105
+      min-w-[50px]
+    `}>
+      {session.isPaid ? "مدفوع" : "غير مدفوع"}
+    </span>
+  </div>
+</div>
                                 <span className="text-xs sm:text-sm font-semibold text-gray-900">
                                   {formatCurrency(session.sessionCost)}
                                 </span>
-                            <div
-                              className="flex items-center gap-1.5 cursor-pointer group/payment px-2.5 py-1.5 -m-1 rounded-lg hover:bg-gray-100/70 active:bg-gray-200/50 transition-all duration-200 select-none"
-                              onDoubleClick={(e) => {
-                                e.stopPropagation();
-                                togglePaymentStatus(session.id, session.isPaid);
-                              }}
-                              onClick={(e) => e.stopPropagation()}
-                              title="انقر نقرتين مزدوجتين لتغيير حالة الدفع"
-                            >
-                              {session.isPaid ? (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 text-green-700 text-[10px] sm:text-[11px] font-medium border border-green-200 transition-all duration-200 group-hover/payment:scale-[1.02] group-hover/payment:shadow-sm group-hover/payment:bg-green-100">
-                                  <CheckCircle size={11} />
-                                  مدفوع
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 text-red-700 text-[10px] sm:text-[11px] font-medium border border-red-200 transition-all duration-200 group-hover/payment:scale-[1.02] group-hover/payment:shadow-sm group-hover/payment:bg-red-100">
-                                  <AlertCircle size={11} />
-                                  غير مدفوع
-                                </span>
-                              )}
-                            </div>
                           </div>
 
                           {/* أزرار الإجراءات */}
@@ -3394,20 +3593,25 @@ function NewPatientModal({
                   <label className="block text-sm font-semibold text-gray-900 mb-2">
                     الإجراء المخطط
                   </label>
-                  <input
-                    type="text"
-                    value={formData.plannedProcedure}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        plannedProcedure: e.target.value,
-                      })
-                    }
-                    disabled={isLoading}
-                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 shadow-sm focus:ring-2 focus:ring-opacity-50 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-gray-400"
-                    style={{ "--tw-ring-color": primaryColor } as any}
-                    placeholder="مثال: زراعة أسنان"
-                  />
+                  <textarea
+  value={formData.plannedProcedure}
+  onChange={(e) => {
+    const value = e.target.value;
+    // منع تجاوز 60 محرف
+    if (value.length <= 60) {
+      setFormData({
+        ...formData,
+        plannedProcedure: value,
+      });
+    }
+  }}
+  disabled={isLoading}
+  rows={1}
+  maxLength={60}
+  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 shadow-sm focus:ring-2 focus:ring-opacity-50 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-gray-400 resize-none"
+  style={{ "--tw-ring-color": primaryColor } as any}
+  placeholder="مثال: زراعة أسنان"
+/>
                 </div>
                 <div className="w-1/3">
                   <label className="block text-sm font-semibold text-gray-900 mb-2">
