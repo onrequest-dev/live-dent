@@ -132,16 +132,16 @@ function CopyButton({ text, label }: { text: string; label: string }) {
         document.body.appendChild(textArea);
         textArea.focus();
         textArea.select();
-        
+
         try {
           document.execCommand("copy");
         } catch (err) {
           console.error("Fallback copy failed:", err);
         }
-        
+
         document.body.removeChild(textArea);
       }
-      
+
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
     } catch (err) {
@@ -206,59 +206,6 @@ function CopyButton({ text, label }: { text: string; label: string }) {
   );
 }
 
-// // ============================================================
-// // مكون مؤشر قوة كلمة المرور
-// // ============================================================
-
-// function PasswordStrengthIndicator({ password }: { password: string }) {
-//   const getStrength = (pass: string): { score: number; label: string; color: string } => {
-//     if (!pass) return { score: 0, label: "", color: "bg-gray-600" };
-    
-//     let score = 0;
-//     if (pass.length >= 6) score++;
-//     if (pass.length >= 10) score++;
-//     if (/[a-z]/.test(pass) && /[A-Z]/.test(pass)) score++;
-//     if (/\d/.test(pass)) score++;
-//     if (/[^a-zA-Z\d]/.test(pass)) score++;
-    
-//     if (score <= 1) return { score: 1, label: "ضعيفة", color: "bg-red-500" };
-//     if (score <= 2) return { score: 2, label: "متوسطة", color: "bg-yellow-500" };
-//     if (score <= 3) return { score: 3, label: "جيدة", color: "bg-yellow-400" };
-//     if (score <= 4) return { score: 4, label: "قوية", color: "bg-green-400" };
-//     return { score: 5, label: "قوية جداً", color: "bg-green-500" };
-//   };
-
-//   const strength = getStrength(password);
-  
-//   if (!password) return null;
-
-//   return (
-//     <motion.div
-//       initial={{ opacity: 0, height: 0 }}
-//       animate={{ opacity: 1, height: "auto" }}
-//       className="mt-2 space-y-1"
-//     >
-//       <div className="flex gap-1">
-//         {[1, 2, 3, 4, 5].map((level) => (
-//           <div
-//             key={level}
-//             className={`h-1 flex-1 rounded-full transition-all duration-300 ${
-//               level <= strength.score ? strength.color : "bg-gray-700"
-//             }`}
-//           />
-//         ))}
-//       </div>
-//       <p className={`text-xs ${
-//         strength.score <= 1 ? "text-red-400" :
-//         strength.score <= 2 ? "text-yellow-400" :
-//         "text-green-400"
-//       }`}>
-//         قوة كلمة المرور: {strength.label}
-//       </p>
-//     </motion.div>
-//   );
-// }
-
 // ============================================================
 // المكون الرئيسي
 // ============================================================
@@ -303,6 +250,13 @@ function LiveDentRegistrationForm({
   const [showPassword, setShowPassword] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
+  // حالة التحقق من اسم المستخدم
+  const [usernameStatus, setUsernameStatus] = useState<
+    "idle" | "checking" | "available" | "taken" | "error"
+  >("idle");
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const checkingUsernameRef = useRef<string>("");
+
   // التحقق من نوع الجهاز
   useEffect(() => {
     const checkMobile = () => {
@@ -313,11 +267,21 @@ function LiveDentRegistrationForm({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // تنظيف المؤقت عند مغادرة المكون
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
   // تمرير تلقائي إلى الأعلى عند تغيير الخطوة (للهواتف)
   const containerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (isMobile && containerRef.current) {
-      containerRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      containerRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
     }
   }, [currentStep, isMobile]);
 
@@ -348,11 +312,54 @@ function LiveDentRegistrationForm({
     updateField("phoneNumber", value);
   };
 
-  // تنظيف اسم المستخدم
+  // دالة التحقق من توفر اسم المستخدم
+  const checkUsernameAvailability = async (username: string) => {
+    checkingUsernameRef.current = username;
+
+    try {
+      const res = await fetch("/api/v1/create-account/check-username", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_name: username }),
+      });
+
+      if (!res.ok) throw new Error("Network error");
+
+      const data = await res.json();
+
+      // تجاهل النتيجة إذا تغير الاسم أثناء الطلب
+      if (checkingUsernameRef.current !== username) return;
+
+      setUsernameStatus(data.exists ? "taken" : "available");
+    } catch {
+      if (checkingUsernameRef.current === username) {
+        setUsernameStatus("error");
+      }
+    }
+  };
+
+  // تنظيف اسم المستخدم مع التحقق المؤجل
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value;
     value = value.toLowerCase().replace(/[^a-z-]/g, "");
     updateField("username", value);
+
+    // إلغاء أي مؤقت سابق
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    // إذا كان الطول أقل من 4، إخفاء المؤشر
+    if (value.length < 4) {
+      setUsernameStatus("idle");
+      return;
+    }
+
+    // إظهار حالة "جاري التحقق" فوراً
+    setUsernameStatus("checking");
+
+    // انتظر 500 مللي ثانية قبل الاستدعاء الفعلي
+    debounceRef.current = setTimeout(() => {
+      checkUsernameAvailability(value);
+    }, 500);
   };
 
   const cleanPhoneNumber = (phone: string): string => {
@@ -445,6 +452,15 @@ function LiveDentRegistrationForm({
         }
         if (formData.password.length < 6) {
           setError("كلمة المرور يجب أن تكون 6 أحرف على الأقل");
+          return false;
+        }
+        // التحقق من حالة اسم المستخدم
+        if (usernameStatus === "checking") {
+          setError("الرجاء الانتظار حتى يتم التحقق من اسم المستخدم");
+          return false;
+        }
+        if (usernameStatus === "taken") {
+          setError("اسم المستخدم مستخدم بالفعل، يرجى اختيار اسم آخر");
           return false;
         }
         return true;
@@ -595,7 +611,10 @@ ${whatsappLink}
   ];
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0A1628] relative overflow-hidden" ref={containerRef}>
+    <div
+      className="min-h-screen flex items-center justify-center bg-[#0A1628] relative overflow-hidden"
+      ref={containerRef}
+    >
       {/* Background Patterns - مخففة للهواتف */}
       <div className="absolute inset-0 opacity-[0.07] sm:opacity-10">
         <div className="absolute top-10 left-10 w-48 sm:w-72 h-48 sm:h-72 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-full blur-3xl" />
@@ -652,7 +671,9 @@ ${whatsappLink}
                   />
                 ) : (
                   <div className="w-full h-full rounded-full flex items-center justify-center bg-gradient-to-br from-yellow-400 to-amber-600 shadow-lg shadow-yellow-500/30">
-                    <span className="text-2xl sm:text-3xl font-bold text-white">LD</span>
+                    <span className="text-2xl sm:text-3xl font-bold text-white">
+                      LD
+                    </span>
                   </div>
                 )}
               </div>
@@ -759,7 +780,10 @@ ${whatsappLink}
                     }}
                     className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center mx-auto shadow-lg shadow-green-500/30"
                   >
-                    <CheckCircle2 size={isMobile ? 32 : 40} className="text-white" />
+                    <CheckCircle2
+                      size={isMobile ? 32 : 40}
+                      className="text-white"
+                    />
                   </motion.div>
 
                   <div className="space-y-3">
@@ -780,12 +804,14 @@ ${whatsappLink}
 
                     <div className="text-white/80 text-xs sm:text-sm space-y-2 leading-relaxed">
                       <p className="font-medium text-red-400/90">
-                        ⚠️ رجاء قم بنسخ اسم المستخدم وكلمة المرور واحتفظ بهم في مكان آمن على جهازك
+                        ⚠️ رجاء قم بنسخ اسم المستخدم وكلمة المرور واحتفظ بهم في
+                        مكان آمن على جهازك
                       </p>
                       <div className="bg-yellow-500/10 rounded-lg p-2.5 sm:p-3 border border-yellow-500/20 space-y-1.5">
                         <p className="text-yellow-400/90 text-xs sm:text-sm flex items-center gap-2">
                           <Smartphone className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                          ستتلقى إشعاراً تلقائياً على رقم الواتساب فور اكتمال إنشاء الحساب
+                          ستتلقى إشعاراً تلقائياً على رقم الواتساب فور اكتمال
+                          إنشاء الحساب
                         </p>
                         <p className="text-yellow-400/70 text-xs flex items-center gap-2">
                           <span className="text-lg">⏱️</span>
@@ -797,7 +823,6 @@ ${whatsappLink}
                         </p>
                       </div>
                     </div>
-
                   </div>
                 </div>
               </motion.div>
@@ -824,26 +849,35 @@ ${whatsappLink}
                     </h3>
 
                     {/* Doctor Name */}
-                    <motion.div variants={itemVariants} className="space-y-1.5 sm:space-y-2">
+                    <motion.div
+                      variants={itemVariants}
+                      className="space-y-1.5 sm:space-y-2"
+                    >
                       <label className="text-white text-xs sm:text-sm font-medium flex items-center gap-2">
                         <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-yellow-400" />
                         اسم الطبيب
                       </label>
                       <div
                         className={`relative transition-all duration-300 ${
-                          focusedField === "doctorName" ? "transform scale-[1.01]" : ""
+                          focusedField === "doctorName"
+                            ? "transform scale-[1.01]"
+                            : ""
                         }`}
                       >
                         <User
                           className={`absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 transition-colors duration-200 pointer-events-none ${
-                            focusedField === "doctorName" ? "text-yellow-400" : "text-gray-500"
+                            focusedField === "doctorName"
+                              ? "text-yellow-400"
+                              : "text-gray-500"
                           }`}
                         />
                         <input
                           type="text"
                           placeholder="أدخل اسم الطبيب"
                           value={formData.doctorName}
-                          onChange={(e) => updateField("doctorName", e.target.value)}
+                          onChange={(e) =>
+                            updateField("doctorName", e.target.value)
+                          }
                           onFocus={() => setFocusedField("doctorName")}
                           onBlur={() => setFocusedField(null)}
                           className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 bg-[#1A2A44] border border-yellow-500/20 rounded-xl text-white text-sm sm:text-base placeholder-gray-500 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-200"
@@ -856,26 +890,35 @@ ${whatsappLink}
                     </motion.div>
 
                     {/* Clinic Name */}
-                    <motion.div variants={itemVariants} className="space-y-1.5 sm:space-y-2">
+                    <motion.div
+                      variants={itemVariants}
+                      className="space-y-1.5 sm:space-y-2"
+                    >
                       <label className="text-white text-xs sm:text-sm font-medium flex items-center gap-2">
                         <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-yellow-400" />
                         اسم العيادة
                       </label>
                       <div
                         className={`relative transition-all duration-300 ${
-                          focusedField === "clinicName" ? "transform scale-[1.01]" : ""
+                          focusedField === "clinicName"
+                            ? "transform scale-[1.01]"
+                            : ""
                         }`}
                       >
                         <Building2
                           className={`absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 transition-colors duration-200 pointer-events-none ${
-                            focusedField === "clinicName" ? "text-yellow-400" : "text-gray-500"
+                            focusedField === "clinicName"
+                              ? "text-yellow-400"
+                              : "text-gray-500"
                           }`}
                         />
                         <input
                           type="text"
                           placeholder="أدخل اسم العيادة"
                           value={formData.clinicName}
-                          onChange={(e) => updateField("clinicName", e.target.value)}
+                          onChange={(e) =>
+                            updateField("clinicName", e.target.value)
+                          }
                           onFocus={() => setFocusedField("clinicName")}
                           onBlur={() => setFocusedField(null)}
                           className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 bg-[#1A2A44] border border-yellow-500/20 rounded-xl text-white text-sm sm:text-base placeholder-gray-500 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-200"
@@ -888,26 +931,35 @@ ${whatsappLink}
                     </motion.div>
 
                     {/* Clinic Location */}
-                    <motion.div variants={itemVariants} className="space-y-1.5 sm:space-y-2">
+                    <motion.div
+                      variants={itemVariants}
+                      className="space-y-1.5 sm:space-y-2"
+                    >
                       <label className="text-white text-xs sm:text-sm font-medium flex items-center gap-2">
                         <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-yellow-400" />
                         موقع العيادة
                       </label>
                       <div
                         className={`relative transition-all duration-300 ${
-                          focusedField === "clinicLocation" ? "transform scale-[1.01]" : ""
+                          focusedField === "clinicLocation"
+                            ? "transform scale-[1.01]"
+                            : ""
                         }`}
                       >
                         <MapPin
                           className={`absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 transition-colors duration-200 pointer-events-none ${
-                            focusedField === "clinicLocation" ? "text-yellow-400" : "text-gray-500"
+                            focusedField === "clinicLocation"
+                              ? "text-yellow-400"
+                              : "text-gray-500"
                           }`}
                         />
                         <input
                           type="text"
                           placeholder="المحافظة ثم المدينة او الريف ... "
                           value={formData.clinicLocation}
-                          onChange={(e) => updateField("clinicLocation", e.target.value)}
+                          onChange={(e) =>
+                            updateField("clinicLocation", e.target.value)
+                          }
                           onFocus={() => setFocusedField("clinicLocation")}
                           onBlur={() => setFocusedField(null)}
                           className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 bg-[#1A2A44] border border-yellow-500/20 rounded-xl text-white text-sm sm:text-base placeholder-gray-500 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-200"
@@ -920,19 +972,26 @@ ${whatsappLink}
                     </motion.div>
 
                     {/* Phone Number */}
-                    <motion.div variants={itemVariants} className="space-y-1.5 sm:space-y-2">
+                    <motion.div
+                      variants={itemVariants}
+                      className="space-y-1.5 sm:space-y-2"
+                    >
                       <label className="text-white text-xs sm:text-sm font-medium flex items-center gap-2">
                         <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-yellow-400" />
                         رقم الواتساب
                       </label>
                       <div
                         className={`relative transition-all duration-300 ${
-                          focusedField === "phoneNumber" ? "transform scale-[1.01]" : ""
+                          focusedField === "phoneNumber"
+                            ? "transform scale-[1.01]"
+                            : ""
                         }`}
                       >
                         <Phone
                           className={`absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 transition-colors duration-200 pointer-events-none ${
-                            focusedField === "phoneNumber" ? "text-yellow-400" : "text-gray-500"
+                            focusedField === "phoneNumber"
+                              ? "text-yellow-400"
+                              : "text-gray-500"
                           }`}
                         />
                         <input
@@ -951,7 +1010,8 @@ ${whatsappLink}
                         />
                       </div>
                       <p className="text-gray-500 text-[10px] sm:text-xs">
-                        رمز الدولة و الرقم (مهم لأنك ستتلقى رسالة القبول عليه من الضروري ان يكون صحيحا)
+                        رمز الدولة و الرقم (مهم لأنك ستتلقى رسالة القبول عليه من
+                        الضروري ان يكون صحيحا)
                       </p>
                     </motion.div>
                   </motion.div>
@@ -971,26 +1031,35 @@ ${whatsappLink}
                     </h3>
 
                     {/* University */}
-                    <motion.div variants={itemVariants} className="space-y-1.5 sm:space-y-2">
+                    <motion.div
+                      variants={itemVariants}
+                      className="space-y-1.5 sm:space-y-2"
+                    >
                       <label className="text-white text-xs sm:text-sm font-medium flex items-center gap-2">
                         <GraduationCap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-yellow-400" />
                         الجامعة
                       </label>
                       <div
                         className={`relative transition-all duration-300 ${
-                          focusedField === "university" ? "transform scale-[1.01]" : ""
+                          focusedField === "university"
+                            ? "transform scale-[1.01]"
+                            : ""
                         }`}
                       >
                         <GraduationCap
                           className={`absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 transition-colors duration-200 pointer-events-none ${
-                            focusedField === "university" ? "text-yellow-400" : "text-gray-500"
+                            focusedField === "university"
+                              ? "text-yellow-400"
+                              : "text-gray-500"
                           }`}
                         />
                         <input
                           type="text"
                           placeholder="أدخل اسم الجامعة"
                           value={formData.university}
-                          onChange={(e) => updateField("university", e.target.value)}
+                          onChange={(e) =>
+                            updateField("university", e.target.value)
+                          }
                           onFocus={() => setFocusedField("university")}
                           onBlur={() => setFocusedField(null)}
                           className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 bg-[#1A2A44] border border-yellow-500/20 rounded-xl text-white text-sm sm:text-base placeholder-gray-500 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-200"
@@ -1002,26 +1071,35 @@ ${whatsappLink}
                     </motion.div>
 
                     {/* Graduation Year */}
-                    <motion.div variants={itemVariants} className="space-y-1.5 sm:space-y-2">
+                    <motion.div
+                      variants={itemVariants}
+                      className="space-y-1.5 sm:space-y-2"
+                    >
                       <label className="text-white text-xs sm:text-sm font-medium flex items-center gap-2">
                         <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-yellow-400" />
                         سنة التخرج
                       </label>
                       <div
                         className={`relative transition-all duration-300 ${
-                          focusedField === "graduationYear" ? "transform scale-[1.01]" : ""
+                          focusedField === "graduationYear"
+                            ? "transform scale-[1.01]"
+                            : ""
                         }`}
                       >
                         <Calendar
                           className={`absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 transition-colors duration-200 pointer-events-none ${
-                            focusedField === "graduationYear" ? "text-yellow-400" : "text-gray-500"
+                            focusedField === "graduationYear"
+                              ? "text-yellow-400"
+                              : "text-gray-500"
                           }`}
                         />
                         <input
                           type="number"
                           placeholder="مثال: 2015"
                           value={formData.graduationYear}
-                          onChange={(e) => updateField("graduationYear", e.target.value)}
+                          onChange={(e) =>
+                            updateField("graduationYear", e.target.value)
+                          }
                           onFocus={() => setFocusedField("graduationYear")}
                           onBlur={() => setFocusedField(null)}
                           min="1950"
@@ -1050,27 +1128,35 @@ ${whatsappLink}
                       إنشاء الحساب
                     </h3>
 
-                    <div className="bg-red-500/10 border border-yellow-500/20 rounded-xl p-2.5 sm:p-3 mb-2">
-                      <p className="text-red-400 text-[10px] sm:text-xs flex items-center gap-1.5">
+                    <div className="bg-amber-500/10 border border-yellow-500/30 rounded-xl p-2.5 sm:p-3 mb-2">
+                      <p className="text-yellow-400 text-[10px] sm:text-xs flex items-center gap-1.5">
                         <Shield className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                        هذه المعلومات مهمة جداً ويجب عليك الحفاظ عليها في مكان آمن
+                        هذه المعلومات مهمة جداً ويجب عليك الحفاظ عليها في مكان
+                        آمن
                       </p>
                     </div>
 
                     {/* Username */}
-                    <motion.div variants={itemVariants} className="space-y-1.5 sm:space-y-2">
+                    <motion.div
+                      variants={itemVariants}
+                      className="space-y-1.5 sm:space-y-2"
+                    >
                       <label className="text-white text-xs sm:text-sm font-medium flex items-center gap-2">
                         <UserCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-yellow-400" />
                         اسم المستخدم
                       </label>
                       <div
                         className={`relative transition-all duration-300 ${
-                          focusedField === "username" ? "transform scale-[1.01]" : ""
+                          focusedField === "username"
+                            ? "transform scale-[1.01]"
+                            : ""
                         }`}
                       >
                         <UserCircle
                           className={`absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 transition-colors duration-200 pointer-events-none ${
-                            focusedField === "username" ? "text-yellow-400" : "text-gray-500"
+                            focusedField === "username"
+                              ? "text-yellow-400"
+                              : "text-gray-500"
                           }`}
                         />
                         <input
@@ -1080,40 +1166,89 @@ ${whatsappLink}
                           onChange={handleUsernameChange}
                           onFocus={() => setFocusedField("username")}
                           onBlur={() => setFocusedField(null)}
-                          className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 bg-[#1A2A44] border border-yellow-500/20 rounded-xl text-white text-sm sm:text-base placeholder-gray-500 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-200 font-mono"
+                          className="w-full pl-10 sm:pl-12 pr-10 sm:pr-12 py-2.5 sm:py-3 bg-[#1A2A44] border border-yellow-500/20 rounded-xl text-white text-sm sm:text-base placeholder-gray-500 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-200 font-mono"
                           required
                           disabled={loading}
                           dir="ltr"
                           autoComplete="username"
                           inputMode="text"
                         />
+                        {/* مؤشر حالة اسم المستخدم */}
+                        {usernameStatus !== "idle" && (
+                          <div className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2">
+                            {usernameStatus === "checking" ? (
+                              <motion.div
+                                animate={{ rotate: 360 }}
+                                transition={{
+                                  duration: 1,
+                                  repeat: Infinity,
+                                  ease: "linear",
+                                }}
+                                className="w-4 h-4 border-2 border-yellow-400/30 border-t-yellow-400 rounded-full"
+                              />
+                            ) : usernameStatus === "available" ? (
+                              <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
+                            ) : usernameStatus === "taken" ? (
+                              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" />
+                            ) : (
+                              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400" />
+                            )}
+                          </div>
+                        )}
                       </div>
-                        <p className="text-gray-500 text-[10px] sm:text-xs">
-                            مسموح :  احرف انجليزية صغيرة و شرطات - فقط اربع حروف على الأقل 
-                        </p>
+                      <p
+                        className={`text-[10px] sm:text-xs ${
+                          usernameStatus === "available"
+                            ? "text-green-400"
+                            : usernameStatus === "taken"
+                              ? "text-red-400"
+                              : usernameStatus === "error"
+                                ? "text-yellow-400"
+                                : "text-gray-500"
+                        }`}
+                      >
+                        {usernameStatus === "checking"
+                          ? "جاري التحقق..."
+                          : usernameStatus === "available"
+                            ? "✓ اسم المستخدم متاح"
+                            : usernameStatus === "taken"
+                              ? "✗ اسم المستخدم مستخدم بالفعل"
+                              : usernameStatus === "error"
+                                ? "⚠️ خطأ في التحقق"
+                                : "مسموح: احرف انجليزية صغيرة و شرطات - فقط اربع حروف على الأقل"}
+                      </p>
                     </motion.div>
 
                     {/* Password */}
-                    <motion.div variants={itemVariants} className="space-y-1.5 sm:space-y-2">
+                    <motion.div
+                      variants={itemVariants}
+                      className="space-y-1.5 sm:space-y-2"
+                    >
                       <label className="text-white text-xs sm:text-sm font-medium flex items-center gap-2">
                         <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-yellow-400" />
                         كلمة المرور
                       </label>
                       <div
                         className={`relative transition-all duration-300 ${
-                          focusedField === "password" ? "transform scale-[1.01]" : ""
+                          focusedField === "password"
+                            ? "transform scale-[1.01]"
+                            : ""
                         }`}
                       >
                         <Lock
                           className={`absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 transition-colors duration-200 pointer-events-none ${
-                            focusedField === "password" ? "text-yellow-400" : "text-gray-500"
+                            focusedField === "password"
+                              ? "text-yellow-400"
+                              : "text-gray-500"
                           }`}
                         />
                         <input
                           type={showPassword ? "text" : "password"}
                           placeholder="أدخل كلمة المرور"
                           value={formData.password}
-                          onChange={(e) => updateField("password", e.target.value)}
+                          onChange={(e) =>
+                            updateField("password", e.target.value)
+                          }
                           onFocus={() => setFocusedField("password")}
                           onBlur={() => setFocusedField(null)}
                           className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 pl-10 sm:pl-12 bg-[#1A2A44] border border-yellow-500/20 rounded-xl text-white text-sm sm:text-base placeholder-gray-500 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 transition-all duration-200 font-mono"
@@ -1126,7 +1261,11 @@ ${whatsappLink}
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
                           className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-yellow-400 active:text-yellow-500 transition-colors p-1 touch-manipulation"
-                          aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+                          aria-label={
+                            showPassword
+                              ? "إخفاء كلمة المرور"
+                              : "إظهار كلمة المرور"
+                          }
                         >
                           {showPassword ? (
                             <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -1136,9 +1275,8 @@ ${whatsappLink}
                         </button>
                       </div>
                       <p className="text-gray-500 text-[10px] sm:text-xs">
-                        مسموح: أحرف، أرقام، ورموز  ست أحرف على الأقل
+                        مسموح: أحرف، أرقام، ورموز ست أحرف على الأقل
                       </p>
-                      {/* <PasswordStrengthIndicator password={formData.password} /> */}
                     </motion.div>
                   </motion.div>
                 )}
@@ -1182,9 +1320,8 @@ ${whatsappLink}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.95 }}
                     >
-
                       التالي
-                    <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </motion.button>
                   ) : (
                     <motion.button
@@ -1210,9 +1347,7 @@ ${whatsappLink}
                           جاري الإنشاء...
                         </>
                       ) : (
-                        <>
-                          إنشاء الحساب
-                        </>
+                        <>إنشاء الحساب</>
                       )}
                     </motion.button>
                   )}

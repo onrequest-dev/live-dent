@@ -90,6 +90,7 @@ export async function fetchDentalChart(
     }
 
     const result: DentalChartResponse = await response.json();
+    console.log(result.data)
     const chartData = result.data ?? null; // ensure null if no data
 
     // 3. Store in memory cache (including null responses)
