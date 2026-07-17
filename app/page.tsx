@@ -696,12 +696,12 @@ const services = [
               </div>
               
               {/* حاوية الصورة - بدون hover مزعج */}
-              <div className="relative aspect-[4/3] overflow-hidden mx-5 mb-5 rounded-xl">
+              <div className="relative overflow-hidden mx-5 mb-5 rounded-xl" style={{ aspectRatio: '16/10' }}>
                 <Image
                   src={image.src}
                   alt={image.alt}
                   fill
-                  className="object-cover transition-transform duration-1000 ease-out group-hover:scale-105"
+                  className="object-contain transition-transform duration-1000 ease-out group-hover:scale-105"
                   loading="lazy"
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 />

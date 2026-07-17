@@ -57,58 +57,6 @@ import ToothLoader from "../../loding";
 import { ToothChart, ToothChartRef, ToothData } from "../../ToothChart/ToothChart";
 import { saveDentalChart } from "@/client/helpers/dental-chart";
 
-
-////////////بيانات كذب لمكون الشارت//////////////
-
-const DEFAULT_TEETH_DATA: ToothData[] = [
-  // الضواحك والقواطع العلوية اليمنى (1-8)
-  { id: 1, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
-  { id: 2, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
-  { id: 3, procedure: "decayed", color: "#EF4444", treatments: ["إزالة التسوس", "حشوة مؤقتة", "", "", "", "", "", "", "", ""], notes: "يحتاج متابعة بعد أسبوع" },
-  { id: 4, procedure: "filled", color: "#3B82F6", treatments: ["حشوة دائمة", "", "", "", "", "", "", "", "", ""], notes: "" },
-  { id: 5, procedure: "crown", color: "#F59E0B", treatments: ["تحضير السن", "طبعات", "تركيب تاج مؤقت", "تركيب تاج دائم", "", "", "", "", "", ""], notes: "تاج زركونيا" },
-  { id: 6, procedure: "root-canal", color: "#8B4513", treatments: ["فتح اللب", "تنظيف القنوات", "حشو القنوات", "", "", "", "", "", "", ""], notes: "3 قنوات" },
-  { id: 7, procedure: "implant", color: "#10B981", treatments: ["زرع", "انتظار الالتحام", "تركيب الدعامة", "تركيب التاج", "", "", "", "", "", ""], notes: "زرعة ألمانية" },
-  { id: 8, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
-  
-  // القواطع العلوية الأمامية (9-10)
-  { id: 9, procedure: "custom", customProcedure: "تبييض بالليزر", color: "#DC2626", treatments: ["جلسة تبييض 1", "جلسة تبييض 2", "", "", "", "", "", "", "", ""], notes: "نتيجة ممتازة" },
-  { id: 10, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
-  
-  // القواطع العلوية الأمامية (11-12)
-  { id: 11, procedure: "filled", color: "#3B82F6", treatments: ["حشوة تجميلية", "", "", "", "", "", "", "", "", ""], notes: "" },
-  { id: 12, procedure: "crown", color: "#F59E0B", treatments: ["تاج إيماكس", "", "", "", "", "", "", "", "", ""], notes: "تاج تجميلي" },
-  
-  // الضواحك والقواطع العلوية اليسرى (13-16)
-  { id: 13, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
-  { id: 14, procedure: "decayed", color: "#EF4444", treatments: ["كشف تسوس", "", "", "", "", "", "", "", "", ""], notes: "تسوس بسيط" },
-  { id: 15, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
-  { id: 16, procedure: "missing", color: "#9CA3AF", treatments: ["خلع", "", "", "", "", "", "", "", "", ""], notes: "تم الخلع منذ 3 أشهر" },
-  
-  // الضواحك والقواطع السفلية اليسرى (17-24)
-  { id: 17, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
-  { id: 18, procedure: "filled", color: "#3B82F6", treatments: ["حشوة أملغم", "", "", "", "", "", "", "", "", ""], notes: "حشوة قديمة" },
-  { id: 19, procedure: "root-canal", color: "#8B4513", treatments: ["معالجة لبية", "حشو قنوات", "", "", "", "", "", "", "", ""], notes: "" },
-  { id: 20, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
-  { id: 21, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
-  { id: 22, procedure: "decayed", color: "#EF4444", treatments: ["تسوس بين الأسنان", "", "", "", "", "", "", "", "", ""], notes: "يحتاج أشعة" },
-  { id: 23, procedure: "crown", color: "#F59E0B", treatments: ["تاج معدني سيراميك", "", "", "", "", "", "", "", "", ""], notes: "" },
-  { id: 24, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
-  
-  // القواطع السفلية الأمامية (25-26)
-  { id: 25, procedure: "filled", color: "#3B82F6", treatments: ["حشوة", "", "", "", "", "", "", "", "", ""], notes: "" },
-  { id: 26, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
-  
-  // القواطع السفلية الأمامية (27-28)
-  { id: 27, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
-  { id: 28, procedure: "sound", color: "#FFFFFF", treatments: ["", "", "", "", "", "", "", "", "", ""], notes: "" },
-  
-  // الضواحك والقواطع السفلية اليمنى (29-32)
-  { id: 29, procedure: "implant", color: "#10B981", treatments: ["زرعة", "تركيب تاج", "", "", "", "", "", "", "", ""], notes: "زرعة سويسرية" },
-  { id: 30, procedure: "decayed", color: "#EF4444", treatments: ["تسوس عميق", "", "", "", "", "", "", "", "", ""], notes: "قد يحتاج معالجة لبية" },
-  { id: 31, procedure: "filled", color: "#3B82F6", treatments: ["حشوة", "", "", "", "", "", "", "", "", ""], notes: "" },
-  { id: 32, procedure: "crown", color: "#F59E0B", treatments: ["تاج", "", "", "", "", "", "", "", "", ""], notes: "" },
-];
 // ============================================================
 // خدمة API محاكية (لتحضير الربط مع الباك إند)
 // ============================================================
@@ -2018,11 +1966,11 @@ function PatientDetailsCard({
                         السعر المتفق عليه:
                       </span>
                       <span className="text-xs sm:text-sm font-semibold text-gray-900">
-                        {patient.totalPrice ? formatCurrency(parseFloat(patient.totalPrice)) : 'غير محدد'}
+                        {patient.totalPrice ? formatCurrency(parseFloat(patient.totalPrice)) : 'غير محدد'} |
                       </span>
 
                       <span className="text-[11px] sm:text-xs text-gray-500">
-                        إجمالي الجلسات:
+                        إجمالي تكلفة الجلسات:
                       </span>
                       <span className="text-xs sm:text-sm font-semibold text-gray-900">
                         {formatCurrency(finance.totalCost)}
@@ -4429,8 +4377,7 @@ function EditPatientModal({
                   <label className="block text-sm font-semibold text-gray-900 mb-2">
                     الإجراء المخطط
                   </label>
-                  <input
-                    type="text"
+                  <textarea
                     value={formData.plannedProcedure}
                     onChange={(e) =>
                       setFormData({
@@ -4439,8 +4386,13 @@ function EditPatientModal({
                       })
                     }
                     disabled={isLoading}
-                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 shadow-sm focus:ring-2 focus:ring-opacity-50 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-gray-400"
-                    style={{ "--tw-ring-color": primaryColor } as any}
+                    rows={1}
+                    maxLength={60}
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 shadow-sm focus:ring-2 focus:ring-opacity-50 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-gray-400 resize-none overflow-y-auto"
+                    style={{ 
+                      "--tw-ring-color": primaryColor,
+                      minHeight: "52px" // نفس ارتفاع input تقريباً (py-3 * 2 + border)
+                    } as any}
                     placeholder="مثال: زراعة أسنان"
                   />
                 </div>

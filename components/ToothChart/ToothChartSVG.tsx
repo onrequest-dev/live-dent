@@ -4,12 +4,34 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import { ToothData } from "./ToothChart";
 
+
+const numberingSystemsMap = {
+  universal: Array.from({ length: 32 }, (_, i) => i + 1),
+  fdi: [
+    // الفك العلوي - من اليمين إلى اليسار (كما يظهر في الصورة)
+    18, 17, 16, 15, 14, 13, 12, 11, // 1-8 (UR)
+    21, 22, 23, 24, 25, 26, 27, 28, // 9-16 (UL)
+    38, 37, 36, 35, 34, 33, 32, 31, // 17-24 (LL) 
+    41, 42, 43, 44, 45, 46, 47, 48  // 25-32 (LR)
+  ],
+  palmer: [
+    '8', '7', '6', '5', '4', '3', '2', '1',  // 1-8 (UR)
+    '1', '2', '3', '4', '5', '6', '7', '8',  // 9-16 (UL)
+    '8', '7', '6', '5', '4', '3', '2', '1',  // 17-24 (LL)
+    '1', '2', '3', '4', '5', '6', '7', '8'   // 25-32 (LR)
+  ]
+};
+
+
 interface ToothChartSVGProps {
   teethData: ToothData[];
   selectedToothId: number | null;
   onToothClick: (toothNumber: number) => void;
   editable?: boolean;
   primaryColor?: string;
+  // أضف هذه الخصائص
+  numberingSystem?: 'universal' | 'fdi' | 'palmer';
+  onNumberingSystemChange?: (system: 'universal' | 'fdi' | 'palmer') => void;
 }
 
 export function ToothChartSVG({
@@ -21,7 +43,30 @@ export function ToothChartSVG({
 }: ToothChartSVGProps) {
   const svgRef = useRef<HTMLDivElement>(null);
   const hoveredToothRef = useRef<number | null>(null);
+  const [numberingSystem, setNumberingSystem] = React.useState<'universal' | 'fdi' | 'palmer'>(() => {
+  // جلب الإعدادات من localStorage
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('tooth_numbering_system');
+    if (saved === 'universal' || saved === 'fdi' || saved === 'palmer') {
+      return saved;
+    }
+  }
+  return 'universal'; // الافتراضي
+});
 
+const getLabelText = (universalNumber: number): string => {
+  // التأكد من أن الرقم في النطاق الصحيح (1-32)
+  if (universalNumber < 1 || universalNumber > 32) {
+    return '';
+  }
+
+  // الحصول على القيمة من المصفوفة حسب النظام الحالي
+  const index = universalNumber - 1; // تحويل إلى فهرس (0-31)
+  const value = numberingSystemsMap[numberingSystem][index];
+  
+  // إرجاع القيمة كنص
+  return value?.toString() || '';
+};
   // تحديث ألوان الأسنان والنصوص عند تغيير البيانات أو الاختيار
   const updateToothAppearance = useCallback(() => {
     teethData.forEach((tooth) => {
@@ -98,35 +143,46 @@ export function ToothChartSVG({
     updateLabelsAndOutlines();
   }, [teethData, selectedToothId]);
 
-  // تحديث الأرقام والحدود الخارجية
-const updateLabelsAndOutlines = () => {
+const updateLabelsAndOutlines = useCallback(() => {
   const labelsGroup = document.getElementById("toothLabels");
   if (labelsGroup) {
-    // نترك شفافية المجموعة الكلية 1 للتحكم بالأرقام بشكل فردي
     labelsGroup.setAttribute("opacity", "1");
   }
 
-  // تحديث شفافية أرقام الأسنان بشكل فردي
+  // تحديث كل تسمية (1-32)
   for (let i = 1; i <= 32; i++) {
     const label = document.getElementById(`lbl${i}`);
     if (label) {
-      // السن المحدد: شفافية 1، باقي الأسنان: 0.5
-      label.setAttribute("opacity", i === selectedToothId ? "1" : "0.5");
+      // 1. تحديث النص حسب نظام الترقيم الحالي
+      const newText = getLabelText(i);
+      label.textContent = newText;
+      
+      // 2. تحديث حجم الخط حسب طول النص
+      if (numberingSystem === 'palmer') {
+        label.setAttribute("font-size", "16px");
+        // يمكن إضافة تنسيق إضافي لرموز Palmer
+      } else if (numberingSystem === 'fdi' && newText.length > 2) {
+        label.setAttribute("font-size", "15px");
+      } else {
+        label.setAttribute("font-size", "18px");
+      }
+      
+      // 3. تحديث الشفافية
+      const isSelected = selectedToothId === i;
+      label.setAttribute("opacity", isSelected ? "1" : "0.5");
+      
+      // 4. تحديث اللون
+      label.setAttribute("fill", isSelected ? "#000000" : "#4B5563");
     }
   }
 
-  const dmftLabelsGroup = document.getElementById("dmftLabels");
-  if (dmftLabelsGroup) {
-    dmftLabelsGroup.setAttribute("opacity", "1");
-  }
-
+  // تحديث باقي العناصر
   const outlinesGroup = document.getElementById("adult-outlines");
   if (outlinesGroup) {
-    // إذا لم يكن هناك سن محدد: شفافية 1، وإلا: 0.2
     const outlinesOpacity = selectedToothId === null ? "1" : "0.2";
     outlinesGroup.setAttribute("opacity", outlinesOpacity);
   }
-};
+}, [selectedToothId, numberingSystem]); // إضافة التبعيات
 
   // الحصول على تسمية الإجراء
   function getProcedureLabel(procedure: string): string {
@@ -233,9 +289,25 @@ const updateLabelsAndOutlines = () => {
     return () => clearTimeout(timer);
   }, []);
   // تحديث المظهر عند تغيير البيانات أو الاختيار
-  useEffect(() => {
-    updateToothAppearance();
-  }, [updateToothAppearance]);
+// الاستماع لتغييرات نظام الترقيم من الإعدادات
+useEffect(() => {
+  const handleNumberingChange = (e: Event) => {
+    const customEvent = e as CustomEvent;
+    const newSystem = customEvent.detail as 'universal' | 'fdi' | 'palmer';
+    setNumberingSystem(newSystem);
+  };
+
+  window.addEventListener('numberingSystemChanged', handleNumberingChange);
+  
+  return () => {
+    window.removeEventListener('numberingSystemChanged', handleNumberingChange);
+  };
+}, []);
+
+// تحديث المظهر عند تغيير البيانات أو الاختيار أو نظام الترقيم
+useEffect(() => {
+  updateToothAppearance();
+}, [updateToothAppearance, numberingSystem]); // ✅ أضفنا numberingSystem هنا
 
   // إضافة مستمعي الأحداث
   useEffect(() => {
@@ -398,279 +470,327 @@ const updateLabelsAndOutlines = () => {
             `}
           </style>
         </defs>
+
+                {/* تعريفات للعلامة + */}
+        <filter id="cross-glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="1.5" result="blur" />
+          <feFlood floodColor="#3B82F6" floodOpacity="0.3" result="glowColor" />
+          <feComposite in="glowColor" in2="blur" operator="in" result="glow" />
+          <feMerge>
+            <feMergeNode in="glow" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+
+        {/* ظل للعلامة */}
+        <filter id="cross-shadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="1" stdDeviation="2" floodColor="#000000" floodOpacity="0.15" />
+        </filter>
         <g id="toothLabels" transform="translate(40, -5)" opacity="1">
           {/* الفك العلوي - الجهة اليمنى (1-8) */}
           <text
             id="lbl1"
+            data-tooth="1"
             transform="matrix(1 0 0 1 75 324)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            1
+            {getLabelText(1)}
           </text>
           <text
             id="lbl2"
+            data-tooth="2"
             transform="matrix(1 0 0 1 68 276)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            2
+            {getLabelText(2)}
           </text>
           <text
             id="lbl3"
+            data-tooth="3"
             transform="matrix(1 0 0 1 75 234)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            3
+            {getLabelText(3)}
           </text>
           <text
             id="lbl4"
+            data-tooth="4"
             transform="matrix(1 0 0 1 90 195)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            4
+            {getLabelText(4)}
           </text>
           <text
             id="lbl5"
+            data-tooth="5"
             transform="matrix(1 0 0 1 103 164)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            5
+            {getLabelText(5)}
           </text>
           <text
             id="lbl6"
+            data-tooth="6"
             transform="matrix(1 0 0 1 120 134)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            6
+            {getLabelText(6)}
           </text>
           <text
             id="lbl7"
+            data-tooth="7"
             transform="matrix(1 0 0 1 145 117)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            7
+            {getLabelText(7)}
           </text>
           <text
             id="lbl8"
+            data-tooth="8"
             transform="matrix(1 0 0 1 175 112)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            8
+            {getLabelText(8)}
           </text>
 
           {/* الفك العلوي - الأمامية (9-10) */}
           <text
             id="lbl9"
+            data-tooth="9"
             transform="matrix(1 0 0 1 208 112)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            9
+            {getLabelText(9)}
           </text>
           <text
             id="lbl10"
+            data-tooth="10"
             transform="matrix(1 0 0 1 235 118)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            10
+            {getLabelText(10)}
           </text>
 
           {/* الفك العلوي - الأمامية (11-12) */}
           <text
             id="lbl11"
+            data-tooth="11"
             transform="matrix(1 0 0 1 258 142)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            11
+            {getLabelText(11)}
           </text>
           <text
             id="lbl12"
+            data-tooth="12"
             transform="matrix(1 0 0 1 275 172)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            12
+            {getLabelText(12)}
           </text>
 
           {/* الفك العلوي - الجهة اليسرى (13-16) */}
           <text
             id="lbl13"
+            data-tooth="13"
             transform="matrix(1 0 0 1 288 200)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            13
+            {getLabelText(13)}
           </text>
           <text
             id="lbl14"
+            data-tooth="14"
             transform="matrix(1 0 0 1 298 236)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            14
+            {getLabelText(14)}
           </text>
           <text
             id="lbl15"
+            data-tooth="15"
             transform="matrix(1 0 0 1 300 275)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            15
+            {getLabelText(15)}
           </text>
           <text
             id="lbl16"
+            data-tooth="16"
             transform="matrix(1 0 0 1 296 324)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            16
+            {getLabelText(16)}
           </text>
 
           {/* الفك السفلي - الجهة اليسرى (17-20) */}
           <text
             id="lbl17"
+            data-tooth="17"
             transform="matrix(1 0 0 1 308 402)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            17
+            {getLabelText(17)}
           </text>
           <text
             id="lbl18"
+            data-tooth="18"
             transform="matrix(1 0 0 1 310 449)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            18
+            {getLabelText(18)}
           </text>
           <text
             id="lbl19"
+            data-tooth="19"
             transform="matrix(1 0 0 1 306 495)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            19
+            {getLabelText(19)}
           </text>
           <text
             id="lbl20"
+            data-tooth="20"
             transform="matrix(1 0 0 1 288 538)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            20
+            {getLabelText(20)}
           </text>
 
           {/* الفك السفلي - الأمامية (21-22) */}
           <text
             id="lbl21"
+            data-tooth="21"
             transform="matrix(1 0 0 1 268 573)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            21
+            {getLabelText(21)}
           </text>
           <text
             id="lbl22"
+            data-tooth="22"
             transform="matrix(1 0 0 1 258 602)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            22
+            {getLabelText(22)}
           </text>
 
           {/* الفك السفلي - الأمامية (23-24) */}
           <text
             id="lbl23"
+            data-tooth="23"
             transform="matrix(1 0 0 1 238 619)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            23
+            {getLabelText(23)}
           </text>
           <text
             id="lbl24"
+            data-tooth="24"
             transform="matrix(1 0 0 1 215 628)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            24
+            {getLabelText(24)}
           </text>
 
           {/* الفك السفلي - الأمامية (25-26) */}
           <text
             id="lbl25"
+            data-tooth="25"
             transform="matrix(1 0 0 1 188 628)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            25
+            {getLabelText(25)}
           </text>
           <text
             id="lbl26"
+            data-tooth="26"
             transform="matrix(1 0 0 1 163 623)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            26
+            {getLabelText(26)}
           </text>
 
           {/* الفك السفلي - الجهة اليمنى (27-32) */}
           <text
             id="lbl27"
+            data-tooth="27"
             transform="matrix(1 0 0 1 142 603)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            27
+            {getLabelText(27)}
           </text>
           <text
             id="lbl28"
+            data-tooth="28"
             transform="matrix(1 0 0 1 120 573)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            28
+            {getLabelText(28)}
           </text>
           <text
             id="lbl29"
+            data-tooth="29"
             transform="matrix(1 0 0 1 100 538)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            29
+            {getLabelText(29)}
           </text>
           <text
             id="lbl30"
+            data-tooth="30"
             transform="matrix(1 0 0 1 90 495)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            30
+            {getLabelText(30)}
           </text>
           <text
             id="lbl31"
+            data-tooth="31"
             transform="matrix(1 0 0 1 80 449)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            31
+            {getLabelText(31)}
           </text>
           <text
             id="lbl32"
+            data-tooth="32"
             transform="matrix(1 0 0 1 82 402)"
             fontFamily="'Avenir-Heavy'"
             fontSize="18px"
           >
-            32
+            {getLabelText(32)}
           </text>
         </g>
 
@@ -707,7 +827,124 @@ const updateLabelsAndOutlines = () => {
 	<text id="txtTooth2" transform="matrix(1 0 0 1 3.25 260.1059)" font-family="'MyriadPro-Regular'" font-size="16px"></text>
 	<text id="txtTooth1" transform="matrix(1 0 0 1 5.0001 338.4393)" font-family="'MyriadPro-Regular'" font-size="16px"></text>
 </g> */}
+        {/* العلامة + المركزية مع تسميات الأرباع */}
+{/* العلامة + المركزية - متقطعة وباهتة */}
+{/* 
+  العلامة + المركزية - مع براميترات التحكم 
+  يمكنك تغيير القيم في الأعلى للتحكم بموقع وحجم العلامة
+*/}
 
+{/* ===== براميترات التحكم ===== */}
+{/* 
+  centerX, centerY: مركز العلامة
+  verticalLength: طول الخط العمودي (كامل)
+  horizontalLength: طول الخط الأفقي (كامل)
+  lineWidth: سمك الخط
+  dashPattern: نمط التقطيع
+  labelOffset: المسافة بين الخط والتسمية
+  color: لون الخط والتسميات
+  opacity: شفافية المجموعة
+*/}
+
+{/* ============================================
+    🔧 قم بتعديل هذه القيم لتحريك العلامة
+    ============================================ */}
+
+<g id="center-cross" opacity="0.35">
+  
+  {/* ===== الخط العمودي ===== */}
+  {/* غيّر x1 و x2 لتحريك يمين/يسار */}
+  {/* غيّر y1 و y2 لتحريك أعلى/أسفل */}
+  <line
+    x1="225"   // ← غيّر هذا الرقم (يمين/يسار)
+    y1="305"   // ← غيّر هذا الرقم (أعلى/أسفل)
+    x2="225"   // ← غيّر هذا الرقم (يمين/يسار)
+    y2="395"   // ← غيّر هذا الرقم (أعلى/أسفل)
+    stroke="#94A3B8"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeOpacity="0.5"
+    strokeDasharray="10 6"
+  />
+  
+  {/* ===== الخط الأفقي ===== */}
+  {/* غيّر x1 و x2 لتحريك يمين/يسار */}
+  {/* غيّر y1 و y2 لتحريك أعلى/أسفل */}
+  <line
+    x1="160"   // ← غيّر هذا الرقم (يمين/يسار)
+    y1="350"   // ← غيّر هذا الرقم (أعلى/أسفل)
+    x2="290"   // ← غيّر هذا الرقم (يمين/يسار)
+    y2="350"   // ← غيّر هذا الرقم (أعلى/أسفل)
+    stroke="#94A3B8"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeOpacity="0.5"
+    strokeDasharray="10 6"
+  />
+  
+  {/* ===== نقطة المنتصف ===== */}
+  <circle
+    cx="225"   // ← غيّر هذا الرقم (يمين/يسار)
+    cy="350"   // ← غيّر هذا الرقم (أعلى/أسفل)
+    r="2"
+    fill="#94A3B8"
+    opacity="0.3"
+  />
+  
+{/* ===== التسميات ===== */}
+  
+{/* علوي */}
+<text
+  x="225"
+  y="275"
+  textAnchor="middle"
+  fontFamily="'Avenir-Medium', sans-serif"
+  fontSize="15px"
+  fill="#000000"    // ← غيّر إلى أسود خالص
+  opacity="1"
+>
+  علوي
+</text>
+
+{/* سفلي */}
+<text
+  x="225"
+  y="435"
+  textAnchor="middle"
+  fontFamily="'Avenir-Medium', sans-serif"
+  fontSize="15px"
+  fill="#000000"    // ← غيّر إلى أسود خالص
+  opacity="0.7"     // ← يمكنك زيادة الشفافية أيضاً
+>
+  سفلي
+</text>
+
+{/* يسار */}
+<text
+  x="320"
+  y="354"
+  textAnchor="start"
+  fontFamily="'Avenir-Medium', sans-serif"
+  fontSize="15px"
+  fill="#000000"    // ← غيّر إلى أسود خالص
+  opacity="0.7"
+>
+  يسار
+</text>
+
+{/* يمين */}
+<text
+  x="125"
+  y="354"
+  textAnchor="end"
+  fontFamily="'Avenir-Medium', sans-serif"
+  fontSize="15px"
+  fill="#000000"    // ← غيّر إلى أسود خالص
+  opacity="0.7"
+>
+  يمين
+</text>
+</g>
         <g id="Spots">
           <polygon
             id="Tooth32"
