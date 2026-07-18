@@ -56,7 +56,7 @@ import { useModalBackHandler } from "@/hooks/useModalBackHandler";
 import ToothLoader from "../../loding";
 import { ToothChart, ToothChartRef, ToothData } from "../../ToothChart/ToothChart";
 import { saveDentalChart } from "@/client/helpers/dental-chart";
-
+import getCurrency from '@/client/helpers/getCurrency';
 // ============================================================
 // خدمة API محاكية (لتحضير الربط مع الباك إند)
 // ============================================================
@@ -407,15 +407,11 @@ const handleUpdateSessionPayment = useCallback(async (sessionId: string, isPaid:
     return `${day}/${month}/${year}`;
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      currencyDisplay: "code",
-    })
-      .format(amount)
-      .replace("USD", "$");
-  };
+const formatCurrency = (amount: number) => {
+  const currencySymbol = getCurrency();
+  console.log(getCurrency())
+  return `${amount} ${currencySymbol}`;
+};
 
   const calculateBirthYear = (age: number) => new Date().getFullYear() - age;
 
@@ -2950,7 +2946,7 @@ function EditSessionModal({
                   dir="ltr"
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">
-                  $
+                  {getCurrency()}
                 </span>
               </div>
             </div>
@@ -3639,7 +3635,7 @@ function NewPatientModal({
                       dir="ltr"
                     />
                     <span className="absolute  right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">
-                      $
+                      {getCurrency()}
                     </span>
                   </div>
                 </div>
@@ -3833,7 +3829,7 @@ function NewPatientModal({
                           dir="ltr"
                         />
                         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">
-                          $
+                          {getCurrency()}
                         </span>
                       </div>
                     </div>
@@ -4300,7 +4296,7 @@ function NewAppointmentModal({
                     dir="ltr"
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">
-                    $
+                    {getCurrency()}
                   </span>
                 </div>
               </div>
@@ -4721,7 +4717,7 @@ function EditPatientModal({
                       dir="ltr"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">
-                      $
+                      {getCurrency()}
                     </span>
                   </div>
                 </div>
