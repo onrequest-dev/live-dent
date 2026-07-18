@@ -36,7 +36,7 @@ const COLORS = {
   primary: '#0043fa',
   primaryLight: '#0043fa15',
   primaryMedium: '#0043fa30',
-  background: '#d2e9ff',
+  background: '#d2d9ff',
   surface: '#ffffff',
   text: '#0f172a',
   textSecondary: '#475569',

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { format, parseISO, isValid } from "date-fns";
 import { arSA } from "date-fns/locale";
-import { Calendar as CalendarIcon, ChevronDown } from "lucide-react";
+import { Calendar as CalendarIcon, X, ChevronUp, ChevronDown } from "lucide-react";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 
@@ -29,143 +29,377 @@ export function DatePicker({
   disabled = false,
   minDate,
   maxDate,
-  primaryColor = "#007bff",
+  primaryColor = "#4F46E5",
   className = "",
 }: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+  const [animation, setAnimation] = useState<"slide-up" | "slide-down" | "">("");
 
-  // تهيئة التاريخ المحدد
+  // تهيئة التاريخ - دائماً يكون هناك قيمة افتراضية (تاريخ اليوم)
   useEffect(() => {
+    let date: Date;
+    
     if (value instanceof Date && isValid(value)) {
-      setSelectedDate(value);
+      date = value;
     } else if (typeof value === "string" && value) {
       const parsedDate = parseISO(value);
-      if (isValid(parsedDate)) {
-        setSelectedDate(parsedDate);
-      }
+      date = isValid(parsedDate) ? parsedDate : new Date();
+    } else {
+      date = new Date();
     }
+    
+    setSelectedDate(date);
+    setCurrentMonth(date);
   }, [value]);
 
   const handleSelect = (date: Date | undefined) => {
     if (date) {
-      setSelectedDate(date);
-      onChange(date);
+      // تصحيح مشكلة المنطقة الزمنية
+      const correctedDate = new Date(date);
+      correctedDate.setDate(correctedDate.getDate() + 1);
+      
+      setSelectedDate(correctedDate);
+      setCurrentMonth(correctedDate);
+      onChange(correctedDate);
       setIsOpen(false);
     }
+  };
+
+  const handleOpen = () => {
+    if (!disabled) {
+      setCurrentMonth(selectedDate);
+      setIsOpen(true);
+    }
+  };
+
+  const handleMonthChange = (direction: "prev" | "next") => {
+    setAnimation(direction === "prev" ? "slide-down" : "slide-up");
+    
+    const newMonth = new Date(currentMonth);
+    if (direction === "prev") {
+      newMonth.setMonth(newMonth.getMonth() - 1);
+    } else {
+      newMonth.setMonth(newMonth.getMonth() + 1);
+    }
+    
+    setTimeout(() => {
+      setCurrentMonth(newMonth);
+      setAnimation("");
+    }, 150);
   };
 
   const getDateDisplay = () => {
     if (!selectedDate) return placeholder;
     try {
-      return format(selectedDate, "EEEE، d MMMM yyyy", { locale: arSA });
+      return format(selectedDate, "dd/MM/yyyy");
     } catch {
       return placeholder;
     }
   };
 
-  // بناء خيارات التعطيل لـ DayPicker
   const getDisabledDays = () => {
     const disabledDays = [];
-    
-    if (minDate) {
-      disabledDays.push({ before: minDate });
-    }
-    
-    if (maxDate) {
-      disabledDays.push({ after: maxDate });
-    }
-    
+    if (minDate) disabledDays.push({ before: minDate });
+    if (maxDate) disabledDays.push({ after: maxDate });
     return disabledDays.length > 0 ? disabledDays : undefined;
   };
 
+  const getMonthYearWithNumber = () => {
+    const months = [
+      "يناير", "فبراير", "مارس", "إبريل", "مايو", "يونيو",
+      "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
+    ];
+    const monthNumber = currentMonth.getMonth() + 1;
+    const monthName = months[currentMonth.getMonth()];
+    const year = currentMonth.getFullYear();
+    return `${monthName} (${monthNumber.toString().padStart(2, '0')}) ${year}`;
+  };
+
+  // الحصول على رقم اليوم في الأسبوع (0 = الأحد, 6 = السبت)
+  const getDayOfWeek = () => {
+    return selectedDate.getDay();
+  };
+
+  // أسماء الأيام بالأحرف المختصرة
+  const weekDays = ["أحد", "إثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"];
+
   return (
     <div className={`relative ${className}`}>
+      {/* Label */}
       {label && (
-        <label className="block text-sm font-semibold text-gray-900 mb-2">
-          {label} {required && <span className="text-red-500 font-bold">*</span>}
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {label}
+          {required && <span className="text-red-500 mr-1">*</span>}
         </label>
       )}
 
-      {/* حقل الإدخال */}
+      {/* Input Button */}
       <button
         type="button"
-        onClick={() => !disabled && setIsOpen(!isOpen)}
+        onClick={handleOpen}
         disabled={disabled}
         className={`
-          w-full px-4 py-3 bg-white border rounded-xl 
-          text-right text-gray-900 shadow-sm 
-          transition-all duration-200
-          flex items-center justify-between
-          ${disabled ? "opacity-50 cursor-not-allowed" : "hover:border-gray-400 cursor-pointer"}
-          ${error ? "border-red-500" : "border-gray-300"}
-          focus:ring-2 focus:ring-opacity-50 focus:border-transparent
+          w-full px-4 py-3 text-right rounded-xl
+          border-2 transition-all duration-200
+          flex items-center gap-3
+          ${
+            disabled
+              ? "bg-gray-50 border-gray-200 cursor-not-allowed opacity-60"
+              : "bg-white hover:shadow-md cursor-pointer"
+          }
+          ${error ? "border-red-400" : "border-gray-200 hover:border-gray-300"}
+          focus:outline-none focus:ring-2 focus:ring-offset-2
+          ${error ? "focus:ring-red-200" : "focus:ring-indigo-200"}
         `}
-        style={{ 
-          "--tw-ring-color": primaryColor,
-          borderColor: error ? "#ef4444" : undefined
-        } as React.CSSProperties}
+        style={{
+          boxShadow: isOpen ? `0 0 0 3px ${primaryColor}20` : undefined,
+        }}
       >
-        <span className="flex items-center gap-2">
-          <CalendarIcon size={18} className="text-gray-400 flex-shrink-0" />
-          <span className="truncate">{getDateDisplay()}</span>
-        </span>
-        <ChevronDown 
-          size={16} 
-          className={`text-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} 
+        <CalendarIcon
+          size={20}
+          className={error ? "text-red-400" : "text-gray-400"}
         />
+        <span className="flex-1 truncate text-sm text-gray-900 font-medium">
+          {getDateDisplay()}
+        </span>
       </button>
 
-      {/* رسالة الخطأ */}
+      {/* Error Message */}
       {error && (
-        <p className="text-red-500 text-sm mt-1">{error}</p>
+        <p className="text-red-500 text-xs mt-1.5 flex items-center gap-1.5">
+          <span className="inline-block w-1.5 h-1.5 bg-red-500 rounded-full flex-shrink-0"></span>
+          {error}
+        </p>
       )}
 
-      {/* الـ Popup - يظهر فوق كل شيء */}
+      {/* Modal Overlay */}
       {isOpen && (
-        <>
-          <div 
-            className="fixed inset-0 z-40" 
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute z-50 mt-2 bg-white rounded-2xl shadow-xl border border-gray-200 p-4 w-full sm:w-auto sm:min-w-[320px]">
-            <DayPicker
-              mode="single"
-              selected={selectedDate}
-              onSelect={handleSelect}
-              locale={arSA}
-              disabled={getDisabledDays()}
-              className="rtl"
-              modifiersStyles={{
-                selected: {
-                  backgroundColor: primaryColor,
-                  color: "white",
-                  fontWeight: "600",
-                  borderRadius: "0.5rem",
-                },
-                today: {
-                  border: `2px solid ${primaryColor}`,
-                  fontWeight: "500",
-                  borderRadius: "0.5rem",
-                },
-              }}
-              style={
-                {
-                  "--primary-color": primaryColor,
-                } as React.CSSProperties
-              }
-            />
-            
-            {/* زر إلغاء في الأسفل */}
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="w-full mt-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-700 font-medium transition-colors text-sm"
-            >
-              إلغاء
-            </button>
+
+          {/* Calendar Modal */}
+          <div 
+            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-[380px] overflow-hidden animate-in zoom-in-95 duration-200"
+            dir="rtl"
+          >
+            {/* Header مع أزرار التنقل ورقم الشهر */}
+            <div className="bg-gray-50 px-6 py-4 border-b border-gray-100">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-bold text-gray-900">
+                  اختر التاريخ
+                </h3>
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+                >
+                  <X size={18} className="text-gray-500" />
+                </button>
+              </div>
+              
+              {/* عرض الشهر مع رقمه */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-base font-semibold text-gray-800">
+                    {getMonthYearWithNumber()}
+                  </span>
+                  <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-medium">
+                    {currentMonth.getMonth() + 1}
+                  </span>
+                </div>
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => handleMonthChange("prev")}
+                    className="p-2 hover:bg-white rounded-lg transition-all hover:shadow-sm border border-transparent hover:border-gray-200"
+                    title="الشهر السابق"
+                  >
+                    <ChevronUp size={20} className="text-gray-600" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleMonthChange("next")}
+                    className="p-2 hover:bg-white rounded-lg transition-all hover:shadow-sm border border-transparent hover:border-gray-200"
+                    title="الشهر التالي"
+                  >
+                    <ChevronDown size={20} className="text-gray-600" />
+                  </button>
+                </div>
+              </div>
+
+              {/* عرض أيام الأسبوع مع تمييز اليوم المحدد */}
+              <div className="flex justify-between mt-4 pt-3 border-t border-gray-200">
+                {weekDays.map((day, index) => (
+                  <div
+                    key={day}
+                    className="flex flex-col items-center gap-1"
+                  >
+                    <span
+                      className={`
+                        text-xs font-medium transition-all duration-200
+                        ${
+                          index === getDayOfWeek()
+                            ? "text-white px-2 py-0.5 rounded-full"
+                            : "text-gray-500"
+                        }
+                      `}
+                      style={
+                        index === getDayOfWeek()
+                          ? {
+                              backgroundColor: primaryColor,
+                              boxShadow: `0 2px 8px ${primaryColor}40`,
+                            }
+                          : undefined
+                      }
+                    >
+                      {day}
+                    </span>
+                    {/* نقطة صغيرة تحت اليوم المحدد */}
+                    {index === getDayOfWeek() && (
+                      <span
+                        className="w-1 h-1 rounded-full"
+                        style={{ backgroundColor: primaryColor }}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Calendar Body مع أنيميشن */}
+            <div className="p-4 flex justify-center overflow-hidden">
+              <div 
+                className={`transition-all duration-200 ${
+                  animation === "slide-up" 
+                    ? "transform -translate-y-4 opacity-0" 
+                    : animation === "slide-down" 
+                    ? "transform translate-y-4 opacity-0" 
+                    : "transform translate-y-0 opacity-100"
+                }`}
+              >
+                <style>{`
+                  .rdp {
+                    --rdp-cell-size: 42px;
+                    --rdp-accent-color: ${primaryColor};
+                    --rdp-background-color: ${primaryColor}15;
+                    margin: 0;
+                  }
+                  .rdp-months {
+                    justify-content: center;
+                  }
+                  .rdp-month_caption {
+                    display: none;
+                  }
+                  .rdp-nav {
+                    display: none;
+                  }
+                  .rdp-month_grid {
+                    width: 100%;
+                  }
+                  .rdp-weekdays {
+                    display: none;
+                  }
+                  .rdp-day {
+                    width: 42px;
+                    height: 42px;
+                    font-size: 0.9rem;
+                    color: #111827;
+                    border-radius: 12px;
+                    transition: all 0.2s;
+                    font-weight: 500;
+                  }
+                  .rdp-day:hover:not([disabled]):not(.rdp-selected) {
+                    background-color: ${primaryColor}10;
+                    transform: scale(1.05);
+                  }
+                  .rdp-day_button {
+                    width: 42px;
+                    height: 42px;
+                    border-radius: 12px;
+                    font-weight: 500;
+                  }
+                  .rdp-selected .rdp-day_button {
+                    background-color: ${primaryColor};
+                    color: white;
+                    font-weight: 700;
+                    box-shadow: 0 4px 12px ${primaryColor}40;
+                    transform: scale(1.05);
+                  }
+                  .rdp-today .rdp-day_button {
+                    border: 2px solid ${primaryColor};
+                    font-weight: 700;
+                    color: ${primaryColor};
+                  }
+                  .rdp-today.rdp-selected .rdp-day_button {
+                    color: white;
+                    border: 2px solid ${primaryColor};
+                  }
+                  .rdp-disabled {
+                    opacity: 0.25;
+                    cursor: not-allowed;
+                  }
+                  .rdp-disabled:hover {
+                    background-color: transparent !important;
+                    transform: none !important;
+                  }
+                  .rdp-outside {
+                    opacity: 0.2;
+                  }
+                `}</style>
+                <DayPicker
+                  mode="single"
+                  month={currentMonth}
+                  selected={selectedDate}
+                  onSelect={handleSelect}
+                  locale={arSA}
+                  disabled={getDisabledDays()}
+                  showOutsideDays={true}
+                />
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="flex gap-3 p-4 bg-gray-50 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => {
+                  const today = new Date();
+                  setSelectedDate(today);
+                  setCurrentMonth(today);
+                  onChange(today);
+                  setIsOpen(false);
+                }}
+                className="flex-1 py-2.5 px-4 bg-white hover:bg-gray-100 text-gray-700 font-medium rounded-xl transition-all text-sm border border-gray-200 hover:border-gray-300"
+              >
+                اليوم
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="flex-1 py-2.5 px-4 bg-gray-700 hover:bg-gray-800 text-white font-medium rounded-xl transition-all text-sm"
+              >
+                إلغاء
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (selectedDate) {
+                    setIsOpen(false);
+                  }
+                }}
+                className="flex-1 py-2.5 px-4 text-white font-medium rounded-xl transition-all text-sm shadow-lg hover:shadow-xl hover:scale-[1.02]"
+                style={{ backgroundColor: primaryColor }}
+              >
+                تأكيد
+              </button>
+            </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
