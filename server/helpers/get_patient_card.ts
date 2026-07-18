@@ -5,7 +5,7 @@ export async function getPatientData(clinicId: string, patientId: string) {
         p_clinic_id: clinicId,
         p_patient_id: patientId
     });
-
+    // console.log(data.clinic)
     if (error) {
         console.error("RPC error:", error);
         return { success: false, error: "Failed to fetch patient data" };

@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
     const cookieStore = cookies();
-    const primary_color = cookieStore.get('primary_color')?.value || "##528ff7";
+    const primary_color = cookieStore.get('primary_color')?.value || "#528ff7";
     const secondary_color = cookieStore.get('secondary_color')?.value || "#528ff7";
   return {
     name: 'Live-dent',
@@ -25,11 +25,17 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
         sizes: '192x192',
         type: 'image/png',
       },
-      {
-        src: '/icon-512x512.png',
-        sizes: '512x512',
-        type: 'image/png',
-      },
+      // {
+      //   src: '/icon-512x512.png',
+      //   sizes: '512x512',
+      //   type: 'image/png',
+      // },
+      //     {
+      //   src: '/icon-512x512.png',
+      //   sizes: '512x512',
+      //   type: 'image/png',
+      //   purpose: 'maskable' // مهم لأيقونات السبلاش
+      // },
     ],
   }
 }
