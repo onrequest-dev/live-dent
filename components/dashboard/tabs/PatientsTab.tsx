@@ -31,6 +31,7 @@ import {
   CalendarDays,
   Filter,
 } from "lucide-react";
+import getCurrency from '@/client/helpers/getCurrency';
 import * as XLSX from "xlsx-js-style";
 import { Clinic, Patient, PatientCase, Session } from "@/types";
 import React from "react";
@@ -385,7 +386,7 @@ function PatientsHeader({
       <span className="text-[10px] text-gray-500 truncate">{label}</span>
       <span className={`text-sm font-bold truncate`} style={{ color }}>
         {value.toLocaleString()}
-        <span className="text-[10px] font-normal opacity-60 mr-0.5">$</span>
+        <span className="text-[10px] font-normal opacity-60 mr-0.5">{getCurrency()}</span>
       </span>
     </button>
   );
@@ -501,7 +502,7 @@ function PatientsHeader({
     <div className="text-[8px] text-gray-500">الإجمالي</div>
     <div className="text-[10px] font-bold text-gray-800 mt-0.5">
       {totalCost.toLocaleString()}
-      <span className="text-[10px] font-normal text-gray-400 mr-0.5">$</span>
+      <span className="text-[10px] font-normal text-gray-400 mr-0.5">{getCurrency()}</span>
     </div>
   </div>
   
@@ -509,7 +510,7 @@ function PatientsHeader({
     <div className="text-[8px] text-teal-600">مدفوع</div>
     <div className="text-[10px] font-bold text-teal-600 mt-0.5">
       {paidCost.toLocaleString()}
-      <span className="text-[10px] font-normal text-teal-400 mr-0.5">$</span>
+      <span className="text-[10px] font-normal text-teal-400 mr-0.5">{getCurrency()}</span>
     </div>
   </div>
   
@@ -517,7 +518,7 @@ function PatientsHeader({
     <div className="text-[8px] text-amber-600">متبقي</div>
     <div className="text-[10px] font-bold text-amber-600 mt-0.5">
       {unpaidCost.toLocaleString()}
-      <span className="text-[10px] font-normal text-amber-400 mr-0.5">$</span>
+      <span className="text-[10px] font-normal text-amber-400 mr-0.5">{getCurrency()}</span>
     </div>
   </div>
 </div>
@@ -539,7 +540,7 @@ function PatientsHeader({
       <span className="text-sm text-gray-500">الإجمالي</span>
       <span className="text-base font-bold text-gray-800" dir="ltr">
         {totalCost.toLocaleString('en-US')}
-        <span className="text-xs font-normal text-gray-400 ml-1">$</span>
+        <span className="text-xs font-normal text-gray-400 ml-1">{getCurrency()}</span>
       </span>
     </div>
     
@@ -550,7 +551,7 @@ function PatientsHeader({
       <span className="text-sm text-teal-600">مدفوع</span>
       <span className="text-base font-bold text-teal-600" dir="ltr">
         {paidCost.toLocaleString('en-US')}
-        <span className="text-xs font-normal text-teal-400 ml-1">$</span>
+        <span className="text-xs font-normal text-teal-400 ml-1">{getCurrency()}</span>
       </span>
     </div>
     
@@ -561,7 +562,7 @@ function PatientsHeader({
       <span className="text-sm text-amber-600">متبقي</span>
       <span className="text-base font-bold text-amber-600" dir="ltr">
         {unpaidCost.toLocaleString('en-US')}
-        <span className="text-xs font-normal text-amber-400 ml-1">$</span>
+        <span className="text-xs font-normal text-amber-400 ml-1">{getCurrency()}</span>
       </span>
     </div>
   </div>
@@ -1474,7 +1475,7 @@ function TableFooter({ sessionsCount, totalCost }: TableFooterProps) {
           <span>
             إجمالي التكلفة:{" "}
             <span className="font-bold text-gray-800">
-              {totalCost.toLocaleString()} $
+              {totalCost.toLocaleString()} {getCurrency()}
             </span>
           </span>
         </div>
@@ -1961,7 +1962,7 @@ function AgendaCard({
             className="text-sm font-bold"
             style={{ color: session.isPaid ? "#059669" : "#DC2626" }}
           >
-            {session.sessionCost?.toLocaleString()} $
+            {session.sessionCost?.toLocaleString()} {getCurrency()}
           </span>
         </div>
 
@@ -2102,7 +2103,7 @@ function DesktopTableRow({ session, getPatientData }: DesktopTableRowProps) {
 
       <td className="py-2.5 px-3 text-xs md:text-sm font-bold whitespace-nowrap">
         <span style={{ color: session.isPaid ? "#059669" : "#DC2626" }}>
-          {session.sessionCost?.toLocaleString()} $
+          {session.sessionCost?.toLocaleString()} {getCurrency()}
         </span>
       </td>
 
@@ -2225,7 +2226,7 @@ function MobileListRow({
           className="text-sm font-bold"
           style={{ color: session.isPaid ? "#059669" : "#DC2626" }}
         >
-          {session.sessionCost?.toLocaleString()} $
+          {session.sessionCost?.toLocaleString()} {getCurrency()}
         </p>
 
         {/* مؤشر الحالة أكبر مع مؤشر الدفع */}
@@ -3788,7 +3789,7 @@ function SessionDetailModal({
         valueColor={session.isPaid ? "#059669" : "#DC2626"}
         bold
       >
-        {session.sessionCost?.toLocaleString()} $
+        {session.sessionCost?.toLocaleString()} {getCurrency()}
       </ModalInfoRow>
     </div>
 

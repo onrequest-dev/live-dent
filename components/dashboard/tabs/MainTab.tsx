@@ -2271,254 +2271,275 @@ const togglePaymentStatus = useCallback((sessionId: string, currentIsPaid: boole
                     {/* عرض البطاقات للشاشات الصغيرة (الجوال والتابلت) */}
                     {/* ============================================================ */}
                     <div className="flex flex-col gap-2 sm:gap-3 lg:hidden">
-                      {sortedSessions.map((session) => {
-                        const statusBadge = getSessionStatusBadge(
-                          session.status,
-                        );
-                        return (
-                          <div
-                            key={session.id}
-                            className="bg-gray-50 rounded-xl sm:rounded-2xl p-3 sm:p-4 cursor-pointer hover:bg-gray-100 transition-colors border border-gray-100"
-                            onClick={() => setSelectedSession(session)}
-                          >
-                            {/* الصف الأول: حالة الجلسة + التاريخ */}
-<div className="flex items-center justify-between mb-2">
-  <div 
-    className="flex items-center gap-2 cursor-pointer group/status"
-    onClick={(e) => {
-      e.stopPropagation();
-      toggleSessionStatus(session.id, session.status);
-    }}
-    title={`انقر لتغيير الحالة (حالياً: ${statusBadge.label})`}
-  >
-    <div className="relative flex items-center gap-2">
-      {/* المسار */}
-      <div 
-        className={`
-          relative w-14 h-7 rounded-full transition-all duration-300
-          ${session.status === "completed" 
-            ? "bg-emerald-400/60" 
-            : "bg-amber-400/60"
-          }
-          group-hover/status:shadow-lg
-          flex items-center justify-between px-1.5
-        `}
+  {sortedSessions.map((session) => {
+    const statusBadge = getSessionStatusBadge(session.status);
+    return (
+      <div
+        key={session.id}
+        className="bg-gray-50 rounded-xl sm:rounded-2xl p-3 sm:p-4 cursor-pointer hover:bg-gray-100 transition-colors border border-gray-100"
+        onClick={() => setSelectedSession(session)}
       >
-        {/* أيقونة المجدول (يسار) */}
-        <span className={`
-          text-[10px] transition-all duration-300 z-10
-          ${session.status === "completed" 
-            ? "opacity-20 text-white/40" 
-            : "opacity-100 text-white"
-          }
-        `}>
-          <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="12 6 12 12 16 14" />
-          </svg>
-        </span>
+{/* الصف الأول: الإجراء والملاحظة */}
+<div className="mb-2">
+  <span
+    className="text-sm sm:text-base font-semibold text-gray-900 line-clamp-2"
+    title={
+      session.performedProcedure ||
+      session.plannedProcedure ||
+      "جلسة"
+    }
+  >
+    {session.performedProcedure ||
+      session.plannedProcedure ||
+      "جلسة"}
+  </span>
+  
+  {/* الملاحظة - تظهر إذا وجدت */}
+  {session.notes && (
+    <div className="mt-1 flex items-start gap-1">
+      <svg className="w-3.5 h-3.5 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <polyline points="14 2 14 8 20 8" />
+        <line x1="16" y1="13" x2="8" y2="13" />
+        <line x1="16" y1="17" x2="8" y2="17" />
+      </svg>
+      <p className="text-[11px] sm:text-xs text-gray-500 line-clamp-2 leading-relaxed">
+        {session.notes}
+      </p>
+    </div>
+  )}
+</div>
 
-        {/* أيقونة المكتمل (يمين) */}
-        <span className={`
-          text-[10px] transition-all duration-300 z-10
-          ${session.status === "completed" 
-            ? "opacity-100 text-white" 
-            : "opacity-20 text-white/40"
-          }
-        `}>
-          <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        </span>
-
-        {/* 🔥 الدائرة - باستخدام left بدلاً من transform */}
-        <div 
-          className={`
-            absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md 
-            transition-all duration-300 ease-in-out
-            group-hover/status:scale-105
-            flex items-center justify-center
-          `}
-          style={{
-            // ✅ استخدام left بدلاً من transform للتحكم الدقيق
-            left: session.status === "scheduled" ? "2px" : "calc(100% - 26px)"
-          }}
-        >
-          {session.status === "completed" ? (
-            <svg className="w-3 h-3 text-emerald-500" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-              <polyline points="20 6 9 17 4 12" />
+        {/* الصف الثاني: التاريخ والوقت - في اليسار */}
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-[11px] sm:text-xs text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-full flex items-center gap-1">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
             </svg>
-          ) : (
-            <svg className="w-3 h-3 text-amber-500" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+            {formatDate(session.startTime)}
+          </span>
+          <span className="text-[11px] sm:text-xs text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-full flex items-center gap-1">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="10" />
               <polyline points="12 6 12 12 16 14" />
             </svg>
-          )}
+            {formatTime(session.startTime)}
+          </span>
+          
+          {/* التكلفة */}
+          <span className="text-xs sm:text-sm font-semibold text-gray-900 mr-auto bg-white px-2.5 py-1 rounded-full shadow-sm">
+            {formatCurrency(session.sessionCost)}
+          </span>
         </div>
-      </div>
 
-      {/* النص */}
-      <span className={`
-        text-xs sm:text-sm font-semibold transition-all duration-300
-        ${session.status === "completed" ? "text-emerald-700" : "text-amber-700"}
-        group-hover/status:scale-105
-        min-w-[40px]
-      `}>
-        {statusBadge.label}
-      </span>
+        {/* خط فاصل */}
+        <div className="border-t border-gray-200 mb-3"></div>
+
+        {/* الصف الثالث: الأزرار والمفاتيح */}
+        <div className="flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
+          {/* المجموعة اليسرى: حالة الجلسة + حالة الدفع */}
+          <div className="flex items-center gap-3 flex-wrap">
+{/* مفتاح حالة الجلسة (مجدول/مكتمل) */}
+<div 
+  className="flex flex-col items-center gap-0.5 cursor-pointer group/status"
+  onClick={(e) => {
+    e.stopPropagation();
+    toggleSessionStatus(session.id, session.status);
+  }}
+  title={`انقر لتغيير الحالة (حالياً: ${statusBadge.label})`}
+>
+  {/* النص فوق المفتاح */}
+  <span className={`
+    text-[10px] font-medium transition-all duration-300
+    ${session.status === "completed" ? "text-emerald-600" : "text-amber-600"}
+    group-hover/status:scale-105
+  `}>
+    {statusBadge.label}
+  </span>
+  
+  {/* المفتاح - أكبر قليلاً */}
+  <div 
+    className={`
+      relative w-11 h-6 rounded-full transition-all duration-300
+      ${session.status === "completed" 
+        ? "bg-emerald-400/60" 
+        : "bg-amber-400/60"
+      }
+      group-hover/status:shadow-md
+      flex items-center justify-between px-1
+    `}
+  >
+    {/* أيقونة المجدول (يسار) */}
+    <span className={`
+      text-[8px] transition-all duration-300 z-10
+      ${session.status === "completed" 
+        ? "opacity-0" 
+        : "opacity-100 text-white"
+      }
+    `}>
+      <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+    </span>
+
+    {/* أيقونة المكتمل (يمين) */}
+    <span className={`
+      text-[8px] transition-all duration-300 z-10
+      ${session.status === "completed" 
+        ? "opacity-100 text-white" 
+        : "opacity-0"
+      }
+    `}>
+      <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+    </span>
+
+    {/* الدائرة المتحركة - أكبر قليلاً */}
+    <div 
+      className={`
+        absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm 
+        transition-all duration-300 ease-in-out
+        group-hover/status:scale-110
+        flex items-center justify-center
+      `}
+      style={{
+        left: session.status === "scheduled" ? "2px" : "calc(100% - 22px)"
+      }}
+    >
+      {session.status === "completed" ? (
+        <svg className="w-2.5 h-2.5 text-emerald-500" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ) : (
+        <svg className="w-2.5 h-2.5 text-amber-500" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+        </svg>
+      )}
     </div>
   </div>
-
-  {/* التاريخ */}
-  <span className="text-[11px] sm:text-xs text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-full flex-shrink-0">
-    {formatDate(session.startTime)}
-  </span>
 </div>
 
-                            {/* الصف الثاني: الإجراء + الوقت */}
-                            <div className="flex items-center justify-between mb-2">
-                              <span
-                                className="text-xs sm:text-sm font-medium text-gray-900 truncate max-w-[60%]"
-                                title={
-                                  session.performedProcedure ||
-                                  session.plannedProcedure ||
-                                  "جلسة"
-                                }
-                              >
-                                {session.performedProcedure ||
-                                  session.plannedProcedure ||
-                                  "جلسة"}
-                              </span>
-                              <span className="text-[11px] sm:text-xs text-gray-500">
-                                {formatTime(session.startTime)}
-                              </span>
-                            </div>
-
-                            {/* الصف الثالث: التكلفة + حالة الدفع + الأزرار */}
-                            <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-                              <div className="flex items-center gap-2">
-
+{/* مفتاح حالة الدفع */}
 <div
-  className="flex items-center gap-1.5 cursor-pointer group/payment select-none"
+  className="flex flex-col items-center gap-0.5 cursor-pointer group/payment"
   onClick={(e) => {
     e.stopPropagation();
     togglePaymentStatus(session.id, session.isPaid);
   }}
   title={`انقر لتغيير حالة الدفع (حالياً: ${session.isPaid ? 'مدفوع' : 'غير مدفوع'})`}
 >
-  {/* Toggle Switch للدفع */}
-  <div className="relative flex items-center gap-2">
-    {/* المسار */}
+  {/* النص فوق المفتاح */}
+  <span className={`
+    text-[10px] font-medium transition-all duration-300
+    ${session.isPaid ? "text-emerald-600" : "text-rose-600"}
+    group-hover/payment:scale-105
+  `}>
+    {session.isPaid ? "مدفوع" : "غير مدفوع"}
+  </span>
+  
+  {/* المفتاح - أكبر قليلاً */}
+  <div 
+    className={`
+      relative w-11 h-6 rounded-full transition-all duration-300
+      ${session.isPaid 
+        ? "bg-emerald-400/60" 
+        : "bg-rose-400/60"
+      }
+      group-hover/payment:shadow-md
+      flex items-center justify-between px-1
+    `}
+  >
+    {/* أيقونة غير مدفوع (يسار) */}
+    <span className={`
+      text-[8px] transition-all duration-300 z-10
+      ${session.isPaid 
+        ? "opacity-0" 
+        : "opacity-100 text-white"
+      }
+    `}>
+      <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="8" x2="12" y2="12" />
+        <line x1="12" y1="16" x2="12.01" y2="16" />
+      </svg>
+    </span>
+
+    {/* أيقونة مدفوع (يمين) */}
+    <span className={`
+      text-[8px] transition-all duration-300 z-10
+      ${session.isPaid 
+        ? "opacity-100 text-white" 
+        : "opacity-0"
+      }
+    `}>
+      <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+    </span>
+
+    {/* الدائرة المتحركة - أكبر قليلاً */}
     <div 
       className={`
-        relative w-14 h-7 rounded-full transition-all duration-300
-        ${session.isPaid 
-          ? "bg-emerald-400/60" 
-          : "bg-rose-400/60"
-        }
-        group-hover/payment:shadow-lg
-        flex items-center justify-between px-1.5
+        absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm 
+        transition-all duration-300 ease-in-out
+        group-hover/payment:scale-110
+        flex items-center justify-center
       `}
+      style={{
+        left: session.isPaid ? "calc(100% - 22px)" : "2px"
+      }}
     >
-      {/* أيقونة غير مدفوع (يسار) */}
-      <span className={`
-        text-[10px] transition-all duration-300 z-10
-        ${session.isPaid 
-          ? "opacity-20 text-white/40" 
-          : "opacity-100 text-white"
-        }
-      `}>
-        <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+      {session.isPaid ? (
+        <svg className="w-2.5 h-2.5 text-emerald-500" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ) : (
+        <svg className="w-2.5 h-2.5 text-rose-500" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="10" />
           <line x1="12" y1="8" x2="12" y2="12" />
           <line x1="12" y1="16" x2="12.01" y2="16" />
         </svg>
-      </span>
-
-      {/* أيقونة مدفوع (يمين) */}
-      <span className={`
-        text-[10px] transition-all duration-300 z-10
-        ${session.isPaid 
-          ? "opacity-100 text-white" 
-          : "opacity-20 text-white/40"
-        }
-      `}>
-        <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      </span>
-
-      {/* الدائرة المتحركة */}
-      <div 
-        className={`
-          absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md 
-          transition-all duration-300 ease-in-out
-          group-hover/payment:scale-105
-          flex items-center justify-center
-        `}
-        style={{
-          left: session.isPaid ? "calc(100% - 26px)" : "2px"
-        }}
-      >
-        {session.isPaid ? (
-          <svg className="w-3 h-3 text-emerald-500" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        ) : (
-          <svg className="w-3 h-3 text-rose-500" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
-        )}
-      </div>
+      )}
     </div>
-
-    {/* النص بجانب التبديل */}
-    <span className={`
-      text-xs sm:text-sm font-semibold transition-all duration-300
-      ${session.isPaid ? "text-emerald-700" : "text-rose-700"}
-      group-hover/payment:scale-105
-      min-w-[50px]
-    `}>
-      {session.isPaid ? "مدفوع" : "غير مدفوع"}
-    </span>
   </div>
 </div>
-                                <span className="text-xs sm:text-sm font-semibold text-gray-900">
-                                  {formatCurrency(session.sessionCost)}
-                                </span>
-                          </div>
+          </div>
 
-                          {/* أزرار الإجراءات */}
-                          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onEditSession(session);
-                              }}
-                              className="p-1.5 rounded-lg bg-white hover:bg-gray-200 transition-colors flex-shrink-0 shadow-sm"
-                              title="تعديل الجلسة"
-                            >
-                              <Edit size={13} className="text-gray-600" />
-                            </button>
+          {/* المجموعة اليمنى: أزرار التعديل والحذف */}
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditSession(session);
+              }}
+              className="p-2 rounded-lg bg-white hover:bg-blue-50 hover:text-blue-600 transition-all flex-shrink-0 shadow-sm border border-gray-100 group/btn"
+              title="تعديل الجلسة"
+            >
+              <Edit size={14} className="text-gray-600 group-hover/btn:text-blue-600 transition-colors" />
+            </button>
 
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onRequestDeleteSession(session.id);
-                              }}
-                              className="p-1.5 rounded-lg bg-white hover:bg-red-50 transition-colors flex-shrink-0 shadow-sm"
-                              title="حذف الجلسة"
-                            >
-                              <Trash2 size={13} className="text-red-600" />
-                            </button>
-                          </div>
-                        </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onRequestDeleteSession(session.id);
+              }}
+              className="p-2 rounded-lg bg-white hover:bg-red-50 hover:text-red-600 transition-all flex-shrink-0 shadow-sm border border-gray-100 group/btn"
+              title="حذف الجلسة"
+            >
+              <Trash2 size={14} className="text-red-500 group-hover/btn:text-red-600 transition-colors" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  })}
+</div>
                   </div>
                 ) : (
                   /* حالة عدم وجود جلسات */
