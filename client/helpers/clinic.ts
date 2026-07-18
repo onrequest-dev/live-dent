@@ -144,7 +144,7 @@ export async function getClinic(): Promise<ApiResponse<Clinic>> {
     const response = await fetch("/api/v1/clinic");
     const result = await response.json();
     
-    localStorage.setItem('currency', result.data?.settings?.currency || 'USD'); 
+    localStorage.setItem('currency', result.data?.currency || 'USD'); 
 
     if (!response.ok) {
       return { success: false, error: result.error || "فشل جلب بيانات العيادة" };
