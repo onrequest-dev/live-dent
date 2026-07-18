@@ -1289,50 +1289,101 @@ const FilterPopover = () => {
   );
 };
 
-  // ============================================================================
-  // مكون فرعي: التنقل بين الأيام (يبقى كما هو)
-  // ============================================================================
-  const DayNavigation = () => {
-    if (isCalendarMode) return null;
-    if (!isDayMode) return null;
+// ============================================================================
+// مكون فرعي: التنقل بين الأيام
+// ============================================================================
+// ============================================================================
+// مكون فرعي: التنقل بين الأيام
+// ============================================================================
+const DayNavigation = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-    return (
-      <div className="flex items-center gap-1 bg-gray-100 rounded-full p-1">
+  // إغلاق القائمة عند النقر خارجها
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  if (isCalendarMode) return null;
+  if (!isDayMode) return null;
+
+  return (
+    <div className="flex items-center gap-1 bg-gray-100 rounded-full p-1">
+      <button
+        onClick={onPreviousDay}
+        disabled={!canGoPrevious}
+        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+        style={{ color: clinicColor }}
+      >
+        <ChevronRight size={16} />
+      </button>
+
+      {/* قائمة منسدلة مخصصة */}
+      <div className="relative" ref={dropdownRef}>
         <button
-          onClick={onPreviousDay}
-          disabled={!canGoPrevious}
-          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
-          style={{ color: clinicColor }}
+          onClick={() => setIsOpen(!isOpen)}
+          className="flex items-center gap-2 bg-white hover:bg-gray-50 px-4 py-1.5 text-sm font-medium text-gray-700 rounded-full border border-gray-200 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all duration-200 min-w-[150px] sm:min-w-[170px] justify-center"
         >
-          <ChevronRight size={16} />
+          <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <span className="text-right">
+            {getDayName(selectedDate)} - {formatDisplayDate(selectedDate)}
+          </span>
+          <svg className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
         </button>
 
-        <div className="relative">
-          <select
-            value={selectedDate}
-            onChange={(e) => onDateChange(e.target.value)}
-            className="appearance-none bg-transparent px-2 py-1.5 text-sm font-medium text-gray-700 focus:outline-none cursor-pointer text-center min-w-[140px] sm:min-w-[160px]"
-            style={{ direction: "rtl" }}
-          >
+        {isOpen && (
+          <div className="absolute top-full mt-2 right-0 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 min-w-[220px] max-h-64 overflow-y-auto z-50">
             {availableDates.map((date) => (
-              <option key={date} value={date}>
-                {getDayName(date)} - {formatDisplayDate(date)}
-              </option>
+              <button
+                key={date}
+                onClick={() => {
+                  onDateChange(date);
+                  setIsOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-150 hover:bg-blue-50 ${
+                  date === selectedDate 
+                    ? 'bg-blue-50 text-blue-600 font-semibold' 
+                    : 'text-gray-700'
+                }`}
+              >
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                  date === selectedDate ? 'bg-blue-500' : 'bg-gray-300'
+                }`}></span>
+                <span className="flex-1 text-right">
+                  {getDayName(date)} - {formatDisplayDate(date)}
+                </span>
+                {date === selectedDate && (
+                  <svg className="w-4 h-4 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </button>
             ))}
-          </select>
-        </div>
-
-        <button
-          onClick={onNextDay}
-          disabled={!canGoNext}
-          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
-          style={{ color: clinicColor }}
-        >
-          <ChevronLeft size={16} />
-        </button>
+          </div>
+        )}
       </div>
-    );
-  };
+
+      <button
+        onClick={onNextDay}
+        disabled={!canGoNext}
+        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+        style={{ color: clinicColor }}
+      >
+        <ChevronLeft size={16} />
+      </button>
+    </div>
+  );
+};
 
   // ============================================================================
   // Render

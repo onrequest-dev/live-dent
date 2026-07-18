@@ -313,7 +313,7 @@ const ScrollProgress = () => {
 // ==========================================
 const SocialContact = () => {
   const socialLinks = [
-    { icon: FaTelegramPlane, href: "https://t.me/OnRequest_dev", label: "تلغرام" },
+    { icon: FaTelegramPlane, href: "https://t.me/LIVEDENTsy", label: "تلغرام" },
     { icon: FaWhatsapp, href: "https://wa.me/+963982719525", label: "واتساب" },
     { icon: FaYoutube, href: "https://youtube.com/@OnRequest_dev", label: "يوتيوب" },
     { icon: FaInstagram, href: "https://www.instagram.com/livedent.official", label: "انستغرام" },
@@ -368,7 +368,341 @@ const SocialContact = () => {
     </div>
   );
 };
+// ==========================================
+// مكون عرض الهواتف الدوارة - النسخة المثالية
+// ==========================================
+const PhoneCarousel = () => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+  const dragStartX = useRef(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  const slides = [
+    {
+      src: "/imglan/ph1.webp",
+      icon: Users,
+      label: "لوحة المرضى",
+      text: "كل مريض بمكانه",
+    },
+    {
+      src: "/imglan/ph2.webp",
+      icon: Calendar,
+      label: "مواعيد ومدفوعات",
+      text: "جدولك واضح ودفعاتك مضبوطة",
+    },
+    {
+      src: "/imglan/ph3.webp",
+      icon: Activity,
+      label: "شارت سني مخصص",
+      text: "كل سن وله سجله الخاص",
+    },
+    {
+      src: "/imglan/ph4.webp",
+      icon: BarChart,
+      label: "إحصائيات وأجندات",
+      text: "عيادتك بالأرقام",
+    },
+    {
+      src: "/imglan/ph5.webp",
+      icon: Camera,
+      label: "رفع ومعاينة الأشعة",
+      text: "الأشعة بمكانها الصح",
+    },
+    {
+      src: "/imglan/ph6.webp",
+      icon: IdCard,
+      label: "كرت رقمي للمشاركة",
+      text: "بطاقتك الاحترافية بلمسة",
+    },
+  ];
+
+  const totalSlides = slides.length;
+
+  // التحريك التلقائي
+  useEffect(() => {
+    if (!isPaused && !isDragging) {
+      intervalRef.current = setInterval(() => {
+        setCurrentIndex((prev) => (prev + 1) % totalSlides);
+      }, 3500);
+    }
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [isPaused, isDragging]);
+
+  const goToSlide = (index: number) => {
+    setCurrentIndex(index);
+  };
+
+  // ====== نظام السحب ======
+  const handleDragStart = (clientX: number) => {
+    setIsDragging(true);
+    setIsPaused(true);
+    dragStartX.current = clientX;
+    setDragOffset(0);
+  };
+
+  const handleDragMove = (clientX: number) => {
+    if (!isDragging) return;
+    const diff = clientX - dragStartX.current;
+    setDragOffset(diff * 1.5); // مقاومة لطيفة
+  };
+
+  const handleDragEnd = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    
+    const threshold = 50;
+    
+    if (dragOffset > threshold) {
+      setCurrentIndex((prev) => (prev - 1 + totalSlides) % totalSlides);
+    } else if (dragOffset < -threshold) {
+      setCurrentIndex((prev) => (prev + 1) % totalSlides);
+    }
+    
+    setDragOffset(0);
+    setTimeout(() => setIsPaused(false), 2500);
+  };
+
+  // ====== حساب موقع الشريحة ======
+  const getSlideStyle = (index: number): React.CSSProperties => {
+    let offset = index - currentIndex;
+    
+    // تدوير لانهائي
+    if (offset > totalSlides / 2) offset -= totalSlides;
+    if (offset < -totalSlides / 2) offset += totalSlides;
+    
+    // إزاحة السحب
+    const dragInfluence = isDragging ? dragOffset / 200 : 0;
+    const finalOffset = offset + dragInfluence;
+    const absOffset = Math.abs(finalOffset);
+    
+    return {
+      transform: `translateX(${finalOffset * 210}px) scale(${1 - absOffset * 0.06})`,
+      opacity: Math.max(0, 1 - absOffset * 0.6),
+      zIndex: absOffset < 0.5 ? 10 : 0,
+      transition: isDragging
+        ? 'none'
+        : 'transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.35s ease',
+      pointerEvents: absOffset < 0.5 ? 'auto' : 'none',
+    };
+  };
+
+  return (
+    <section
+      className="relative py-16 md:py-24 overflow-hidden"
+      style={{ backgroundColor: COLORS.surface }}
+    >
+      {/* خلفية ناعمة */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `
+            radial-gradient(ellipse at 50% 20%, ${COLORS.primary}04, transparent 50%),
+            radial-gradient(ellipse at 20% 80%, ${COLORS.primary}03, transparent 50%),
+            radial-gradient(ellipse at 80% 80%, ${COLORS.primary}03, transparent 50%)
+          `,
+        }}
+      />
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 relative z-10">
+        {/* العنوان */}
+        <AnimatedSection className="text-center mb-10 md:mb-14" direction="up">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-5"
+            style={{
+              backgroundColor: COLORS.primaryLight,
+              border: `1px solid ${COLORS.primary}15`,
+            }}
+          >
+            <Smartphone size={14} style={{ color: COLORS.primary }} />
+            <span className="text-xs font-semibold tracking-wide" style={{ color: COLORS.primary }}>
+              تجربة الجوال
+            </span>
+          </motion.div>
+
+          <h2
+            className="text-3xl md:text-2xl lg:text-2xl font-bold mb-3"
+            style={{ color: COLORS.text }}
+          >
+            التجربة الأبسط
+          </h2>
+
+          <p className="text-base md:text-lg" style={{ color: COLORS.textSecondary }}>
+            تصل لأي معلومة بأقل من ثلاث نقرات
+          </p>
+        </AnimatedSection>
+
+        {/* المحتوى: نص + هواتف */}
+        <div className="flex flex-col lg:flex-row items-center gap-6 lg:gap-12">
+          {/* النص المتغير */}
+          <div className="flex-1 order-2 lg:order-1 w-full text-center lg:text-right">
+            <div className="relative h-28 flex items-center justify-center lg:justify-start">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentIndex}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.25, ease: "easeOut" }}
+                  className="w-full"
+                >
+
+                  {/* التصنيف */}
+                  <p
+                    className="text-sm font-medium mb-1.5 opacity-60"
+                    style={{ color: COLORS.textSecondary }}
+                  >
+                    {slides[currentIndex].label}
+                  </p>
+
+                  {/* النص الرئيسي */}
+                  <p
+                    className="text-xl md:text-2xl lg:text-3xl font-bold leading-tight"
+                    style={{ color: COLORS.text }}
+                  >
+                    {slides[currentIndex].text}
+                  </p>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            {/* نقاط + شريط تقدم */}
+            <div className="flex items-center justify-center lg:justify-start gap-3 mt-6">
+              {slides.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => goToSlide(index)}
+                  className="transition-all duration-300 rounded-full"
+                  style={{
+                    width: index === currentIndex ? "20px" : "5px",
+                    height: "5px",
+                    backgroundColor: index === currentIndex ? COLORS.primary : `${COLORS.primary}18`,
+                    borderRadius: index === currentIndex ? "3px" : "50%",
+                  }}
+                />
+              ))}
+              <div
+                className="h-[2px] rounded-full overflow-hidden flex-1 max-w-[120px]"
+                style={{ backgroundColor: `${COLORS.primary}08` }}
+              >
+                <motion.div
+                  key={currentIndex}
+                  initial={{ width: "0%" }}
+                  animate={!isPaused && !isDragging ? { width: "100%" } : { width: "0%" }}
+                  transition={{ duration: 3.5, ease: "linear" }}
+                  className="h-full rounded-full"
+                  style={{ backgroundColor: COLORS.primary }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* الهواتف */}
+          <div
+            ref={containerRef}
+            className="relative order-1 lg:order-2 flex-shrink-0 select-none"
+            onMouseEnter={() => setIsPaused(true)}
+            onMouseLeave={() => {
+              setIsPaused(false);
+              handleDragEnd();
+            }}
+            onMouseDown={(e) => handleDragStart(e.clientX)}
+            onMouseMove={(e) => handleDragMove(e.clientX)}
+            onMouseUp={handleDragEnd}
+            onTouchStart={(e) => handleDragStart(e.touches[0].clientX)}
+            onTouchMove={(e) => handleDragMove(e.touches[0].clientX)}
+            onTouchEnd={handleDragEnd}
+            style={{ touchAction: 'pan-y' }}
+          >
+            <div className="relative h-[380px] md:h-[440px] w-[230px] flex items-center justify-center">
+              {slides.map((slide, index) => {
+                const style = getSlideStyle(index);
+                const isActive = index === currentIndex;
+
+                return (
+                  <div
+                    key={index}
+                    className="absolute flex items-center justify-center"
+                    style={style}
+                  >
+                    {/* توهج خلفي للشريحة النشطة */}
+                    <div
+                      className="absolute -inset-8 -z-10 rounded-[3rem] transition-opacity duration-500"
+                      style={{
+                        background: `radial-gradient(ellipse, ${COLORS.primary}10, transparent 70%)`,
+                        filter: 'blur(30px)',
+                        opacity: isActive ? 0.7 : 0,
+                      }}
+                    />
+
+                    {/* جسم الهاتف */}
+                    <div
+                      style={{
+                        width: '200px',
+                        height: '400px',
+                        padding: '4px',
+                        borderRadius: '2rem',
+                        background: 'linear-gradient(160deg, #2d2d2d 0%, #1a1a1a 35%, #222 65%, #1a1a1a 100%)',
+                        boxShadow: `
+                          0 0 0 0.5px rgba(255,255,255,0.06),
+                          0 20px 40px -10px rgba(0,0,0,0.4),
+                          0 0 40px -8px ${COLORS.primary}12
+                        `,
+                      }}
+                    >
+                      {/* الشاشة */}
+                      <div
+                        className="relative w-full h-full overflow-hidden"
+                        style={{
+                          borderRadius: '1.7rem',
+                          backgroundColor: '#000',
+                        }}
+                      >
+                        <Image
+                          src={slide.src}
+                          alt=""
+                          fill
+                          className="object-cover"
+                          sizes="200px"
+                          priority={isActive}
+                          loading={Math.abs(index - currentIndex) <= 1 ? undefined : 'lazy'}
+                          draggable="false"
+                        />
+
+                        {/* انعكاس خفيف */}
+                        <div
+                          className="absolute inset-0 pointer-events-none"
+                          style={{
+                            background: `
+                              linear-gradient(
+                                180deg,
+                                rgba(255,255,255,0.03) 0%,
+                                transparent 25%,
+                                transparent 75%,
+                                rgba(255,255,255,0.02) 100%
+                              )
+                            `,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
 // ==========================================
 // الصفحة الرئيسية
 // ==========================================
@@ -463,7 +797,24 @@ const services = [
     { src: "/imglan/i10.webp", alt: "الجدول الاسبوعي", title: "كن على دراية بمتى سيكون لديك ضغط في العمل ومتى ستكون متفرغا" },
     { src: "/imglan/i11.webp", alt: "سيرة ثاتية لك وصفحة لجدول عيادتك", title: "تمييز عن البقية وشارك برستيجك الخاص مع مرضاك" },
   ];
+  // ✨ أضف هذه المتغيرات الجديدة للابتوب
+  const [currentLaptopIndex, setCurrentLaptopIndex] = useState(0);
 
+  const goNextLaptop = () => {
+    setCurrentLaptopIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const goPrevLaptop = () => {
+    setCurrentLaptopIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+
+  // تقليب تلقائي لشاشة اللابتوب
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentLaptopIndex((prev) => (prev + 1) % images.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [images.length]);
   return (
     <div 
       className="min-h-screen relative" 
@@ -601,9 +952,370 @@ const services = [
           </div>
         </motion.div>
       </section>
-
+        <PhoneCarousel />
       {/* Services Section */}
-      <section className="relative py-24 overflow-hidden">
+      
+
+{/* ========================================== */}
+{/* Gallery Section - لابتوب متجاوب ومتناسق     */}
+{/* ========================================== */}
+<section className="relative py-16 md:py-24 overflow-hidden" style={{ backgroundColor: COLORS.surface }}>
+  <DentalSVG direction="left" size="normal" className="top-16 -right-24 md:-right-40 opacity-[0.05]" />
+  
+  <div className="max-w-6xl mx-auto px-4 sm:px-6 relative z-10">
+    <AnimatedSection className="text-center mb-12 md:mb-16" direction="up">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.8 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
+        className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-5"
+        style={{ 
+          backgroundColor: COLORS.primaryLight, 
+          border: `1px solid ${COLORS.primary}15` 
+        }}
+      >
+        <Layout size={14} style={{ color: COLORS.primary }} />
+        <span className="text-xs font-semibold tracking-wide" style={{ color: COLORS.primary }}>لمحة من النظام</span>
+      </motion.div>
+      
+      <motion.h2 
+        className="text-2xl md:text-4xl font-bold mb-3"
+        style={{ color: COLORS.text }}
+      >
+        تجربة سطح مكتب استثنائية
+      </motion.h2>
+      <motion.p 
+        className="text-base md:text-lg"
+        style={{ color: COLORS.textSecondary }}
+      >
+        اضغط على الشاشة للمعاينة الكاملة
+      </motion.p>
+    </AnimatedSection>
+
+    {/* ====== اللابتوب ====== */}
+    <AnimatedSection direction="up" delay={0.2}>
+      <div className="relative max-w-[280px] sm:max-w-md md:max-w-2xl lg:max-w-[500px] mx-auto">
+        
+        {/* منظور ثلاثي الأبعاد - أخف على الهاتف */}
+        <div style={{ perspective: '800px' }}>
+          
+          <div
+            className="relative mx-auto"
+            style={{
+              transform: 'rotateY(-20deg) rotateX(8deg)',
+              transformStyle: 'preserve-3d',
+              width: '100%',
+            }}
+          >
+            
+            {/* ========== الشاشة ========== */}
+            <div
+              className="w-full rounded-t-2xl"
+              style={{
+                background: '#0d0d0d',
+                padding: '2% 2% 0 2%',
+                boxShadow: `
+                  0 0 0 0.5px rgba(255,255,255,0.04),
+                  0 30px 50px -20px rgba(0,0,0,0.7),
+                  inset 0 1px 0 rgba(255,255,255,0.03)
+                `,
+              }}
+            >
+              {/* كاميرا */}
+              <div className="flex items-center justify-center pb-1.5 md:pb-2">
+                <div 
+                  className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full relative"
+                  style={{ 
+                    backgroundColor: '#000',
+                    boxShadow: '0 0 0 1px rgba(255,255,255,0.2), 0 0 0 2px rgba(0,0,0,0.5)',
+                  }}
+                >
+                  <div 
+                    className="absolute -right-[1px] -top-[1px] w-[2px] h-[2px] md:w-[3px] md:h-[3px] rounded-full"
+                    style={{ backgroundColor: '#22c55e', boxShadow: '0 0 2px #22c55e' }}
+                  />
+                </div>
+              </div>
+
+              {/* الشاشة - صورة تغطي بالكامل */}
+              <div
+                className="relative w-full cursor-pointer group overflow-hidden rounded-lg"
+                style={{ aspectRatio: '16/10', backgroundColor: '#000' }}
+                onClick={() => setSelectedImage(images[currentLaptopIndex])}
+              >
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentLaptopIndex}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="absolute inset-0"
+                  >
+                    <Image
+                      src={images[currentLaptopIndex].src}
+                      alt={images[currentLaptopIndex].alt}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 90vw, (max-width: 1024px) 60vw, 50vw"
+                      priority
+                    />
+                    
+                    {/* انعكاس */}
+                    <div 
+                      className="absolute inset-0 pointer-events-none"
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, transparent 50%)',
+                      }}
+                    />
+                    
+                    {/* Overlay hover */}
+                    <div 
+                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center"
+                      style={{ backgroundColor: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(1px)' }}
+                    >
+                      <div 
+                        className="flex items-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-5 md:py-2.5 rounded-full"
+                        style={{
+                          backgroundColor: 'rgba(0,0,0,0.7)',
+                          border: '1px solid rgba(255,255,255,0.15)',
+                          color: 'white',
+                          fontSize: 'clamp(10px, 2vw, 14px)',
+                          fontWeight: 500,
+                        }}
+                      >
+                        <Search size={14} />
+                        اضغط للتكبير
+                      </div>
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+              
+              {/* شعار LIVEDENT */}
+              <div className="flex justify-center py-1 md:py-1.5">
+                <span 
+                  className="text-[7px] md:text-[9px] font-light tracking-[0.15em] rounded-full"
+                  style={{ color: '#fbfbfd' }}
+                >
+                  LIVEDENT
+                </span>
+              </div>
+            </div>
+
+            {/* ========== المفصلة ========== */}
+            <div
+              className="mx-auto"
+              style={{
+                width: '25%',
+                height: '3px',
+                background: 'linear-gradient(180deg, #1a1a1a 0%, #333 50%, #1a1a1a 100%)',
+                borderRadius: '0 0 2px 2px',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.6)',
+              }}
+            />
+
+            {/* ========== القاعدة - متعامدة مع الشاشة ========== */}
+            <div
+              className="w-full rounded-b-2xl"
+              style={{
+                width: '100%',
+                marginLeft: '-4%',
+                background: 'linear-gradient(180deg, #1e1e1e 0%, #181818 50%, #111 100%)',
+                padding: '2.5% 3% 3.5%',
+                boxShadow: `
+                  0 20px 40px -15px rgba(0,0,0,0.7),
+                  0 0 0 0.5px rgba(255,255,255,0.03),
+                  inset 0 1px 0 rgba(255,255,255,0.03)
+                `,
+                marginTop: '-1px',
+                    transform: 'rotateX(40deg) rotateY(0deg)', 
+                         // قيمة سالبة = للخلف
+                    transformOrigin: 'top center'
+              }}
+            >
+              <div className="space-y-[8px] md:space-y-1">
+                {/* صف 1 */}
+                <div className="flex justify-between gap-[2px] md:gap-1">
+                  {[...Array(14)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="rounded-[2px] md:rounded-[3px] flex-1"
+                      style={{
+                        height: 'clamp(12px, 3vw, 28px)',
+                        background: 'linear-gradient(180deg, #2a2a2a 0%, #1f1f1f 100%)',
+                        boxShadow: '0 1px 0 rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {/* صف 2 */}
+                <div className="flex justify-between gap-[2px] md:gap-1">
+                  {[...Array(14)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="rounded-[2px] md:rounded-[3px]"
+                      style={{
+                        flex: i === 13 ? 1.5 : 1,
+                        height: 'clamp(12px, 3vw, 28px)',
+                        background: 'linear-gradient(180deg, #2a2a2a 0%, #1f1f1f 100%)',
+                        boxShadow: '0 1px 0 rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {/* صف 3 */}
+                <div className="flex justify-between gap-[2px] md:gap-1">
+                  {[...Array(13)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="rounded-[2px] md:rounded-[3px]"
+                      style={{
+                        flex: i === 12 ? 1.8 : 1,
+                        height: 'clamp(12px, 3vw, 28px)',
+                        background: 'linear-gradient(180deg, #2a2a2a 0%, #1f1f1f 100%)',
+                        boxShadow: '0 1px 0 rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {/* صف 4 */}
+                <div className="flex justify-between gap-[2px] md:gap-1">
+                  {[...Array(12)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="rounded-[2px] md:rounded-[3px]"
+                      style={{
+                        flex: i === 0 ? 1.6 : i === 11 ? 2.1 : 1,
+                        height: 'clamp(12px, 3vw, 28px)',
+                        background: 'linear-gradient(180deg, #2a2a2a 0%, #1f1f1f 100%)',
+                        boxShadow: '0 1px 0 rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {/* صف المسافة */}
+                <div className="flex justify-center gap-[2px] md:gap-1">
+                  {[
+                    { flex: 0.6 }, // fn
+                    { flex: 0.6 }, // ctrl
+                    { flex: 0.7 }, // alt
+                    { flex: 5 },   // space
+                    { flex: 0.7 }, // alt
+                    { flex: 0.6 }, // ctrl
+                  ].map((item, i) => (
+                    <div
+                      key={i}
+                      className="rounded-[2px] md:rounded-[3px]"
+                      style={{
+                        flex: item.flex,
+                        height: i < 3 ? 'clamp(8px, 2vw, 18px)' : 'clamp(10px, 2.5vw, 22px)',
+                        background: 'linear-gradient(180deg, #2a2a2a 0%, #1f1f1f 100%)',
+                        boxShadow: '0 1px 0 rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {/* لوحة التتبع */}
+                <div className="flex justify-center pt-1.5 md:pt-2">
+                  <div
+                    className="rounded-md md:rounded-lg"
+                    style={{
+                      width: '28%',
+                      height: 'clamp(16px, 4vw, 36px)',
+                      background: 'linear-gradient(180deg, #1a1a1a 0%, #151515 100%)',
+                      border: '0.5px solid rgba(255,255,255,0.04)',
+                      boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)',
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* ظل أرضي */}
+        <div 
+          className="mx-auto mt-0"
+          style={{
+            width: '85%',
+            height: '15px',
+            background: 'radial-gradient(ellipse, rgba(0,0,0,0.2), transparent 70%)',
+            filter: 'blur(12px)',
+            transform: 'rotateX(70deg)',
+          }}
+        />
+
+        {/* أزرار التنقل */}
+        <div className="flex items-center justify-center gap-2 md:gap-3 mt-8 md:mt-12">
+          <button
+            onClick={goPrevLaptop}
+            className="w-8 h-8 md:w-11 md:h-11 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110"
+            style={{
+              backgroundColor: COLORS.glassBg,
+              border: `1px solid ${COLORS.glassBorder}`,
+              backdropFilter: 'blur(10px)',
+            }}
+          >
+            <ArrowLeft size={16} style={{ color: COLORS.primary }} />
+          </button>
+
+          <div className="flex items-center gap-1.5 md:gap-2 mx-1 md:mx-2">
+            {images.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentLaptopIndex(index)}
+                className="transition-all duration-300 rounded-full"
+                style={{
+                  width: index === currentLaptopIndex ? '22px' : '6px',
+                  height: '6px',
+                  backgroundColor: index === currentLaptopIndex ? COLORS.primary : `${COLORS.primary}18`,
+                  borderRadius: '3px',
+                }}
+              />
+            ))}
+          </div>
+
+          <button
+            onClick={goNextLaptop}
+            className="w-8 h-8 md:w-11 md:h-11 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 rotate-180"
+            style={{
+              backgroundColor: COLORS.glassBg,
+              border: `1px solid ${COLORS.glassBorder}`,
+              backdropFilter: 'blur(10px)',
+            }}
+          >
+            <ArrowLeft size={16} style={{ color: COLORS.primary }} />
+          </button>
+        </div>
+
+        {/* اسم الصورة */}
+        <AnimatePresence mode="wait">
+          <motion.p
+            key={currentLaptopIndex}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.25 }}
+            className="text-center mt-3 text-xs md:text-sm font-medium opacity-70"
+            style={{ color: COLORS.textSecondary }}
+          >
+            {images[currentLaptopIndex].title}
+          </motion.p>
+        </AnimatePresence>
+      </div>
+    </AnimatedSection>
+  </div>
+</section>
+
+
+<section className="relative py-24 overflow-hidden">
         <DentalSVG direction="right" size="large" className="top-20 -left-32 md:-left-48 opacity-[0.06]" />
 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 relative z-10">
@@ -647,80 +1359,6 @@ const services = [
           </div>
         </div>
       </section>
-
-      {/* Gallery Section */}
-      <section className="relative py-24 overflow-hidden" style={{ backgroundColor: COLORS.surface }}>
-  <DentalSVG direction="left" size="normal" className="top-16 -right-24 md:-right-40 opacity-[0.05]" />
-
-  <div className="max-w-6xl mx-auto px-4 sm:px-6 relative z-10">
-    <AnimatedSection className="text-center mb-16" direction="up">
-      <motion.h2 
-        className="text-3xl md:text-4xl font-bold mb-4"
-        style={{ color: COLORS.text }}
-      >
-        لمحة من النظام
-      </motion.h2>
-      <motion.p 
-        className="text-lg"
-        style={{ color: COLORS.textSecondary }}
-      >
-        اضغط على الصورة للمعاينة الكاملة
-      </motion.p>
-    </AnimatedSection>
-
-    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-      {images.map((image, index) => (
-        <AnimatedSection key={index} delay={index * 0.1} direction="up">
-          <motion.div
-            whileTap={{ scale: 0.98 }}
-            transition={{ duration: 0.3 }}
-            className="cursor-pointer group"
-            onClick={() => setSelectedImage(image)}
-          >
-            <div 
-              className="rounded-2xl overflow-hidden transition-all duration-500 ease-out hover:shadow-xl hover:-translate-y-1"
-              style={{ 
-                backgroundColor: COLORS.background,
-                border: `1px solid ${COLORS.border}`,
-                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-              }}
-            >
-              {/* Label مع تحسينات */}
-              <div className="px-5 pt-5 pb-0">
-                <h3 
-                  className="font-semibold text-base mb-3 transition-all duration-300 group-hover:text-primary"
-                  style={{ color: COLORS.text }}
-                >
-                  {image.title}
-                </h3>
-              </div>
-              
-              {/* حاوية الصورة - بدون hover مزعج */}
-              <div className="relative overflow-hidden mx-5 mb-5 rounded-xl" style={{ aspectRatio: '16/10' }}>
-                <Image
-                  src={image.src}
-                  alt={image.alt}
-                  fill
-                  className="object-contain transition-transform duration-1000 ease-out group-hover:scale-105"
-                  loading="lazy"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                />
-                
-                {/* Overlay بسيط وأنيق */}
-                <div 
-                  className="absolute inset-0 opacity-0 transition-all duration-500 ease-out group-hover:opacity-100"
-                  style={{ 
-                    background: `linear-gradient(to top, ${COLORS.primary}30, transparent)`,
-                  }}
-                />
-              </div>
-            </div>
-          </motion.div>
-        </AnimatedSection>
-      ))}
-    </div>
-  </div>
-</section>
 
       {/* Footer */}
       <footer className="py-10" style={{ borderTop: `1px solid ${COLORS.border}` }}>

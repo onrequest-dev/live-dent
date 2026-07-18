@@ -3437,7 +3437,7 @@ function NewPatientModal({
       date: new Date().toISOString().split("T")[0],
       time: "10:00",
       procedure: "كشف أولي",
-      cost: "5",
+      cost: getCurrency() === "$" ? "5" : "700",
       notes: "",
     },
   });
