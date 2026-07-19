@@ -92,7 +92,14 @@ const api = {
   // إضافة موعد جديد
   addSession: async (
     clinicId: string,
-    sessionData: Omit<Session, "id" | "clinicId" | "patientSnapshot">,
+    sessionData: Omit<Session, "id" | "clinicId" | "patientSnapshot"> & {
+      info: {
+        clinicName: string;
+        patientName: string;
+        gender:string;
+        phoneNumber:string;
+      };
+    },
   ): Promise<Session> => {
     const result = await createSession(sessionData);
     if (!result || !result.data || !result.data.id)
@@ -654,6 +661,12 @@ const handleUpdateSessionStatus = useCallback(async (
           sessionCost: patientData.appointment.cost || 0,
           isPaid: false,
           notes: patientData.appointment.notes,
+          info: {
+            clinicName: clinicData?.name || "",
+            patientName: newPatient.fullName,
+            phoneNumber: newPatient.phone,
+            gender:newPatient.gender
+          },
         });
         setSessions((prev) => [...prev, newSession]);
       }
@@ -686,6 +699,12 @@ const handleUpdateSessionStatus = useCallback(async (
         isPaid: false,
         caseId: appointmentData.caseId,
         notes: appointmentData.notes,
+        info:{
+        "clinicName": clinicData?.name||"",
+          "patientName": selectedPatient.fullName,
+          phoneNumber:selectedPatient.phone,
+          gender:selectedPatient.gender
+        }
       });
       setSessions((prev) => [...prev, newSession]);
       // لا حاجة لتحديث selectedPatientSessions لأنه مشتق تلقائياً

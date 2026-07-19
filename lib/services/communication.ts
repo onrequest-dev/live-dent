@@ -3,7 +3,7 @@
 import { Patient, Session } from '@/types';
 
 interface WhatsAppMessageOptions {
-  patient: Patient;
+  patient: {fullName:string;gender:string;id:string};
   session?: Session;
   clinicName: string;
   messageType: 'reminder' | 'confirmation' | 'followUp' | 'custom';
@@ -136,7 +136,7 @@ export function generateWhatsAppMessage({
 }: WhatsAppMessageOptions): string {
   const title = patient.gender === 'male' ? 'الأستاذ' : 'الأستاذة';
   const patientName = patient.fullName;
-  const patientCardUrl = `${window.location.origin}/public-clinic/${clinicId}/${patient.id}`;
+  const patientCardUrl = `https://live-dent.vercel.app/public-clinic/${clinicId}/${patient.id}`;
   
   const messages: Record<typeof messageType, string> = {
     reminder: generateRandomReminder(title, patientName, clinicName, date, time, patientCardUrl),

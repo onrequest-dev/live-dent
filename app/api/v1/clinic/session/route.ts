@@ -1,3 +1,5 @@
+import { generateWhatsAppMessage } from "@/lib/services/communication";
+import { sendMessage } from "@/server/helpers/send_whatssap_message";
 import { decodeJWT } from "@/server/jwt";
 import { sanitizeInput } from "@/server/sanitize";
 import { supabase_server } from "@/server/supabase-server";
@@ -19,14 +21,27 @@ export async function POST(request: NextRequest) {
     if (jwt_user.role !== 'admin' && jwt_user.role !== 'manager') {
         return NextResponse.json({ error: "Forbidden - Insufficient permissions" }, { status: 403 });
     }
-    const sessionData: Omit<Session, 'id' | 'clinicId' | 'createdAt'> = sanitizeInput(await (request.json()));
+    const sessionData: Omit<Session, 'id' | 'clinicId' | 'createdAt'>&{ info: {
+    clinicName: string;
+    patientName: string;
+    gender:string;
+    phoneNumber:string;
+  };} = sanitizeInput(await (request.json()));
     const clinicId = jwt_user.clinicId;
-    const { data, error } = await supabase_server.from("Session").insert({ ...sessionData, clinicId }).select("*").single();
+    // إزالة info قبل الإدراج في قاعدة البيانات بطريقة متوافقة مع TypeScript
+    const { info, ...sessionWithoutInfo } = sessionData as any;
+    const { data, error } = await supabase_server.from("Session").insert({ ...sessionWithoutInfo, clinicId }).select("*").single();
     if (error || !data) {
         console.error("Error adding session:", error);
         return NextResponse.json({ error: "Failed to add session" }, { status: 500 });
     }
-    
+    sendMessage(info.phoneNumber,generateWhatsAppMessage({
+      "patient":{"fullName":info.patientName,"gender":info.gender,"id":data.patientId},
+      "clinicId":clinicId,
+      "clinicName":info.clinicName,
+      "messageType":"reminder",
+    }))
+
     return NextResponse.json(data, { status: 201 });
 } 
 
