@@ -5,6 +5,7 @@ import { sanitizeInput } from "@/server/sanitize";
 import { supabase_server } from "@/server/supabase-server";
 import { ClinicEmployeeJwt,  Session } from "@/types";
 import { NextRequest, NextResponse } from "next/server";
+import { waitUntil } from '@vercel/functions';
 
 export async function POST(request: NextRequest) {
     const jwt = request.cookies.get("jwt")?.value;
@@ -36,25 +37,41 @@ export async function POST(request: NextRequest) {
         console.error("Error adding session:", error);
         return NextResponse.json({ error: "Failed to add session" }, { status: 500 });
     }
-    if(!info.prevent_auto_messages){
-      // ensure startTime is a Date
-      const start = data.startTime instanceof Date ? data.startTime : new Date(data.startTime);
-      const iso = isNaN(start.getTime()) ? null : start.toISOString();
-      const time = iso ? iso.split('T')[1].substring(0,5) : null;
-      const date = iso ? iso.split('T')[0] : null;
-      await sendMessage(info.phoneNumber, generateWhatsAppMessage({
+if (!info.prevent_auto_messages) {
+  const start = new Date(data.startTime);
+
+  if (isNaN(start.getTime())) {
+    console.error('Invalid startTime:', data.startTime);
+  } else {
+    // توقيت سوريا UTC+3
+    const localStart = new Date(start.getTime() + 3 * 60 * 60 * 1000);
+
+    let hours = localStart.getUTCHours();
+    const minutes = localStart.getUTCMinutes().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'مساءً' : 'صباحاً';
+    hours = hours % 12 || 12; // تحويل 0 إلى 12
+    const time = `${hours}:${minutes} ${ampm}`;
+
+    const year = localStart.getUTCFullYear();
+    const month = (localStart.getUTCMonth() + 1).toString().padStart(2, '0');
+    const day = localStart.getUTCDate().toString().padStart(2, '0');
+    const date = `${year}-${month}-${day}`;
+
+    waitUntil(
+      sendMessage(info.phoneNumber, generateWhatsAppMessage({
         patient: { fullName: info.patientName, gender: info.gender, id: data.patientId },
         clinicId: clinicId,
         clinicName: info.clinicName,
         messageType: "reminder",
         time,
         date,
-      }));
-    }
+      }))
+    );
+  }
+}
 
     return NextResponse.json(data, { status: 201 });
-} 
-
+}
 
 
 export async function PUT(
