@@ -96,8 +96,9 @@ const api = {
       info: {
         clinicName: string;
         patientName: string;
-        gender:string;
-        phoneNumber:string;
+        gender: string;
+        phoneNumber: string;
+        prevent_auto_messages: boolean;
       };
     },
   ): Promise<Session> => {
@@ -650,26 +651,31 @@ const handleUpdateSessionStatus = useCallback(async (
       });
 
       setPatients((prev) => [...prev, newPatient]);
-
-      if (patientData.addAppointment && patientData.appointment) {
-        const newSession = await api.addSession(clinicId, {
-          patientId: newPatient.id,
-          startTime: patientData.appointment.startTime,
-          endTime: patientData.appointment.endTime,
-          status: "scheduled",
-          plannedProcedure: patientData.appointment.procedure,
-          sessionCost: patientData.appointment.cost || 0,
-          isPaid: false,
-          notes: patientData.appointment.notes,
-          info: {
-            clinicName: clinicData?.name || "",
-            patientName: newPatient.fullName,
-            phoneNumber: newPatient.phone,
-            gender:newPatient.gender
-          },
-        });
-        setSessions((prev) => [...prev, newSession]);
-      }
+      let prevent_auto_messages = false;
+      const preventautomessagesflag = localStorage.getItem(
+        "prevent_auto_messages",
+      );
+      if (preventautomessagesflag&&preventautomessagesflag=="true") prevent_auto_messages = true
+        if (patientData.addAppointment && patientData.appointment) {
+          const newSession = await api.addSession(clinicId, {
+            patientId: newPatient.id,
+            startTime: patientData.appointment.startTime,
+            endTime: patientData.appointment.endTime,
+            status: "scheduled",
+            plannedProcedure: patientData.appointment.procedure,
+            sessionCost: patientData.appointment.cost || 0,
+            isPaid: false,
+            notes: patientData.appointment.notes,
+            info: {
+              clinicName: clinicData?.name || "",
+              patientName: newPatient.fullName,
+              phoneNumber: newPatient.phone,
+              gender: newPatient.gender,
+              prevent_auto_messages:prevent_auto_messages
+            },
+          });
+          setSessions((prev) => [...prev, newSession]);
+        }
 
       setShowNewPatientModal(false);
 
@@ -687,6 +693,12 @@ const handleUpdateSessionStatus = useCallback(async (
     if (!selectedPatient) return;
 
     setIsAddingAppointment(true);
+    let prevent_auto_messages = false;
+    const preventautomessagesflag = localStorage.getItem(
+      "prevent_auto_messages",
+    );
+    if (preventautomessagesflag && preventautomessagesflag == "true")
+      prevent_auto_messages = true;
 
     try {
       const newSession = await api.addSession(clinicId, {
@@ -703,7 +715,8 @@ const handleUpdateSessionStatus = useCallback(async (
         "clinicName": clinicData?.name||"",
           "patientName": selectedPatient.fullName,
           phoneNumber:selectedPatient.phone,
-          gender:selectedPatient.gender
+          gender:selectedPatient.gender,
+          prevent_auto_messages:prevent_auto_messages
         }
       });
       setSessions((prev) => [...prev, newSession]);

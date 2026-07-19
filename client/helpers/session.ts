@@ -13,6 +13,7 @@ export async function createSession(
     patientName: string;
     gender:string;
     phoneNumber:string;
+    prevent_auto_messages:boolean;
   };
 }
 ): Promise<ApiResponse<Session>> {
