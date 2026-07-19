@@ -57,6 +57,8 @@ import ToothLoader from "../../loding";
 import { ToothChart, ToothChartRef, ToothData } from "../../ToothChart/ToothChart";
 import { saveDentalChart } from "@/client/helpers/dental-chart";
 import getCurrency from '@/client/helpers/getCurrency';
+import {DatePicker} from '@/components/ui/DatePicker';
+import {TimePicker} from '@/components/ui/TimePicker';
 // ============================================================
 // خدمة API محاكية (لتحضير الربط مع الباك إند)
 // ============================================================
@@ -2870,22 +2872,65 @@ function EditSessionModal({
                 <div className="absolute right-0 top-0 bottom-3 w-6 bg-gradient-to-l from-white via-white/80 to-transparent pointer-events-none sm:hidden" />
               </div>
             </div>
-            {/* تاريخ ووقت الجلسة */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                تاريخ ووقت الجلسة
-              </label>
-              <input
-                type="datetime-local"
-                value={formData.startTime}
-                onChange={(e) =>
-                  setFormData({ ...formData, startTime: e.target.value })
-                }
-                disabled={isLoading}
-                className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 shadow-sm focus:ring-2 focus:ring-opacity-50 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ "--tw-ring-color": primaryColor } as any}
-              />
-            </div>
+{/* تاريخ ووقت الجلسة - في سطر واحد مع حل مشكلة التوقيت */}
+<div className="flex flex-col sm:flex-row gap-3">
+<div className="flex-1">
+  <DatePicker
+    label="تاريخ الجلسة"
+    required
+    value={formData.startTime}
+    onChange={(date) => {
+      // استخدام UTC للحصول على التاريخ الصحيح بدون مشاكل المنطقة الزمنية
+      const year = date.getUTCFullYear();
+      const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+      const day = String(date.getUTCDate()).padStart(2, "0");
+      
+      // الحفاظ على الوقت من القيمة الحالية
+      const currentTime = new Date(formData.startTime);
+      const hours = String(currentTime.getHours()).padStart(2, "0");
+      const minutes = String(currentTime.getMinutes()).padStart(2, "0");
+      
+      const newDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+      
+      setFormData({
+        ...formData,
+        startTime: newDateTime,
+      });
+    }}
+    minDate={new Date()}
+    primaryColor={primaryColor}
+    disabled={isLoading}
+  />
+</div>
+
+  <div className="flex-1">
+    <TimePicker
+      label="وقت الجلسة"
+      required
+      value={(() => {
+        const d = new Date(formData.startTime);
+        return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+      })()}
+      onChange={(time) => {
+        // استخراج التاريخ من القيمة الحالية
+        const currentDate = new Date(formData.startTime);
+        const year = currentDate.getFullYear();
+        const month = String(currentDate.getMonth() + 1).padStart(2, "0");
+        const day = String(currentDate.getDate()).padStart(2, "0");
+        
+        // بناء التاريخ الجديد مع الوقت الجديد
+        const newDateTime = `${year}-${month}-${day}T${time}`;
+        
+        setFormData({
+          ...formData,
+          startTime: newDateTime,
+        });
+      }}
+      primaryColor={primaryColor}
+      disabled={isLoading}
+    />
+  </div>
+</div>
 
             {/* الإجراء المخطط */}
             <div>
@@ -2971,49 +3016,170 @@ function EditSessionModal({
                 </span>
               </div>
             </div>
-            {/* حالة الدفع */}
-            <div className="bg-gray-50 rounded-xl p-4 space-y-3">
-              <label
-                className={`flex items-center gap-3 ${isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
-              >
-                <input
-                  type="checkbox"
-                  checked={formData.isPaid}
-                  onChange={(e) =>
-                    setFormData({ ...formData, isPaid: e.target.checked })
-                  }
-                  disabled={isLoading}
-                  className="w-4 h-4 rounded"
-                  style={{ accentColor: primaryColor }}
-                />
-                <span className="text-gray-900 font-medium">
-                  تم دفع تكلفة الجلسة
-                </span>
-              </label>
+            {/* قسم حالة الدفع */}
+<div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
+  {/* رأس القسم مع المفتاح */}
+  <div className="flex items-center justify-between mb-4">
+    <span className="text-sm font-semibold text-gray-800">
+      حالة الدفع
+    </span>
+    
+    {/* مفتاح حالة الدفع */}
+    <div
+      className="flex flex-col items-center gap-0.5 cursor-pointer group/payment"
+      onClick={(e) => {
+        e.stopPropagation();
+        if (!isLoading) {
+          setFormData({ ...formData, isPaid: !formData.isPaid });
+        }
+      }}
+      title={formData.isPaid ? "انقر للتغيير إلى غير مدفوع" : "انقر للتغيير إلى مدفوع"}
+    >
+      {/* النص فوق المفتاح */}
+      <span className={`
+        text-[10px] font-medium transition-all duration-300
+        ${formData.isPaid ? "text-emerald-600" : "text-rose-600"}
+        group-hover/payment:scale-105
+      `}>
+        {formData.isPaid ? "مدفوع" : "غير مدفوع"}
+      </span>
+      
+      {/* المفتاح */}
+      <div 
+        className={`
+          relative w-11 h-6 rounded-full transition-all duration-300
+          ${formData.isPaid 
+            ? "bg-emerald-400/60" 
+            : "bg-rose-400/60"
+          }
+          group-hover/payment:shadow-md
+          flex items-center justify-between px-1
+        `}
+      >
+        {/* أيقونة غير مدفوع (يسار) */}
+        <span className={`
+          text-[8px] transition-all duration-300 z-10
+          ${formData.isPaid ? "opacity-0" : "opacity-100 text-white"}
+        `}>
+          <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+        </span>
 
-              {formData.isPaid && (
-                <div className="pt-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    طريقة الدفع
-                  </label>
-                  <select
-                    value={formData.paymentMethod}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        paymentMethod: e.target.value as "cash" | "transfer",
-                      })
-                    }
-                    disabled={isLoading}
-                    className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-opacity-50 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{ "--tw-ring-color": primaryColor } as any}
-                  >
-                    <option value="cash">نقداً</option>
-                    <option value="transfer">تحويل بنكي</option>
-                  </select>
-                </div>
-              )}
-            </div>
+        {/* أيقونة مدفوع (يمين) */}
+        <span className={`
+          text-[8px] transition-all duration-300 z-10
+          ${formData.isPaid ? "opacity-100 text-white" : "opacity-0"}
+        `}>
+          <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </span>
+
+        {/* الدائرة المتحركة */}
+        <div 
+          className={`
+            absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm 
+            transition-all duration-300 ease-in-out
+            group-hover/payment:scale-110
+            flex items-center justify-center
+          `}
+          style={{
+            left: formData.isPaid ? "calc(100% - 22px)" : "2px"
+          }}
+        >
+          {formData.isPaid ? (
+            <svg className="w-2.5 h-2.5 text-emerald-500" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          ) : (
+            <svg className="w-2.5 h-2.5 text-rose-500" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {/* حقل طريقة الدفع - يظهر فقط عند التفعيل */}
+  <div className={`
+    transition-all duration-500 ease-in-out
+    ${formData.isPaid 
+      ? "opacity-100 max-h-40 translate-y-0" 
+      : "opacity-0 max-h-0 translate-y-2 overflow-hidden"
+    }
+  `}>
+    <div className="relative">
+      <label className="block text-xs font-medium text-gray-600 mb-2">
+        طريقة الدفع
+      </label>
+      
+      {/* شبكة خيارات الدفع */}
+      <div className="grid grid-cols-2 gap-2">
+        {/* خيار نقداً */}
+        <button
+          type="button"
+          onClick={() => setFormData({ ...formData, paymentMethod: "cash" })}
+          disabled={isLoading}
+          className={`
+            relative flex items-center gap-2 px-4 py-3 rounded-xl border-2 
+            transition-all duration-300
+            ${formData.paymentMethod === "cash"
+              ? "border-emerald-400 bg-emerald-50/50 shadow-sm"
+              : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+            }
+            disabled:opacity-50 disabled:cursor-not-allowed
+          `}
+        >
+          <span className={`
+            text-sm font-medium
+            ${formData.paymentMethod === "cash" ? "text-emerald-700" : "text-gray-700"}
+          `}>
+            نقداً
+          </span>
+          {formData.paymentMethod === "cash" && (
+            <svg className="absolute top-1 right-1 w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+          )}
+        </button>
+
+        {/* خيار تحويل بنكي */}
+        <button
+          type="button"
+          onClick={() => setFormData({ ...formData, paymentMethod: "transfer" })}
+          disabled={isLoading}
+          className={`
+            relative flex items-center gap-2 px-4 py-3 rounded-xl border-2 
+            transition-all duration-300
+            ${formData.paymentMethod === "transfer"
+              ? "border-emerald-400 bg-emerald-50/50 shadow-sm"
+              : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+            }
+            disabled:opacity-50 disabled:cursor-not-allowed
+          `}
+        >
+          <span className={`
+            text-sm font-medium
+            ${formData.paymentMethod === "transfer" ? "text-emerald-700" : "text-gray-700"}
+          `}>
+            تحويل بنكي
+          </span>
+          {formData.paymentMethod === "transfer" && (
+            <svg className="absolute top-1 right-1 w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+          )}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
             {/* ملاحظات */}
             <div>
@@ -3271,7 +3437,7 @@ function NewPatientModal({
       date: new Date().toISOString().split("T")[0],
       time: "10:00",
       procedure: "كشف أولي",
-      cost: "5",
+      cost: getCurrency() === "$" ? "5" : "700",
       notes: "",
     },
   });
@@ -3858,74 +4024,73 @@ function NewPatientModal({
 
                   {/* التاريخ والوقت في صف واحد */}
                   <div className="flex gap-3 items-start">
-                    {formData.appointmentMode === "days" ? (
-                      <div className="flex-1">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          بعد كم يوم؟
-                        </label>
-                        <input
-                          type="number"
-                          min="1"
-                          max="10"
-                          value={formData.appointment.days}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              appointment: {
-                                ...formData.appointment,
-                                days: e.target.value,
-                              },
-                            })
-                          }
-                          disabled={isLoading}
-                          className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 shadow-sm focus:ring-2 focus:ring-opacity-50 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-gray-400"
-                          style={{ "--tw-ring-color": primaryColor } as any}
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-2/3">
-                        <label className=" block text-sm font-medium text-gray-700 mb-2">
-                          التاريخ
-                        </label>
-                        <input
-                          type="date"
-                          value={formData.appointment.date}
-                          min={new Date().toISOString().split("T")[0]}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              appointment: {
-                                ...formData.appointment,
-                                date: e.target.value,
-                              },
-                            })
-                          }
-                          disabled={isLoading}
-                          className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 shadow-sm focus:ring-2 focus:ring-opacity-50 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                          style={{ "--tw-ring-color": primaryColor } as any}
-                        />
-                      </div>
-                    )}
+                   {formData.appointmentMode === "days" ? (
+  <div className="flex-1">
+    <label className="block text-sm font-medium text-gray-700 mb-2">
+      بعد كم يوم؟
+    </label>
+    <input
+      type="number"
+      min="1"
+      max="10"
+      value={formData.appointment.days}
+      onChange={(e) =>
+        setFormData({
+          ...formData,
+          appointment: {
+            ...formData.appointment,
+            days: e.target.value,
+          },
+        })
+      }
+      disabled={isLoading}
+      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 shadow-sm focus:ring-2 focus:ring-opacity-50 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-gray-400"
+      style={{ "--tw-ring-color": primaryColor } as any}
+    />
+  </div>
+) : (
+  <div className="w-2/3">
+    <DatePicker
+      label="التاريخ"
+      required
+      value={formData.appointment.date}
+      onChange={(date) => {
+        const dateStr = date.toISOString().split("T")[0];
+        setFormData({
+          ...formData,
+          appointment: {
+            ...formData.appointment,
+            date: dateStr,
+          },
+        });
+      }}
+      minDate={new Date()}
+      primaryColor={primaryColor}
+      disabled={isLoading}
+      error={localError ? "يرجى اختيار تاريخ صحيح" : undefined}
+    />
+  </div>
+)}
                     <div className="flex-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        الوقت
-                      </label>
-                      <input
-                        type="time"
-                        value={formData.appointment.time}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            appointment: {
-                              ...formData.appointment,
-                              time: e.target.value,
-                            },
-                          })
-                        }
-                        disabled={isLoading}
-                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 shadow-sm focus:ring-2 focus:ring-opacity-50 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                        style={{ "--tw-ring-color": primaryColor } as any}
-                      />
+<div className="flex-1">
+  <TimePicker
+    label="الوقت"
+    required
+    value={formData.appointment.time}
+    onChange={(time) =>
+      setFormData({
+        ...formData,
+        appointment: {
+          ...formData.appointment,
+          time,
+        },
+      })
+    }
+    primaryColor={primaryColor}
+    disabled={isLoading}
+    error={localError ? "يرجى اختيار وقت صحيح" : undefined}
+  />
+</div>
                     </div>
                   </div>
                 </div>
@@ -4236,40 +4401,33 @@ function NewAppointmentModal({
                   </p>
                 </div>
               ) : (
-                <div className="w-2/3">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    التاريخ
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={formData.date}
-                    min={new Date().toISOString().split("T")[0]}
-                    onChange={(e) =>
-                      setFormData({ ...formData, date: e.target.value })
-                    }
-                    disabled={isLoading}
-                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 shadow-sm focus:ring-2 focus:ring-opacity-50 focus:border-[--tw-ring-color] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{ "--tw-ring-color": primaryColor } as any}
-                  />
-                </div>
+  <div className="w-2/3">
+    <DatePicker
+      label="التاريخ"
+      required
+      value={formData.date}
+      onChange={(date) => {
+        const dateStr = date.toISOString().split("T")[0];
+        setFormData({ ...formData, date: dateStr });
+      }}
+      minDate={new Date()}
+      primaryColor={primaryColor}
+      disabled={isLoading}
+      error={localError ? "يرجى اختيار تاريخ صحيح" : undefined}
+    />
+  </div>
               )}
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  الوقت
-                </label>
-                <input
-                  type="time"
-                  required
-                  value={formData.time}
-                  onChange={(e) =>
-                    setFormData({ ...formData, time: e.target.value })
-                  }
-                  disabled={isLoading}
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 shadow-sm focus:ring-2 focus:ring-opacity-50 focus:border-[--tw-ring-color] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ "--tw-ring-color": primaryColor } as any}
-                />
-              </div>
+<div className="flex-1">
+  <TimePicker
+    label="الوقت"
+    required
+    value={formData.time}
+    onChange={(time) => setFormData({ ...formData, time })}
+    primaryColor={primaryColor}
+    disabled={isLoading}
+    error={localError ? "يرجى اختيار وقت صحيح" : undefined}
+  />
+</div>
             </div>
 
             {/* الإجراء والتكلفة في صف واحد */}
