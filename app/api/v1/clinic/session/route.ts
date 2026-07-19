@@ -36,14 +36,14 @@ export async function POST(request: NextRequest) {
         console.error("Error adding session:", error);
         return NextResponse.json({ error: "Failed to add session" }, { status: 500 });
     }
-    if(!info.prevent_auto_messages){
+
     sendMessage(info.phoneNumber,generateWhatsAppMessage({
       "patient":{"fullName":info.patientName,"gender":info.gender,"id":data.patientId},
       "clinicId":clinicId,
       "clinicName":info.clinicName,
       "messageType":"reminder",
     }))
-  }
+
 
     return NextResponse.json(data, { status: 201 });
 } 
