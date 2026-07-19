@@ -380,23 +380,23 @@ const handleAutoNotifyChange = (checked: boolean) => {
           </div>
         </div>
 {/* التنبيه التلقائي */}
+{/* التنبيه التلقائي */}
 <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-  <div className="p-6 border-b border-gray-100">
+  <div className="p-4 md:p-6 border-b border-gray-100">
     <div className="flex items-center gap-2">
-      {/* <Bell size={20} style={{ color: primaryColor }} /> */}
-      <h2 className="text-xl font-semibold text-gray-800">
+      <h2 className="text-lg md:text-xl font-semibold text-gray-800">
         التنبيه التلقائي
       </h2>
     </div>
   </div>
 
-  <div className="p-6">
-    <div className="flex items-center justify-between">
-      <div className="flex-1 text-right ml-4">
-        <label className="text-lg font-medium text-gray-700">
+  <div className="p-4 md:p-6">
+    <div className="flex items-center justify-between gap-4">
+      <div className="flex-1 text-right min-w-0">
+        <label className="text-base md:text-lg font-medium text-gray-700">
           تنبيه تلقائي للمواعيد
         </label>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-xs md:text-sm text-gray-500 mt-1">
           {autoNotify 
             ? "سيتم إبلاغ المريض بالمواعيد الجديدة تلقائياً فور إنشائها" 
             : "لن يتم إرسال تنبيهات تلقائية للمواعيد الجديدة"
@@ -406,21 +406,17 @@ const handleAutoNotifyChange = (checked: boolean) => {
 
       <button
         onClick={() => handleAutoNotifyChange(!autoNotify)}
-        className="relative"
+        className="relative flex-shrink-0"
       >
         <div
-          className={`w-14 h-7 rounded-full transition-all ${
-            autoNotify ? "" : "bg-gray-300"
+          className={`flex items-center w-12 h-6 md:w-14 md:h-7 rounded-full transition-all p-0.5 md:p-1 ${
+            autoNotify ? "justify-start" : "justify-end"
           }`}
           style={{
-            backgroundColor: autoNotify ? primaryColor : undefined,
+            backgroundColor: autoNotify ? primaryColor : "#D1D5DB",
           }}
         >
-          <div
-            className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all ${
-              autoNotify ? "right-1" : "left-1"
-            }`}
-          />
+          <div className="w-5 h-5 bg-white rounded-full shadow-md" />
         </div>
       </button>
     </div>

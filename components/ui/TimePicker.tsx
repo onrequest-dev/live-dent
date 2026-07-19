@@ -87,17 +87,23 @@ export function TimePicker({
     }
   };
 
-  // تحديد الفترة حسب الموقع على الساعة (وليس الرقم)
-  const getAutoPeriodByPosition = (angle: number): "AM" | "PM" => {
-    // الزاوية 0 = 12 (أعلى)، 90 = 3 (يمين)، 180 = 6 (أسفل)، 270 = 9 (يسار)
-    // قبل 12 (النصف الأيمن من الساعة) = AM
-    // بعد 12 (النصف الأيسر من الساعة) = PM
-    if (angle > 0 && angle <= 180) {
-      return "PM"; // النصف الأيمن: 1 إلى 6 -> بعد الظهر
-    } else {
-      return "AM"; // النصف الأيسر: 7 إلى 12 -> قبل الظهر
-    }
-  };
+// استبدل الدالة الحالية بهذه الدالة المعدلة
+const getAutoPeriodByPosition = (angle: number): "AM" | "PM" => {
+  // الزاوية 0 = 12 (أعلى)، 90 = 3 (يمين)، 180 = 6 (أسفل)، 270 = 9 (يسار)
+  // الساعات من 1 إلى 8 = PM (مساء)
+  // الساعات 9, 10, 11, 12 = AM (صباح)
+  
+  // حساب الساعة من الزاوية
+  let hour = Math.round(angle / 30);
+  if (hour === 0 || hour === 12) hour = 12;
+  
+  // الساعات 1-8 تكون PM، والساعات 9-12 تكون AM
+  if (hour >= 1 && hour <= 8) {
+    return "PM"; // من 1 إلى 8 مساءً
+  } else {
+    return "AM"; // من 9 إلى 12 صباحاً
+  }
+};
 
   const updateHour = (newHour: number) => {
     setHours(newHour);
