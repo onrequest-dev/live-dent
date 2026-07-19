@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       const iso = isNaN(start.getTime()) ? null : start.toISOString();
       const time = iso ? iso.split('T')[1].substring(0,5) : null;
       const date = iso ? iso.split('T')[0] : null;
-      sendMessage(info.phoneNumber, generateWhatsAppMessage({
+      await sendMessage(info.phoneNumber, generateWhatsAppMessage({
         patient: { fullName: info.patientName, gender: info.gender, id: data.patientId },
         clinicId: clinicId,
         clinicName: info.clinicName,
