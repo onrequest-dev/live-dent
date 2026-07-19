@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
         console.error("Error adding session:", error);
         return NextResponse.json({ error: "Failed to add session" }, { status: 500 });
     }
+    
     return NextResponse.json(data, { status: 201 });
 } 
 
