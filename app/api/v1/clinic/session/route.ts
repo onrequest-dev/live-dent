@@ -37,13 +37,20 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Failed to add session" }, { status: 500 });
     }
     if(!info.prevent_auto_messages){
-    sendMessage(info.phoneNumber,generateWhatsAppMessage({
-      "patient":{"fullName":info.patientName,"gender":info.gender,"id":data.patientId},
-      "clinicId":clinicId,
-      "clinicName":info.clinicName,
-      "messageType":"reminder",
-    }))
-  }
+      // ensure startTime is a Date
+      const start = data.startTime instanceof Date ? data.startTime : new Date(data.startTime);
+      const iso = isNaN(start.getTime()) ? null : start.toISOString();
+      const time = iso ? iso.split('T')[1].substring(0,5) : null;
+      const date = iso ? iso.split('T')[0] : null;
+      sendMessage(info.phoneNumber, generateWhatsAppMessage({
+        patient: { fullName: info.patientName, gender: info.gender, id: data.patientId },
+        clinicId: clinicId,
+        clinicName: info.clinicName,
+        messageType: "reminder",
+        time,
+        date,
+      }));
+    }
 
     return NextResponse.json(data, { status: 201 });
 } 
