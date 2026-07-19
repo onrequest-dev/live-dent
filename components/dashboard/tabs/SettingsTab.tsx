@@ -30,29 +30,38 @@ export function SettingsTab({ clinicData }: SettingsTabProps) {
   const [autoCollapse, setAutoCollapse] = useState(true);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isInstalling, setIsInstalling] = useState(false);
-  const [numberingSystem, setNumberingSystem] = useState<'universal' | 'fdi' | 'palmer'>('universal');
+  const [numberingSystem, setNumberingSystem] = useState<'universal' | 'fdi' | 'palmer'>('universal');//ترقيم الشارت السني
+  const [autoNotify, setAutoNotify] = useState(true);//التنبيه التلقائي للمرضى
   // استخدام hook تثبيت PWA
   const { isInstallable, isInstalled, installApp } = usePWAInstall();
 
-  // تحميل الإعدادات
-  useEffect(() => {
-    const savedSettings = localStorage.getItem("dashboard_settings");
-    if (savedSettings) {
-      try {
-        const settings = JSON.parse(savedSettings);
-        setAutoCollapse(settings.autoCollapse ?? true);
-      } catch (error) {
-        console.error("خطأ في قراءة الإعدادات:", error);
-      }
+// تحميل الإعدادات
+useEffect(() => {
+  const savedSettings = localStorage.getItem("dashboard_settings");
+  if (savedSettings) {
+    try {
+      const settings = JSON.parse(savedSettings);
+      setAutoCollapse(settings.autoCollapse ?? true);
+    } catch (error) {
+      console.error("خطأ في قراءة الإعدادات:", error);
     }
+  }
 
-      
-  // ✅ أضف هذا الجزء لتحميل نظام الترقيم
   const savedNumbering = localStorage.getItem('tooth_numbering_system');
   if (savedNumbering === 'universal' || savedNumbering === 'fdi' || savedNumbering === 'palmer') {
     setNumberingSystem(savedNumbering);
   }
-  }, []);
+
+  // تحميل إعدادات التنبيه التلقائي
+  const preventAutoMessages = localStorage.getItem('prevent_auto_messages');
+  // إذا كان المتغير موجودًا وقيمته "true"، يعني أن التنبيه معطل
+  if (preventAutoMessages === 'true') {
+    setAutoNotify(false);
+  } else {
+    // إذا لم يكن موجودًا أو قيمته غير true، التنبيه مفعل (افتراضي)
+    setAutoNotify(true);
+  }
+}, []);
 
   // ✅ أضف هذه الدالة الجديدة للتعامل مع تغيير نظام الترقيم
 const handleNumberingSystemChange = (system: 'universal' | 'fdi' | 'palmer') => {
@@ -61,6 +70,23 @@ const handleNumberingSystemChange = (system: 'universal' | 'fdi' | 'palmer') => 
   window.dispatchEvent(new CustomEvent('numberingSystemChanged', { detail: system }));
 };
 
+// معالج التنبيه التلقائي
+const handleAutoNotifyChange = (checked: boolean) => {
+  setAutoNotify(checked);
+  
+  if (checked) {
+    // إذا كان مفعلاً - احذف المتغير من localStorage
+    localStorage.removeItem('prevent_auto_messages');
+  } else {
+    // إذا كان معطلاً - أضف المتغير بقيمة true
+    localStorage.setItem('prevent_auto_messages', 'true');
+  }
+  
+  // إرسال حدث للتواصل مع باقي أجزاء التطبيق
+  window.dispatchEvent(
+    new CustomEvent("autoNotifyChanged", { detail: { enabled: checked } })
+  );
+};
   // حفظ الإعدادات
   const handleAutoCollapseChange = (checked: boolean) => {
     setAutoCollapse(checked);
@@ -353,7 +379,53 @@ const handleNumberingSystemChange = (system: 'universal' | 'fdi' | 'palmer') => 
             </div>
           </div>
         </div>
+{/* التنبيه التلقائي */}
+<div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+  <div className="p-6 border-b border-gray-100">
+    <div className="flex items-center gap-2">
+      {/* <Bell size={20} style={{ color: primaryColor }} /> */}
+      <h2 className="text-xl font-semibold text-gray-800">
+        التنبيه التلقائي
+      </h2>
+    </div>
+  </div>
 
+  <div className="p-6">
+    <div className="flex items-center justify-between">
+      <div className="flex-1 text-right ml-4">
+        <label className="text-lg font-medium text-gray-700">
+          تنبيه تلقائي للمواعيد
+        </label>
+        <p className="text-sm text-gray-500 mt-1">
+          {autoNotify 
+            ? "سيتم إبلاغ المريض بالمواعيد الجديدة تلقائياً فور إنشائها" 
+            : "لن يتم إرسال تنبيهات تلقائية للمواعيد الجديدة"
+          }
+        </p>
+      </div>
+
+      <button
+        onClick={() => handleAutoNotifyChange(!autoNotify)}
+        className="relative"
+      >
+        <div
+          className={`w-14 h-7 rounded-full transition-all ${
+            autoNotify ? "" : "bg-gray-300"
+          }`}
+          style={{
+            backgroundColor: autoNotify ? primaryColor : undefined,
+          }}
+        >
+          <div
+            className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all ${
+              autoNotify ? "right-1" : "left-1"
+            }`}
+          />
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
         {/* اختيار نظام ترقيم الأسنان */}
 <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
   <div className="p-6 border-b border-gray-100">
