@@ -545,7 +545,7 @@ function AppointmentsTab({
   primaryColor: string;
   secondaryColor: string;
   now: Date;
-  currency: "USD" | "SP";
+  currency?: string | undefined;
 }) {
   const currencySymbol = currency === "USD" ? "$" : "ل.س";
 
