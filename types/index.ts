@@ -20,7 +20,7 @@ export interface Clinic {
     primaryColor: string;               // 🎨 اللون الأساسي للهوية البصرية للعيادة (كود HEX مثل: "#0284c7") - يستخدم في الأزرار والعناوين
     secondaryColor: string;             // 🎨 اللون الثانوي للهوية البصرية (مثل: "#0ea5e9") - يستخدم للتأثيرات والخلفيات الفرعية
 };
-currency?:"USD"|"SP"
+currency?:"USD"|"SP"|string;
 }
 
 // 🧑‍⚕️ الملف الشخصي للطبيب (يظهر في صفحة CV العامة)
