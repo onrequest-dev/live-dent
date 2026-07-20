@@ -90,6 +90,7 @@ async function sendMessage(
     });
 
     const data = await res.json().catch(() => null);
+    console.log(`📥 Response from WhatsApp API for ${cleanNumber}:`, data);
     
     if (!res.ok) {
       const error: SendMessageError = { status: res.status, data };
