@@ -419,7 +419,6 @@ const handleUpdateSessionPayment = useCallback(async (sessionId: string, isPaid:
 
 const formatCurrency = (amount: number) => {
   const currencySymbol = getCurrency();
-  console.log(getCurrency())
   return `${amount} ${currencySymbol}`;
 };
 
