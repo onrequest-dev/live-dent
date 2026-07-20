@@ -34,8 +34,10 @@ export function DatePicker({
 }: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [tempSelectedDate, setTempSelectedDate] = useState<Date>(new Date());
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [animation, setAnimation] = useState<"slide-up" | "slide-down" | "">("");
+  const [isClosing, setIsClosing] = useState(false);
 
   // تهيئة التاريخ - دائماً يكون هناك قيمة افتراضية (تاريخ اليوم)
   useEffect(() => {
@@ -51,27 +53,69 @@ export function DatePicker({
     }
     
     setSelectedDate(date);
+    setTempSelectedDate(date);
     setCurrentMonth(date);
   }, [value]);
 
   const handleSelect = (date: Date | undefined) => {
     if (date) {
-      // تصحيح مشكلة المنطقة الزمنية
-      const correctedDate = new Date(date);
-      correctedDate.setDate(correctedDate.getDate() + 1);
+      // استخدام التاريخ مباشرة بدون تعديل المنطقة الزمنية
+      const correctedDate = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        12, // نحدد وقت الظهر لتجنب مشاكل المنطقة الزمنية
+        0,
+        0
+      );
       
-      setSelectedDate(correctedDate);
-      setCurrentMonth(correctedDate);
-      onChange(correctedDate);
-      setIsOpen(false);
+      // تحديث التاريخ المؤقت فقط دون إغلاق النافذة
+      setTempSelectedDate(correctedDate);
     }
+  };
+
+  const handleConfirm = () => {
+    if (tempSelectedDate) {
+      setSelectedDate(tempSelectedDate);
+      onChange(tempSelectedDate);
+      handleClose();
+    }
+  };
+
+  const handleCancel = () => {
+    setTempSelectedDate(selectedDate);
+    handleClose();
+  };
+
+  const handleToday = () => {
+    const today = new Date();
+    const normalizedToday = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+      12,
+      0,
+      0
+    );
+    setTempSelectedDate(normalizedToday);
+    setCurrentMonth(normalizedToday);
   };
 
   const handleOpen = () => {
     if (!disabled) {
       setCurrentMonth(selectedDate);
+      setTempSelectedDate(selectedDate);
+      setIsClosing(false);
       setIsOpen(true);
     }
+  };
+
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsOpen(false);
+      setIsClosing(false);
+    }, 250);
   };
 
   const handleMonthChange = (direction: "prev" | "next") => {
@@ -119,7 +163,7 @@ export function DatePicker({
 
   // الحصول على رقم اليوم في الأسبوع (0 = الأحد, 6 = السبت)
   const getDayOfWeek = () => {
-    return selectedDate.getDay();
+    return tempSelectedDate.getDay();
   };
 
   // أسماء الأيام بالأحرف المختصرة
@@ -177,15 +221,24 @@ export function DatePicker({
       {/* Modal Overlay */}
       {isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          {/* Backdrop */}
+          {/* Backdrop with smooth animation */}
           <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
-            onClick={() => setIsOpen(false)}
+            className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-all duration-300 ${
+              isClosing ? 'opacity-0' : 'opacity-100 animate-in fade-in'
+            }`}
+            onClick={handleClose}
           />
 
-          {/* Calendar Modal */}
+          {/* Calendar Modal with smooth animation */}
           <div 
-            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-[380px] overflow-hidden animate-in zoom-in-95 duration-200"
+            className={`
+              relative bg-white rounded-2xl shadow-2xl w-full max-w-[380px] overflow-hidden
+              transition-all duration-300 ease-out
+              ${isClosing 
+                ? 'opacity-0 scale-90 translate-y-4' 
+                : 'opacity-100 scale-100 translate-y-0 animate-in zoom-in-95'
+              }
+            `}
             dir="rtl"
           >
             {/* Header مع أزرار التنقل ورقم الشهر */}
@@ -194,12 +247,6 @@ export function DatePicker({
                 <h3 className="text-lg font-bold text-gray-900">
                   اختر التاريخ
                 </h3>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="p-2 hover:bg-gray-200 rounded-full transition-colors"
-                >
-                  <X size={18} className="text-gray-500" />
-                </button>
               </div>
               
               {/* عرض الشهر مع رقمه */}
@@ -354,7 +401,7 @@ export function DatePicker({
                 <DayPicker
                   mode="single"
                   month={currentMonth}
-                  selected={selectedDate}
+                  selected={tempSelectedDate}
                   onSelect={handleSelect}
                   locale={arSA}
                   disabled={getDisabledDays()}
@@ -367,31 +414,21 @@ export function DatePicker({
             <div className="flex gap-3 p-4 bg-gray-50 border-t border-gray-100">
               <button
                 type="button"
-                onClick={() => {
-                  const today = new Date();
-                  setSelectedDate(today);
-                  setCurrentMonth(today);
-                  onChange(today);
-                  setIsOpen(false);
-                }}
+                onClick={handleToday}
                 className="flex-1 py-2.5 px-4 bg-white hover:bg-gray-100 text-gray-700 font-medium rounded-xl transition-all text-sm border border-gray-200 hover:border-gray-300"
               >
                 اليوم
               </button>
               <button
                 type="button"
-                onClick={() => setIsOpen(false)}
+                onClick={handleCancel}
                 className="flex-1 py-2.5 px-4 bg-gray-700 hover:bg-gray-800 text-white font-medium rounded-xl transition-all text-sm"
               >
                 إلغاء
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  if (selectedDate) {
-                    setIsOpen(false);
-                  }
-                }}
+                onClick={handleConfirm}
                 className="flex-1 py-2.5 px-4 text-white font-medium rounded-xl transition-all text-sm shadow-lg hover:shadow-xl hover:scale-[1.02]"
                 style={{ backgroundColor: primaryColor }}
               >

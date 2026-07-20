@@ -25,12 +25,14 @@ export function TimePicker({
   className = "",
 }: TimePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(false); // للتحكم في الأنيميشن
   const [step, setStep] = useState<1 | 2>(1);
   const [hours, setHours] = useState(12);
   const [minutes, setMinutes] = useState(0);
   const [period, setPeriod] = useState<"AM" | "PM">("AM");
   const [manualPeriod, setManualPeriod] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false); // حالة الانتقال
   const clockRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -60,6 +62,22 @@ export function TimePicker({
       onChange(timeStr);
     }
   }, [value]);
+
+  // فتح مع أنيميشن
+  const openPicker = () => {
+    if (disabled) return;
+    setIsOpen(true);
+    setTimeout(() => setIsVisible(true), 10);
+  };
+
+  // إغلاق مع أنيميشن
+  const closePicker = () => {
+    setIsVisible(false);
+    setTimeout(() => {
+      setIsOpen(false);
+      setStep(1);
+    }, 300); // نفس مدة الأنيميشن
+  };
 
   const convertTo24Hour = (hour12: number, period: "AM" | "PM"): number => {
     if (period === "AM") {
@@ -96,8 +114,7 @@ export function TimePicker({
     const hour24 = convertTo24Hour(hours, period);
     const timeStr = `${String(hour24).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
     onChange(timeStr);
-    setIsOpen(false);
-    setStep(1);
+    closePicker();
   };
 
   const getTimeDisplay = () => {
@@ -128,7 +145,7 @@ export function TimePicker({
   };
 
   const handleClockInteraction = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!clockRef.current) return;
+    if (!clockRef.current || isTransitioning) return;
 
     const rect = clockRef.current.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
@@ -167,37 +184,44 @@ export function TimePicker({
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (isTransitioning) return;
     setIsDragging(true);
     handleClockInteraction(e);
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (isDragging) handleClockInteraction(e);
+    if (isDragging && !isTransitioning) handleClockInteraction(e);
   };
 
   const handleMouseUp = () => {
-    if (isDragging && step === 1) setStep(2);
+    if (isDragging && step === 1) {
+      goToMinutesStep();
+    }
     setIsDragging(false);
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    if (isTransitioning) return;
     setIsDragging(true);
     handleClockInteraction(e);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (isDragging) {
+    if (isDragging && !isTransitioning) {
       e.preventDefault();
       handleClockInteraction(e);
     }
   };
 
   const handleTouchEnd = () => {
-    if (isDragging && step === 1) setStep(2);
+    if (isDragging && step === 1) {
+      goToMinutesStep();
+    }
     setIsDragging(false);
   };
 
   const handleHourClick = (value: number) => {
+    if (isTransitioning) return;
     const angle = (value % 12) * 30;
     setHours(value);
     
@@ -206,11 +230,32 @@ export function TimePicker({
       setPeriod(autoPeriod);
     }
     
-    setTimeout(() => setStep(2), 200);
+    goToMinutesStep();
+  };
+
+  // الانتقال إلى خطوة الدقائق مع تأخير
+  const goToMinutesStep = () => {
+    if (isTransitioning) return;
+    
+    setIsTransitioning(true);
+    
+    // تأخير لمدة ثانية واحدة قبل الانتقال للدقائق
+    setTimeout(() => {
+      setStep(2);
+      setMinutes(0); // إعادة العقرب إلى 00
+      
+      // تأخير إضافي لإظهار الأنيميشن
+      setTimeout(() => {
+        setIsTransitioning(false);
+      }, 300);
+    }, 200);
   };
 
   const hourNumbers = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
   const minuteNumbers = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+
+  // حساب زاوية عقرب الدقائق (يبدأ من 00)
+  const displayMinuteAngle = step === 2 ? getMinuteAngle(minutes) : getMinuteAngle(0);
 
   return (
     <div className={`relative ${className}`}>
@@ -223,7 +268,7 @@ export function TimePicker({
 
       <button
         type="button"
-        onClick={() => !disabled && setIsOpen(true)}
+        onClick={openPicker}
         disabled={disabled}
         className={`
           w-full px-4 py-3 text-right rounded-xl
@@ -253,15 +298,27 @@ export function TimePicker({
 
       {isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          {/* خلفية معتمة مع أنيميشن */}
           <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={() => {
-              setIsOpen(false);
-              setStep(1);
-            }}
+            className={`
+              absolute inset-0 bg-black/40 backdrop-blur-sm
+              transition-all duration-300 ease-out
+              ${isVisible ? "opacity-100" : "opacity-0"}
+            `}
+            onClick={closePicker}
           />
 
-          <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-[400px] overflow-hidden">
+          {/* محتوى المنتقي مع أنيميشن */}
+          <div
+            className={`
+              relative bg-white rounded-3xl shadow-2xl w-full max-w-[400px] overflow-hidden
+              transition-all duration-300 ease-out
+              ${isVisible 
+                ? "opacity-100 scale-100 translate-y-0" 
+                : "opacity-0 scale-95 translate-y-4"
+              }
+            `}
+          >
             {/* Header مع أزرار ص/م */}
             <div className="px-6 pt-5 pb-3">
               <div className="flex items-center justify-between mb-2">
@@ -309,16 +366,6 @@ export function TimePicker({
                     </span>
                   )}
                 </div>
-
-                <button
-                  onClick={() => {
-                    setIsOpen(false);
-                    setStep(1);
-                  }}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <X size={18} className="text-gray-500" />
-                </button>
               </div>
 
               <div className="text-center mt-2">
@@ -326,14 +373,25 @@ export function TimePicker({
                   {getCurrentTimeDisplay()}
                 </div>
                 <div className="text-sm text-gray-400 mt-1">
-                  {step === 1 ? "اختر الساعة" : "اختر الدقائق"}
+                  {isTransitioning 
+                    ? "..." 
+                    : step === 1 
+                      ? "اختر الساعة" 
+                      : "اختر الدقائق"
+                  }
                 </div>
               </div>
             </div>
 
             {/* الساعة التناظرية */}
             <div className="px-4 pb-4 flex justify-center">
-              <div className="relative w-72 h-72">
+              <div 
+                className={`
+                  relative w-72 h-72
+                  transition-all duration-500 ease-out
+                  ${isTransitioning ? "scale-95 opacity-50" : "scale-100 opacity-100"}
+                `}
+              >
                 <div className="absolute inset-0 rounded-full bg-gradient-to-b from-gray-50 to-white border-2 border-gray-100 shadow-lg" />
 
                 {step === 2 && (
@@ -377,6 +435,7 @@ export function TimePicker({
                     <button
                       key={`${step}-${value}`}
                       onClick={() => {
+                        if (isTransitioning) return;
                         if (step === 1) {
                           handleHourClick(value);
                         } else {
@@ -386,6 +445,7 @@ export function TimePicker({
                       className={`
                         absolute w-10 h-10 rounded-full flex items-center justify-center
                         text-sm font-bold transition-all duration-200
+                        ${isTransitioning ? "pointer-events-none" : ""}
                         ${isSelected
                           ? "text-white shadow-xl scale-110 z-10"
                           : "text-gray-600 hover:bg-gray-100 hover:scale-105"
@@ -406,7 +466,10 @@ export function TimePicker({
 
                 <div
                   ref={clockRef}
-                  className="absolute inset-0 rounded-full cursor-pointer z-20"
+                  className={`
+                    absolute inset-0 rounded-full z-20
+                    ${isTransitioning ? "pointer-events-none" : "cursor-pointer"}
+                  `}
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
                   onMouseUp={handleMouseUp}
@@ -423,15 +486,16 @@ export function TimePicker({
                   />
                   
                   <div
-                    className="absolute rounded-full origin-bottom transition-transform duration-200 ease-out"
+                    className="absolute rounded-full origin-bottom transition-all duration-300 ease-out"
                     style={{
                       width: step === 1 ? "4px" : "3px",
                       height: step === 1 ? "75px" : "100px",
                       backgroundColor: primaryColor,
-                      transform: `rotate(${step === 1 ? getHourAngle(hours) : getMinuteAngle(minutes)}deg)`,
+                      transform: `rotate(${step === 1 ? getHourAngle(hours) : displayMinuteAngle}deg)`,
                       bottom: "50%",
                       boxShadow: `0 2px 8px rgba(0,0,0,0.15)`,
                       borderRadius: "999px",
+                      transitionDuration: isTransitioning ? "500ms" : "300ms",
                     }}
                   />
                 </div>
@@ -442,10 +506,7 @@ export function TimePicker({
             <div className="flex gap-3 p-4 bg-gray-50/50 border-t border-gray-100">
               <button
                 type="button"
-                onClick={() => {
-                  setIsOpen(false);
-                  setStep(1);
-                }}
+                onClick={closePicker}
                 className="flex-1 py-3 px-4 bg-white hover:bg-gray-50 text-gray-700 font-medium rounded-xl transition-all text-sm border border-gray-200 hover:border-gray-300"
               >
                 إلغاء
@@ -453,17 +514,25 @@ export function TimePicker({
               {step === 1 ? (
                 <button
                   type="button"
-                  onClick={() => setStep(2)}
-                  className="flex-1 py-3 px-4 text-white font-medium rounded-xl transition-all text-sm shadow-lg hover:shadow-xl"
+                  onClick={goToMinutesStep}
+                  disabled={isTransitioning}
+                  className={`
+                    flex-1 py-3 px-4 text-white font-medium rounded-xl transition-all text-sm shadow-lg hover:shadow-xl
+                    ${isTransitioning ? "opacity-50 cursor-not-allowed" : ""}
+                  `}
                   style={{ backgroundColor: primaryColor }}
                 >
-                  التالي: الدقائق
+                  {isTransitioning ? "جاري الانتقال..." : "التالي: الدقائق"}
                 </button>
               ) : (
                 <>
                   <button
                     type="button"
-                    onClick={() => setStep(1)}
+                    onClick={() => {
+                      setStep(1);
+                      setIsTransitioning(false);
+                    }}
+                    disabled={isTransitioning}
                     className="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-all text-sm"
                   >
                     رجوع

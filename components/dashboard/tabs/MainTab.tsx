@@ -4099,7 +4099,7 @@ function NewPatientModal({
       minDate={new Date()}
       primaryColor={primaryColor}
       disabled={isLoading}
-      error={localError ? "يرجى اختيار تاريخ صحيح" : undefined}
+      // error={localError ? "يرجى اختيار تاريخ صحيح" : undefined}
     />
   </div>
 )}
@@ -4120,7 +4120,7 @@ function NewPatientModal({
     }
     primaryColor={primaryColor}
     disabled={isLoading}
-    error={localError ? "يرجى اختيار وقت صحيح" : undefined}
+    // error={localError ? "يرجى اختيار وقت صحيح" : undefined}
   />
 </div>
                     </div>
@@ -4445,7 +4445,7 @@ function NewAppointmentModal({
       minDate={new Date()}
       primaryColor={primaryColor}
       disabled={isLoading}
-      error={localError ? "يرجى اختيار تاريخ صحيح" : undefined}
+      // error={localError ? "يرجى اختيار تاريخ صحيح" : undefined}
     />
   </div>
               )}
@@ -4457,7 +4457,7 @@ function NewAppointmentModal({
     onChange={(time) => setFormData({ ...formData, time })}
     primaryColor={primaryColor}
     disabled={isLoading}
-    error={localError ? "يرجى اختيار وقت صحيح" : undefined}
+    // error={localError ? "يرجى اختيار وقت صحيح" : undefined}
   />
 </div>
             </div>
