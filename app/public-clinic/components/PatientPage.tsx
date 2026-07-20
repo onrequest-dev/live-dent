@@ -168,50 +168,50 @@ export default function PatientPage({
   // ============================================================
   const now = new Date();
 
-const processedSessions = useMemo(() => {
-  const allSessions = [...sessions].sort(
-    (a, b) =>
-      new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
-  );
-
-  const scheduled = allSessions
-    .filter((s) => s.status === "scheduled")
-    .sort(
+  const processedSessions = useMemo(() => {
+    const allSessions = [...sessions].sort(
       (a, b) =>
-        new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+        new Date(b.startTime).getTime() - new Date(a.startTime).getTime(),
     );
 
-  const upcoming = scheduled.filter((s) => new Date(s.startTime) >= now);
-  const pastScheduled = scheduled.filter((s) => new Date(s.startTime) < now);
+    const scheduled = allSessions
+      .filter((s) => s.status === "scheduled")
+      .sort(
+        (a, b) =>
+          new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+      );
 
-  const completed = allSessions
-    .filter((s) => s.status === "completed" || s.status === "no-show")
-    .slice(0, 10);
+    const upcoming = scheduled.filter((s) => new Date(s.startTime) >= now);
+    const pastScheduled = scheduled.filter((s) => new Date(s.startTime) < now);
 
-  const totalAmount = allSessions
-    .filter((s) => s.status !== "cancelled")
-    .reduce((sum, s) => sum + (s.sessionCost || 0), 0);
+    const completed = allSessions
+      .filter((s) => s.status === "completed" || s.status === "no-show")
+      .slice(0, 10);
 
-  const totalPaid = allSessions
-    .filter((s) => s.isPaid)
-    .reduce((sum, s) => sum + (s.sessionCost || 0), 0);
+    const totalAmount = allSessions
+      .filter((s) => s.status !== "cancelled")
+      .reduce((sum, s) => sum + (s.sessionCost || 0), 0);
 
-  const remainingAmount = totalAmount - totalPaid;
+    const totalPaid = allSessions
+      .filter((s) => s.isPaid)
+      .reduce((sum, s) => sum + (s.sessionCost || 0), 0);
 
-  const latestSession = allSessions[0] || null;
+    const remainingAmount = totalAmount - totalPaid;
 
-  return {
-    allSessions,
-    scheduled,
-    upcoming, // ← تأكد من وجود هذا
-    pastScheduled,
-    completed,
-    totalAmount,
-    totalPaid,
-    remainingAmount,
-    latestSession,
-  };
-}, [sessions]);
+    const latestSession = allSessions[0] || null;
+
+    return {
+      allSessions,
+      scheduled,
+      upcoming, // ← تأكد من وجود هذا
+      pastScheduled,
+      completed,
+      totalAmount,
+      totalPaid,
+      remainingAmount,
+      latestSession,
+    };
+  }, [sessions]);
 
   // ============================================================
   // تحميل الكرت كصورة
@@ -303,14 +303,22 @@ const processedSessions = useMemo(() => {
             href={`/public-clinic/${clinic.id}`}
             className="p-3 sm:p-3.5 rounded-2xl bg-white shadow-md hover:shadow-lg transition-all border border-gray-100"
           >
-            <Building2 size={18} className="sm:w-5 sm:h-5" style={{ color: primaryColor }} />
+            <Building2
+              size={18}
+              className="sm:w-5 sm:h-5"
+              style={{ color: primaryColor }}
+            />
           </Link>
 
           <Link
             href={`/public-clinic/${clinic.id}/doctor-cv`}
             className="p-3 sm:p-3.5 rounded-2xl bg-white shadow-md hover:shadow-lg transition-all border border-gray-100"
           >
-            <Stethoscope size={18} className="sm:w-5 sm:h-5" style={{ color: primaryColor }} />
+            <Stethoscope
+              size={18}
+              className="sm:w-5 sm:h-5"
+              style={{ color: primaryColor }}
+            />
           </Link>
         </motion.div>
 
@@ -375,7 +383,11 @@ const processedSessions = useMemo(() => {
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
                         <span className="flex items-center gap-1.5 sm:gap-2">
-                          <Phone size={14} className="sm:w-4 sm:h-4" style={{ color: primaryColor }} />
+                          <Phone
+                            size={14}
+                            className="sm:w-4 sm:h-4"
+                            style={{ color: primaryColor }}
+                          />
                           <span className="text-gray-600">رقم الهاتف:</span>
                         </span>
                         <span className="font-medium text-gray-900" dir="ltr">
@@ -384,11 +396,18 @@ const processedSessions = useMemo(() => {
                       </div>
                       <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
                         <span className="flex items-center gap-1.5 sm:gap-2">
-                          <User size={14} className="sm:w-4 sm:h-4" style={{ color: primaryColor }} />
-                          <span className="text-gray-600">المعلومات الشخصية:</span>
+                          <User
+                            size={14}
+                            className="sm:w-4 sm:h-4"
+                            style={{ color: primaryColor }}
+                          />
+                          <span className="text-gray-600">
+                            المعلومات الشخصية:
+                          </span>
                         </span>
                         <span className="font-medium text-gray-900">
-                          {patient.gender === "male" ? "ذكر" : "أنثى"} · {patient.age} سنة
+                          {patient.gender === "male" ? "ذكر" : "أنثى"} ·{" "}
+                          {patient.age} سنة
                         </span>
                       </div>
                     </div>
@@ -397,60 +416,76 @@ const processedSessions = useMemo(() => {
               </div>
             </div>
 
-
             {/* ============================================================ */}
             {/* أزرار التبويب */}
             {/* ============================================================ */}
             <div className="px-4 sm:px-6 pb-2">
               <div className="flex gap-2 p-1 bg-gray-100 rounded-xl">
-                <TabButton tab="appointments" icon={CalendarDays} label="المواعيد" />
+                <TabButton
+                  tab="appointments"
+                  icon={CalendarDays}
+                  label="المواعيد"
+                />
                 <TabButton tab="chart" icon={LayoutGrid} label="الشارت السني" />
               </div>
             </div>
 
-{/* ============================================================ */}
-{/* محتوى التبويب */}
-{/* ============================================================ */}
-<div className="px-4 sm:px-6 pb-4 sm:pb-6">
-  {/* تبويب المواعيد */}
-  <div style={{ display: activeTab === "appointments" ? "block" : "none" }}>
-    <motion.div
-      key="appointments"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: activeTab === "appointments" ? 1 : 0, y: activeTab === "appointments" ? 0 : 10 }}
-      transition={{ duration: 0.3 }}
-    >
-      <AppointmentsTab
-        scheduled={processedSessions.scheduled}
-        upcoming={processedSessions.upcoming}
-        pastScheduled={processedSessions.pastScheduled}
-        completed={processedSessions.completed}
-        totalAmount={processedSessions.totalAmount}
-        totalPaid={processedSessions.totalPaid}
-        remainingAmount={processedSessions.remainingAmount}
-        primaryColor={primaryColor}
-        secondaryColor={secondaryColor}
-        now={now}
-      />
-    </motion.div>
-  </div>
+            {/* ============================================================ */}
+            {/* محتوى التبويب */}
+            {/* ============================================================ */}
+            <div className="px-4 sm:px-6 pb-4 sm:pb-6">
+              {/* تبويب المواعيد */}
+              <div
+                style={{
+                  display: activeTab === "appointments" ? "block" : "none",
+                }}
+              >
+                <motion.div
+                  key="appointments"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{
+                    opacity: activeTab === "appointments" ? 1 : 0,
+                    y: activeTab === "appointments" ? 0 : 10,
+                  }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <AppointmentsTab
+                    scheduled={processedSessions.scheduled}
+                    upcoming={processedSessions.upcoming}
+                    pastScheduled={processedSessions.pastScheduled}
+                    completed={processedSessions.completed}
+                    totalAmount={processedSessions.totalAmount}
+                    totalPaid={processedSessions.totalPaid}
+                    remainingAmount={processedSessions.remainingAmount}
+                    primaryColor={primaryColor}
+                    secondaryColor={secondaryColor}
+                    now={now}
+                    currency={clinic.currency}
+                  />
+                </motion.div>
+              </div>
 
-  {/* تبويب الشارت - يبقى محملاً دائماً */}
-  <div style={{ display: activeTab === "chart" ? "block" : "none" }}>
-    <motion.div
-      key="chart"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: activeTab === "chart" ? 1 : 0, y: activeTab === "chart" ? 0 : 10 }}
-      transition={{ duration: 0.3 }}
-    >
-      <ChartTab
-        patientId={patient.id}
-        patientName={patient.fullName}
-        primaryColor={primaryColor}
-      />
-    </motion.div>
-  </div>
-</div>
+              {/* تبويب الشارت - يبقى محملاً دائماً */}
+              <div
+                style={{ display: activeTab === "chart" ? "block" : "none" }}
+              >
+                <motion.div
+                  key="chart"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{
+                    opacity: activeTab === "chart" ? 1 : 0,
+                    y: activeTab === "chart" ? 0 : 10,
+                  }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <ChartTab
+                    patientId={patient.id}
+                    patientName={patient.fullName}
+                    primaryColor={primaryColor}
+                  />
+                </motion.div>
+              </div>
+            </div>
 
             {/* ============================================================ */}
             {/* تذييل */}
@@ -498,6 +533,7 @@ function AppointmentsTab({
   primaryColor,
   secondaryColor,
   now,
+  currency,
 }: {
   scheduled: Session[];
   upcoming: Session[];
@@ -509,7 +545,10 @@ function AppointmentsTab({
   primaryColor: string;
   secondaryColor: string;
   now: Date;
+  currency: "USD" | "SP";
 }) {
+  const currencySymbol = currency === "USD" ? "$" : "ل.س";
+
   return (
     <div className="space-y-4">
       {/* المواعيد المجدولة */}
@@ -520,7 +559,11 @@ function AppointmentsTab({
               className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center"
               style={{ backgroundColor: `${primaryColor}15` }}
             >
-              <Calendar size={16} className="sm:w-[18px] sm:h-[18px]" style={{ color: primaryColor }} />
+              <Calendar
+                size={16}
+                className="sm:w-[18px] sm:h-[18px]"
+                style={{ color: primaryColor }}
+              />
             </div>
             <h4 className="text-sm sm:text-base font-bold text-gray-800">
               المواعيد المجدولة ({scheduled.length}) يتوجب عليك حضورها
@@ -558,33 +601,48 @@ function AppointmentsTab({
 
                       <div className="space-y-1.5 sm:space-y-2">
                         <div className="flex items-center gap-1.5 text-xs sm:text-sm">
-                          <Calendar size={13} className="sm:w-3.5 sm:h-3.5" style={{ color: primaryColor }} />
-                          <span className="text-gray-500">{sessionDate.dayName}</span>
+                          <Calendar
+                            size={13}
+                            className="sm:w-3.5 sm:h-3.5"
+                            style={{ color: primaryColor }}
+                          />
+                          <span className="text-gray-500">
+                            {sessionDate.dayName}
+                          </span>
                           <span className="text-gray-300">•</span>
-                          <span className="font-medium text-gray-700">{sessionDate.formattedDate}</span>
+                          <span className="font-medium text-gray-700">
+                            {sessionDate.formattedDate}
+                          </span>
                         </div>
                         <div className="flex items-center gap-1.5 text-xs sm:text-sm">
-                          <Clock size={13} className="sm:w-3.5 sm:h-3.5" style={{ color: primaryColor }} />
-                          <span className="font-medium text-gray-700">{formatTime(session.startTime)}</span>
+                          <Clock
+                            size={13}
+                            className="sm:w-3.5 sm:h-3.5"
+                            style={{ color: primaryColor }}
+                          />
+                          <span className="font-medium text-gray-700">
+                            {formatTime(session.startTime)}
+                          </span>
                         </div>
                       </div>
 
-                      {session.toothNumber && session.toothNumber.length > 0 && (
-                        <div className="mt-2 sm:mt-3 flex flex-wrap gap-1">
-                          {session.toothNumber.map((tooth) => (
-                            <span
-                              key={tooth}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] sm:text-xs"
-                              style={{
-                                backgroundColor: `${primaryColor}10`,
-                                color: primaryColor,
-                              }}
-                            >
-                              🦷 {tooth}
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                      {session.toothNumber &&
+                        session.toothNumber.length > 0 && (
+                          <div className="mt-2 sm:mt-3 flex flex-wrap gap-1">
+                            {session.toothNumber.map((tooth) => (
+                              <span
+                                key={tooth}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] sm:text-xs"
+                                style={{
+                                  backgroundColor: `${primaryColor}10`,
+                                  color: primaryColor,
+                                }}
+                              >
+                                🦷 {tooth}
+                              </span>
+                            ))}
+                          </div>
+                        )}
 
                       {session.notes && (
                         <p className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-gray-500 line-clamp-2">
@@ -594,9 +652,14 @@ function AppointmentsTab({
                     </div>
 
                     <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 sm:gap-1">
-                      <p className="text-base sm:text-lg font-bold" style={{ color: primaryColor }}>
+                      <p
+                        className="text-base sm:text-lg font-bold"
+                        style={{ color: primaryColor }}
+                      >
                         {session.sessionCost.toLocaleString()}{" "}
-                        <span className="text-[10px] sm:text-xs font-normal text-gray-600">$</span>
+                        <span className="text-[10px] sm:text-xs font-normal text-gray-600">
+                          {currencySymbol}
+                        </span>
                       </p>
                       <PaymentBadge isPaid={session.isPaid} />
                     </div>
@@ -624,10 +687,14 @@ function AppointmentsTab({
               className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center"
               style={{ backgroundColor: `${primaryColor}15` }}
             >
-              <CheckCircle2 size={16} className="sm:w-[18px] sm:h-[18px]" style={{ color: primaryColor }} />
+              <CheckCircle2
+                size={16}
+                className="sm:w-[18px] sm:h-[18px]"
+                style={{ color: primaryColor }}
+              />
             </div>
             <h4 className="text-sm sm:text-base font-bold text-gray-800">
-               المواعيد السابقة ({completed.length}) التي قمت بحضورها 
+              المواعيد السابقة ({completed.length}) التي قمت بحضورها
             </h4>
           </div>
 
@@ -655,12 +722,13 @@ function AppointmentsTab({
                           <Calendar size={11} className="sm:w-3 sm:h-3" />
                           {sessionDate.dayName} {sessionDate.formattedDate}
                         </span>
-                        {session.toothNumber && session.toothNumber.length > 0 && (
-                          <span className="flex items-center gap-1">
-                            <span>🦷</span>
-                            {session.toothNumber.join("، ")}
-                          </span>
-                        )}
+                        {session.toothNumber &&
+                          session.toothNumber.length > 0 && (
+                            <span className="flex items-center gap-1">
+                              <span>🦷</span>
+                              {session.toothNumber.join("، ")}
+                            </span>
+                          )}
                       </div>
                       {session.performedProcedure && (
                         <p className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-gray-600">
@@ -670,7 +738,7 @@ function AppointmentsTab({
                     </div>
                     <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 sm:gap-1">
                       <p className="text-sm sm:text-base font-bold text-gray-900">
-                        {session.sessionCost.toLocaleString()} $
+                        {session.sessionCost.toLocaleString()} {currencySymbol}
                       </p>
                       <PaymentBadge isPaid={session.isPaid} />
                     </div>
@@ -691,21 +759,31 @@ function AppointmentsTab({
         }}
       >
         <div className="flex items-center gap-2 mb-3 sm:mb-4">
-          <CreditCard size={18} className="sm:w-5 sm:h-5" style={{ color: primaryColor }} />
-          <h4 className="font-bold text-gray-800 text-sm sm:text-base">الملخص المالي</h4>
+          <CreditCard
+            size={18}
+            className="sm:w-5 sm:h-5"
+            style={{ color: primaryColor }}
+          />
+          <h4 className="font-bold text-gray-800 text-sm sm:text-base">
+            الملخص المالي
+          </h4>
         </div>
 
         <div className="space-y-2 sm:space-y-3">
           <div className="flex items-center justify-between py-1">
-            <span className="text-gray-600 text-xs sm:text-sm">إجمالي التكاليف</span>
+            <span className="text-gray-600 text-xs sm:text-sm">
+              إجمالي التكاليف
+            </span>
             <span className="font-bold text-gray-900 text-base sm:text-lg">
-              {totalAmount.toLocaleString()} $
+              {totalAmount.toLocaleString()} {currencySymbol}
             </span>
           </div>
           <div className="flex items-center justify-between py-1">
-            <span className="text-gray-600 text-xs sm:text-sm">المبلغ المدفوع</span>
+            <span className="text-gray-600 text-xs sm:text-sm">
+              المبلغ المدفوع
+            </span>
             <span className="font-bold text-emerald-600 text-base sm:text-lg">
-              {totalPaid.toLocaleString()} $
+              {totalPaid.toLocaleString()} {currencySymbol}
             </span>
           </div>
           <div className="relative my-1 sm:my-2">
@@ -714,13 +792,15 @@ function AppointmentsTab({
             </div>
           </div>
           <div className="flex items-center justify-between py-1">
-            <span className="font-medium text-gray-800 text-xs sm:text-sm">المبلغ المتبقي</span>
+            <span className="font-medium text-gray-800 text-xs sm:text-sm">
+              المبلغ المتبقي
+            </span>
             <span
               className={`font-bold text-lg sm:text-xl ${
                 remainingAmount > 0 ? "text-amber-600" : "text-emerald-600"
               }`}
             >
-              {remainingAmount.toLocaleString()} $
+              {remainingAmount.toLocaleString()} {currencySymbol}
             </span>
           </div>
         </div>
@@ -748,9 +828,15 @@ function ChartTab({
           className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center"
           style={{ backgroundColor: `${primaryColor}15` }}
         >
-          <LayoutGrid size={16} className="sm:w-[18px] sm:h-[18px]" style={{ color: primaryColor }} />
+          <LayoutGrid
+            size={16}
+            className="sm:w-[18px] sm:h-[18px]"
+            style={{ color: primaryColor }}
+          />
         </div>
-        <h4 className="text-sm sm:text-base font-bold text-gray-800">الشارت السني</h4>
+        <h4 className="text-sm sm:text-base font-bold text-gray-800">
+          الشارت السني
+        </h4>
       </div>
       <div className="bg-gray-50/50 rounded-2xl p-2 sm:p-4">
         <PatientToothChart

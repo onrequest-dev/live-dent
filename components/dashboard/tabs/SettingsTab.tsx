@@ -30,23 +30,63 @@ export function SettingsTab({ clinicData }: SettingsTabProps) {
   const [autoCollapse, setAutoCollapse] = useState(true);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isInstalling, setIsInstalling] = useState(false);
-
+  const [numberingSystem, setNumberingSystem] = useState<'universal' | 'fdi' | 'palmer'>('universal');//ترقيم الشارت السني
+  const [autoNotify, setAutoNotify] = useState(true);//التنبيه التلقائي للمرضى
   // استخدام hook تثبيت PWA
   const { isInstallable, isInstalled, installApp } = usePWAInstall();
 
-  // تحميل الإعدادات
-  useEffect(() => {
-    const savedSettings = localStorage.getItem("dashboard_settings");
-    if (savedSettings) {
-      try {
-        const settings = JSON.parse(savedSettings);
-        setAutoCollapse(settings.autoCollapse ?? true);
-      } catch (error) {
-        console.error("خطأ في قراءة الإعدادات:", error);
-      }
+// تحميل الإعدادات
+useEffect(() => {
+  const savedSettings = localStorage.getItem("dashboard_settings");
+  if (savedSettings) {
+    try {
+      const settings = JSON.parse(savedSettings);
+      setAutoCollapse(settings.autoCollapse ?? true);
+    } catch (error) {
+      console.error("خطأ في قراءة الإعدادات:", error);
     }
-  }, []);
+  }
 
+  const savedNumbering = localStorage.getItem('tooth_numbering_system');
+  if (savedNumbering === 'universal' || savedNumbering === 'fdi' || savedNumbering === 'palmer') {
+    setNumberingSystem(savedNumbering);
+  }
+
+  // تحميل إعدادات التنبيه التلقائي
+  const preventAutoMessages = localStorage.getItem('prevent_auto_messages');
+  // إذا كان المتغير موجودًا وقيمته "true"، يعني أن التنبيه معطل
+  if (preventAutoMessages === 'true') {
+    setAutoNotify(false);
+  } else {
+    // إذا لم يكن موجودًا أو قيمته غير true، التنبيه مفعل (افتراضي)
+    setAutoNotify(true);
+  }
+}, []);
+
+  // ✅ أضف هذه الدالة الجديدة للتعامل مع تغيير نظام الترقيم
+const handleNumberingSystemChange = (system: 'universal' | 'fdi' | 'palmer') => {
+  setNumberingSystem(system);
+  localStorage.setItem('tooth_numbering_system', system);
+  window.dispatchEvent(new CustomEvent('numberingSystemChanged', { detail: system }));
+};
+
+// معالج التنبيه التلقائي
+const handleAutoNotifyChange = (checked: boolean) => {
+  setAutoNotify(checked);
+  
+  if (checked) {
+    // إذا كان مفعلاً - احذف المتغير من localStorage
+    localStorage.removeItem('prevent_auto_messages');
+  } else {
+    // إذا كان معطلاً - أضف المتغير بقيمة true
+    localStorage.setItem('prevent_auto_messages', 'true');
+  }
+  
+  // إرسال حدث للتواصل مع باقي أجزاء التطبيق
+  window.dispatchEvent(
+    new CustomEvent("autoNotifyChanged", { detail: { enabled: checked } })
+  );
+};
   // حفظ الإعدادات
   const handleAutoCollapseChange = (checked: boolean) => {
     setAutoCollapse(checked);
@@ -118,48 +158,10 @@ export function SettingsTab({ clinicData }: SettingsTabProps) {
 
       <div className="space-y-6">
        <AccountSwitcher/>
-        {/* إعدادات السلوك */}
-        {/* إعدادات السلوك - يظهر فقط في الشاشات الكبيرة */}
-        <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="p-6 border-b border-gray-100">
-            <h2 className="text-xl font-semibold text-gray-800">السلوك</h2>
-          </div>
 
-          <div className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <label className="text-lg font-medium text-gray-700">
-                  إغلاق تلقائي للقائمة
-                </label>
-                <p className="text-sm text-gray-500 mt-1">
-                  إغلاق القائمة عند التنقل بين التبويبات
-                </p>
-              </div>
 
-              <button
-                onClick={() => handleAutoCollapseChange(!autoCollapse)}
-                className="relative"
-              >
-                <div
-                  className={`w-14 h-7 rounded-full transition-all ${
-                    autoCollapse ? "" : "bg-gray-300"
-                  }`}
-                  style={{
-                    backgroundColor: autoCollapse ? primaryColor : undefined,
-                  }}
-                >
-                  <div
-                    className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all ${
-                      autoCollapse ? "right-1" : "left-1"
-                    }`}
-                  />
-                </div>
-              </button>
-            </div>
-          </div>
-        </div>
 
-        {/* إضافة إلى الشاشة الرئيسية - القسم المعدل */}
+               {/* إضافة إلى الشاشة الرئيسية - القسم المعدل */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="p-6 border-b border-gray-100">
             <div className="flex items-center gap-2">
@@ -337,6 +339,162 @@ export function SettingsTab({ clinicData }: SettingsTabProps) {
             )}
           </div>
         </div>
+        {/* إعدادات السلوك */}
+        {/* إعدادات السلوك - يظهر فقط في الشاشات الكبيرة */}
+        <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-6 border-b border-gray-100">
+            <h2 className="text-xl font-semibold text-gray-800">السلوك</h2>
+          </div>
+
+          <div className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-lg font-medium text-gray-700">
+                  إغلاق تلقائي للقائمة
+                </label>
+                <p className="text-sm text-gray-500 mt-1">
+                  إغلاق القائمة عند التنقل بين التبويبات
+                </p>
+              </div>
+
+              <button
+                onClick={() => handleAutoCollapseChange(!autoCollapse)}
+                className="relative"
+              >
+                <div
+                  className={`w-14 h-7 rounded-full transition-all ${
+                    autoCollapse ? "" : "bg-gray-300"
+                  }`}
+                  style={{
+                    backgroundColor: autoCollapse ? primaryColor : undefined,
+                  }}
+                >
+                  <div
+                    className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all ${
+                      autoCollapse ? "right-1" : "left-1"
+                    }`}
+                  />
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+{/* التنبيه التلقائي */}
+{/* التنبيه التلقائي */}
+<div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+  <div className="p-4 md:p-6 border-b border-gray-100">
+    <div className="flex items-center gap-2">
+      <h2 className="text-lg md:text-xl font-semibold text-gray-800">
+        التنبيه التلقائي
+      </h2>
+    </div>
+  </div>
+
+  <div className="p-4 md:p-6">
+    <div className="flex items-center justify-between gap-4">
+      <div className="flex-1 text-right min-w-0">
+        <label className="text-base md:text-lg font-medium text-gray-700">
+          تنبيه تلقائي للمواعيد
+        </label>
+        <p className="text-xs md:text-sm text-gray-500 mt-1">
+          {autoNotify 
+            ? "سيتم إبلاغ المريض بالمواعيد الجديدة تلقائياً فور إنشائها" 
+            : "لن يتم إرسال تنبيهات تلقائية للمواعيد الجديدة"
+          }
+        </p>
+      </div>
+
+      <button
+        onClick={() => handleAutoNotifyChange(!autoNotify)}
+        className="relative flex-shrink-0"
+      >
+        <div
+          className={`flex items-center w-12 h-6 md:w-14 md:h-7 rounded-full transition-all p-0.5 md:p-1 ${
+            autoNotify ? "justify-start" : "justify-end"
+          }`}
+          style={{
+            backgroundColor: autoNotify ? primaryColor : "#D1D5DB",
+          }}
+        >
+          <div className="w-5 h-5 bg-white rounded-full shadow-md" />
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+        {/* اختيار نظام ترقيم الأسنان */}
+<div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+  <div className="p-6 border-b border-gray-100">
+    <h2 className="text-xl font-semibold text-gray-800">نظام ترقيم الأسنان</h2>
+  </div>
+  
+  <div className="p-6">
+    <div className="space-y-3">
+      {/* نظام Universal */}
+      <button
+        onClick={() => handleNumberingSystemChange('universal')}
+        className="w-full p-4 rounded-xl border-2 transition-all text-right"
+        style={{
+          borderColor: numberingSystem === 'universal' ? primaryColor : '#E5E7EB',
+          backgroundColor: numberingSystem === 'universal' ? `${primaryColor}10` : 'white',
+        }}
+      >
+        <div className="flex items-center justify-between">
+          <div className="w-5 h-5">
+            {numberingSystem === 'universal' && (
+              <CheckCircle2 size={20} style={{ color: primaryColor }} />
+            )}
+          </div>
+          <div>
+            <p className="font-medium text-gray-800">النظام العالمي (Universal)</p>
+          </div>
+        </div>
+      </button>
+
+      {/* نظام FDI */}
+      <button
+        onClick={() => handleNumberingSystemChange('fdi')}
+        className="w-full p-4 rounded-xl border-2 transition-all text-right"
+        style={{
+          borderColor: numberingSystem === 'fdi' ? primaryColor : '#E5E7EB',
+          backgroundColor: numberingSystem === 'fdi' ? `${primaryColor}10` : 'white',
+        }}
+      >
+        <div className="flex items-center justify-between">
+          <div className="w-5 h-5">
+            {numberingSystem === 'fdi' && (
+              <CheckCircle2 size={20} style={{ color: primaryColor }} />
+            )}
+          </div>
+          <div>
+            <p className="font-medium text-gray-800">نظام FDI</p>
+          </div>
+        </div>
+      </button>
+
+      {/* نظام Palmer */}
+      <button
+        onClick={() => handleNumberingSystemChange('palmer')}
+        className="w-full p-4 rounded-xl border-2 transition-all text-right"
+        style={{
+          borderColor: numberingSystem === 'palmer' ? primaryColor : '#E5E7EB',
+          backgroundColor: numberingSystem === 'palmer' ? `${primaryColor}10` : 'white',
+        }}
+      >
+        <div className="flex items-center justify-between">
+          <div className="w-5 h-5">
+            {numberingSystem === 'palmer' && (
+              <CheckCircle2 size={20} style={{ color: primaryColor }} />
+            )}
+          </div>
+          <div>
+            <p className="font-medium text-gray-800">نظام Palmer</p>
+          </div>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
 
         {/* المشاركة */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">

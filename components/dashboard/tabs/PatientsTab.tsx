@@ -31,6 +31,7 @@ import {
   CalendarDays,
   Filter,
 } from "lucide-react";
+import getCurrency from '@/client/helpers/getCurrency';
 import * as XLSX from "xlsx-js-style";
 import { Clinic, Patient, PatientCase, Session } from "@/types";
 import React from "react";
@@ -385,7 +386,7 @@ function PatientsHeader({
       <span className="text-[10px] text-gray-500 truncate">{label}</span>
       <span className={`text-sm font-bold truncate`} style={{ color }}>
         {value.toLocaleString()}
-        <span className="text-[10px] font-normal opacity-60 mr-0.5">$</span>
+        <span className="text-[10px] font-normal opacity-60 mr-0.5">{getCurrency()}</span>
       </span>
     </button>
   );
@@ -501,7 +502,7 @@ function PatientsHeader({
     <div className="text-[8px] text-gray-500">الإجمالي</div>
     <div className="text-[10px] font-bold text-gray-800 mt-0.5">
       {totalCost.toLocaleString()}
-      <span className="text-[10px] font-normal text-gray-400 mr-0.5">$</span>
+      <span className="text-[10px] font-normal text-gray-400 mr-0.5">{getCurrency()}</span>
     </div>
   </div>
   
@@ -509,7 +510,7 @@ function PatientsHeader({
     <div className="text-[8px] text-teal-600">مدفوع</div>
     <div className="text-[10px] font-bold text-teal-600 mt-0.5">
       {paidCost.toLocaleString()}
-      <span className="text-[10px] font-normal text-teal-400 mr-0.5">$</span>
+      <span className="text-[10px] font-normal text-teal-400 mr-0.5">{getCurrency()}</span>
     </div>
   </div>
   
@@ -517,7 +518,7 @@ function PatientsHeader({
     <div className="text-[8px] text-amber-600">متبقي</div>
     <div className="text-[10px] font-bold text-amber-600 mt-0.5">
       {unpaidCost.toLocaleString()}
-      <span className="text-[10px] font-normal text-amber-400 mr-0.5">$</span>
+      <span className="text-[10px] font-normal text-amber-400 mr-0.5">{getCurrency()}</span>
     </div>
   </div>
 </div>
@@ -539,7 +540,7 @@ function PatientsHeader({
       <span className="text-sm text-gray-500">الإجمالي</span>
       <span className="text-base font-bold text-gray-800" dir="ltr">
         {totalCost.toLocaleString('en-US')}
-        <span className="text-xs font-normal text-gray-400 ml-1">$</span>
+        <span className="text-xs font-normal text-gray-400 ml-1">{getCurrency()}</span>
       </span>
     </div>
     
@@ -550,7 +551,7 @@ function PatientsHeader({
       <span className="text-sm text-teal-600">مدفوع</span>
       <span className="text-base font-bold text-teal-600" dir="ltr">
         {paidCost.toLocaleString('en-US')}
-        <span className="text-xs font-normal text-teal-400 ml-1">$</span>
+        <span className="text-xs font-normal text-teal-400 ml-1">{getCurrency()}</span>
       </span>
     </div>
     
@@ -561,7 +562,7 @@ function PatientsHeader({
       <span className="text-sm text-amber-600">متبقي</span>
       <span className="text-base font-bold text-amber-600" dir="ltr">
         {unpaidCost.toLocaleString('en-US')}
-        <span className="text-xs font-normal text-amber-400 ml-1">$</span>
+        <span className="text-xs font-normal text-amber-400 ml-1">{getCurrency()}</span>
       </span>
     </div>
   </div>
@@ -1288,50 +1289,101 @@ const FilterPopover = () => {
   );
 };
 
-  // ============================================================================
-  // مكون فرعي: التنقل بين الأيام (يبقى كما هو)
-  // ============================================================================
-  const DayNavigation = () => {
-    if (isCalendarMode) return null;
-    if (!isDayMode) return null;
+// ============================================================================
+// مكون فرعي: التنقل بين الأيام
+// ============================================================================
+// ============================================================================
+// مكون فرعي: التنقل بين الأيام
+// ============================================================================
+const DayNavigation = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-    return (
-      <div className="flex items-center gap-1 bg-gray-100 rounded-full p-1">
+  // إغلاق القائمة عند النقر خارجها
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  if (isCalendarMode) return null;
+  if (!isDayMode) return null;
+
+  return (
+    <div className="flex items-center gap-1 bg-gray-100 rounded-full p-1">
+      <button
+        onClick={onPreviousDay}
+        disabled={!canGoPrevious}
+        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+        style={{ color: clinicColor }}
+      >
+        <ChevronRight size={16} />
+      </button>
+
+      {/* قائمة منسدلة مخصصة */}
+      <div className="relative" ref={dropdownRef}>
         <button
-          onClick={onPreviousDay}
-          disabled={!canGoPrevious}
-          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
-          style={{ color: clinicColor }}
+          onClick={() => setIsOpen(!isOpen)}
+          className="flex items-center gap-2 bg-white hover:bg-gray-50 px-4 py-1.5 text-sm font-medium text-gray-700 rounded-full border border-gray-200 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all duration-200 min-w-[150px] sm:min-w-[170px] justify-center"
         >
-          <ChevronRight size={16} />
+          <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <span className="text-right">
+            {getDayName(selectedDate)} - {formatDisplayDate(selectedDate)}
+          </span>
+          <svg className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
         </button>
 
-        <div className="relative">
-          <select
-            value={selectedDate}
-            onChange={(e) => onDateChange(e.target.value)}
-            className="appearance-none bg-transparent px-2 py-1.5 text-sm font-medium text-gray-700 focus:outline-none cursor-pointer text-center min-w-[140px] sm:min-w-[160px]"
-            style={{ direction: "rtl" }}
-          >
+        {isOpen && (
+          <div className="absolute top-full mt-2 right-0 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 min-w-[220px] max-h-64 overflow-y-auto z-50">
             {availableDates.map((date) => (
-              <option key={date} value={date}>
-                {getDayName(date)} - {formatDisplayDate(date)}
-              </option>
+              <button
+                key={date}
+                onClick={() => {
+                  onDateChange(date);
+                  setIsOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-150 hover:bg-blue-50 ${
+                  date === selectedDate 
+                    ? 'bg-blue-50 text-blue-600 font-semibold' 
+                    : 'text-gray-700'
+                }`}
+              >
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                  date === selectedDate ? 'bg-blue-500' : 'bg-gray-300'
+                }`}></span>
+                <span className="flex-1 text-right">
+                  {getDayName(date)} - {formatDisplayDate(date)}
+                </span>
+                {date === selectedDate && (
+                  <svg className="w-4 h-4 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </button>
             ))}
-          </select>
-        </div>
-
-        <button
-          onClick={onNextDay}
-          disabled={!canGoNext}
-          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
-          style={{ color: clinicColor }}
-        >
-          <ChevronLeft size={16} />
-        </button>
+          </div>
+        )}
       </div>
-    );
-  };
+
+      <button
+        onClick={onNextDay}
+        disabled={!canGoNext}
+        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+        style={{ color: clinicColor }}
+      >
+        <ChevronLeft size={16} />
+      </button>
+    </div>
+  );
+};
 
   // ============================================================================
   // Render
@@ -1474,7 +1526,7 @@ function TableFooter({ sessionsCount, totalCost }: TableFooterProps) {
           <span>
             إجمالي التكلفة:{" "}
             <span className="font-bold text-gray-800">
-              {totalCost.toLocaleString()} $
+              {totalCost.toLocaleString()} {getCurrency()}
             </span>
           </span>
         </div>
@@ -1961,7 +2013,7 @@ function AgendaCard({
             className="text-sm font-bold"
             style={{ color: session.isPaid ? "#059669" : "#DC2626" }}
           >
-            {session.sessionCost?.toLocaleString()} $
+            {session.sessionCost?.toLocaleString()} {getCurrency()}
           </span>
         </div>
 
@@ -2102,7 +2154,7 @@ function DesktopTableRow({ session, getPatientData }: DesktopTableRowProps) {
 
       <td className="py-2.5 px-3 text-xs md:text-sm font-bold whitespace-nowrap">
         <span style={{ color: session.isPaid ? "#059669" : "#DC2626" }}>
-          {session.sessionCost?.toLocaleString()} $
+          {session.sessionCost?.toLocaleString()} {getCurrency()}
         </span>
       </td>
 
@@ -2225,7 +2277,7 @@ function MobileListRow({
           className="text-sm font-bold"
           style={{ color: session.isPaid ? "#059669" : "#DC2626" }}
         >
-          {session.sessionCost?.toLocaleString()} $
+          {session.sessionCost?.toLocaleString()} {getCurrency()}
         </p>
 
         {/* مؤشر الحالة أكبر مع مؤشر الدفع */}
@@ -3788,7 +3840,7 @@ function SessionDetailModal({
         valueColor={session.isPaid ? "#059669" : "#DC2626"}
         bold
       >
-        {session.sessionCost?.toLocaleString()} $
+        {session.sessionCost?.toLocaleString()} {getCurrency()}
       </ModalInfoRow>
     </div>
 

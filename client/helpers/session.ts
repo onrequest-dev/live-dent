@@ -7,7 +7,15 @@ import { ApiResponse } from "./fetch_with_retry";
 // إنشاء جلسة جديدة
 // ============================================================
 export async function createSession(
-    credentials: Omit<Session, 'id' | 'clinicId' | 'createdAt'>
+    credentials : Omit<Session, 'id' | 'clinicId' | 'createdAt'> & {
+  info: {
+    clinicName: string;
+    patientName: string;
+    gender:string;
+    phoneNumber:string;
+    prevent_auto_messages:boolean;
+  };
+}
 ): Promise<ApiResponse<Session>> {
     try {
         const response = await fetch('/api/v1/clinic/session', {
