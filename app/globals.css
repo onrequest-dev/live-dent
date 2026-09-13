@@ -55,15 +55,15 @@ body {
 /* ============================================================
    تحسين تحديد النص (السماح به فقط في الحقول النصية)
    ============================================================ */
-* {
+/* * {
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
-}
+} */
 
 /* السماح بتحديد النص داخل حقول الإدخال والمناطق النصية */
-input[type="text"],
+/* input[type="text"],
 input[type="tel"],
 input[type="email"],
 input[type="number"],
@@ -78,7 +78,7 @@ textarea,
   -moz-user-select: text !important;
   -ms-user-select: text !important;
   user-select: text !important;
-}
+} */
 
 /* ============================================================
    تحسينات Native-like العامة
@@ -774,10 +774,10 @@ html {
       -ms-touch-action: manipulation;
       -webkit-text-size-adjust: 100%;
       text-size-adjust: 100%;
-      -webkit-user-select: none;
+       -webkit-user-select: none;
       -moz-user-select: none;
-      -ms-user-select: none;
-      user-select: none;
+      -ms-user-select: none; 
+       user-select: none; 
       -webkit-tap-highlight-color: transparent;
       /* remove tap highlight */
     }

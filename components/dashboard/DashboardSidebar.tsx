@@ -16,25 +16,42 @@ import {
   Menu,
   X,
   TableProperties,
+  CalendarDays,
+  Stethoscope,
 } from "lucide-react";
+// ✅ استيراد أيقونات react-icons
+import { 
+  FaHome, 
+  FaUsers, 
+  FaCalendarAlt, 
+  FaTooth, 
+  FaCog 
+} from "react-icons/fa";
 import { Clinic } from "@/types";
 
-
-// ✅ ترتيب الأيقونات للقائمة السفلية (من اليمين لليسار)
-const bottomNavItems = [
-  { tab: "cv", label: "CV الطبيب", icon: UserCircle },
-  { tab: "clinic", label: "العيادة", icon: Building2 },
-  { tab: "main", label: "الرئيسية", icon: LayoutDashboard, featured: true },
-  { tab: "patients", label: "المرضى", icon: TableProperties },
-  { tab: "settings", label: "الإعدادات", icon: Settings },
+// ✅ التبويبات الظاهرة في القائمة الجانبية (للشاشات الكبيرة)
+const visibleMenuItems = [
+  { tab: "main", label: "الرئيسية", icon: FaHome },
+  { tab: "patients", label: "المرضى", icon: FaUsers },
+  { tab: "schedule", label: "مخطط اليوم", icon: FaCalendarAlt },
+  { tab: "treatments", label: "العلاجات", icon: FaTooth },
+  { tab: "settings", label: "الإعدادات", icon: FaCog },
 ];
 
-const menuItems = [
-  { tab: "main", label: "الرئيسية", icon: LayoutDashboard },
-  { tab: "patients", label: "جدول المرضى", icon: TableProperties },
+// ✅ التبويبات المخفية (تظهر في الإعدادات فقط)
+const hiddenMenuItems = [
   { tab: "clinic", label: "معلومات العيادة", icon: Building2 },
   { tab: "cv", label: "CV الطبيب", icon: UserCircle },
-  { tab: "settings", label: "الإعدادات", icon: Settings },
+];
+
+// ✅ القائمة السفلية للهاتف - بالترتيب المطلوب من اليمين لليسار
+// جدول المرضى - مخطط اليوم - الرئيسية - العلاجات - الإعدادات
+const bottomNavItems = [
+  { tab: "patients", label: "المرضى", icon: FaUsers },
+  { tab: "schedule", label: "مخطط اليوم", icon: FaCalendarAlt },
+  { tab: "main", label: "الرئيسية", icon: FaHome, featured: true },
+  { tab: "treatments", label: "العلاجات", icon: FaTooth },
+  { tab: "settings", label: "الإعدادات", icon: FaCog },
 ];
 
 interface DashboardSidebarProps {
@@ -247,161 +264,80 @@ export function DashboardSidebar({ clinicData }: DashboardSidebarProps) {
   const primaryColor = clinicData.settings.primaryColor;
   const secondaryColor = clinicData.settings.secondaryColor;
 
-  // ✨ شريط التنقل السفلي للهاتف - تصميم أنيق وناعم
-  const MobileBottomNav = () => (
-    <nav className="fixed bottom-4 left-4 right-4 z-50 md:hidden">
-      <div className="relative">
+ const MobileBottomNav = () => (
+  <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
+    <div
+      className="relative rounded-t-3xl border-t border-gray-200/60"
+      style={{
+        background: `linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.98) 100%)`,
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+      }}
+    >
+      {/* الشريط العلوي الملون */}
+      <div className="absolute inset-0 rounded-t-3xl overflow-hidden pointer-events-none">
         <div
-          className="
-            rounded-[32px] 
-            shadow-[0_8px_32px_-8px_rgba(0,0,0,0.12)]
-            border border-white/50
-            p-1.5
-          "
+          className="absolute top-0 left-0 right-0 h-[2px]"
           style={{
-            background: `linear-gradient(180deg, rgba(255, 255, 255, 0.27) 0%, ${primaryColor}08 50%, rgba(255, 255, 255, 0.34) 100%)`,
-            backdropFilter: "blur(20px)",
-            WebkitBackdropFilter: "blur(20px)",
+            background: `linear-gradient(90deg, transparent 0%, ${primaryColor}60 20%, ${primaryColor} 50%, ${primaryColor}60 80%, transparent 100%)`,
           }}
-        >
-          <div
-            className="absolute -top-[2px] left-1/2 -translate-x-1/2 w-2/3 h-[3px] rounded-full"
-            style={{
-              background: `linear-gradient(90deg, transparent 0%, ${primaryColor}90 10%, ${primaryColor} 50%, ${primaryColor}90 90%, transparent 100%)`,
-            }}
-          />
-
-          <div className="flex items-center justify-around px-1">
-            {bottomNavItems.map((item) => {
-              const isActive = activeTabForUI === item.tab;
-              const Icon = item.icon;
-              const isFeatured = item.featured;
-
-              const IconWrapper = ({
-                children,
-              }: {
-                children: React.ReactNode;
-              }) => (
-                <div className="relative flex flex-col items-center justify-center">
-                  {children}
-                </div>
-              );
-
-              const content = (
-                <>
-                  {!isFeatured ? (
-                    <motion.div
-                      whileTap={{ scale: 0.9 }}
-                      whileHover={{ scale: 1.05 }}
-                      className="relative flex items-center justify-center w-12 h-12"
-                    >
-                      {isActive && (
-                        <motion.div
-                          layoutId="mobileActiveBg"
-                          className="absolute inset-0 rounded-2xl"
-                          style={{
-                            background: `linear-gradient(135deg, ${primaryColor}15, ${primaryColor}08)`,
-                          }}
-                          transition={{
-                            type: "spring",
-                            stiffness: 380,
-                            damping: 30,
-                          }}
-                        />
-                      )}
-
-                      <Icon
-                        size={21}
-                        className="relative z-10 transition-all duration-300"
-                        style={{
-                          color: isActive ? primaryColor : "#475569",
-                        }}
-                        strokeWidth={isActive ? 2.2 : 1.8}
-                      />
-
-                      {isActive && (
-                        <motion.div
-                          layoutId="mobileActiveDot"
-                          className="absolute -bottom-0.5 w-1 h-1 rounded-full"
-                          style={{ backgroundColor: primaryColor }}
-                          transition={{
-                            type: "spring",
-                            stiffness: 500,
-                            damping: 30,
-                          }}
-                        />
-                      )}
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      whileTap={{ scale: 0.92 }}
-                      className="relative flex items-center justify-center -mt-6"
-                    >
-                      <motion.div
-                        whileHover={{
-                          scale: 1.08,
-                          boxShadow: `0 12px 28px ${primaryColor}35`,
-                        }}
-                        className="
-                          w-[52px] h-[52px] rounded-[20px] flex items-center justify-center
-                          shadow-[0_8px_24px_-6px_rgba(0,0,0,0.15)]
-                          transition-all duration-300
-                          border-[3px] border-white
-                        "
-                        style={{
-                          background: isActive
-                            ? `linear-gradient(135deg, ${primaryColor}, ${primaryColor}dd)`
-                            : `linear-gradient(135deg, #ffffff, #f8fafc)`,
-                          boxShadow: isActive
-                            ? `0 12px 28px ${primaryColor}40, 0 0 0 4px ${primaryColor}20`
-                            : `0 8px 24px -6px rgba(0,0,0,0.12), 0 0 0 2px ${primaryColor}15`,
-                        }}
-                      >
-                        <Icon
-                          size={23}
-                          className="transition-all duration-300"
-                          style={{
-                            color: isActive ? "#ffffff" : primaryColor,
-                          }}
-                          strokeWidth={2.2}
-                        />
-                      </motion.div>
-                    </motion.div>
-                  )}
-                </>
-              );
-
-              if (item.tab === "patients") {
-                return (
-                  <a
-                    key={item.tab}
-                    href={`/dashboard/${clinicId}?tab=patients`}
-                    onClick={(e) => navigateToTab("patients", e)}
-                    className="flex-1 flex justify-center"
-                  >
-                    <IconWrapper>{content}</IconWrapper>
-                  </a>
-                );
-              }
-
-              return (
-                <a
-                  key={item.tab}
-                  href={`/dashboard/${clinicId}?tab=${item.tab}`}
-                  onClick={(e) => navigateToTab(item.tab, e)}
-                  className="flex-1 flex justify-center"
-                >
-                  <IconWrapper>{content}</IconWrapper>
-                </a>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="h-[env(safe-area-inset-bottom,8px)]" />
+        />
       </div>
-    </nav>
-  );
+
+      <div className="flex items-center justify-around px-2 py-2" dir="rtl">
+        {bottomNavItems.map((item) => {
+          const isActive = activeTabForUI === item.tab;
+          const Icon = item.icon;
+
+          return (
+            <a
+              key={item.tab}
+              href={`/dashboard/${clinicId}?tab=${item.tab}`}
+              onClick={(e) => navigateToTab(item.tab, e)}
+              className="flex-1 flex justify-center"
+            >
+              <motion.div
+                whileTap={{ scale: 0.92 }}
+                className="relative flex flex-col items-center justify-center py-1 px-2 min-w-[56px]"
+              >
+                {/* ✅ خلفية ناعمة للعنصر النشط */}
+                {isActive && (
+                  <motion.div
+                    layoutId="mobileActiveBg"
+                    className="absolute inset-0 rounded-2xl"
+                    style={{ backgroundColor: `${primaryColor}12` }}
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  />
+                )}
+
+                {/* الأيقونة */}
+                <Icon
+                  size={22}
+                  className="relative z-10"
+                  style={{
+                    color: isActive ? primaryColor : "#94a3b8",
+                  }}
+                />
+
+                {/* النص */}
+                <span
+                  className="relative z-10 text-[10px] font-medium mt-0.5"
+                  style={{
+                    color: isActive ? primaryColor : "#94a3b8",
+                  }}
+                >
+                  {item.label}
+                </span>
+              </motion.div>
+            </a>
+          );
+        })}
+      </div>
+
+      <div className="h-[env(safe-area-inset-bottom,0px)]" />
+    </div>
+  </nav>
+);
 
   // عرض القائمة الجانبية للشاشات الكبيرة
   const sidebarContent = (
@@ -522,63 +458,9 @@ export function DashboardSidebar({ clinicData }: DashboardSidebarProps) {
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {menuItems.map((item) => {
+        {visibleMenuItems.map((item) => {
           const isActive = activeTabForUI === item.tab;
           const Icon = item.icon;
-
-          if (item.tab === "patients") {
-            return (
-              <a
-                key={item.tab}
-                href={`/dashboard/${clinicId}?tab=patients`}
-                onClick={(e) => navigateToTab("patients", e)}
-                style={{ textDecoration: "none" }}
-              >
-                <motion.div
-                  whileHover={{ x: -4 }}
-                  whileTap={{ scale: 0.97 }}
-                  className={`
-                    flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium
-                    transition-all duration-200 relative
-                    ${isCollapsed && !isMobile ? "justify-center" : ""}
-                  `}
-                  style={{
-                    color: isActive ? primaryColor : "#64748b",
-                    backgroundColor: isActive ? "#ffffff" : "transparent",
-                    boxShadow: isActive
-                      ? `0 4px 12px ${primaryColor}20`
-                      : "none",
-                  }}
-                >
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeBackground"
-                      className="absolute inset-0 rounded-xl -z-0"
-                      style={{ backgroundColor: `${primaryColor}10` }}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.2 }}
-                    />
-                  )}
-
-                  <Icon size={isCollapsed && !isMobile ? 22 : 20} />
-
-                  <AnimatePresence mode="wait">
-                    {(!isCollapsed || isMobile) && (
-                      <motion.span
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -10 }}
-                        className="flex-1"
-                      >
-                        {item.label}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-              </a>
-            );
-          }
 
           return (
             <a
@@ -631,30 +513,6 @@ export function DashboardSidebar({ clinicData }: DashboardSidebarProps) {
           );
         })}
       </nav>
-
-      {/* <div className="p-3 border-t border-gray-100">
-        <motion.button
-          whileHover={{ x: -4 }}
-          className={`
-            flex items-center gap-3 px-4 py-3 w-full rounded-xl text-sm font-medium
-            text-red-500 hover:bg-red-50 transition-all
-            ${(isCollapsed && !isMobile) ? 'justify-center' : ''}
-          `}
-        >
-          <LogOut size={20} />
-          <AnimatePresence mode="wait">
-            {(!isCollapsed || isMobile) && (
-              <motion.span
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-              >
-                تسجيل الخروج
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </motion.button>
-      </div> */}
     </motion.div>
   );
 

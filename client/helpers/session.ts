@@ -58,6 +58,58 @@ export async function createSession(
     }
 }
 
+
+// ✅ دالة إنشاء عدة مواعيد بطلب واحد
+export async function createBulkSessions(
+  sessions: (Omit<Session, 'id' | 'clinicId' | 'createdAt'> & {
+    info: {
+      clinicName: string;
+      patientName: string;
+      gender: string;
+      phoneNumber: string;
+      prevent_auto_messages: boolean;
+    };
+  })[]
+): Promise<ApiResponse<Session[]>> {
+    try {
+const response = await fetch('/api/v1/clinic/session/bulk', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ sessions: sessions }),
+});
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            return {
+                success: false,
+                error: data.message || data.error || 'فشل في إنشاء الجلسات',
+            };
+        }
+
+        const createdSessions: Session[] = data.data || data.sessions || data;
+
+        // ✅ تحديث newsessions في sessionStorage
+        const stored = sessionStorage.getItem('newsessions');
+        const newSessions: Session[] = stored ? JSON.parse(stored) : [];
+        newSessions.push(...createdSessions);
+        sessionStorage.setItem('newsessions', JSON.stringify(newSessions));
+
+        return {
+            success: true,
+            data: createdSessions,
+        };
+    } catch (error) {
+        console.error('Create bulk sessions error:', error);
+        return {
+            success: false,
+            error: 'حدث خطأ في الاتصال بالخادم',
+        };
+    }
+}
 // ============================================================
 // تحديث جلسة موجودة
 // ============================================================
