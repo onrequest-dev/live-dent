@@ -15,11 +15,12 @@ import {
   Download,
   Smartphone,
   CheckCircle2,
+  Lock
 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { AccountSwitcher } from "../AccountSwitcher";
-
+import { ChangePasswordModal } from "./ChangePasswordModal";
 interface SettingsTabProps {
   clinicData: any;
 }
@@ -34,7 +35,7 @@ export function SettingsTab({ clinicData }: SettingsTabProps) {
   const [autoNotify, setAutoNotify] = useState(true);//التنبيه التلقائي للمرضى
   // استخدام hook تثبيت PWA
   const { isInstallable, isInstalled, installApp } = usePWAInstall();
-
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 // تحميل الإعدادات
 useEffect(() => {
   const savedSettings = localStorage.getItem("dashboard_settings");
@@ -131,6 +132,9 @@ const handleAutoNotifyChange = (checked: boolean) => {
   };
 
   const primaryColor = clinicData?.settings?.primaryColor || "#3B82F6";
+  const clinicEmail = clinicData?.doctorProfile?.contactEmail || 
+                    clinicData?.settings?.contactEmail || 
+                    clinicData?.doctorProfile?.email;
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
 
   const clinicUrl = `${baseUrl}/public-clinic/${clinicId}`;
@@ -562,55 +566,74 @@ const handleAutoNotifyChange = (checked: boolean) => {
           </div>
         </div>
 
-        {/* الدعم والحساب */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="p-6 border-b border-gray-100">
-            <h2 className="text-xl font-semibold text-gray-800">
-              الدعم والحساب
-            </h2>
+{/* الدعم والحساب */}
+<div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+  <div className="p-6 border-b border-gray-100">
+    <h2 className="text-xl font-semibold text-gray-800">
+      الدعم والحساب
+    </h2>
+  </div>
+
+  <div className="p-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      {/* خدمة العملاء */}
+      <a
+        href={whatsappUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all"
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className="p-2 rounded-lg"
+            style={{ backgroundColor: "#25D36615" }}
+          >
+            <MessageCircle size={20} style={{ color: "#25D366" }} />
           </div>
-
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {/* خدمة العملاء */}
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all"
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="p-2 rounded-lg"
-                    style={{ backgroundColor: "#25D36615" }}
-                  >
-                    <MessageCircle size={20} style={{ color: "#25D366" }} />
-                  </div>
-                  <div className="flex-1 text-right">
-                    <p className="font-medium text-gray-800">خدمة العملاء</p>
-                    <p className="text-xs text-gray-500">تواصل عبر واتساب</p>
-                  </div>
-                </div>
-              </a>
-
-              {/* تسجيل الخروج */}
-              <button className="p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="p-2 rounded-lg"
-                    style={{ backgroundColor: "#EF444415" }}
-                  >
-                    <LogOut size={20} style={{ color: "#EF4444" }} />
-                  </div>
-                  <div className="flex-1 text-right">
-                    <p className="font-medium text-gray-800">تسجيل الخروج</p>
-                    <p className="text-xs text-gray-500">الخروج من الحساب</p>
-                  </div>
-                </div>
-              </button>
-            </div>
+          <div className="flex-1 text-right">
+            <p className="font-medium text-gray-800">خدمة العملاء</p>
+            <p className="text-xs text-gray-500">تواصل عبر واتساب</p>
           </div>
         </div>
+      </a>
+
+      {/* تغيير كلمة المرور */}
+      <button
+        onClick={() => setShowPasswordModal(true)}
+        className="p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all"
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className="p-2 rounded-lg"
+            style={{ backgroundColor: `${primaryColor}15` }}
+          >
+            <Lock size={20} style={{ color: primaryColor }} />
+          </div>
+          <div className="flex-1 text-right">
+            <p className="font-medium text-gray-800">تغيير كلمة المرور</p>
+            <p className="text-xs text-gray-500">إعادة تعيين كلمة المرور</p>
+          </div>
+        </div>
+      </button>
+
+      {/* تسجيل الخروج */}
+      <button className="p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all">
+        <div className="flex items-center gap-3">
+          <div
+            className="p-2 rounded-lg"
+            style={{ backgroundColor: "#EF444415" }}
+          >
+            <LogOut size={20} style={{ color: "#EF4444" }} />
+          </div>
+          <div className="flex-1 text-right">
+            <p className="font-medium text-gray-800">تسجيل الخروج</p>
+            <p className="text-xs text-gray-500">الخروج من الحساب</p>
+          </div>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
 
         {/* الشعارات */}
         <div className="mt-12 pt-8 border-t border-gray-100">
@@ -670,6 +693,16 @@ const handleAutoNotifyChange = (checked: boolean) => {
           </div>
         </div>
       </div>
+
+      {/* نافذة تغيير كلمة المرور */}
+<ChangePasswordModal
+  isOpen={showPasswordModal}
+  onClose={() => setShowPasswordModal(false)}
+  clinicId={clinicId}
+  clinicName={clinicData?.name}
+  clinicEmail={clinicEmail}
+  primaryColor={primaryColor}
+/>
     </motion.div>
   );
 }
