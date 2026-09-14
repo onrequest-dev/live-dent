@@ -18,8 +18,11 @@ export function middleware(request: NextRequest) {
     })
     return NextResponse.rewrite(newUrl)
   }
+
     
   if (pathname === '/' && jwt) {
+    const suspended = request.cookies.get('suspended')?.value
+    if(suspended) return NextResponse.redirect(new URL('/suspended', request.url))
     const clinicId = request.cookies.get('clinic_id')?.value
     if(!clinicId) return NextResponse.redirect(new URL('/log-in', request.url))
     return NextResponse.redirect(new URL(`/dashboard/${clinicId}`, request.url))
