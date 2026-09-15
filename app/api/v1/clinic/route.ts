@@ -4,7 +4,6 @@ import { supabase_server } from "@/server/supabase-server";
 import { Clinic, ClinicEmployeeJwt } from "@/types";
 import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
-const cond = true 
 export async function GET(request: NextRequest) {
     const jwt = request.cookies.get("jwt")?.value;
     if (!jwt) {
