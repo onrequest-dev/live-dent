@@ -4,7 +4,6 @@ import { supabase_server } from "@/server/supabase-server";
 import { Clinic, ClinicEmployeeJwt } from "@/types";
 import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
-
 export async function GET(request: NextRequest) {
     const jwt = request.cookies.get("jwt")?.value;
     if (!jwt) {
@@ -20,11 +19,22 @@ export async function GET(request: NextRequest) {
     if (jwt_user.role !== 'admin' && jwt_user.role !== 'manager') {
         return NextResponse.json({ error: "Forbidden - Insufficient permissions" }, { status: 403 });
     }
+    // if(cond) return NextResponse.redirect(new URL("/log-in", request.url));
+
     const clinicId = jwt_user.clinicId;
     const {data,error} = await supabase_server.from("Clinic").select("*").eq("id", clinicId).maybeSingle();
     if(error){
         // console.error("Supabase error:", error);
         return NextResponse.json({ error: "Failed to fetch clinic data" }, { status: 500 });
+    }
+    if(data.subscriptionStatus === "expired") {
+        const response = NextResponse.redirect(new URL("/suspended", request.url));
+        response.cookies.set("suspended", "true", {
+            path: "/",
+            maxAge: 60 * 60 * 24 * 2,
+            httpOnly: true,
+        });
+        return response;
     }
     const {data:doctorProfile,error:doctorProfileError} = await supabase_server.from("DoctorProfile").select("*").eq("clinicId", clinicId).single();
     if(doctorProfileError){

@@ -141,7 +141,12 @@ import { ApiResponse } from "./fetch_with_retry";
 
 export async function getClinic(): Promise<ApiResponse<Clinic>> {
   try {
-    const response = await fetch("/api/v1/clinic");
+    const response = await fetch("/api/v1/clinic",{redirect: "manual",});
+    if (response.type === "opaqueredirect" || response.status === 0) {
+    // هناك redirect
+    window.location.href = "/suspended";
+    return { success: false, error: "تمت إعادة التوجيه إلى صفحة تسجيل الدخول" };
+}
     const result = await response.json();
     
     localStorage.setItem('currency', result.data?.currency || 'USD'); 
