@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     // if(cond) return NextResponse.redirect(new URL("/log-in", request.url));
 
     const clinicId = jwt_user.clinicId;
-    const {data,error} = await supabase_server.from("templates").select("*").eq("clinicId", clinicId).maybeSingle();
+    const {data,error} = await supabase_server.from("templates").select("*").eq("owner_id", clinicId).maybeSingle();
     if (error) {
         // console.error("Supabase error:", error);
         return NextResponse.json({ error: "Failed to fetch clinic data" }, { status: 500 });
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     }
     const clinicId = jwt_user.clinicId;
     const templateData = sanitizeInput(await request.json());
-    const { data, error } = await supabase_server.from("templates").insert([{ ...templateData, clinicId }]).select("*").single();
+    const { data, error } = await supabase_server.from("templates").insert([{ ...templateData, "owner_id":clinicId }]).select("*").single();
     if (error) {
         // console.error("Supabase error:", error);
         return NextResponse.json({ error: "Failed to create template" }, { status: 500 });
