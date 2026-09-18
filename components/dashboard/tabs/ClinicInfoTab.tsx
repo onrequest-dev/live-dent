@@ -31,6 +31,7 @@ import { WorkingHours } from '@/types';
 import { handleUploadImage } from '@/client/helpers/upload_image';
 import { HexColorPicker } from 'react-colorful';
 import ToothLoader from '../../loding';
+import { TimePicker } from '../../ui/TimePicker'; // ✅ استيراد TimePicker
 // ============================================================
 // أيام الأسبوع
 // ============================================================
@@ -716,19 +717,24 @@ export function ClinicInfoTab({ clinicData, onClinicUpdate }: ClinicInfoTabProps
               
               {!wh.isClosed ? (
                 <div className="flex items-center gap-1.5 md:gap-3 flex-1 min-w-0">
-                  <input
-                    type="time"
-                    value={wh.start}
-                    onChange={(e) => handleWorkingHourChange(wh.day, 'start', e.target.value)}
-                    className="flex-1 min-w-0 px-2 md:px-3 py-1.5 md:py-2 border border-gray-300 rounded-lg md:rounded-xl text-xs md:text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  {/* ✅ استخدام TimePicker بدلاً من input type="time" */}
+                  <div className="flex-1 min-w-0">
+                    <TimePicker
+                      value={wh.start}
+                      onChange={(time) => handleWorkingHourChange(wh.day, 'start', time)}
+                      primaryColor={primaryColor}
+                      className="w-full"
+                    />
+                  </div>
                   <span className="text-gray-600 font-medium flex-shrink-0 text-xs md:text-sm">-</span>
-                  <input
-                    type="time"
-                    value={wh.end}
-                    onChange={(e) => handleWorkingHourChange(wh.day, 'end', e.target.value)}
-                    className="flex-1 min-w-0 px-2 md:px-3 py-1.5 md:py-2 border border-gray-300 rounded-lg md:rounded-xl text-xs md:text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  <div className="flex-1 min-w-0">
+                    <TimePicker
+                      value={wh.end}
+                      onChange={(time) => handleWorkingHourChange(wh.day, 'end', time)}
+                      primaryColor={primaryColor}
+                      className="w-full"
+                    />
+                  </div>
                 </div>
               ) : (
                 <span className="text-red-600 text-xs md:text-sm font-medium flex-1">مغلق</span>

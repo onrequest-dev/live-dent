@@ -58,7 +58,9 @@ import { ToothChart, ToothChartRef, ToothData } from "../../ToothChart/ToothChar
 import { saveDentalChart } from "@/client/helpers/dental-chart";
 import getCurrency from '@/client/helpers/getCurrency';
 import {DatePicker} from '@/components/ui/DatePicker';
+import {SmartDatePicker} from '@/components/ui/SmartDatePicker';
 import {TimePicker} from '@/components/ui/TimePicker';
+import { SmartTimePicker } from '@/components/ui/SmartTimePicker';
 // ============================================================
 // خدمة API محاكية (لتحضير الربط مع الباك إند)
 // ============================================================
@@ -339,29 +341,57 @@ const handleUpdateSessionPayment = useCallback(async (sessionId: string, isPaid:
       .toLowerCase();
   };
 
-  const filteredPatients = useMemo(() => {
-    let filtered = patients;
-    if (showTodayOnly) {
-      const todayStr = new Date().toISOString().split("T")[0];
-      const todayPatientIds = sessions
-        .filter((s) => {
-          const sessionDate = new Date(s.startTime).toISOString().split("T")[0];
-          return sessionDate === todayStr && s.status === "scheduled";
-        })
-        .map((s) => s.patientId);
-      filtered = filtered.filter((p) => todayPatientIds.includes(p.id));
+const filteredPatients = useMemo(() => {
+  let filtered = patients;
+  if (showTodayOnly) {
+    const todayStr = new Date().toISOString().split("T")[0];
+    const todayPatientIds = sessions
+      .filter((s) => {
+        const sessionDate = new Date(s.startTime).toISOString().split("T")[0];
+        return sessionDate === todayStr && s.status === "scheduled";
+      })
+      .map((s) => s.patientId);
+    filtered = filtered.filter((p) => todayPatientIds.includes(p.id));
+  }
+  if (searchQuery) {
+    const query = searchQuery.toLowerCase();
+    filtered = filtered.filter(
+      (p) =>
+        normalizeText(p.fullName).includes(normalizeText(query)) ||
+        normalizeText(p.phone).includes(normalizeText(query)) ||
+        normalizeText(p.id).includes(normalizeText(query)),
+    );
+  }
+
+  // ✅ ترتيب: موعد اليوم أولاً (الأقرب وقتاً) ثم الأحدث إضافة
+  const todayStr = new Date().toISOString().split("T")[0];
+  
+  return [...filtered].sort((a, b) => {
+    // البحث عن موعد اليوم لكل مريض
+    const aTodaySession = sessions.find((s) => {
+      const sessionDate = new Date(s.startTime).toISOString().split("T")[0];
+      return s.patientId === a.id && sessionDate === todayStr && s.status === "scheduled";
+    });
+    const bTodaySession = sessions.find((s) => {
+      const sessionDate = new Date(s.startTime).toISOString().split("T")[0];
+      return s.patientId === b.id && sessionDate === todayStr && s.status === "scheduled";
+    });
+
+    // من لديه موعد اليوم يأتي أولاً
+    if (aTodaySession && !bTodaySession) return -1;
+    if (!aTodaySession && bTodaySession) return 1;
+
+    // كلاهما لديه موعد اليوم - الأقرب وقتاً أولاً
+    if (aTodaySession && bTodaySession) {
+      return new Date(aTodaySession.startTime).getTime() - new Date(bTodaySession.startTime).getTime();
     }
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (p) =>
-          normalizeText(p.fullName).includes(normalizeText(query)) ||
-          normalizeText(p.phone).includes(normalizeText(query)) ||
-          normalizeText(p.id).includes(normalizeText(query)),
-      );
-    }
-    return filtered;
-  }, [patients, sessions, searchQuery, showTodayOnly]);
+
+    // لا يوجد مواعيد اليوم - الأحدث إضافة أولاً
+    const aCreated = new Date(a.createdAt || 0).getTime();
+    const bCreated = new Date(b.createdAt || 0).getTime();
+    return bCreated - aCreated;
+  });
+}, [patients, sessions, searchQuery, showTodayOnly]);
 
   const patientsWithDetails = useMemo(() => {
     return filteredPatients.map((patient) => {
@@ -409,13 +439,14 @@ const handleUpdateSessionPayment = useCallback(async (sessionId: string, isPaid:
     });
   };
 
-  const formatDate = (date: Date | string) => {
-    const d = new Date(date);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${day}/${month}/${year}`;
-  };
+const formatDate = (date: Date | string) => {
+  const d = new Date(date);
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const dayName = d.toLocaleDateString("ar-SA", { weekday: "short" });
+  
+  return `${dayName} ${day}/${month}`;
+};
 
 const formatCurrency = (amount: number) => {
   const currencySymbol = getCurrency();
@@ -502,18 +533,45 @@ const formatCurrency = (amount: number) => {
     }
   };
 
-  const handlePatientSelect = (patient: Patient) => {
-    setSelectedPatient(patient);
-    // لم نعد بحاجة لتحديث selectedPatientCases و selectedPatientSessions يدوياً
-    // لأنهما مشتقان تلقائياً من useMemo
-    if (isMobile) {
+const handlePatientSelect = (patient: Patient) => {
+  setSelectedPatient(patient);
+  
+  // ✅ حفظ المريض الحالي
+  sessionStorage.setItem("lastPatientId", patient.id);
+  
+  if (isMobile) {
+    setIsMobileDrawerOpen(true);
+  }
+  if (isCollapsed) {
+    setIsCollapsed(false);
+  }
+};
+// ✅ 2. إضافة useEffect لاستعادة الحالة
+// ✅ استعادة الحالة بعد التحديث من تطبيق القالب
+useEffect(() => {
+  const refreshToothChart = sessionStorage.getItem("refresh_tooth_chart");
+  const lastPatientId = sessionStorage.getItem("lastPatientId");
+  
+  if (refreshToothChart === "true" && lastPatientId) {
+    const patient = patients.find((p) => p.id === lastPatientId);
+    
+    if (patient) {
+      setSelectedPatient(patient);
+      setIsCollapsed(false);
+      
+      // ✅ للهاتف - فتح الدرج
+      if (isMobile) {
+        setIsMobileDrawerOpen(true);
+      }
+      if (window.innerWidth < 1024) {
       setIsMobileDrawerOpen(true);
     }
-    if (isCollapsed) {
-      setIsCollapsed(false);
+      // ✅ تنظيف الإشارات
+      sessionStorage.removeItem("refresh_tooth_chart");
+      // لا نزيل lastPatientId و lastActiveTab لأن PatientDetailsCard سيقرأها
     }
-  };
-
+  }
+}, [patients, isMobile]);
   const handleWhatsApp = (
     patient: Patient,
     session?: Session,
@@ -742,7 +800,7 @@ const handleUpdateSessionStatus = useCallback(async (
     <>
       <ToastContainer toasts={toasts} removeToast={removeToast} />
 
-      <div className="min-h-screen  p-3 sm:p-4 lg:p-6 ">
+      <div className="min-h-screen  p-1 sm:p-4 lg:p-6 ">
         {/* شريط العمليات العلوي */}
         <div className="mb-4 sm:mb-6 lg:mb-8 ">
           {/* ============================================================ */}
@@ -1297,9 +1355,11 @@ const handleUpdateSessionStatus = useCallback(async (
             >
               <PatientDetailsCard
                 clinicId={clinicId}
+                clinicData={clinicData}
                 patient={selectedPatient}
                 cases={selectedPatientCases}
                 sessions={selectedPatientSessions}
+                allClinicSessions={sessions}
                 primaryColor={primaryColor}
                 secondaryColor={secondaryColor}
                 onClose={() => setSelectedPatient(null)}
@@ -1323,6 +1383,7 @@ const handleUpdateSessionStatus = useCallback(async (
                   setEditingPatient(selectedPatient);
                   setShowEditPatientModal(true);
                 }}
+                
               />
             </motion.div>
           )}
@@ -1340,6 +1401,8 @@ const handleUpdateSessionStatus = useCallback(async (
             onSubmit={handleAddPatient}
             isLoading={isAddingPatient}
             addToast={addToast}
+            clinicData={clinicData} // ✅ تمرير clinicData
+            sessions={sessions} // ✅ تمرير كل الجلسات
           />
         )}
       </AnimatePresence>
@@ -1356,6 +1419,8 @@ const handleUpdateSessionStatus = useCallback(async (
             onSubmit={handleAddAppointment}
             isLoading={isAddingAppointment}
             addToast={addToast}
+            clinicData={clinicData} // ✅ تمرير clinicData
+            sessions={sessions} // ✅ تمرير كل الجلسات
           />
         )}
       </AnimatePresence>
@@ -1399,6 +1464,7 @@ const handleUpdateSessionStatus = useCallback(async (
             >
               <PatientDetailsCard
                 clinicId={clinicId}
+                clinicData={clinicData}
                 onEditPatient={() => {
                   setEditingPatient(selectedPatient);
                   setShowEditPatientModal(true);
@@ -1406,6 +1472,7 @@ const handleUpdateSessionStatus = useCallback(async (
                 patient={selectedPatient}
                 cases={selectedPatientCases}
                 sessions={selectedPatientSessions}
+                allClinicSessions={sessions}
                 primaryColor={primaryColor}
                 secondaryColor={secondaryColor}
                 onClose={() => {
@@ -1439,17 +1506,19 @@ const handleUpdateSessionStatus = useCallback(async (
 
       <AnimatePresence>
         {showEditSessionModal && editingSession && (
-          <EditSessionModal
-            session={editingSession}
-            primaryColor={primaryColor}
-            onClose={() => {
-              setShowEditSessionModal(false);
-              setEditingSession(null);
-            }}
-            onSave={handleSaveSessionEdit}
-            onDelete={handleDeleteSession}
-            addToast={addToast}
-          />
+        <EditSessionModal
+          session={editingSession}
+          primaryColor={primaryColor}
+          onClose={() => {
+            setShowEditSessionModal(false);
+            setEditingSession(null);
+          }}
+          onSave={handleSaveSessionEdit}
+          onDelete={handleDeleteSession}
+          addToast={addToast}
+          clinicData={clinicData} // ✅ تمرير clinicData
+          sessions={sessions} // ✅ تمرير كل الجلسات
+        />
         )}
       </AnimatePresence>
 
@@ -1614,6 +1683,7 @@ interface PatientDetailsCardProps {
   patient: Patient;
   cases: PatientCase[];
   sessions: Session[];
+  allClinicSessions?: Session[];
   primaryColor: string;
   secondaryColor: string;
   onClose: () => void;
@@ -1638,12 +1708,14 @@ interface PatientDetailsCardProps {
   onRequestDeleteSession: (sessionId: string) => void;
   onEditPatient: () => void;
   clinicId: string;
+  clinicData: Clinic | null;
 }
 
 function PatientDetailsCard({
   patient,
   cases,
   sessions,
+  allClinicSessions = [],
   primaryColor,
   secondaryColor,
   onClose,
@@ -1664,14 +1736,15 @@ function PatientDetailsCard({
   onEditPatient,
   onRequestDeleteSession,
   clinicId,
+  clinicData,
 }: PatientDetailsCardProps) {
   useModalBackHandler(onClose);
   const finance = calculateFinance();
   const pastSessions = sessions;
   const [selectedSession, setSelectedSession] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"appointments" | "chart" | "xray">(
-    "appointments",
-  );
+const [activeTab, setActiveTab] = useState<"appointments" | "chart" | "xray">(
+  "chart", // ✅ تغيير من "appointments" إلى "chart"
+);
   const [showXRayViewer, setShowXRayViewer] = useState(false);
 
   // ============================================================
@@ -1681,7 +1754,7 @@ function PatientDetailsCard({
   const [showUnsavedModal, setShowUnsavedModal] = useState(false);
   const pendingActionRef = useRef<(() => void) | null>(null);
   const chartRef = useRef<ToothChartRef>(null);
-
+  
   // دالة مساعدة لمحاولة تنفيذ إجراء مع التحقق من التغييرات
   const withUnsavedCheck = useCallback(
     (action: () => void) => {
@@ -1703,14 +1776,41 @@ function PatientDetailsCard({
   }, [withUnsavedCheck, onClose]);
 
   // معالج التبديل إلى تبويب آخر
-  const handleTabChange = useCallback(
-    (tab: "appointments" | "chart" | "xray") => {
-      withUnsavedCheck(() => {
-        setActiveTab(tab);
-      });
-    },
-    [withUnsavedCheck],
-  );
+// ✅ تعديل handleTabChange
+const handleTabChange = useCallback(
+  (tab: "appointments" | "chart" | "xray") => {
+    withUnsavedCheck(() => {
+      setActiveTab(tab);
+      // ✅ حفظ التبويب النشط
+      sessionStorage.setItem("lastActiveTab", tab);
+    });
+  },
+  [withUnsavedCheck],
+);
+
+// ✅ استعادة التبويب عند التحميل
+// ✅ استعادة التبويب عند التحميل
+useEffect(() => {
+  const savedTab = sessionStorage.getItem("lastActiveTab");
+  const refreshToothChart = sessionStorage.getItem("refresh_tooth_chart");
+  const lastSelectedToothId = sessionStorage.getItem("lastSelectedToothId");
+  
+  if (savedTab === "appointments" || savedTab === "chart" || savedTab === "xray") {
+    setActiveTab(savedTab);
+  }
+  
+  // ✅ إذا كان التحديث من تطبيق قالب - فتح الشارت مباشرة
+  if (refreshToothChart === "true") {
+    setActiveTab("chart");
+    
+    // ✅ تنظيف
+    sessionStorage.removeItem("refresh_tooth_chart");
+    sessionStorage.removeItem("lastSelectedToothId");
+  }
+  
+  // ✅ تنظيف lastActiveTab بعد الاستخدام
+  sessionStorage.removeItem("lastActiveTab");
+}, []);
 
   // حفظ ثم متابعة الإجراء
   const handleSaveAndProceed = async () => {
@@ -1744,10 +1844,10 @@ function PatientDetailsCard({
     setShowUnsavedModal(false);
   };
 
-  // فرز الجلسات من الأحدث إلى الأقدم
-  const sortedSessions = [...pastSessions].sort(
-    (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime(),
-  );
+// ✅ فرز الجلسات من الأقدم إلى الأحدث (ما يجب القيام به أولاً)
+const sortedSessions = [...pastSessions].sort(
+  (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+);
 
   // دالة مساعدة لعرض حالة الجلسة بشكل موحد
 const getSessionStatusBadge = (status: Session["status"]) => {
@@ -1778,41 +1878,10 @@ const togglePaymentStatus = useCallback((sessionId: string, currentIsPaid: boole
         {/* شريط التبويبات - ثابت في الأعلى */}
         {/* ============================================================ */}
         <div className="flex items-center border-b border-gray-200 bg-gray-50/50 overflow-x-auto scrollbar-hide min-h-[48px] sm:min-h-0">
-          {/* تبويب المواعيد */}
-          <button
-            onClick={() => handleTabChange("appointments")}
-            className={`
-    relative flex items-center gap-2 px-4 sm:px-5 py-6 sm:py-3 
-    text-sm sm:text-base font-medium transition-all duration-200
-    whitespace-nowrap flex-shrink-0
-    ${
-      activeTab === "appointments"
-        ? "text-gray-900 bg-white border-b-2"
-        : "text-gray-500 hover:text-gray-700 hover:bg-gray-100 border-b-2 border-transparent"
-    }
-  `}
-            style={
-              activeTab === "appointments"
-                ? {
-                    borderBottomColor: primaryColor,
-                    color: primaryColor,
-                  }
-                : {}
-            }
-          >
-            <Calendar size={16} className="sm:w-[18px] sm:h-[18px]" />
-            <span>المواعيد</span>
-            {sessions.length > 0 && (
-              <span className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-600 ml-1">
-                {sessions.length}
-              </span>
-            )}
-          </button>
-
-          {/* تبويب الشارت */}
-          <button
-            onClick={() => handleTabChange("chart")}
-            className={`
+  {/* ✅ تبويب الشارت - أولاً */}
+  <button
+    onClick={() => handleTabChange("chart")}
+    className={`
       relative flex items-center gap-2 px-4 sm:px-5 py-5 sm:py-3 
       text-sm sm:text-base font-medium transition-all duration-200
       whitespace-nowrap flex-shrink-0
@@ -1822,27 +1891,57 @@ const togglePaymentStatus = useCallback((sessionId: string, currentIsPaid: boole
           : "text-gray-500 hover:text-gray-700 hover:bg-gray-100 border-b-2 border-transparent"
       }
     `}
-            style={
-              activeTab === "chart"
-                ? {
-                    borderBottomColor: primaryColor,
-                    color: primaryColor,
-                  }
-                : {}
-            }
-          >
-            <Stethoscope size={16} className="sm:w-[18px] sm:h-[18px]" />
-            <span>الشارت</span>
-          </button>
+    style={
+      activeTab === "chart"
+        ? {
+            borderBottomColor: primaryColor,
+            color: primaryColor,
+          }
+        : {}
+    }
+  >
+    <Stethoscope size={16} className="sm:w-[18px] sm:h-[18px]" />
+    <span>الشارت</span>
+  </button>
 
-          {/* تبويب الأشعة */}
-          <XRayViewerButton
-            patientId={patient.id}
-            patientName={patient.fullName}
-            primaryColor={primaryColor}
-            isMobile={isMobile}
-            // onClick={() => handleTabChange("xray")}
-            className={`
+  {/* ✅ تبويب المواعيد - ثانياً */}
+  <button
+    onClick={() => handleTabChange("appointments")}
+    className={`
+      relative flex items-center gap-2 px-4 sm:px-5 py-6 sm:py-3 
+      text-sm sm:text-base font-medium transition-all duration-200
+      whitespace-nowrap flex-shrink-0
+      ${
+        activeTab === "appointments"
+          ? "text-gray-900 bg-white border-b-2"
+          : "text-gray-500 hover:text-gray-700 hover:bg-gray-100 border-b-2 border-transparent"
+      }
+    `}
+    style={
+      activeTab === "appointments"
+        ? {
+            borderBottomColor: primaryColor,
+            color: primaryColor,
+          }
+        : {}
+    }
+  >
+    <Calendar size={16} className="sm:w-[18px] sm:h-[18px]" />
+    <span>المواعيد</span>
+    {sessions.length > 0 && (
+      <span className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-600 ml-1">
+        {sessions.length}
+      </span>
+    )}
+  </button>
+
+  {/* ✅ تبويب الأشعة - ثالثاً */}
+  <XRayViewerButton
+    patientId={patient.id}
+    patientName={patient.fullName}
+    primaryColor={primaryColor}
+    isMobile={isMobile}
+    className={`
       relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-5 sm:py-3 
       text-xs sm:text-sm font-medium transition-all duration-300
       whitespace-nowrap flex-shrink-0 rounded-t-xl
@@ -1852,47 +1951,47 @@ const togglePaymentStatus = useCallback((sessionId: string, currentIsPaid: boole
           : "text-gray-400 hover:text-gray-600 hover:bg-white/60"
       }
     `}
-            style={
-              activeTab === "xray"
-                ? {
-                    boxShadow:
-                      "0 -2px 8px rgba(0,0,0,0.03), 0 -1px 3px rgba(0,0,0,0.02)",
-                    borderBottomColor: primaryColor,
-                    color: primaryColor,
-                  }
-                : ({
-                    boxShadow: "none",
-                    borderBottomColor: "transparent",
-                    color: undefined,
-                  } as React.CSSProperties)
-            }
-          >
-            <svg
-              viewBox="0 0 24 24"
-              width="14"
-              height="14"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="sm:w-[16px] sm:h-[16px]"
-            >
-              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-            </svg>
-            <span>الأشعة</span>
-          </XRayViewerButton>
+    style={
+      activeTab === "xray"
+        ? {
+            boxShadow:
+              "0 -2px 8px rgba(0,0,0,0.03), 0 -1px 3px rgba(0,0,0,0.02)",
+            borderBottomColor: primaryColor,
+            color: primaryColor,
+          }
+        : ({
+            boxShadow: "none",
+            borderBottomColor: "transparent",
+            color: undefined,
+          } as React.CSSProperties)
+    }
+  >
+    <svg
+      viewBox="0 0 24 24"
+      width="14"
+      height="14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="sm:w-[16px] sm:h-[16px]"
+    >
+      <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+    </svg>
+    <span>الأشعة</span>
+  </XRayViewerButton>
 
-          {/* زر الإغلاق */}
-          <div className="flex-1" />
-          <button
-            onClick={handleClose}
-            className="flex items-center gap-1.5 px-3 sm:px-4 py-5 sm:py-3 text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
-            title="إغلاق"
-          >
-            <X size={18} className="sm:w-[20px] sm:h-[20px]" />
-          </button>
-        </div>
+  {/* زر الإغلاق */}
+  <div className="flex-1" />
+  <button
+    onClick={handleClose}
+    className="flex items-center gap-1.5 px-3 sm:px-4 py-5 sm:py-3 text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
+    title="إغلاق"
+  >
+    <X size={18} className="sm:w-[20px] sm:h-[20px]" />
+  </button>
+</div>
         {/* ============================================================ */}
         {/* محتوى التبويبات مع أنيميشن */}
         {/* ============================================================ */}
@@ -2600,16 +2699,17 @@ const togglePaymentStatus = useCallback((sessionId: string, currentIsPaid: boole
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
               >
-                <ToothChart
-                  ref={chartRef}
-                  patientId={patient.id}
-                  clinicId={patient.clinicId} // ✅ تمرير clinicId
-                  patientName={patient.fullName}
-                  primaryColor={primaryColor}
-                  editable={true}
-                  // onSave لم نعد بحاجة إليه إذا أردنا السلوك الداخلي
-                  onDirtyChange={setIsChartDirty}
-                />
+              <ToothChart
+                ref={chartRef}
+                patientId={patient.id}
+                clinicId={patient.clinicId}
+                patientName={patient.fullName}
+                primaryColor={primaryColor}
+                editable={true}
+                onDirtyChange={setIsChartDirty}
+                clinicData={clinicData} // ✅ إضافة بيانات العيادة
+                existingSessions={allClinicSessions} 
+              />
               </motion.div>
             )}
 
@@ -2672,6 +2772,9 @@ interface EditSessionModalProps {
     message: string;
     type: "success" | "error" | "info";
   }) => void;
+  // ✅ إضافة الخصائص الجديدة
+  clinicData: Clinic | null;
+  sessions: Session[]; // كل الجلسات لحساب المواعيد المحجوزة
 }
 
 const formatToLocalDatetimeLocal = (date: Date): string => {
@@ -2689,6 +2792,8 @@ function EditSessionModal({
   onSave,
   onDelete,
   addToast,
+  clinicData, // ✅ استقبال clinicData
+  sessions, // ✅ استقبال sessions
 }: EditSessionModalProps) {
   useModalBackHandler(onClose);
   const [isSaving, setIsSaving] = useState(false);
@@ -2703,7 +2808,42 @@ function EditSessionModal({
     notes: session.notes || "",
     startTime: formatToLocalDatetimeLocal(new Date(session.startTime)),
   });
+  // ✅ حساب تاريخ الموعد من formData.startTime
+const appointmentDate = useMemo(() => {
+  return new Date(formData.startTime);
+}, [formData.startTime]);
 
+// ✅ حساب المواعيد المحجوزة في نفس اليوم (باستثناء الجلسة الحالية)
+const bookedSlotsForDate = useMemo(() => {
+  if (!sessions || sessions.length === 0) return [];
+  
+  const targetDate = new Date(formData.startTime);
+  
+  return sessions
+    .filter((s) => {
+      // استبعاد الجلسة الحالية
+      if (s.id === session.id) return false;
+      
+      const sessionDate = new Date(s.startTime);
+      
+      // نفس اليوم فقط
+      return (
+        sessionDate.getFullYear() === targetDate.getFullYear() &&
+        sessionDate.getMonth() === targetDate.getMonth() &&
+        sessionDate.getDate() === targetDate.getDate() &&
+        s.status === "scheduled" // فقط المجدولة
+      );
+    })
+    .map((s) => {
+      const start = new Date(s.startTime);
+      const end = new Date(s.endTime || new Date(start.getTime() + 30 * 60000));
+      
+      return {
+        startTime: `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`,
+        endTime: `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`,
+      };
+    });
+}, [sessions, session.id, formData.startTime]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -2906,61 +3046,64 @@ function EditSessionModal({
 {/* تاريخ ووقت الجلسة - في سطر واحد مع حل مشكلة التوقيت */}
 <div className="flex flex-col sm:flex-row gap-3">
 <div className="flex-1">
-  <DatePicker
-    label="تاريخ الجلسة"
+<SmartDatePicker
+  label="تاريخ الجلسة"
+  required
+  value={formData.startTime}
+  onChange={(date) => {
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    
+    const currentTime = new Date(formData.startTime);
+    const hours = String(currentTime.getHours()).padStart(2, "0");
+    const minutes = String(currentTime.getMinutes()).padStart(2, "0");
+    
+    const newDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+    
+    setFormData({
+      ...formData,
+      startTime: newDateTime,
+    });
+  }}
+  minDate={new Date()}
+  primaryColor={primaryColor}
+  disabled={isLoading}
+  workingHours={clinicData?.settings?.workingHours || []} // ✅ تمرير ساعات العمل
+/>
+</div>
+
+<div className="flex-1">
+  <SmartTimePicker
+    label="الوقت"
     required
-    value={formData.startTime}
-    onChange={(date) => {
-      // استخدام UTC للحصول على التاريخ الصحيح بدون مشاكل المنطقة الزمنية
-      const year = date.getUTCFullYear();
-      const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-      const day = String(date.getUTCDate()).padStart(2, "0");
+    value={(() => {
+      const d = new Date(formData.startTime);
+      return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+    })()}
+    onChange={(time) => {
+      // استخراج التاريخ من القيمة الحالية
+      const currentDate = new Date(formData.startTime);
+      const year = currentDate.getFullYear();
+      const month = String(currentDate.getMonth() + 1).padStart(2, "0");
+      const day = String(currentDate.getDate()).padStart(2, "0");
       
-      // الحفاظ على الوقت من القيمة الحالية
-      const currentTime = new Date(formData.startTime);
-      const hours = String(currentTime.getHours()).padStart(2, "0");
-      const minutes = String(currentTime.getMinutes()).padStart(2, "0");
-      
-      const newDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+      // بناء التاريخ الجديد مع الوقت الجديد
+      const newDateTime = `${year}-${month}-${day}T${time}`;
       
       setFormData({
         ...formData,
         startTime: newDateTime,
       });
     }}
-    minDate={new Date()}
     primaryColor={primaryColor}
     disabled={isLoading}
+    appointmentDate={appointmentDate}
+    workingHours={clinicData?.settings?.workingHours || []}
+    appointmentDuration={clinicData?.settings?.defaultAppointmentDuration || 30}
+    bookedSlots={bookedSlotsForDate}
   />
 </div>
-
-  <div className="flex-1">
-    <TimePicker
-      label="وقت الجلسة"
-      required
-      value={(() => {
-        const d = new Date(formData.startTime);
-        return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-      })()}
-      onChange={(time) => {
-        // استخراج التاريخ من القيمة الحالية
-        const currentDate = new Date(formData.startTime);
-        const year = currentDate.getFullYear();
-        const month = String(currentDate.getMonth() + 1).padStart(2, "0");
-        const day = String(currentDate.getDate()).padStart(2, "0");
-        
-        // بناء التاريخ الجديد مع الوقت الجديد
-        const newDateTime = `${year}-${month}-${day}T${time}`;
-        
-        setFormData({
-          ...formData,
-          startTime: newDateTime,
-        });
-      }}
-      primaryColor={primaryColor}
-      disabled={isLoading}
-    />
-  </div>
 </div>
 
             {/* الإجراء المخطط */}
@@ -3435,6 +3578,9 @@ interface NewPatientModalProps {
     message: string;
     type: "success" | "error" | "info";
   }) => void;
+  // ✅ إضافة الخصائص الجديدة
+  clinicData: Clinic | null;
+  sessions: Session[];
 }
 
 function NewPatientModal({
@@ -3444,6 +3590,8 @@ function NewPatientModal({
   onSubmit,
   isLoading: externalLoading = false,
   addToast,
+  clinicData, // ✅ استقبال clinicData
+  sessions, // ✅ استقبال sessions
 }: NewPatientModalProps) {
   useModalBackHandler(onClose);
   const [internalLoading, setInternalLoading] = useState(false);
@@ -3488,7 +3636,33 @@ function NewPatientModal({
     const currentYear = new Date().getFullYear();
     return currentYear - age;
   };
-
+  // ✅ حساب المواعيد المحجوزة لليوم المحدد
+const bookedSlotsForDate = useMemo(() => {
+  if (!sessions || sessions.length === 0) return [];
+  
+  const targetDate = calculateAppointmentDate();
+  
+  return sessions
+    .filter((s) => {
+      const sessionDate = new Date(s.startTime);
+      
+      return (
+        sessionDate.getFullYear() === targetDate.getFullYear() &&
+        sessionDate.getMonth() === targetDate.getMonth() &&
+        sessionDate.getDate() === targetDate.getDate() &&
+        s.status === "scheduled"
+      );
+    })
+    .map((s) => {
+      const start = new Date(s.startTime);
+      const end = new Date(s.endTime || new Date(start.getTime() + 30 * 60000));
+      
+      return {
+        startTime: `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`,
+        endTime: `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`,
+      };
+    });
+}, [sessions, formData.appointmentMode, formData.appointment.days, formData.appointment.date]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError(null);
@@ -4081,46 +4255,49 @@ function NewPatientModal({
   </div>
 ) : (
   <div className="w-2/3">
-    <DatePicker
-      label="التاريخ"
-      required
-      value={formData.appointment.date}
-      onChange={(date) => {
-        const dateStr = date.toISOString().split("T")[0];
-        setFormData({
-          ...formData,
-          appointment: {
-            ...formData.appointment,
-            date: dateStr,
-          },
-        });
-      }}
-      minDate={new Date()}
-      primaryColor={primaryColor}
-      disabled={isLoading}
-      // error={localError ? "يرجى اختيار تاريخ صحيح" : undefined}
-    />
+<SmartDatePicker
+  label="التاريخ"
+  required
+  value={formData.appointment.date}
+  onChange={(date) => {
+    const dateStr = date.toISOString().split("T")[0];
+    setFormData({
+      ...formData,
+      appointment: {
+        ...formData.appointment,
+        date: dateStr,
+      },
+    });
+  }}
+  minDate={new Date()}
+  primaryColor={primaryColor}
+  disabled={isLoading}
+  workingHours={clinicData?.settings?.workingHours || []} // ✅ تمرير ساعات العمل
+/>
   </div>
 )}
                     <div className="flex-1">
 <div className="flex-1">
-  <TimePicker
-    label="الوقت"
-    required
-    value={formData.appointment.time}
-    onChange={(time) =>
-      setFormData({
-        ...formData,
-        appointment: {
-          ...formData.appointment,
-          time,
-        },
-      })
-    }
-    primaryColor={primaryColor}
-    disabled={isLoading}
-    // error={localError ? "يرجى اختيار وقت صحيح" : undefined}
-  />
+<SmartTimePicker
+  label="الوقت"
+  required
+  value={formData.appointment.time}
+  onChange={(time) =>
+    setFormData({
+      ...formData,
+      appointment: {
+        ...formData.appointment,
+        time,
+      },
+    })
+  }
+  primaryColor={primaryColor}
+  disabled={isLoading}
+  appointmentDate={appointmentDate}
+  workingHours={clinicData?.settings?.workingHours || []}
+  appointmentDuration={clinicData?.settings?.defaultAppointmentDuration || 30}
+  bookedSlots={bookedSlotsForDate}
+/>
 </div>
                     </div>
                   </div>
@@ -4185,6 +4362,9 @@ interface NewAppointmentModalProps {
     message: string;
     type: "success" | "error" | "info";
   }) => void;
+  // ✅ إضافة الخصائص الجديدة
+  clinicData: Clinic | null;
+  sessions: Session[];
 }
 
 function NewAppointmentModal({
@@ -4195,6 +4375,8 @@ function NewAppointmentModal({
   onSubmit,
   isLoading: externalLoading = false,
   addToast,
+  clinicData, // ✅ استقبال clinicData
+  sessions, // ✅ استقبال sessions
 }: NewAppointmentModalProps) {
   useModalBackHandler(onClose);
   const [internalLoading, setInternalLoading] = useState(false);
@@ -4213,7 +4395,7 @@ function NewAppointmentModal({
     notes: "",
   });
 
-  const calculateAppointmentDate = (): Date => {
+  const calculateAppointmentDate = useCallback((): Date => {
     if (formData.appointmentMode === "days") {
       const days = parseInt(formData.days) || 1;
       const date = new Date();
@@ -4222,7 +4404,36 @@ function NewAppointmentModal({
     } else {
       return new Date(formData.date);
     }
-  };
+  }, [formData.appointmentMode, formData.days, formData.date]);
+  // ✅ حساب المواعيد المحجوزة لليوم المحدد
+const bookedSlotsForDate = useMemo(() => {
+  if (!sessions || sessions.length === 0) return [];
+  
+  const targetDate = calculateAppointmentDate();
+  
+  return sessions
+    .filter((s) => {
+      const sessionDate = new Date(s.startTime);
+      
+      // نفس اليوم فقط
+      return (
+        sessionDate.getFullYear() === targetDate.getFullYear() &&
+        sessionDate.getMonth() === targetDate.getMonth() &&
+        sessionDate.getDate() === targetDate.getDate() &&
+        s.status === "scheduled" // فقط المجدولة
+      );
+    })
+    .map((s) => {
+      const start = new Date(s.startTime);
+      const end = new Date(s.endTime || new Date(start.getTime() + 30 * 60000));
+      
+      return {
+        startTime: `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`,
+        endTime: `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`,
+      };
+    });
+}, [sessions, formData.appointmentMode, formData.days, formData.date]);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -4292,8 +4503,8 @@ function NewAppointmentModal({
       setInternalLoading(false);
     }
   };
-
-  const appointmentDate = calculateAppointmentDate();
+  
+  const appointmentDate = useMemo(() => calculateAppointmentDate(), [calculateAppointmentDate]);
   const formattedAppointmentDate = appointmentDate.toLocaleDateString("ar-SA", {
     weekday: "long",
     year: "numeric",
@@ -4433,31 +4644,35 @@ function NewAppointmentModal({
                 </div>
               ) : (
   <div className="w-2/3">
-    <DatePicker
-      label="التاريخ"
-      required
-      value={formData.date}
-      onChange={(date) => {
-        const dateStr = date.toISOString().split("T")[0];
-        setFormData({ ...formData, date: dateStr });
-      }}
-      minDate={new Date()}
-      primaryColor={primaryColor}
-      disabled={isLoading}
-      // error={localError ? "يرجى اختيار تاريخ صحيح" : undefined}
-    />
+<SmartDatePicker
+  label="التاريخ"
+  required
+  value={formData.date}
+  onChange={(date) => {
+    const dateStr = date.toISOString().split("T")[0];
+    setFormData({ ...formData, date: dateStr });
+  }}
+  minDate={new Date()}
+  primaryColor={primaryColor}
+  disabled={isLoading}
+  workingHours={clinicData?.settings?.workingHours || []} // ✅ تمرير ساعات العمل
+/>
   </div>
               )}
 <div className="flex-1">
-  <TimePicker
-    label="الوقت"
-    required
-    value={formData.time}
-    onChange={(time) => setFormData({ ...formData, time })}
-    primaryColor={primaryColor}
-    disabled={isLoading}
-    // error={localError ? "يرجى اختيار وقت صحيح" : undefined}
-  />
+{/* في NewAppointmentModal */}
+<SmartTimePicker
+  label="الوقت"
+  required
+  value={formData.time}
+  onChange={(time) => setFormData({ ...formData, time })}
+  primaryColor={primaryColor}
+  disabled={isLoading}
+  appointmentDate={appointmentDate} // ✅ تاريخ الموعد
+  workingHours={clinicData?.settings?.workingHours || []} // ✅ ساعات العمل
+  appointmentDuration={clinicData?.settings?.defaultAppointmentDuration || 30} // ✅ مدة الموعد
+  bookedSlots={bookedSlotsForDate} // ✅ المواعيد المحجوزة
+/>
 </div>
             </div>
 

@@ -139,7 +139,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                   initial={isActive ? { opacity: 0 } : false}
                   animate={isActive ? { opacity: 1 } : false}
                   transition={{ duration: 0.3 }}
-                  className="p-3 md:p-6 dashboard-mobile-scale"
+                  className="p-3 md:p-1 dashboard-mobile-scale md:p-6 dashboard-mobile-scale"
                 >
                   {pageContent}
                 </motion.div>

@@ -10,6 +10,8 @@ import { ClinicInfoTab } from '../../../components/dashboard/tabs/ClinicInfoTab'
 import { DoctorCVTab } from '../../../components/dashboard/tabs/DoctorCVTab';
 import { MessagesTab } from '../../../components/dashboard/tabs/MessagesTab';
 import { SettingsTab } from '../../../components/dashboard/tabs/SettingsTab';
+import { ScheduleTab } from '../../../components/dashboard/tabs/ScheduleTab'; // ✅ استيراد جديد
+import { TreatmentsTab } from '../../../components/dashboard/tabs/TreatmentsTab'; // ✅ استيراد جدي
 import { getClinic, getClinicData } from '@/client/helpers/clinic';
 import { Clinic, Patient, PatientCase, Session } from '@/types';
 import ToothLoader from '../../../components/loding';
@@ -99,7 +101,7 @@ return (
 );
   }
 
-  // ✅ عرض التبويب المناسب مع تمرير البيانات
+    // ✅ عرض التبويب المناسب مع تمرير البيانات
   const renderTab = () => {
     switch (tab) {
       case 'main':
@@ -112,15 +114,30 @@ return (
           />
         );
         
-        case 'patients':
-          return (
-            <PatientsTab 
-              clinicData={clinicData}
-              patients={dashboardData.patients}
-              patientCases={dashboardData.patientCases}
-              sessions={dashboardData.sessions}
-            />
-          );
+      case 'patients':
+        return (
+          <PatientsTab 
+            clinicData={clinicData}
+            patients={dashboardData.patients}
+            patientCases={dashboardData.patientCases}
+            sessions={dashboardData.sessions}
+          />
+        );
+      
+      // ✅ التبويب الجديد: مخطط اليوم
+      case 'schedule':
+        return (
+          <ScheduleTab clinicData={clinicData}
+            patients={dashboardData.patients}
+            patientCases={dashboardData.patientCases}
+            sessions={dashboardData.sessions} />
+        );
+      
+      // ✅ التبويب الجديد: العلاجات
+      case 'treatments':
+        return (
+          <TreatmentsTab clinicData={clinicData} />
+        );
         
       case 'clinic':
         return (
@@ -131,7 +148,7 @@ return (
         
       case 'cv':
         return (
-        <DoctorCVTab clinicData={clinicData} />
+          <DoctorCVTab clinicData={clinicData} />
         );
         
       case 'messages':
@@ -142,7 +159,7 @@ return (
       case 'settings': 
         return (
           <SettingsTab clinicData={clinicData} />
-      );
+        );
         
       default:
         return (

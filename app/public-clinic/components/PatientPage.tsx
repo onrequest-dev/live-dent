@@ -186,7 +186,6 @@ export default function PatientPage({
 
     const completed = allSessions
       .filter((s) => s.status === "completed" || s.status === "no-show")
-      .slice(0, 10);
 
     const totalAmount = allSessions
       .filter((s) => s.status !== "cancelled")

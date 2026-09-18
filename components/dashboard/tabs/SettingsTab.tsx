@@ -1,7 +1,7 @@
 // components/dashboard/tabs/SettingsTab.tsx
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import {
@@ -10,104 +10,111 @@ import {
   Share2,
   Building2,
   UserCircle,
-  RefreshCw,
   LogOut,
   Download,
   Smartphone,
   CheckCircle2,
-  Lock
+  Lock,
+  Stethoscope,
+  Palette,
+  Bell,
+  LayoutGrid,
+  ChevronRight,
 } from "lucide-react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { AccountSwitcher } from "../AccountSwitcher";
 import { ChangePasswordModal } from "./ChangePasswordModal";
+
 interface SettingsTabProps {
   clinicData: any;
 }
 
+// ============================================================
+// أنواع التبويبات الداخلية
+// ============================================================
+
+type SettingsSection = "clinic" | "appearance" | "notifications";
+
 export function SettingsTab({ clinicData }: SettingsTabProps) {
   const params = useParams();
+  const router = useRouter();
   const clinicId = params?.clinicId as string;
+  
+  // ✅ التبويب النشط
+  const [activeSection, setActiveSection] = useState<SettingsSection>("clinic");
+  
+  // ✅ الحالات
   const [autoCollapse, setAutoCollapse] = useState(true);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isInstalling, setIsInstalling] = useState(false);
-  const [numberingSystem, setNumberingSystem] = useState<'universal' | 'fdi' | 'palmer'>('universal');//ترقيم الشارت السني
-  const [autoNotify, setAutoNotify] = useState(true);//التنبيه التلقائي للمرضى
-  // استخدام hook تثبيت PWA
+  const [numberingSystem, setNumberingSystem] = useState<'universal' | 'fdi' | 'palmer'>('universal');
+  const [toothDisplayPreference, setToothDisplayPreference] = useState<'number' | 'name' | 'both'>('number');
+  const [autoNotify, setAutoNotify] = useState(true);
+  
   const { isInstallable, isInstalled, installApp } = usePWAInstall();
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-// تحميل الإعدادات
-useEffect(() => {
-  const savedSettings = localStorage.getItem("dashboard_settings");
-  if (savedSettings) {
-    try {
-      const settings = JSON.parse(savedSettings);
-      setAutoCollapse(settings.autoCollapse ?? true);
-    } catch (error) {
-      console.error("خطأ في قراءة الإعدادات:", error);
+
+  // ✅ تحميل الإعدادات
+  useEffect(() => {
+    const savedSettings = localStorage.getItem("dashboard_settings");
+    if (savedSettings) {
+      try {
+        const settings = JSON.parse(savedSettings);
+        setAutoCollapse(settings.autoCollapse ?? true);
+      } catch (error) {
+        console.error("خطأ في قراءة الإعدادات:", error);
+      }
     }
-  }
 
-  const savedNumbering = localStorage.getItem('tooth_numbering_system');
-  if (savedNumbering === 'universal' || savedNumbering === 'fdi' || savedNumbering === 'palmer') {
-    setNumberingSystem(savedNumbering);
-  }
+    const savedNumbering = localStorage.getItem('tooth_numbering_system');
+    if (savedNumbering === 'universal' || savedNumbering === 'fdi' || savedNumbering === 'palmer') {
+      setNumberingSystem(savedNumbering);
+    }
 
-  // تحميل إعدادات التنبيه التلقائي
-  const preventAutoMessages = localStorage.getItem('prevent_auto_messages');
-  // إذا كان المتغير موجودًا وقيمته "true"، يعني أن التنبيه معطل
-  if (preventAutoMessages === 'true') {
-    setAutoNotify(false);
-  } else {
-    // إذا لم يكن موجودًا أو قيمته غير true، التنبيه مفعل (افتراضي)
-    setAutoNotify(true);
-  }
-}, []);
+    const savedDisplayPref = localStorage.getItem('tooth_display_preference');
+    if (savedDisplayPref === 'number' || savedDisplayPref === 'name' || savedDisplayPref === 'both') {
+      setToothDisplayPreference(savedDisplayPref);
+    }
 
-  // ✅ أضف هذه الدالة الجديدة للتعامل مع تغيير نظام الترقيم
-const handleNumberingSystemChange = (system: 'universal' | 'fdi' | 'palmer') => {
-  setNumberingSystem(system);
-  localStorage.setItem('tooth_numbering_system', system);
-  window.dispatchEvent(new CustomEvent('numberingSystemChanged', { detail: system }));
-};
+    const preventAutoMessages = localStorage.getItem('prevent_auto_messages');
+    setAutoNotify(preventAutoMessages !== 'true');
+  }, []);
 
-// معالج التنبيه التلقائي
-const handleAutoNotifyChange = (checked: boolean) => {
-  setAutoNotify(checked);
-  
-  if (checked) {
-    // إذا كان مفعلاً - احذف المتغير من localStorage
-    localStorage.removeItem('prevent_auto_messages');
-  } else {
-    // إذا كان معطلاً - أضف المتغير بقيمة true
-    localStorage.setItem('prevent_auto_messages', 'true');
-  }
-  
-  // إرسال حدث للتواصل مع باقي أجزاء التطبيق
-  window.dispatchEvent(
-    new CustomEvent("autoNotifyChanged", { detail: { enabled: checked } })
-  );
-};
-  // حفظ الإعدادات
-  const handleAutoCollapseChange = (checked: boolean) => {
-    setAutoCollapse(checked);
-    localStorage.setItem(
-      "dashboard_settings",
-      JSON.stringify({ autoCollapse: checked }),
-    );
-    window.dispatchEvent(
-      new CustomEvent("settingsChanged", { detail: { autoCollapse: checked } }),
-    );
+  // ✅ المعالجات
+  const handleNumberingSystemChange = (system: 'universal' | 'fdi' | 'palmer') => {
+    setNumberingSystem(system);
+    localStorage.setItem('tooth_numbering_system', system);
+    window.dispatchEvent(new CustomEvent('numberingSystemChanged', { detail: system }));
   };
 
-  // معالج تثبيت التطبيق
+  const handleToothDisplayChange = (pref: 'number' | 'name' | 'both') => {
+    setToothDisplayPreference(pref);
+    localStorage.setItem('tooth_display_preference', pref);
+    window.dispatchEvent(new CustomEvent('toothDisplayPreferenceChanged', { detail: pref }));
+  };
+
+  const handleAutoNotifyChange = (checked: boolean) => {
+    setAutoNotify(checked);
+    if (checked) {
+      localStorage.removeItem('prevent_auto_messages');
+    } else {
+      localStorage.setItem('prevent_auto_messages', 'true');
+    }
+    window.dispatchEvent(new CustomEvent("autoNotifyChanged", { detail: { enabled: checked } }));
+  };
+
+  const handleAutoCollapseChange = (checked: boolean) => {
+    setAutoCollapse(checked);
+    localStorage.setItem("dashboard_settings", JSON.stringify({ autoCollapse: checked }));
+    window.dispatchEvent(new CustomEvent("settingsChanged", { detail: { autoCollapse: checked } }));
+  };
+
   const handleInstallApp = async () => {
     setIsInstalling(true);
     try {
       const success = await installApp();
-      if (success) {
-        setShowInstallPrompt(false);
-      }
+      if (success) setShowInstallPrompt(false);
     } catch (error) {
       console.error("فشل تثبيت التطبيق:", error);
     } finally {
@@ -115,14 +122,10 @@ const handleAutoNotifyChange = (checked: boolean) => {
     }
   };
 
-  // مشاركة
   const handleShare = async (url: string, title: string) => {
     if (navigator.share) {
       try {
-        await navigator.share({
-          title,
-          url,
-        });
+        await navigator.share({ title, url });
       } catch (err) {
         console.error("فشل المشاركة:", err);
       }
@@ -136,573 +139,430 @@ const handleAutoNotifyChange = (checked: boolean) => {
                     clinicData?.settings?.contactEmail || 
                     clinicData?.doctorProfile?.email;
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
-
   const clinicUrl = `${baseUrl}/public-clinic/${clinicId}`;
   const doctorCVUrl = `${baseUrl}/public-clinic/${clinicId}/doctor-cv`;
   const whatsappUrl = `https://wa.me/+963982719525`;
+
+  // ✅ تعريف التبويبات
+const sections: { id: SettingsSection; label: string; icon: any }[] = [
+  { id: "clinic", label: "العيادة والحساب", icon: Building2 },
+  { id: "appearance", label: "المظهر والأسنان", icon: Palette },
+  { id: "notifications", label: "التنبيهات", icon: Bell },
+];
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="max-w-4xl mx-auto p-3 pb-20"
+      className="max-w-4xl mx-auto p-1 pb-20"
+      dir="rtl"
     >
       {/* الرأس */}
-      <div className="mb-8">
+      <div className="mb-6">
         <div className="flex items-center gap-3 mb-2">
-          <div
-            className="p-3 rounded-xl"
-            style={{ backgroundColor: `${primaryColor}1` }}
-          >
+          <div className="p-3 rounded-xl" style={{ backgroundColor: `${primaryColor}15` }}>
             <Settings size={24} style={{ color: primaryColor }} />
           </div>
           <h1 className="text-3xl font-bold text-gray-800">الإعدادات</h1>
         </div>
       </div>
 
-      <div className="space-y-6">
-       <AccountSwitcher/>
+      {/* ✅ شريط التبويبات */}
+      <div className="mb-6 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-2 bg-gray-100 p-1 rounded-2xl min-w-max">
+          {sections.map((section) => {
+            const Icon = section.icon;
+            const isActive = activeSection === section.id;
+            return (
+              <button
+                key={section.id}
+                onClick={() => setActiveSection(section.id)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
+                  isActive ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <Icon size={16} className={isActive ? "" : "text-gray-400"} />
+                <span>{section.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
+      {/* ✅ محتوى التبويب */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeSection}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.2 }}
+          className="space-y-4"
+        >
+          {/* ============================================================ */}
+          {/* تبويب العيادة */}
+          {/* ============================================================ */}
+{activeSection === "clinic" && (
+  <>
+    <AccountSwitcher />
 
+    {/* ✅ أزرار المشاركة - أعلى القسم */}
+    <div className="grid grid-cols-2 gap-3">
+      <button
+        onClick={() => handleShare(clinicUrl, clinicData?.name || "صفحة العيادة")}
+        className="p-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all text-right"
+      >
+        <div className="flex items-center gap-2">
+          <Share2 size={16} style={{ color: primaryColor }} />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-gray-800">مشاركة العيادة</p>
+            <p className="text-[10px] text-gray-500">رابط صفحة العيادة</p>
+          </div>
+        </div>
+      </button>
 
-               {/* إضافة إلى الشاشة الرئيسية - القسم المعدل */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="p-6 border-b border-gray-100">
-            <div className="flex items-center gap-2">
-              <Smartphone size={20} style={{ color: primaryColor }} />
-              <h2 className="text-xl font-semibold text-gray-800">
-                إضافة إلى الشاشة الرئيسية
-              </h2>
+      <button
+        onClick={() => handleShare(doctorCVUrl, `CV ${clinicData?.doctorProfile?.fullName || "الطبيب"}`)}
+        className="p-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all text-right"
+      >
+        <div className="flex items-center gap-2">
+          <Share2 size={16} style={{ color: primaryColor }} />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-gray-800">مشاركة الطبيب</p>
+            <p className="text-[10px] text-gray-500">رابط السيرة الذاتية</p>
+          </div>
+        </div>
+      </button>
+    </div>
+
+    <SectionCard title="إدارة العيادة" icon={Building2} primaryColor={primaryColor}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <button
+          onClick={() => router.push(`/dashboard/${clinicId}?tab=clinic`)}
+          className="p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all text-right"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg" style={{ backgroundColor: `${primaryColor}15` }}>
+              <Building2 size={20} style={{ color: primaryColor }} />
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-gray-800">معلومات العيادة</p>
+              <p className="text-xs text-gray-500">تعديل بيانات العيادة وساعات العمل</p>
             </div>
           </div>
+        </button>
 
-          <div className="p-6">
-            {!isInstalled ? (
-              // حالة عدم التثبيت - زر التفعيل
-              <div>
-                {!showInstallPrompt ? (
-                  // الحالة الافتراضية - عرض زر التثبيت
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-lg font-medium text-gray-700">
-                        اضافة الى سطح المكتب
-                      </label>
-                      <p className="text-sm text-gray-500 mt-1">
-                        اضف LiveDent الى سطح المكتب لتسهيل الوصول اليه
-                      </p>
-                    </div>
+        <button
+          onClick={() => router.push(`/dashboard/${clinicId}?tab=cv`)}
+          className="p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all text-right"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg" style={{ backgroundColor: `${primaryColor}15` }}>
+              <UserCircle size={20} style={{ color: primaryColor }} />
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-gray-800">CV الطبيب</p>
+              <p className="text-xs text-gray-500">تعديل السيرة الذاتية</p>
+            </div>
+          </div>
+        </button>
+      </div>
+    </SectionCard>
 
+    {/* ✅ قسم الحساب - مدمج */}
+    <SectionCard title="الحساب والدعم" icon={UserCircle} primaryColor={primaryColor}>
+      <div className="grid grid-cols-1 gap-3">
+        <a
+          href={whatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg" style={{ backgroundColor: "#25D36615" }}>
+              <MessageCircle size={20} style={{ color: "#25D366" }} />
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-gray-800">خدمة العملاء</p>
+              <p className="text-xs text-gray-500">تواصل عبر واتساب</p>
+            </div>
+          </div>
+        </a>
+
+        <button
+          onClick={() => setShowPasswordModal(true)}
+          className="p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all text-right"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg" style={{ backgroundColor: `${primaryColor}15` }}>
+              <Lock size={20} style={{ color: primaryColor }} />
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-gray-800">تغيير كلمة المرور</p>
+              <p className="text-xs text-gray-500">إعادة تعيين كلمة المرور</p>
+            </div>
+          </div>
+        </button>
+
+        <button className="p-4 rounded-xl border border-red-200 hover:bg-red-50 transition-all text-right">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg" style={{ backgroundColor: "#EF444415" }}>
+              <LogOut size={20} style={{ color: "#EF4444" }} />
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-red-600">تسجيل الخروج</p>
+              <p className="text-xs text-gray-500">الخروج من الحساب</p>
+            </div>
+          </div>
+        </button>
+      </div>
+    </SectionCard>
+
+    <FooterLogos />
+  </>
+)}
+
+          {/* ============================================================ */}
+          {/* تبويب المظهر والأسنان */}
+          {/* ============================================================ */}
+          {activeSection === "appearance" && (
+            <>
+              <SectionCard title="نظام ترقيم الأسنان" icon={Stethoscope} primaryColor={primaryColor}>
+                <div className="space-y-3">
+                  {[
+                    { value: 'universal' as const, label: 'النظام العالمي (Universal)' },
+                    { value: 'fdi' as const, label: 'نظام FDI' },
+                    { value: 'palmer' as const, label: 'نظام Palmer' },
+                  ].map((option) => (
                     <button
-                      onClick={() => setShowInstallPrompt(true)}
-                      disabled={!isInstallable}
-                      className="px-6 py-3 text-sm font-medium text-white rounded-xl transition-all hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      key={option.value}
+                      onClick={() => handleNumberingSystemChange(option.value)}
+                      className="w-full p-4 rounded-xl border-2 transition-all text-right flex items-center justify-between"
                       style={{
-                        backgroundColor: isInstallable
-                          ? primaryColor
-                          : "#9CA3AF",
-                        boxShadow: isInstallable
-                          ? `0 4px 12px ${primaryColor}40`
-                          : "none",
+                        borderColor: numberingSystem === option.value ? primaryColor : '#E5E7EB',
+                        backgroundColor: numberingSystem === option.value ? `${primaryColor}10` : 'white',
                       }}
                     >
-                      <Download size={18} />
-                      {isInstallable
-                        ? "تثبيت التطبيق"
-                        : "التطبيق غير قابل للتثبيت حالياً"}
+                      <span className="font-medium text-gray-800">{option.label}</span>
+                      {numberingSystem === option.value && (
+                        <CheckCircle2 size={20} style={{ color: primaryColor }} />
+                      )}
                     </button>
+                  ))}
+                </div>
+              </SectionCard>
 
-                    {!isInstallable && (
-                      <p className="text-xs text-gray-400">
-                        * تأكد من فتح الموقع عبر متصفح مدعوم (Chrome, Edge,
-                        Safari)
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  // حالة عرض Prompt التثبيت
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border-2"
-                    style={{ borderColor: `${primaryColor}30` }}
-                  >
-                    <div className="text-center mb-6">
-                      <motion.div
-                        animate={{
-                          y: [0, -10, 0],
-                          scale: [1, 1.05, 1],
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "easeInOut",
-                        }}
-                        className="w-20 h-20 bg-white rounded-2xl shadow-lg flex items-center justify-center mx-auto mb-4"
-                        style={{ boxShadow: `0 8px 25px ${primaryColor}20` }}
-                      >
-                        <Download size={36} style={{ color: primaryColor }} />
-                      </motion.div>
-
-                      <h3 className="text-xl font-bold text-gray-800 mb-2">
-                        تثبيت التطبيق على الشاشة الرئيسية
-                      </h3>
-                      <p className="text-sm text-gray-600 max-w-md mx-auto">
-                        سيتم إضافة اختصار للتطبيق على شاشتك الرئيسية للوصول
-                        السريع والمباشر
-                      </p>
-                    </div>
-
-                    <div className="space-y-3">
-                      <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={handleInstallApp}
-                        disabled={isInstalling}
-                        className="w-full py-3.5 px-6 text-base font-semibold text-white rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-                        style={{
-                          backgroundColor: primaryColor,
-                          boxShadow: `0 8px 25px ${primaryColor}40`,
-                        }}
-                      >
-                        {isInstalling ? (
-                          <>
-                            <svg
-                              className="animate-spin h-5 w-5"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                            >
-                              <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                              />
-                              <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                              />
-                            </svg>
-                            جاري التثبيت...
-                          </>
-                        ) : (
-                          <>
-                            <Download size={20} />
-                            تثبيت الآن
-                          </>
+              <SectionCard title="عرض معلومات الأسنان" icon={LayoutGrid} primaryColor={primaryColor}>
+                <div className="space-y-3">
+                  {[
+                    { value: 'number' as const, label: 'الرقم فقط', example: 'مثال: السن 14' },
+                    { value: 'name' as const, label: 'الاسم العربي', example: 'مثال: الضرس الأول العلوي الأيسر' },
+                    { value: 'both' as const, label: 'الرقم والاسم معاً', example: 'مثال: السن 14 - الضرس الأول العلوي الأيسر' },
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => handleToothDisplayChange(option.value)}
+                      className="w-full p-4 rounded-xl border-2 transition-all text-right"
+                      style={{
+                        borderColor: toothDisplayPreference === option.value ? primaryColor : '#E5E7EB',
+                        backgroundColor: toothDisplayPreference === option.value ? `${primaryColor}10` : 'white',
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-800">{option.label}</p>
+                          <p className="text-xs text-gray-500 mt-1">{option.example}</p>
+                        </div>
+                        {toothDisplayPreference === option.value && (
+                          <CheckCircle2 size={20} style={{ color: primaryColor }} />
                         )}
-                      </motion.button>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </SectionCard>
 
-                      <button
-                        onClick={() => setShowInstallPrompt(false)}
-                        className="w-full py-3 px-6 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all"
-                      >
-                        إلغاء
-                      </button>
-                    </div>
-
-                    <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-500">
-                      <Smartphone size={14} />
-                      <span>متوافق مع جميع الأجهزة والمتصفحات</span>
-                    </div>
-                  </motion.div>
-                )}
-              </div>
-            ) : (
-              // حالة التثبيت الناجح - زر مفعل مع علامة صح
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200"
-              >
+              <SectionCard title="سلوك القائمة" icon={Settings} primaryColor={primaryColor}>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                      <CheckCircle2 size={24} className="text-green-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-green-800">
-                        تم التثبيت بنجاح ✓
-                      </h3>
-                      <p className="text-sm text-green-600">
-                        التطبيق مثبت على شاشتك الرئيسية
-                      </p>
-                    </div>
+                  <div>
+                    <label className="text-lg font-medium text-gray-700">إغلاق تلقائي للقائمة</label>
+                    <p className="text-sm text-gray-500 mt-1">إغلاق القائمة عند التنقل بين التبويبات</p>
                   </div>
-
-                  {/* زر تفعيل يظهر حالة النجاح */}
-                  <div className="relative">
-                    <div className="w-14 h-7 rounded-full bg-green-500">
-                      <div className="absolute top-1 right-1 w-5 h-5 bg-white rounded-full shadow-md" />
-                    </div>
-                  </div>
+                  <ToggleSwitch checked={autoCollapse} onChange={handleAutoCollapseChange} primaryColor={primaryColor} />
                 </div>
-              </motion.div>
-            )}
-          </div>
-        </div>
-        {/* إعدادات السلوك */}
-        {/* إعدادات السلوك - يظهر فقط في الشاشات الكبيرة */}
-        <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="p-6 border-b border-gray-100">
-            <h2 className="text-xl font-semibold text-gray-800">السلوك</h2>
-          </div>
+              </SectionCard>
 
-          <div className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <label className="text-lg font-medium text-gray-700">
-                  إغلاق تلقائي للقائمة
-                </label>
-                <p className="text-sm text-gray-500 mt-1">
-                  إغلاق القائمة عند التنقل بين التبويبات
-                </p>
+              <SectionCard title="تطبيق الهاتف" icon={Smartphone} primaryColor={primaryColor}>
+                <PWAInstallSection
+                  isInstalled={isInstalled}
+                  isInstallable={isInstallable}
+                  showInstallPrompt={showInstallPrompt}
+                  isInstalling={isInstalling}
+                  primaryColor={primaryColor}
+                  onShowPrompt={() => setShowInstallPrompt(true)}
+                  onCancelPrompt={() => setShowInstallPrompt(false)}
+                  onInstall={handleInstallApp}
+                />
+              </SectionCard>
+            </>
+          )}
+
+          {/* ============================================================ */}
+          {/* تبويب التنبيهات */}
+          {/* ============================================================ */}
+          {activeSection === "notifications" && (
+            <SectionCard title="التنبيه التلقائي" icon={Bell} primaryColor={primaryColor}>
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1">
+                  <label className="text-base font-medium text-gray-700">تنبيه تلقائي للمواعيد</label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {autoNotify 
+                      ? "سيتم إبلاغ المريض بالمواعيد الجديدة تلقائياً" 
+                      : "لن يتم إرسال تنبيهات تلقائية"}
+                  </p>
+                </div>
+                <ToggleSwitch checked={autoNotify} onChange={handleAutoNotifyChange} primaryColor={primaryColor} />
               </div>
+            </SectionCard>
+          )}
+        </motion.div>
+      </AnimatePresence>
 
-              <button
-                onClick={() => handleAutoCollapseChange(!autoCollapse)}
-                className="relative"
-              >
-                <div
-                  className={`w-14 h-7 rounded-full transition-all ${
-                    autoCollapse ? "" : "bg-gray-300"
-                  }`}
-                  style={{
-                    backgroundColor: autoCollapse ? primaryColor : undefined,
-                  }}
-                >
-                  <div
-                    className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all ${
-                      autoCollapse ? "right-1" : "left-1"
-                    }`}
-                  />
-                </div>
-              </button>
-            </div>
-          </div>
+      <ChangePasswordModal
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+        clinicId={clinicId}
+        clinicName={clinicData?.name}
+        clinicEmail={clinicEmail}
+        primaryColor={primaryColor}
+      />
+    </motion.div>
+  );
+}
+
+// ============================================================
+// مكونات مساعدة
+// ============================================================
+
+function SectionCard({ title, icon: Icon, primaryColor, children }: {
+  title: string;
+  icon: any;
+  primaryColor: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="p-5 border-b border-gray-100">
+        <div className="flex items-center gap-2">
+          <Icon size={20} style={{ color: primaryColor }} />
+          <h2 className="text-lg font-semibold text-gray-800">{title}</h2>
         </div>
-{/* التنبيه التلقائي */}
-{/* التنبيه التلقائي */}
-<div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-  <div className="p-4 md:p-6 border-b border-gray-100">
-    <div className="flex items-center gap-2">
-      <h2 className="text-lg md:text-xl font-semibold text-gray-800">
-        التنبيه التلقائي
-      </h2>
-    </div>
-  </div>
-
-  <div className="p-4 md:p-6">
-    <div className="flex items-center justify-between gap-4">
-      <div className="flex-1 text-right min-w-0">
-        <label className="text-base md:text-lg font-medium text-gray-700">
-          تنبيه تلقائي للمواعيد
-        </label>
-        <p className="text-xs md:text-sm text-gray-500 mt-1">
-          {autoNotify 
-            ? "سيتم إبلاغ المريض بالمواعيد الجديدة تلقائياً فور إنشائها" 
-            : "لن يتم إرسال تنبيهات تلقائية للمواعيد الجديدة"
-          }
-        </p>
       </div>
+      <div className="p-5">{children}</div>
+    </div>
+  );
+}
 
-      <button
-        onClick={() => handleAutoNotifyChange(!autoNotify)}
-        className="relative flex-shrink-0"
+function ToggleSwitch({ checked, onChange, primaryColor }: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  primaryColor: string;
+}) {
+  return (
+    <button
+      onClick={() => onChange(!checked)}
+      className="relative flex-shrink-0"
+    >
+      <div
+        className={`w-14 h-7 rounded-full transition-all ${checked ? "" : "bg-gray-300"}`}
+        style={{ backgroundColor: checked ? primaryColor : undefined }}
       >
         <div
-          className={`flex items-center w-12 h-6 md:w-14 md:h-7 rounded-full transition-all p-0.5 md:p-1 ${
-            autoNotify ? "justify-start" : "justify-end"
+          className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all ${
+            checked ? "right-1" : "left-1"
           }`}
-          style={{
-            backgroundColor: autoNotify ? primaryColor : "#D1D5DB",
-          }}
-        >
-          <div className="w-5 h-5 bg-white rounded-full shadow-md" />
-        </div>
-      </button>
-    </div>
-  </div>
-</div>
-        {/* اختيار نظام ترقيم الأسنان */}
-<div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-  <div className="p-6 border-b border-gray-100">
-    <h2 className="text-xl font-semibold text-gray-800">نظام ترقيم الأسنان</h2>
-  </div>
-  
-  <div className="p-6">
-    <div className="space-y-3">
-      {/* نظام Universal */}
-      <button
-        onClick={() => handleNumberingSystemChange('universal')}
-        className="w-full p-4 rounded-xl border-2 transition-all text-right"
-        style={{
-          borderColor: numberingSystem === 'universal' ? primaryColor : '#E5E7EB',
-          backgroundColor: numberingSystem === 'universal' ? `${primaryColor}10` : 'white',
-        }}
-      >
-        <div className="flex items-center justify-between">
-          <div className="w-5 h-5">
-            {numberingSystem === 'universal' && (
-              <CheckCircle2 size={20} style={{ color: primaryColor }} />
-            )}
-          </div>
-          <div>
-            <p className="font-medium text-gray-800">النظام العالمي (Universal)</p>
-          </div>
-        </div>
-      </button>
+        />
+      </div>
+    </button>
+  );
+}
 
-      {/* نظام FDI */}
-      <button
-        onClick={() => handleNumberingSystemChange('fdi')}
-        className="w-full p-4 rounded-xl border-2 transition-all text-right"
-        style={{
-          borderColor: numberingSystem === 'fdi' ? primaryColor : '#E5E7EB',
-          backgroundColor: numberingSystem === 'fdi' ? `${primaryColor}10` : 'white',
-        }}
-      >
-        <div className="flex items-center justify-between">
-          <div className="w-5 h-5">
-            {numberingSystem === 'fdi' && (
-              <CheckCircle2 size={20} style={{ color: primaryColor }} />
-            )}
-          </div>
-          <div>
-            <p className="font-medium text-gray-800">نظام FDI</p>
-          </div>
-        </div>
-      </button>
-
-      {/* نظام Palmer */}
-      <button
-        onClick={() => handleNumberingSystemChange('palmer')}
-        className="w-full p-4 rounded-xl border-2 transition-all text-right"
-        style={{
-          borderColor: numberingSystem === 'palmer' ? primaryColor : '#E5E7EB',
-          backgroundColor: numberingSystem === 'palmer' ? `${primaryColor}10` : 'white',
-        }}
-      >
-        <div className="flex items-center justify-between">
-          <div className="w-5 h-5">
-            {numberingSystem === 'palmer' && (
-              <CheckCircle2 size={20} style={{ color: primaryColor }} />
-            )}
-          </div>
-          <div>
-            <p className="font-medium text-gray-800">نظام Palmer</p>
-          </div>
-        </div>
-      </button>
-    </div>
-  </div>
-</div>
-
-        {/* المشاركة */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="p-6 border-b border-gray-100">
-            <h2 className="text-xl font-semibold text-gray-800">مشاركة</h2>
-          </div>
-
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {/* مشاركة العيادة */}
-              <button
-                onClick={() =>
-                  handleShare(clinicUrl, clinicData?.name || "صفحة العيادة")
-                }
-                className="p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all"
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="p-2 rounded-lg"
-                    style={{ backgroundColor: `${primaryColor}15` }}
-                  >
-                    <Building2 size={20} style={{ color: primaryColor }} />
-                  </div>
-                  <div className="flex-1 text-right">
-                    <p className="font-medium text-gray-800">
-                      مشاركة صفحة العيادة
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      مشاركة الرابط مع المرضى
-                    </p>
-                  </div>
-                  <Share2 size={18} className="text-gray-400" />
-                </div>
-              </button>
-
-              {/* مشاركة الطبيب */}
-              <button
-                onClick={() =>
-                  handleShare(
-                    doctorCVUrl,
-                    `CV ${clinicData?.doctorProfile?.fullName || "الطبيب"}`,
-                  )
-                }
-                className="p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all"
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="p-2 rounded-lg"
-                    style={{ backgroundColor: `${primaryColor}15` }}
-                  >
-                    <UserCircle size={20} style={{ color: primaryColor }} />
-                  </div>
-                  <div className="flex-1 text-right">
-                    <p className="font-medium text-gray-800">
-                      مشاركة صفحة الطبيب
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      مشاركة السيرة الذاتية
-                    </p>
-                  </div>
-                  <Share2 size={18} className="text-gray-400" />
-                </div>
-              </button>
-            </div>
-          </div>
-        </div>
-
-{/* الدعم والحساب */}
-<div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-  <div className="p-6 border-b border-gray-100">
-    <h2 className="text-xl font-semibold text-gray-800">
-      الدعم والحساب
-    </h2>
-  </div>
-
-  <div className="p-6">
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-      {/* خدمة العملاء */}
-      <a
-        href={whatsappUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all"
-      >
+function PWAInstallSection({ isInstalled, isInstallable, showInstallPrompt, isInstalling, primaryColor, onShowPrompt, onCancelPrompt, onInstall }: {
+  isInstalled: boolean;
+  isInstallable: boolean;
+  showInstallPrompt: boolean;
+  isInstalling: boolean;
+  primaryColor: string;
+  onShowPrompt: () => void;
+  onCancelPrompt: () => void;
+  onInstall: () => void;
+}) {
+  if (isInstalled) {
+    return (
+      <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
         <div className="flex items-center gap-3">
-          <div
-            className="p-2 rounded-lg"
-            style={{ backgroundColor: "#25D36615" }}
-          >
-            <MessageCircle size={20} style={{ color: "#25D366" }} />
-          </div>
-          <div className="flex-1 text-right">
-            <p className="font-medium text-gray-800">خدمة العملاء</p>
-            <p className="text-xs text-gray-500">تواصل عبر واتساب</p>
-          </div>
-        </div>
-      </a>
-
-      {/* تغيير كلمة المرور */}
-      <button
-        onClick={() => setShowPasswordModal(true)}
-        className="p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all"
-      >
-        <div className="flex items-center gap-3">
-          <div
-            className="p-2 rounded-lg"
-            style={{ backgroundColor: `${primaryColor}15` }}
-          >
-            <Lock size={20} style={{ color: primaryColor }} />
-          </div>
-          <div className="flex-1 text-right">
-            <p className="font-medium text-gray-800">تغيير كلمة المرور</p>
-            <p className="text-xs text-gray-500">إعادة تعيين كلمة المرور</p>
-          </div>
-        </div>
-      </button>
-
-      {/* تسجيل الخروج */}
-      <button className="p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all">
-        <div className="flex items-center gap-3">
-          <div
-            className="p-2 rounded-lg"
-            style={{ backgroundColor: "#EF444415" }}
-          >
-            <LogOut size={20} style={{ color: "#EF4444" }} />
-          </div>
-          <div className="flex-1 text-right">
-            <p className="font-medium text-gray-800">تسجيل الخروج</p>
-            <p className="text-xs text-gray-500">الخروج من الحساب</p>
-          </div>
-        </div>
-      </button>
-    </div>
-  </div>
-</div>
-
-        {/* الشعارات */}
-        <div className="mt-12 pt-8 border-t border-gray-100">
-          <div className="flex flex-col items-center justify-center">
-            {/* الشعارات مع تأثير hover */}
-            <div className="flex items-center justify-center gap-6 mb-4">
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                className="relative group"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                <Image
-                  src="/logo.png"
-                  alt="LiveDent"
-                  width={48}
-                  height={48}
-                  className="object-contain"
-                />
-              </motion.div>
-
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                className="relative group"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                <Image
-                  src="/onrequs1t.jpg.png"
-                  alt="OnRequest"
-                  width={48}
-                  height={48}
-                  className="object-contain"
-                />
-              </motion.div>
-            </div>
-
-            {/* النص مع تدرج لوني */}
-            <div className="text-center space-y-1">
-              <h3 className="text-xl font-bold text-blue-950">LiveDent</h3>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  OnRequest
-                </span>
-                <span className="text-xs font-medium text-gray-900 uppercase tracking-wider">
-                  BY
-                </span>
-              </div>
-            </div>
-
-            {/* حقوق النشر */}
-            <p className="text-xs text-gray-900 mt-4">
-              © 2026 جميع الحقوق محفوظة
-            </p>
+          <CheckCircle2 size={24} className="text-green-600" />
+          <div>
+            <p className="font-semibold text-green-800">تم التثبيت بنجاح ✓</p>
+            <p className="text-sm text-green-600">التطبيق مثبت على شاشتك الرئيسية</p>
           </div>
         </div>
       </div>
+    );
+  }
 
-      {/* نافذة تغيير كلمة المرور */}
-<ChangePasswordModal
-  isOpen={showPasswordModal}
-  onClose={() => setShowPasswordModal(false)}
-  clinicId={clinicId}
-  clinicName={clinicData?.name}
-  clinicEmail={clinicEmail}
-  primaryColor={primaryColor}
-/>
-    </motion.div>
+  if (showInstallPrompt) {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm text-gray-600">
+          سيتم إضافة اختصار للتطبيق على شاشتك الرئيسية
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={onInstall}
+            disabled={isInstalling}
+            className="flex-1 py-3 rounded-xl text-white font-medium flex items-center justify-center gap-2"
+            style={{ backgroundColor: primaryColor }}
+          >
+            {isInstalling ? "جاري التثبيت..." : "تثبيت الآن"}
+          </button>
+          <button
+            onClick={onCancelPrompt}
+            className="flex-1 py-3 rounded-xl bg-gray-100 text-gray-700 font-medium"
+          >
+            إلغاء
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <button
+        onClick={onShowPrompt}
+        disabled={!isInstallable}
+        className="px-6 py-3 text-sm font-medium text-white rounded-xl transition-all disabled:opacity-50 flex items-center gap-2"
+        style={{ backgroundColor: isInstallable ? primaryColor : "#9CA3AF" }}
+      >
+        <Download size={18} />
+        {isInstallable ? "تثبيت التطبيق" : "غير قابل للتثبيت"}
+      </button>
+    </div>
+  );
+}
+
+function FooterLogos() {
+  return (
+    <div className="mt-8 pt-6 border-t border-gray-100">
+      <div className="flex flex-col items-center justify-center">
+        <div className="flex items-center gap-6 mb-4">
+          <Image src="/logo.png" alt="LiveDent" width={40} height={40} className="object-contain" />
+          <Image src="/onrequs1t.jpg.png" alt="OnRequest" width={40} height={40} className="object-contain" />
+        </div>
+        <h3 className="text-lg font-bold text-blue-950">LiveDent</h3>
+        <p className="text-xs text-gray-500 mt-2">© 2026 جميع الحقوق محفوظة</p>
+      </div>
+    </div>
   );
 }
