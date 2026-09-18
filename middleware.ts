@@ -7,7 +7,28 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const jwt = request.cookies.get('jwt')?.value
 //   console.log(jwt)
+  const adminToken = request.cookies.get('admin_token')?.value
 
+  // ============================================================
+  // ✅ حماية مسارات المدير
+  // ============================================================
+  if (pathname.startsWith('/admin')) {
+    // صفحة تسجيل دخول المدير مفتوحة
+    if (pathname === '/admin/login') {
+      // إذا كان مسجل دخول بالفعل → حوّله للداشبورد
+      if (adminToken && adminToken === process.env.ADMIN_TOKEN) {
+        return NextResponse.redirect(new URL('/admin/dashboard', request.url))
+      }
+      return NextResponse.next()
+    }
+
+    // التحقق من الكوكي
+    if (!adminToken || adminToken !== process.env.ADMIN_TOKEN) {
+      return NextResponse.redirect(new URL('/admin/login', request.url))
+    }
+
+    return NextResponse.next()
+  }
   // السماح بالوصول للمسارات المفتوحة للجميع
   if(pathname === '/landing-page') {
     // إنشاء URL جديد مع الحفاظ على query parameters

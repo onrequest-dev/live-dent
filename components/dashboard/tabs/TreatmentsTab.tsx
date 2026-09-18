@@ -1150,7 +1150,7 @@ export function TreatmentsTab({ clinicData }: TreatmentsTabProps) {
             placeholder="ابحث عن قالب..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pr-10 pl-4 py-3 rounded-2xl bg-white border border-gray-100 text-[13px] placeholder:text-gray-300 focus:border-gray-200 outline-none transition-all shadow-sm"
+            className="w-full pr-10 pl-4 py-3 rounded-2xl bg-white border border-gray-100 text-[13px] text-gray-900 placeholder:text-gray-300 focus:border-gray-200 outline-none transition-all shadow-sm"
           />
         </div>
 
