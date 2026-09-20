@@ -335,13 +335,13 @@ useEffect(() => {
                   className={refreshing ? "animate-spin" : ""}
                 />
               </button>
-              <button
+              {/* <button
                 onClick={handleLogout}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs sm:text-sm font-medium transition-all"
               >
                 <LogOut size={14} />
                 <span className="hidden sm:inline">خروج</span>
-              </button>
+              </button> */}
             </div>
           </div>
         </div>

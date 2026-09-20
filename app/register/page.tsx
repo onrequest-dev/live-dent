@@ -740,45 +740,6 @@ function LiveDentRegistrationForm({
               priority
             />
           </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-4"
-            style={{
-              backgroundColor: COLORS.primaryLight,
-              border: `1px solid ${COLORS.primary}15`,
-            }}
-          >
-            <Sparkles size={14} style={{ color: COLORS.primary }} />
-            <span
-              className="text-xs font-semibold tracking-wide"
-              style={{ color: COLORS.primary }}
-            >
-              انضم إلى LiveDent
-            </span>
-          </motion.div>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3"
-            style={{ color: COLORS.text }}
-          >
-            أنشئ حساب عيادتك
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="text-base sm:text-lg max-w-2xl mx-auto"
-            style={{ color: COLORS.textSecondary }}
-          >
-            ثلاث خطوات بسيطة وتبدأ إدارة عيادتك باحترافية
-          </motion.p>
         </AnimatedSection>
 
         {/* Steps Indicator */}
@@ -1006,21 +967,32 @@ function LiveDentRegistrationForm({
               // ============================================================
               // Form Card
               // ============================================================
-              <motion.div
-                key={`step-${currentStep}`}
-                variants={cardVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                className="rounded-3xl p-5 sm:p-8 lg:p-10"
-                style={{
-                  backgroundColor: COLORS.glassBg,
-                  backdropFilter: "blur(20px)",
-                  WebkitBackdropFilter: "blur(20px)",
-                  border: `1px solid ${COLORS.glassBorder}`,
-                  boxShadow: "0 20px 60px -20px rgba(0,67,250,0.15)",
-                }}
-              >
+<motion.div
+  key={`step-${currentStep}`}
+  variants={cardVariants}
+  initial="hidden"
+  animate="visible"
+  exit="exit"
+  className="rounded-3xl p-5 sm:p-8 lg:p-10 relative overflow-hidden"
+  style={{
+    // خلفية زجاجية شبه شفافة - بلور أساسي
+    backgroundColor: "rgba(255, 255, 255, 0.25)",
+
+    // تشويش قوي + إشباع لوني
+    backdropFilter: "blur(30px) saturate(180%)",
+    WebkitBackdropFilter: "blur(30px) saturate(180%)",
+
+    // إطار زجاجي ناعم
+    border: "1px solid rgba(255, 255, 255, 0.45)",
+
+    // ظل خارجي + توهج داخلي (زجاج حقيقي)
+    boxShadow: `
+      0 20px 60px -20px rgba(0, 67, 250, 0.15),
+      0 0 0 1px rgba(255, 255, 255, 0.15) inset,
+      0 1px 0 rgba(255, 255, 255, 0.5) inset
+    `,
+  }}
+>
                 {/* ========== Step 1 ========== */}
                 {currentStep === 1 && (
                   <motion.div
@@ -1602,13 +1574,11 @@ function LiveDentRegistrationForm({
                               ease: "linear",
                             }}
                           >
-                            <Sparkles className="w-5 h-5" />
                           </motion.div>
                           جاري الإنشاء...
                         </>
                       ) : (
                         <>
-                          <Sparkles className="w-5 h-5" />
                           إنشاء الحساب
                         </>
                       )}

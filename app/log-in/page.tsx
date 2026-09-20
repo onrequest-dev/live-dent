@@ -283,45 +283,6 @@ function LoginForm() {
                 priority
               />
             </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-4"
-              style={{
-                backgroundColor: COLORS.primaryLight,
-                border: `1px solid ${COLORS.primary}15`,
-              }}
-            >
-              <Shield size={14} style={{ color: COLORS.primary }} />
-              <span
-                className="text-xs font-semibold tracking-wide"
-                style={{ color: COLORS.primary }}
-              >
-                دخول آمن
-              </span>
-            </motion.div>
-
-            <motion.h1
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="text-3xl sm:text-4xl font-bold mb-2"
-              style={{ color: COLORS.text }}
-            >
-              مرحباً بك في LiveDent
-            </motion.h1>
-
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="text-sm sm:text-base"
-              style={{ color: COLORS.textSecondary }}
-            >
-              نظام إدارة عيادات الأسنان الذكي
-            </motion.p>
           </motion.div>
 
           {/* ============================================================
@@ -343,16 +304,6 @@ function LoginForm() {
                     backdropFilter: "blur(8px)",
                   }}
                 >
-                  <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: `${COLORS.success}20` }}
-                  >
-                    <CheckCircle2
-                      className="w-5 h-5"
-                      style={{ color: COLORS.success }}
-                    />
-                  </div>
-
                   <div className="flex-1 min-w-0">
                     <p
                       className="text-sm font-semibold mb-0.5"
@@ -394,17 +345,28 @@ function LoginForm() {
           {/* ============================================================
               Login Card
           ============================================================ */}
-          <motion.div
-            variants={cardVariants}
-            className="rounded-3xl p-6 sm:p-8"
-            style={{
-              backgroundColor: COLORS.glassBg,
-              backdropFilter: "blur(20px)",
-              WebkitBackdropFilter: "blur(20px)",
-              border: `1px solid ${COLORS.glassBorder}`,
-              boxShadow: "0 20px 60px -20px rgba(0,67,250,0.15)",
-            }}
-          >
+<motion.div
+  variants={cardVariants}
+  className="rounded-3xl p-6 sm:p-8 relative overflow-hidden"
+  style={{
+    // خلفية زجاجية شبه شفافة - أقوى بلور
+    backgroundColor: "rgba(255, 255, 255, 0.25)",
+
+    // تشويش قوي على كل ما خلف البطاقة
+    backdropFilter: "blur(30px) saturate(180%)",
+    WebkitBackdropFilter: "blur(30px) saturate(180%)",
+
+    // إطار زجاجي متدرج
+    border: "1px solid rgba(255, 255, 255, 0.45)",
+
+    // ظل ناعم + توهج داخلي
+    boxShadow: `
+      0 20px 60px -20px rgba(0, 67, 250, 0.15),
+      0 0 0 1px rgba(255, 255, 255, 0.15) inset,
+      0 1px 0 rgba(255, 255, 255, 0.5) inset
+    `,
+  }}
+>
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* ============================================================
                   Username Field
@@ -581,16 +543,6 @@ function LoginForm() {
                 >
                   {loading ? (
                     <>
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{
-                          duration: 1,
-                          repeat: Infinity,
-                          ease: "linear",
-                        }}
-                      >
-                        <Sparkles className="w-5 h-5" />
-                      </motion.div>
                       جاري الدخول...
                     </>
                   ) : (
@@ -620,7 +572,6 @@ function LoginForm() {
                   className="inline-flex items-center gap-1.5 text-sm font-semibold transition-colors"
                   style={{ color: COLORS.primary }}
                 >
-                  <Sparkles className="w-4 h-4" />
                   إنشاء حساب جديد
                 </a>
               </div>
@@ -635,15 +586,7 @@ function LoginForm() {
               className="text-xs flex items-center justify-center gap-2"
               style={{ color: COLORS.textSecondary }}
             >
-              <Sparkles
-                className="w-3 h-3"
-                style={{ color: COLORS.primary }}
-              />
               © 2026 LiveDent — جميع الحقوق محفوظة
-              <Sparkles
-                className="w-3 h-3"
-                style={{ color: COLORS.primary }}
-              />
             </p>
           </AnimatedSection>
         </motion.div>
