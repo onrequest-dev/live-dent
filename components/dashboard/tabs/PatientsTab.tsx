@@ -4326,7 +4326,7 @@ export function PatientsTab({
   patientCases,
   sessions,
 }: PatientsTabProps) {
-  const clinicColor = clinicData?.settings.primaryColor || "#8385da";
+  const clinicColor = clinicData?.settings.primaryColor || "#528ff7";
   const clinicName = clinicData?.name || "عيادة الأسنان";
   const today = new Date();
 

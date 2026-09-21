@@ -134,7 +134,7 @@ export function SettingsTab({ clinicData }: SettingsTabProps) {
     }
   };
 
-  const primaryColor = clinicData?.settings?.primaryColor || "#3B82F6";
+  const primaryColor = clinicData?.settings?.primaryColor || "#528ff7";
   const clinicEmail = clinicData?.doctorProfile?.contactEmail || 
                     clinicData?.settings?.contactEmail || 
                     clinicData?.doctorProfile?.email;

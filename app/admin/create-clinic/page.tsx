@@ -119,8 +119,8 @@ export default function CreateClinicPage() {
           settings: {
             defaultAppointmentDuration: 30,
             workingHours: [],
-            primaryColor: "#4383a5",
-            secondaryColor: "#6d6d6d",
+            primaryColor: "##528ff7",
+            secondaryColor: "##528ff7",
           },
         },
         credentials: {

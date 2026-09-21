@@ -12,8 +12,8 @@ const DEFAULT_LOGO =
   "https://hzwxienpgfiaokdoqhmd.supabase.co/storage/v1/object/public/images/logos/logo_1b0b60f6-d0ac-4b65-94ea-e60be6ec475e.jpg";
 
 const DEFAULT_SETTINGS = {
-  primaryColor: "#4383a5",
-  secondaryColor: "#6d6d6d",
+  primaryColor: "#528ff7",
+  secondaryColor: "#528ff7",
   defaultAppointmentDuration: 30,
   workingHours: [
     { day: 0, start: "00:00", end: "00:00", isClosed: true },
@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
         currency,
       });
     } catch (tgErr) {
-      console.warn("[create-account/public] Telegram failed:", tgErr);
+      // console.warn("[create-account/public] Telegram failed:", tgErr);
     }
 
     // -------- 9. إعداد الاستجابة (بنفس شكل login/route.ts) --------

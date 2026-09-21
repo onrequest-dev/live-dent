@@ -141,8 +141,8 @@ export function MainTab({
   const params = useParams();
   const clinicId = params?.clinicId as string;
 
-  const primaryColor = clinicData?.settings.primaryColor || "#007bff";
-  const secondaryColor = clinicData?.settings.secondaryColor || "#6c757d";
+  const primaryColor = clinicData?.settings.primaryColor || "#528ff7";
+  const secondaryColor = clinicData?.settings.secondaryColor || "#528ff7";
 
 const mergeUniqueById = <T extends { id: string }>(items: T[]) => {
   const map = new Map<string, T>();

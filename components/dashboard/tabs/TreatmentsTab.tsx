@@ -776,7 +776,7 @@ function TemplateEditor({
 // ============================================================
 
 export function TreatmentsTab({ clinicData }: TreatmentsTabProps) {
-  const primaryColor = clinicData?.settings?.primaryColor || "#3B82F6";
+  const primaryColor = clinicData?.settings?.primaryColor || "#528ff7";
 
   const [templates, setTemplates] = useState<TreatmentTemplate[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
