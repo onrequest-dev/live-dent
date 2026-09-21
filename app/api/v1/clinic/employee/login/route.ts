@@ -109,6 +109,6 @@ export async function POST(request: NextRequest) {
         maxAge: 60 * 60 * 24 * 365 * 20, 
         httpOnly: true 
     });
-    
+    res.cookies.delete("suspended");
     return res;
 }

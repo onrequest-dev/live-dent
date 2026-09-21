@@ -244,7 +244,7 @@ export async function getAllSessions(): Promise<ApiResponse<Session[]>> {
                 error: data.message || data.error || 'فشل في جلب الجلسات',
             };
         }
-
+// console.log("Fetched all sessions: ", data.data || data );
         return {
             success: true,
             data: data.data || data,
