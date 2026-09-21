@@ -512,8 +512,10 @@ function AppointmentDetails({ appointment, primaryColor, onClose, onOpenPatient,
     </div>
   );
 }
-
-function TimelineChart({ workingHours, appointments, isToday, primaryColor, onAppointmentClick, selectedAppointmentId }: {
+function TimelineChart({ 
+  workingHours, appointments, isToday, primaryColor, 
+  onAppointmentClick, selectedAppointmentId 
+}: {
   workingHours: any;
   appointments: any[];
   isToday: boolean;
@@ -522,28 +524,10 @@ function TimelineChart({ workingHours, appointments, isToday, primaryColor, onAp
   selectedAppointmentId?: string;
 }) {
   const [currentTime, setCurrentTime] = useState(new Date());
-  
+
   const startMinutes = timeToMinutes(workingHours.start_time);
   const endMinutes = timeToMinutes(workingHours.end_time);
-  const slotDuration = workingHours.slot_duration || 30;
-
-  // ✅ استخدام المدة الفعلية من أول موعد إذا كانت مختلفة
-  const effectiveSlotDuration = useMemo(() => {
-    if (appointments.length > 0) {
-      const firstApp = appointments[0];
-      const appStart = timeToMinutes(firstApp.appointment_time);
-      const appEnd = timeToMinutes(firstApp.end_time);
-      const actual = appEnd - appStart;
-      if (actual > 0 && actual !== slotDuration) {
-        return actual;
-      }
-    }
-    return slotDuration;
-  }, [appointments, slotDuration]);
-
-  const totalSlots = Math.floor((endMinutes - startMinutes) / effectiveSlotDuration);
-
-  console.log('📊 عدد المربعات:', totalSlots, '| مدة المربع:', effectiveSlotDuration, 'دقيقة | slotDuration:', slotDuration);
+  const totalMinutes = endMinutes - startMinutes;
 
   useEffect(() => {
     const interval = setInterval(() => setCurrentTime(new Date()), 60000);
@@ -553,7 +537,7 @@ function TimelineChart({ workingHours, appointments, isToday, primaryColor, onAp
   const nowMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
   const isNowInRange = isToday && nowMinutes >= startMinutes && nowMinutes <= endMinutes;
   const nowPositionPercent = isNowInRange
-    ? ((nowMinutes - startMinutes) / (endMinutes - startMinutes)) * 100
+    ? ((nowMinutes - startMinutes) / totalMinutes) * 100
     : 0;
 
   function formatSlotTime(minutes: number): string {
@@ -564,52 +548,88 @@ function TimelineChart({ workingHours, appointments, isToday, primaryColor, onAp
     return `${h12}:${String(m).padStart(2, '0')} ${period}`;
   }
 
+  // ============================================================
+  // ✅ حساب موضع وعرض كل موعد بشكل نسبي
+  // ============================================================
+  const appointmentsWithPosition = useMemo(() => {
+    return appointments.map((app) => {
+      const appStart = timeToMinutes(app.appointment_time);
+      const appEnd = timeToMinutes(app.end_time);
+      const duration = Math.max(appEnd - appStart, 5); // على الأقل 5 دقائق للعرض
+
+      const leftPercent = ((appStart - startMinutes) / totalMinutes) * 100;
+      const widthPercent = (duration / totalMinutes) * 100;
+
+      return {
+        ...app,
+        leftPercent: Math.max(0, leftPercent),
+        widthPercent: Math.min(100 - leftPercent, widthPercent),
+      };
+    });
+  }, [appointments, startMinutes, totalMinutes]);
+
+  // ============================================================
+  // ✅ توليد خطوط الشبكة كل 30 دقيقة (اختياري - للتوضيح البصري)
+  // ============================================================
+  const gridLines = useMemo(() => {
+    const lines: number[] = [];
+    for (let m = startMinutes + 30; m < endMinutes; m += 30) {
+      lines.push(((m - startMinutes) / totalMinutes) * 100);
+    }
+    return lines;
+  }, [startMinutes, endMinutes, totalMinutes]);
+
   return (
     <div>
       {/* المسطرة الأفقية */}
       <div className="relative">
-        <div className="flex h-14 rounded-xl overflow-hidden" dir="ltr">
-          {Array.from({ length: totalSlots }).map((_, index) => {
-            // ✅ استخدام effectiveSlotDuration هنا - كان الخطأ
-            const slotStart = startMinutes + index * effectiveSlotDuration;
-            const slotEnd = slotStart + effectiveSlotDuration;
-            
-            // ✅ البحث عن موعد يقع ضمن نطاق هذه الخانة
-            const appointment = appointments.find(a => {
-              const appMinutes = timeToMinutes(a.appointment_time);
-              return appMinutes >= slotStart && appMinutes < slotEnd;
-            }) || null;
-            
-            const isBooked = !!appointment;
-            const isSelected = selectedAppointmentId === appointment?.id;
-            const isCompleted = appointment?.status === 'completed';
+        <div
+          className="relative h-14 rounded-xl overflow-hidden bg-gray-50"
+          dir="ltr"
+        >
+          {/* خطوط الشبكة الخفيفة كل 30 دقيقة */}
+          {gridLines.map((left, i) => (
+            <div
+              key={i}
+              className="absolute top-0 bottom-0 w-px bg-gray-200/60"
+              style={{ left: `${left}%` }}
+            />
+          ))}
+
+          {/* المواعيد كعرض نسبي */}
+          {appointmentsWithPosition.map((app) => {
+            const isSelected = selectedAppointmentId === app.id;
+            const isCompleted = app.status === 'completed';
 
             return (
               <button
-                key={index}
-                onClick={() => isBooked && onAppointmentClick(appointment)}
-                disabled={!isBooked}
-                className={`relative flex-1 h-full transition-all ${isBooked ? 'cursor-pointer hover:opacity-80' : ''}`}
+                key={app.id}
+                onClick={() => onAppointmentClick(app)}
+                className="absolute top-1 bottom-1 rounded-lg transition-all hover:opacity-80 flex items-center justify-center px-1 overflow-hidden"
                 style={{
-                  backgroundColor: isBooked
-                    ? isCompleted
-                      ? '#A7F3D0'
-                      : isSelected
-                        ? primaryColor
-                        : `${primaryColor}30`
-                    : index % 2 === 0
-                      ? '#FAFAFA'
-                      : '#F5F5F5',
+                  left: `${app.leftPercent}%`,
+                  width: `${app.widthPercent}%`,
+                  backgroundColor: isCompleted
+                    ? '#A7F3D0'
+                    : isSelected
+                      ? primaryColor
+                      : `${primaryColor}40`,
+                  minWidth: '20px',
                 }}
+                title={`${app.patient_name} - ${app.appointment_time} (${app.widthPercent.toFixed(1)}%)`}
               >
-                {isBooked && (
-                  <span
-                    className="absolute inset-0 flex items-center justify-center text-[8px] font-bold truncate px-0.5"
-                    style={{ color: isSelected ? 'white' : isCompleted ? '#065F46' : '#374151' }}
-                  >
-                    {appointment.patient_name?.split(' ')[0]}
-                  </span>
-                )}
+                <span
+                  className="text-[8px] font-bold truncate"
+                  style={{
+                    color: isSelected
+                      ? 'white'
+                      : isCompleted
+                        ? '#065F46'
+                        : '#374151',
+                  }}
+                >
+                  {app.patient_name?.split(' ')[0]}
+                </span>
               </button>
             );
           })}
@@ -647,9 +667,9 @@ function TimelineChart({ workingHours, appointments, isToday, primaryColor, onAp
       </div>
 
       {/* الإيضاح */}
-      <div className="flex items-center gap-4 mt-1">
+      <div className="flex items-center gap-4 mt-1 flex-wrap">
         <span className="flex items-center gap-1.5 text-[10px] text-gray-500">
-          <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: `${primaryColor}30` }} />
+          <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: `${primaryColor}40` }} />
           محجوز
         </span>
         <span className="flex items-center gap-1.5 text-[10px] text-gray-500">
