@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     const credentials = req_body.credentials
     clinic_data.logo = "https://hzwxienpgfiaokdoqhmd.supabase.co/storage/v1/object/public/images/logos/logo_1b0b60f6-d0ac-4b65-94ea-e60be6ec475e.jpg"
     clinic_data.settings = {
-  "primaryColor": "#4383a5",
+  "primaryColor": "#528ff7",
   "workingHours": [
     {
       "day": 0,
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
       "isClosed": true
     }
 ],
-  "secondaryColor": "#6d6d6d",
+  "secondaryColor": "#528ff7",
   "defaultAppointmentDuration": 30
     }
     const doctor_prof:DoctorProfile = clinic_data.doctorProfile;

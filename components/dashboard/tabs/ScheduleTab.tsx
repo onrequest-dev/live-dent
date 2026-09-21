@@ -32,7 +32,7 @@ const format12Hour = (time: string): string => {
 };
 
 export function ScheduleTab({ clinicData, patients = [], sessions = [], patientCases = [] }: ScheduleTabProps) {
-  const primaryColor = clinicData?.settings?.primaryColor || "#004aad";
+  const primaryColor = clinicData?.settings?.primaryColor || "#528ff7";
   const router = useRouter();
   const params = useParams();
   const clinicId = params?.clinicId as string;

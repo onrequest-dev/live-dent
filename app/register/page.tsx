@@ -141,13 +141,43 @@ const AnimatedSection = ({
 // ============================================================
 function arabicToLatinUsername(arabicName: string): string {
   const map: Record<string, string> = {
-    ا: "a", أ: "a", إ: "a", آ: "a", ٱ: "a",
-    ب: "b", ت: "t", ث: "th", ج: "j", ح: "h", خ: "kh",
-    د: "d", ذ: "dh", ر: "r", ز: "z", س: "s", ش: "sh",
-    ص: "s", ض: "d", ط: "t", ظ: "z", ع: "a", غ: "gh",
-    ف: "f", ق: "q", ك: "k", ل: "l", م: "m", ن: "n",
-    ه: "h", و: "w", ي: "y", ى: "a", ة: "h", ء: "",
-    ؤ: "w", ئ: "y",
+    ا: "a",
+    أ: "a",
+    إ: "a",
+    آ: "a",
+    ٱ: "a",
+    ب: "b",
+    ت: "t",
+    ث: "th",
+    ج: "j",
+    ح: "h",
+    خ: "kh",
+    د: "d",
+    ذ: "dh",
+    ر: "r",
+    ز: "z",
+    س: "s",
+    ش: "sh",
+    ص: "s",
+    ض: "d",
+    ط: "t",
+    ظ: "z",
+    ع: "a",
+    غ: "gh",
+    ف: "f",
+    ق: "q",
+    ك: "k",
+    ل: "l",
+    م: "m",
+    ن: "n",
+    ه: "h",
+    و: "w",
+    ي: "y",
+    ى: "a",
+    ة: "h",
+    ء: "",
+    ؤ: "w",
+    ئ: "y",
   };
 
   const cleaned = arabicName.trim().replace(/\s+/g, " ");
@@ -221,16 +251,16 @@ function CopyButton({ text, label }: { text: string; label: string }) {
           className="font-mono text-sm sm:text-base truncate select-all"
           style={{ color: COLORS.text, direction: "ltr" }}
         >
-          {label === "password"
-            ? "•".repeat(Math.min(text.length, 18))
-            : text}
+          {label === "password" ? "•".repeat(Math.min(text.length, 18)) : text}
         </span>
       </div>
       <motion.button
         onClick={handleCopy}
         className="p-2 sm:p-2.5 rounded-xl flex-shrink-0 touch-manipulation transition-all"
         style={{
-          backgroundColor: copied ? `${COLORS.success}15` : `${COLORS.primary}10`,
+          backgroundColor: copied
+            ? `${COLORS.success}15`
+            : `${COLORS.primary}10`,
           color: copied ? COLORS.success : COLORS.primary,
         }}
         whileHover={{ scale: 1.05 }}
@@ -252,7 +282,10 @@ function CopyButton({ text, label }: { text: string; label: string }) {
 // ============================================================
 interface FieldProps {
   label: string;
-  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+  icon: React.ComponentType<{
+    className?: string;
+    style?: React.CSSProperties;
+  }>;
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
@@ -430,8 +463,7 @@ function LiveDentRegistrationForm({
     let value = e.target.value.replace(/\s/g, "");
     if (value.startsWith("0")) value = "+963" + value.substring(1);
     if (value === "0") value = "+963";
-    if (value.startsWith("+963+963"))
-      value = value.replace("+963+963", "+963");
+    if (value.startsWith("+963+963")) value = value.replace("+963+963", "+963");
     value = value.replace(/[^\d+]/g, "");
     if (value.includes("+") && value.indexOf("+") !== 0) {
       value = value.replace(/\+/g, "");
@@ -605,14 +637,14 @@ function LiveDentRegistrationForm({
             password: formData.password,
             clinicName: formData.clinicName,
             savedAt: new Date().toISOString(),
-          })
+          }),
         );
 
         // 2) قائمة الحسابات (لتبديل الحسابات)
         const accountsRaw = localStorage.getItem("livedent_accounts") || "[]";
         const accounts = JSON.parse(accountsRaw);
         const filtered = accounts.filter(
-          (a: any) => a.username !== formData.username
+          (a: any) => a.username !== formData.username,
         );
         filtered.push({
           id: data.slug,
@@ -659,6 +691,15 @@ function LiveDentRegistrationForm({
   // الذهاب للوحة التحكم
   const handleGoToDashboard = () => {
     if (!successData) return;
+    const cleanPhone = cleanPhoneNumber(formData.phoneNumber);
+    const message = `مرحبًا ${formData.doctorName}، تم إنشاء حسابك بنجاح على LiveDent.\n\nاسم المستخدم: ${formData.username}\ \n\nيمكنك الآن تسجيل الدخول إلى لوحة التحكم الخاصة بك.`;
+    fetch("/api/v1/hello-user", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cleanPhone, message }),
+    });
+
+    //send messsage to whatsapp
     router.push(`/dashboard/${successData.clinicId}`);
     router.refresh();
   };
@@ -751,7 +792,10 @@ function LiveDentRegistrationForm({
                 const isActive = currentStep === step.number;
                 const isDone = currentStep > step.number;
                 return (
-                  <div key={step.number} className="flex items-center gap-2 sm:gap-4">
+                  <div
+                    key={step.number}
+                    className="flex items-center gap-2 sm:gap-4"
+                  >
                     <motion.div
                       className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl transition-all duration-300"
                       style={{
@@ -847,7 +891,7 @@ function LiveDentRegistrationForm({
                       className="text-2xl sm:text-3xl font-bold mb-2"
                       style={{ color: COLORS.text }}
                     >
-                       تم إنشاء حسابك بنجاح
+                      تم إنشاء حسابك بنجاح
                     </h3>
                     <p
                       className="text-sm sm:text-base"
@@ -870,18 +914,13 @@ function LiveDentRegistrationForm({
                         className="text-xs sm:text-sm font-medium"
                         style={{ color: COLORS.text }}
                       >
-                        احفظ هذه البيانات في مكان آمن — ستحتاجها عندما تسجيل الدخول
+                        احفظ هذه البيانات في مكان آمن — ستحتاجها عندما تسجيل
+                        الدخول
                       </p>
                     </div>
 
-                    <CopyButton
-                      text={successData.username}
-                      label="username"
-                    />
-                    <CopyButton
-                      text={successData.password}
-                      label="password"
-                    />
+                    <CopyButton text={successData.username} label="username" />
+                    <CopyButton text={successData.password} label="password" />
                   </div>
 
                   {/* Confirm Button */}
@@ -937,25 +976,33 @@ function LiveDentRegistrationForm({
                     />
                     <div
                       className="w-5 h-5 rounded-md flex items-center justify-center transition-all flex-shrink-0"
+                      onClick={() => {
+                        if (!credentialsSaved) {
+                          console.log("النقطة مفعلة");
+                        }
+                      }}
                       style={{
                         backgroundColor: credentialsSaved
                           ? COLORS.success
                           : "transparent",
                         border: `2px solid ${
-                          credentialsSaved ? COLORS.success : COLORS.textSecondary
+                          credentialsSaved
+                            ? COLORS.success
+                            : COLORS.textSecondary
                         }`,
                       }}
                     >
                       {credentialsSaved && (
-                        <CheckCircle2 className="w-4 h-4 text-white" strokeWidth={3} />
+                        <CheckCircle2
+                          className="w-4 h-4 text-white"
+                          strokeWidth={3}
+                        />
                       )}
                     </div>
                     <span
                       className="text-sm sm:text-base font-semibold"
                       style={{
-                        color: credentialsSaved
-                          ? COLORS.success
-                          : COLORS.text,
+                        color: credentialsSaved ? COLORS.success : COLORS.text,
                       }}
                     >
                       نعم، قمت بحفظ بياناتي في مكان آمن ✓
@@ -967,32 +1014,32 @@ function LiveDentRegistrationForm({
               // ============================================================
               // Form Card
               // ============================================================
-<motion.div
-  key={`step-${currentStep}`}
-  variants={cardVariants}
-  initial="hidden"
-  animate="visible"
-  exit="exit"
-  className="rounded-3xl p-5 sm:p-8 lg:p-10 relative overflow-hidden"
-  style={{
-    // خلفية زجاجية شبه شفافة - بلور أساسي
-    backgroundColor: "rgba(255, 255, 255, 0.25)",
+              <motion.div
+                key={`step-${currentStep}`}
+                variants={cardVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="rounded-3xl p-5 sm:p-8 lg:p-10 relative overflow-hidden"
+                style={{
+                  // خلفية زجاجية شبه شفافة - بلور أساسي
+                  backgroundColor: "rgba(255, 255, 255, 0.25)",
 
-    // تشويش قوي + إشباع لوني
-    backdropFilter: "blur(30px) saturate(180%)",
-    WebkitBackdropFilter: "blur(30px) saturate(180%)",
+                  // تشويش قوي + إشباع لوني
+                  backdropFilter: "blur(30px) saturate(180%)",
+                  WebkitBackdropFilter: "blur(30px) saturate(180%)",
 
-    // إطار زجاجي ناعم
-    border: "1px solid rgba(255, 255, 255, 0.45)",
+                  // إطار زجاجي ناعم
+                  border: "1px solid rgba(255, 255, 255, 0.45)",
 
-    // ظل خارجي + توهج داخلي (زجاج حقيقي)
-    boxShadow: `
+                  // ظل خارجي + توهج داخلي (زجاج حقيقي)
+                  boxShadow: `
       0 20px 60px -20px rgba(0, 67, 250, 0.15),
       0 0 0 1px rgba(255, 255, 255, 0.15) inset,
       0 1px 0 rgba(255, 255, 255, 0.5) inset
     `,
-  }}
->
+                }}
+              >
                 {/* ========== Step 1 ========== */}
                 {currentStep === 1 && (
                   <motion.div
@@ -1057,85 +1104,94 @@ function LiveDentRegistrationForm({
                     />
 
                     {/* Phone with WhatsApp Verify */}
-{/* Phone with WhatsApp Verify */}
-<div className="space-y-2">
-  <label
-    className="text-sm font-semibold flex items-center gap-2"
-    style={{ color: COLORS.text }}
-  >
-    <Phone className="w-4 h-4" style={{ color: COLORS.primary }} />
-    رقم الواتساب
-  </label>
+                    {/* Phone with WhatsApp Verify */}
+                    <div className="space-y-2">
+                      <label
+                        className="text-sm font-semibold flex items-center gap-2"
+                        style={{ color: COLORS.text }}
+                      >
+                        <Phone
+                          className="w-4 h-4"
+                          style={{ color: COLORS.primary }}
+                        />
+                        رقم الواتساب
+                      </label>
 
-  <div className="relative">
-    <Phone
-      className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none transition-colors duration-200 z-10"
-      style={{
-        color: focusedField === "phoneNumber"
-          ? COLORS.primary
-          : COLORS.textSecondary,
-      }}
-    />
+                      <div className="relative">
+                        <Phone
+                          className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none transition-colors duration-200 z-10"
+                          style={{
+                            color:
+                              focusedField === "phoneNumber"
+                                ? COLORS.primary
+                                : COLORS.textSecondary,
+                          }}
+                        />
 
-    <input
-      type="tel"
-      placeholder="+963 9XX XXX XXX"
-      value={formData.phoneNumber}
-      onChange={handlePhoneChange}
-      onFocus={() => setFocusedField("phoneNumber")}
-      onBlur={() => setFocusedField(null)}
-      className="w-full px-4 py-3.5 pr-12 pl-28 rounded-2xl text-sm sm:text-base transition-all duration-200 outline-none font-mono"
-      style={{
-        backgroundColor: COLORS.surface,
-        border: `1.5px solid ${
-          focusedField === "phoneNumber" ? COLORS.primary : COLORS.border
-        }`,
-        color: COLORS.text,
-        boxShadow:
-          focusedField === "phoneNumber"
-            ? `0 0 0 4px ${COLORS.primary}10`
-            : "0 1px 2px rgba(0,0,0,0.02)",
-        direction: "ltr",
-      }}
-      disabled={loading}
-      dir="ltr"
-      autoComplete="tel"
-      inputMode="tel"
-    />
+                        <input
+                          type="tel"
+                          placeholder="+963 9XX XXX XXX"
+                          value={formData.phoneNumber}
+                          onChange={handlePhoneChange}
+                          onFocus={() => setFocusedField("phoneNumber")}
+                          onBlur={() => setFocusedField(null)}
+                          className="w-full px-4 py-3.5 pr-12 pl-28 rounded-2xl text-sm sm:text-base transition-all duration-200 outline-none font-mono"
+                          style={{
+                            backgroundColor: COLORS.surface,
+                            border: `1.5px solid ${
+                              focusedField === "phoneNumber"
+                                ? COLORS.primary
+                                : COLORS.border
+                            }`,
+                            color: COLORS.text,
+                            boxShadow:
+                              focusedField === "phoneNumber"
+                                ? `0 0 0 4px ${COLORS.primary}10`
+                                : "0 1px 2px rgba(0,0,0,0.02)",
+                            direction: "ltr",
+                          }}
+                          disabled={loading}
+                          dir="ltr"
+                          autoComplete="tel"
+                          inputMode="tel"
+                        />
 
-    {/* زر التحقق - يظهر فقط عند اكتمال الرقم */}
-    {isPhoneValid() && (
-      <motion.button
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={handleWhatsAppVerify}
-        type="button"
-        className="absolute top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all z-20"
-        style={{
-          left: "8px",
-          top:'8px',
-          backgroundColor: "#25D366",
-          color: "#ffffff",
-          boxShadow: "0 2px 8px rgba(37, 211, 102, 0.35)",
-        }}
-        title="اضغط للتحقق من الرقم على الواتساب"
-      >
-        <MessageCircle className="w-4 h-4" />
-        <span>تحقق</span>
-      </motion.button>
-    )}
-  </div>
+                        {/* زر التحقق - يظهر فقط عند اكتمال الرقم */}
+                        {isPhoneValid() && (
+                          <motion.button
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={handleWhatsAppVerify}
+                            type="button"
+                            className="absolute top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all z-20"
+                            style={{
+                              left: "8px",
+                              top: "8px",
+                              backgroundColor: "#25D366",
+                              color: "#ffffff",
+                              boxShadow: "0 2px 8px rgba(37, 211, 102, 0.35)",
+                            }}
+                            title="اضغط للتحقق من الرقم على الواتساب"
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                            <span>تحقق</span>
+                          </motion.button>
+                        )}
+                      </div>
 
-  <p className="text-xs" style={{ color: COLORS.textSecondary }}>
-    {formData.phoneNumber.length === 0
-      ? "أدخل الرقم مع رمز الدولة (مثال: 963...) — سيصلك إشعار قبول عليه"
-      : isPhoneValid()
-        ? "✓ الرقم صحيح — اضغط 'تحقق' للتأكد عبر الواتساب"
-        : "الرقم غير مكتمل — تحقق من الطول ورمز الدولة"}
-  </p>
-</div>
+                      <p
+                        className="text-xs"
+                        style={{ color: COLORS.textSecondary }}
+                      >
+                        {formData.phoneNumber.length === 0
+                          ? "أدخل الرقم مع رمز الدولة (مثال: 963...) — سيصلك إشعار قبول عليه"
+                          : isPhoneValid()
+                            ? "✓ الرقم صحيح — اضغط 'تحقق' للتأكد عبر الواتساب"
+                            : "الرقم غير مكتمل — تحقق من الطول ورمز الدولة"}
+                      </p>
+                    </div>
 
                     {/* Currency */}
                     <div className="space-y-2 pt-1">
@@ -1460,9 +1516,7 @@ function LiveDentRegistrationForm({
                           onClick={() => setShowPassword(!showPassword)}
                           className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-colors"
                           style={{ color: COLORS.textSecondary }}
-                          aria-label={
-                            showPassword ? "إخفاء" : "إظهار"
-                          }
+                          aria-label={showPassword ? "إخفاء" : "إظهار"}
                         >
                           {showPassword ? (
                             <EyeOff className="w-5 h-5" />
@@ -1548,7 +1602,6 @@ function LiveDentRegistrationForm({
                     >
                       التالي
                       <ArrowLeft className="w-4 h-4" />
-                      
                     </motion.button>
                   ) : (
                     <motion.button
@@ -1573,14 +1626,11 @@ function LiveDentRegistrationForm({
                               repeat: Infinity,
                               ease: "linear",
                             }}
-                          >
-                          </motion.div>
+                          ></motion.div>
                           جاري الإنشاء...
                         </>
                       ) : (
-                        <>
-                          إنشاء الحساب
-                        </>
+                        <>إنشاء الحساب</>
                       )}
                     </motion.button>
                   )}
@@ -1596,15 +1646,9 @@ function LiveDentRegistrationForm({
             className="text-xs sm:text-sm flex items-center justify-center gap-2"
             style={{ color: COLORS.textSecondary }}
           >
-            <Sparkles
-              className="w-3 h-3"
-              style={{ color: COLORS.primary }}
-            />
+            <Sparkles className="w-3 h-3" style={{ color: COLORS.primary }} />
             © 2026 LiveDent — جميع الحقوق محفوظة
-            <Sparkles
-              className="w-3 h-3"
-              style={{ color: COLORS.primary }}
-            />
+            <Sparkles className="w-3 h-3" style={{ color: COLORS.primary }} />
           </p>
         </AnimatedSection>
       </div>
@@ -1618,7 +1662,9 @@ function LiveDentRegistrationForm({
 function LiveDentRegistrationFormWrapper() {
   const searchParams = useSearchParams();
   const invite_token = searchParams.get("invite_token") || undefined;
-  return <LiveDentRegistrationForm logo="/logo.png" invite_token={invite_token} />;
+  return (
+    <LiveDentRegistrationForm logo="/logo.png" invite_token={invite_token} />
+  );
 }
 
 export default function LiveDentRegistrationPage() {

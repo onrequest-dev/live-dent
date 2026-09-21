@@ -60,40 +60,47 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ تم إنشاء:', createdSessions.length, 'جلسات');
 
-    // ✅ إرسال رسائل واتساب لكل جلسة (بدون انتظار)
-    for (let i = 0; i < sessionsData.length; i++) {
-        const info = sessionsData[i].info;
-        const data = createdSessions[i];
+    // ✅ إرسال رسالة واتساب واحدة للموعد الأحدث فقط (بدون انتظار)
+    let latestIndex = -1;
+    let latestTime = -Infinity;
 
-        if (info && !info.prevent_auto_messages && data) {
-            const start = new Date(data.startTime);
+    for (let i = 0; i < createdSessions.length; i++) {
+        const time = new Date(createdSessions[i].startTime).getTime();
+        if (!isNaN(time) && time > latestTime) {
+            latestTime = time;
+            latestIndex = i;
+        }
+    }
 
-            if (!isNaN(start.getTime())) {
-                // توقيت سوريا UTC+3
-                const localStart = new Date(start.getTime() + 3 * 60 * 60 * 1000);
+    if (latestIndex !== -1) {
+        const info = sessionsData[latestIndex].info;
+        const data = createdSessions[latestIndex];
 
-                let hours = localStart.getUTCHours();
-                const minutes = localStart.getUTCMinutes().toString().padStart(2, '0');
-                const ampm = hours >= 12 ? 'مساءً' : 'صباحاً';
-                hours = hours % 12 || 12;
-                const time = `${hours}:${minutes} ${ampm}`;
+        if (info && !info.prevent_auto_messages) {
+            // توقيت سوريا UTC+3
+            const localStart = new Date(latestTime + 3 * 60 * 60 * 1000);
 
-                const year = localStart.getUTCFullYear();
-                const month = (localStart.getUTCMonth() + 1).toString().padStart(2, '0');
-                const day = localStart.getUTCDate().toString().padStart(2, '0');
-                const date = `${year}-${month}-${day}`;
+            let hours = localStart.getUTCHours();
+            const minutes = localStart.getUTCMinutes().toString().padStart(2, '0');
+            const ampm = hours >= 12 ? 'مساءً' : 'صباحاً';
+            hours = hours % 12 || 12;
+            const time = `${hours}:${minutes} ${ampm}`;
 
-                waitUntil(
-                    sendMessage(info.phoneNumber, generateWhatsAppMessage({
-                        patient: { fullName: info.patientName, gender: info.gender, id: data.patientId },
-                        clinicId: clinicId,
-                        clinicName: info.clinicName,
-                        messageType: "reminder",
-                        time,
-                        date,
-                    }))
-                );
-            }
+            const year = localStart.getUTCFullYear();
+            const month = (localStart.getUTCMonth() + 1).toString().padStart(2, '0');
+            const day = localStart.getUTCDate().toString().padStart(2, '0');
+            const date = `${year}-${month}-${day}`;
+
+            waitUntil(
+                sendMessage(info.phoneNumber, generateWhatsAppMessage({
+                    patient: { fullName: info.patientName, gender: info.gender, id: data.patientId },
+                    clinicId: clinicId,
+                    clinicName: info.clinicName,
+                    messageType: "reminder",
+                    time,
+                    date,
+                }))
+            );
         }
     }
 
