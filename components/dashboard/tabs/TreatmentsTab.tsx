@@ -263,7 +263,6 @@ function Toast({ message }: { message: { type: "success" | "error"; text: string
 // ============================================================
 // مكوّن الحقل النصي (مع دعم التفريغ)
 // ============================================================
-
 function TextField({
   label,
   value,
@@ -280,11 +279,11 @@ function TextField({
   ltr?: boolean;
 }) {
   const base =
-    "w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-transparent text-[13px] text-gray-900 placeholder:text-gray-300 focus:bg-white focus:border-gray-200 focus:ring-4 focus:ring-gray-100 outline-none transition-all";
+    "w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-200 text-[13px] text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-4 focus:ring-gray-100 outline-none transition-all shadow-sm";
   return (
     <div>
       {label && (
-        <label className="text-[11px] font-semibold text-gray-500 mb-1.5 block">
+        <label className="text-[11px] font-semibold text-gray-600 mb-1.5 block">
           {label}
         </label>
       )}
@@ -309,11 +308,9 @@ function TextField({
     </div>
   );
 }
-
 // ============================================================
 // حقل الأيام — يقبل التفريغ بدون تعليق
 // ============================================================
-
 function DaysField({
   value,
   onChange,
@@ -330,7 +327,7 @@ function DaysField({
 
   return (
     <div>
-      <label className="text-[11px] font-semibold text-gray-500 mb-1.5 block">
+      <label className="text-[11px] font-semibold text-gray-600 mb-1.5 block">
         بعد كم يوم من الموعد السابق
       </label>
       <input
@@ -353,16 +350,14 @@ function DaysField({
           if (v !== "") onChange(parseInt(v));
         }}
         placeholder="1"
-        className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-transparent text-[13px] text-gray-900 placeholder:text-gray-300 focus:bg-white focus:border-gray-200 focus:ring-4 focus:ring-gray-100 outline-none transition-all text-center"
+        className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-200 text-[13px] text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-4 focus:ring-gray-100 outline-none transition-all text-center shadow-sm"
       />
     </div>
   );
 }
-
 // ============================================================
 // حقل السعر — يقبل التفريغ
 // ============================================================
-
 function CostField({
   value,
   onChange,
@@ -383,7 +378,7 @@ function CostField({
 
   return (
     <div>
-      <label className="text-[11px] font-semibold text-gray-500 mb-1.5 block">
+      <label className="text-[11px] font-semibold text-gray-600 mb-1.5 block">
         التكلفة ({sp ? "ل.س" : "$"})
       </label>
       <input
@@ -410,12 +405,11 @@ function CostField({
           }
         }}
         placeholder="0"
-        className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-transparent text-[13px] text-gray-900 placeholder:text-gray-300 focus:bg-white focus:border-gray-200 focus:ring-4 focus:ring-gray-100 outline-none transition-all text-center"
+        className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-200 text-[13px] text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-4 focus:ring-gray-100 outline-none transition-all text-center shadow-sm"
       />
     </div>
   );
 }
-
 // ============================================================
 // نافذة التأكيد — تظهر في وسط الشاشة
 // ============================================================
@@ -609,25 +603,25 @@ function TemplateEditor({
                 السعر الإجمالي ({isSP() ? "ل.س" : "$"})
               </label>
               <input
-                type="text"
-                inputMode="decimal"
-                dir="ltr"
-                defaultValue={isSP() ? usdToSp(draft.totalCost) || "" : draft.totalCost || ""}
-                key={`total-${draft.id}`}
-                onBlur={(e) => {
-                  const n = parseFloat(keepDecimal(e.target.value)) || 0;
-                  onUpdate({ totalCost: isSP() ? spToUsd(n) : n });
-                  e.target.value = isSP()
-                    ? usdToSp(isSP() ? spToUsd(n) : n) === 0
-                      ? ""
-                      : String(usdToSp(spToUsd(n)))
-                    : n === 0
-                    ? ""
-                    : String(n);
-                }}
-                placeholder="0"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-transparent text-[13px] text-gray-900 placeholder:text-gray-300 focus:bg-white focus:border-gray-200 focus:ring-4 focus:ring-gray-100 outline-none transition-all text-center"
-              />
+  type="text"
+  inputMode="decimal"
+  dir="ltr"
+  defaultValue={isSP() ? usdToSp(draft.totalCost) || "" : draft.totalCost || ""}
+  key={`total-${draft.id}`}
+  onBlur={(e) => {
+    const n = parseFloat(keepDecimal(e.target.value)) || 0;
+    onUpdate({ totalCost: isSP() ? spToUsd(n) : n });
+    e.target.value = isSP()
+      ? usdToSp(isSP() ? spToUsd(n) : n) === 0
+        ? ""
+        : String(usdToSp(spToUsd(n)))
+      : n === 0
+        ? ""
+        : String(n);
+  }}
+  placeholder="0"
+  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-200 text-[13px] text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-4 focus:ring-gray-100 outline-none transition-all text-center shadow-sm"
+/>
             </div>
             <div>
               <label className="text-[11px] font-semibold text-gray-500 mb-1.5 block">
@@ -707,13 +701,13 @@ function TemplateEditor({
                   </button>
                 </div>
 
-                <input
-                  type="text"
-                  value={a.name}
-                  onChange={(e) => onUpdateAppt(a.id, "name", e.target.value)}
-                  placeholder="اسم الموعد"
-                  className="w-full px-3 py-2 rounded-lg bg-white border border-transparent text-[12.5px] text-gray-900 placeholder:text-gray-300 focus:border-gray-200 focus:ring-4 focus:ring-gray-100 outline-none transition-all"
-                />
+<input
+  type="text"
+  value={a.name}
+  onChange={(e) => onUpdateAppt(a.id, "name", e.target.value)}
+  placeholder="اسم الموعد"
+  className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-[12.5px] text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:ring-4 focus:ring-gray-100 outline-none transition-all shadow-sm"
+/>
 
                 <div className="grid grid-cols-2 gap-2">
                   <DaysField

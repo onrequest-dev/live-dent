@@ -634,7 +634,7 @@ function LiveDentRegistrationForm({
           "livedent_saved_credentials",
           JSON.stringify({
             username: formData.username,
-            password: formData.password,
+
             clinicName: formData.clinicName,
             savedAt: new Date().toISOString(),
           }),
@@ -924,37 +924,34 @@ function LiveDentRegistrationForm({
                   </div>
 
                   {/* Confirm Button */}
-                  <motion.button
-                    onClick={handleGoToDashboard}
-                    disabled={!credentialsSaved}
-                    whileHover={credentialsSaved ? { scale: 1.02, y: -2 } : {}}
-                    whileTap={credentialsSaved ? { scale: 0.98 } : {}}
-                    className="w-full py-4 rounded-2xl font-bold text-base sm:text-lg flex items-center justify-center gap-2 transition-all duration-300"
-                    style={{
-                      backgroundColor: credentialsSaved
-                        ? COLORS.primary
-                        : COLORS.border,
-                      color: credentialsSaved
-                        ? "#ffffff"
-                        : COLORS.textSecondary,
-                      cursor: credentialsSaved ? "pointer" : "not-allowed",
-                      boxShadow: credentialsSaved
-                        ? `0 8px 24px ${COLORS.primary}30`
-                        : "none",
-                    }}
-                  >
-                    {credentialsSaved ? (
-                      <>
-                        <ArrowRight className="w-5 h-5" />
-                        الدخول للوحة التحكم
-                      </>
-                    ) : (
-                      <>
-                        <Lock className="w-5 h-5" />
-                        يرجى تأكيد حفظ البيانات أولاً
-                      </>
-                    )}
-                  </motion.button>
+                 {/* Confirm Button with Fake Redirect Animation */}
+<motion.button
+  onClick={() => {
+    if (!credentialsSaved || (typeof window !== "undefined" && (window as any).__redirecting)) return;
+    if (typeof window !== "undefined") (window as any).__redirecting = true;
+    // إعادة إطلاق الـ state الداخلي
+    const btn = document.getElementById("confirm-redirect-btn");
+    if (btn) btn.dispatchEvent(new CustomEvent("start-redirect"));
+  }}
+  id="confirm-redirect-btn"
+  disabled={!credentialsSaved}
+  whileHover={credentialsSaved ? { scale: 1.02, y: -2 } : {}}
+  whileTap={credentialsSaved ? { scale: 0.98 } : {}}
+  className="w-full py-4 rounded-2xl font-bold text-base sm:text-lg flex items-center justify-center gap-2 transition-all duration-300 relative overflow-hidden"
+  style={{
+    backgroundColor: credentialsSaved ? COLORS.primary : COLORS.border,
+    color: credentialsSaved ? "#ffffff" : COLORS.textSecondary,
+    cursor: credentialsSaved ? "pointer" : "not-allowed",
+    boxShadow: credentialsSaved
+      ? `0 8px 24px ${COLORS.primary}30`
+      : "none",
+  }}
+>
+  <ConfirmRedirectContent
+    ready={credentialsSaved}
+    onStart={handleGoToDashboard}
+  />
+</motion.button>
 
                   {/* Confirm Checkbox */}
                   <label
@@ -1689,5 +1686,111 @@ export default function LiveDentRegistrationPage() {
     >
       <LiveDentRegistrationFormWrapper />
     </Suspense>
+  );
+}
+
+
+// ============================================================
+// محتوى زر التحويل — بأنيميشن وهمي عند النقر
+// ============================================================
+function ConfirmRedirectContent({
+  ready,
+  onStart,
+}: {
+  ready: boolean;
+  onStart: () => void;
+}) {
+  const [redirecting, setRedirecting] = useState(false);
+
+  // استقبال حدث البدء من الزر الأب
+  useEffect(() => {
+    const btn = document.getElementById("confirm-redirect-btn");
+    if (!btn) return;
+
+    const handler = () => {
+      if (redirecting) return;
+      setRedirecting(true);
+      // ✅ استدعاء التحويل الفعلي بعد بدء الأنيميشن
+      setTimeout(() => {
+        onStart();
+      }, 900);
+    };
+
+    btn.addEventListener("start-redirect", handler);
+    return () => btn.removeEventListener("start-redirect", handler);
+  }, [redirecting, onStart]);
+
+  return (
+    <>
+      {/* ✨ لمعة متحركة */}
+      {redirecting && (
+        <motion.div
+          className="absolute inset-0 pointer-events-none"
+          initial={{ x: "-100%" }}
+          animate={{ x: "100%" }}
+          transition={{
+            duration: 1.2,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          style={{
+            background:
+              "linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent)",
+          }}
+        />
+      )}
+
+      <AnimatePresence mode="wait" initial={false}>
+        {redirecting ? (
+          <motion.div
+            key="redirecting"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="flex items-center justify-center gap-2 relative z-10"
+          >
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{
+                duration: 1,
+                repeat: Infinity,
+                ease: "linear",
+              }}
+              className="w-5 h-5 rounded-full"
+              style={{
+                border: `2.5px solid rgba(255,255,255,0.3)`,
+                borderTopColor: "#ffffff",
+              }}
+            />
+            <span>جاري التحويل للوحة التحكم...</span>
+          </motion.div>
+        ) : ready ? (
+          <motion.div
+            key="ready"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="flex items-center justify-center gap-2 relative z-10"
+          >
+            <ArrowRight className="w-5 h-5" />
+            <span>الدخول للوحة التحكم</span>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="locked"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="flex items-center justify-center gap-2 relative z-10"
+          >
+            <Lock className="w-5 h-5" />
+            <span>يرجى تأكيد حفظ البيانات أولاً</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

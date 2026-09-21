@@ -144,9 +144,7 @@ function LoginForm() {
       // تحقق بسيط من البنية
       if (parsed && typeof parsed.username === "string") {
         setUsername(parsed.username);
-        if (typeof parsed.password === "string") {
-          setPassword(parsed.password);
-        }
+
         if (parsed.clinicName) {
           setSavedClinicName(parsed.clinicName);
         }
@@ -309,7 +307,7 @@ function LoginForm() {
                       className="text-sm font-semibold mb-0.5"
                       style={{ color: COLORS.text }}
                     >
-                      تم تعبئة بياناتك المحفوظة
+                      اسم المستخدم محفوظ سلفا 
                       {savedClinicName && (
                         <span
                           className="font-normal"
@@ -324,7 +322,7 @@ function LoginForm() {
                       className="text-xs"
                       style={{ color: COLORS.textSecondary }}
                     >
-                      يمكنك الدخول مباشرة أو مسح البيانات لتسجيل حساب آخر
+                      يرجى إدخال كلمة المرور
                     </p>
                   </div>
 

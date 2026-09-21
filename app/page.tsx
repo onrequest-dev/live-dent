@@ -25,7 +25,11 @@ import {
   Shield,        // للحماية
   BarChart,      // للتحليلات
   Clock,         // للمواعيد
-  Users,         // للمرضى
+  Users,
+  UserPlus, 
+  PlayCircle,        // للمرضى
+  CheckCircle2,
+  DollarSign,
 } from 'lucide-react';
 import { FaTelegramPlane, FaWhatsapp, FaYoutube, FaInstagram } from 'react-icons/fa';
 
@@ -709,7 +713,7 @@ const PhoneCarousel = () => {
 export default function Home() {
   const [selectedImage, setSelectedImage] = useState<{ src: string; alt: string; title: string } | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
-
+  const [loadingBtn, setLoadingBtn] = useState<null | 'demo' | 'register'>(null);
   useEffect(() => {
     setIsLoaded(true);
   }, []);
@@ -916,37 +920,182 @@ const services = [
             </AnimatedSection>
 
             {/* زر البداية */}
-            <AnimatedSection delay={1.1} direction="up">
-  <motion.div className="flex justify-center">
-    <motion.a
-      href="/Requestcopy"
-      whileHover={{ scale: 1.03, y: -2 }}
-      whileTap={{ scale: 0.97 }}
-      className="relative group"
+{/* أزرار الإجراءات */}{/* أزرار الإجراءات */}
+<AnimatedSection delay={1.1} direction="up" className="w-full">
+  {/* حالة تحميل الأزرار */}
+  {(() => {
+    return null; // placeholder للتذكير فقط
+  })()}
+
+  <motion.div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-5 w-full max-w-2xl mx-auto">
+    
+    {/* ===== الزر الأساسي: عرض توضيحي تفاعلي ===== */}
+    <motion.div
+      whileHover={loadingBtn === null ? { scale: 1.03, y: -2 } : {}}
+      whileTap={loadingBtn === null ? { scale: 0.97 } : {}}
+      className="relative w-full sm:w-auto flex flex-col items-center"
     >
-      {/* تأثير التوهج خلف الزر */}
-      <div 
-        style={{ backgroundColor: COLORS.primary }}
-      />
-      
-      {/* الزر الرئيسي - قلب مفرغ (شفاف) مع إطار */}
-      <div 
-        className="relative px-10 py-4 rounded-2xl font-semibold text-lg inline-flex items-center gap-3 transition-all duration-300 backdrop-blur-sm"
-        style={{ 
-          backgroundColor: 'transparent',
-          border: `2px solid ${COLORS.primary}`,
+      {/* النص الفرعي */}
+      <span
+        className="mb-2 text-xs sm:text-[13px] font-medium text-center leading-snug px-2"
+        style={{ color: COLORS.textSecondary }}
+      >
+        العرض التوضيحي .. فيه تفاصيل العمل و الأسعار
+      </span>
+
+      <a
+        href="/pricing"
+        onClick={(e) => {
+          if (loadingBtn !== null) {
+            e.preventDefault();
+            return;
+          }
+          setLoadingBtn('demo');
+        }}
+        aria-busy={loadingBtn === 'demo'}
+        className="relative w-full px-8 py-4 rounded-2xl font-semibold text-base sm:text-lg inline-flex items-center justify-center gap-3 transition-all duration-300 text-center overflow-hidden"
+        style={{
+          backgroundColor: `${COLORS.primary}15`,
+          backdropFilter: "blur(14px)",
+          WebkitBackdropFilter: "blur(14px)",
+          border: `2px dashed ${COLORS.primary}`,
           color: COLORS.primary,
+          boxShadow: `0 8px 30px ${COLORS.primary}20, inset 0 1px 0 rgba(255,255,255,0.3)`,
+          cursor: loadingBtn === 'demo' ? "wait" : "pointer",
+          opacity: loadingBtn === 'demo' ? 0.75 : 1,
         }}
       >
-        <span>أطلب نسختك الآن</span>
-        <motion.div
-          animate={{ x: [0, 6, 0] }}
-          transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
-        >
-          <ArrowLeft size={20} style={{ color: COLORS.primary }} />
-        </motion.div>
-      </div>
-    </motion.a>
+        <AnimatePresence mode="wait" initial={false}>
+          {loadingBtn === 'demo' ? (
+            <motion.span
+              key="spinner-demo"
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.5 }}
+              transition={{ duration: 0.25 }}
+              className="flex-shrink-0"
+            >
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                className="w-5 h-5 rounded-full"
+                style={{
+                  border: `2px solid ${COLORS.primary}30`,
+                  borderTopColor: COLORS.primary,
+                }}
+              />
+            </motion.span>
+          ) : (
+            <motion.span
+              key="icon-demo"
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.5 }}
+              transition={{ duration: 0.2 }}
+              className="flex-shrink-0"
+            >
+              <PlayCircle size={20} />
+            </motion.span>
+          )}
+        </AnimatePresence>
+
+        <span>
+          {loadingBtn === 'demo' ? "جارٍ التحميل..." : "شاهد عرضاً تفاعلياً"}
+        </span>
+
+        {loadingBtn === 'demo' && (
+          <motion.span
+            initial={{ x: "-100%" }}
+            animate={{ x: "200%" }}
+            transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute inset-y-0 w-1/3 pointer-events-none"
+            style={{
+              background: `linear-gradient(90deg, transparent, ${COLORS.primary}20, transparent)`,
+            }}
+          />
+        )}
+      </a>
+    </motion.div>
+
+    {/* ===== الزر الثانوي: إنشاء حساب ===== */}
+    <motion.div
+      whileHover={loadingBtn === null ? { scale: 1.03, y: -2 } : {}}
+      whileTap={loadingBtn === null ? { scale: 0.97 } : {}}
+      className="relative w-full sm:w-auto"
+    >
+      <a
+        href="/register"
+        onClick={(e) => {
+          if (loadingBtn !== null) {
+            e.preventDefault();
+            return;
+          }
+          setLoadingBtn('register');
+        }}
+        aria-busy={loadingBtn === 'register'}
+        className="relative w-full px-8 py-4 rounded-2xl font-semibold text-base sm:text-lg inline-flex items-center justify-center gap-3 transition-all duration-300 text-center overflow-hidden"
+        style={{
+          backgroundColor: "transparent",
+          backdropFilter: "blur(14px)",
+          WebkitBackdropFilter: "blur(14px)",
+          border: `2px solid ${COLORS.primary}`,
+          color: COLORS.primary,
+          cursor: loadingBtn === 'register' ? "wait" : "pointer",
+          opacity: loadingBtn === 'register' ? 0.75 : 1,
+        }}
+      >
+        <AnimatePresence mode="wait" initial={false}>
+          {loadingBtn === 'register' ? (
+            <motion.span
+              key="spinner-register"
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.5 }}
+              transition={{ duration: 0.25 }}
+              className="flex-shrink-0"
+            >
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                className="w-5 h-5 rounded-full"
+                style={{
+                  border: `2px solid ${COLORS.primary}30`,
+                  borderTopColor: COLORS.primary,
+                }}
+              />
+            </motion.span>
+          ) : (
+            <motion.span
+              key="icon-register"
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.5 }}
+              transition={{ duration: 0.2 }}
+              className="flex-shrink-0"
+            >
+              <UserPlus size={20} />
+            </motion.span>
+          )}
+        </AnimatePresence>
+
+        <span>
+          {loadingBtn === 'register' ? "جارٍ التحميل..." : "أنشئ حساب عيادتك"}
+        </span>
+
+        {loadingBtn === 'register' && (
+          <motion.span
+            initial={{ x: "-100%" }}
+            animate={{ x: "200%" }}
+            transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute inset-y-0 w-1/3 pointer-events-none"
+            style={{
+              background: `linear-gradient(90deg, transparent, ${COLORS.primary}20, transparent)`,
+            }}
+          />
+        )}
+      </a>
+    </motion.div>
+
   </motion.div>
 </AnimatedSection>
           </div>
@@ -1314,52 +1463,301 @@ const services = [
   </div>
 </section>
 
+{/* ========================================== */}
+{/* Core Features Section - المزايا الأساسية    */}
+{/* ========================================== */}
+<section className="relative py-16 md:py-24 overflow-hidden">
+  <DentalSVG direction="right" size="large" className="top-20 -left-32 md:-left-48 opacity-[0.06]" />
 
-<section className="relative py-24 overflow-hidden">
-        <DentalSVG direction="right" size="large" className="top-20 -left-32 md:-left-48 opacity-[0.06]" />
+  <div className="max-w-6xl mx-auto px-4 sm:px-6 relative z-10">
+    {/* العنوان */}
+    <AnimatedSection className="text-center mb-12 md:mb-16" direction="up">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
+        className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-5"
+        style={{
+          backgroundColor: COLORS.primaryLight,
+          border: `1px solid ${COLORS.primary}15`,
+        }}
+      >
+        <Sparkles size={14} style={{ color: COLORS.primary }} />
+        <span className="text-xs font-semibold tracking-wide" style={{ color: COLORS.primary }}>
+          المزايا الأساسية
+        </span>
+      </motion.div>
 
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 relative z-10">
-          <AnimatedSection className="text-center mb-16" direction="up">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.8 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 rounded-full px-5 py-2 mb-6"
-              style={{ backgroundColor: COLORS.primaryLight, border: `1px solid ${COLORS.primary}15` }}
-            >
-              <Sparkles size={16} style={{ color: COLORS.primary }} />
-              <span className="text-sm font-medium" style={{ color: COLORS.primary }}>مميزاتنا</span>
-            </motion.div>
-            
-            <motion.h2 
-              className="text-3xl md:text-4xl font-bold mb-4"
-              style={{ color: COLORS.text }}
-            >
-              أدوات متكاملة لعيادتك
-            </motion.h2>
-            
-            <motion.p 
-              className="text-lg max-w-xl mx-auto"
-              style={{ color: COLORS.textSecondary }}
-            >
-              كل ما تحتاجه لإدارة عيادتك بكفاءة عالية في منصة واحدة
-            </motion.p>
-          </AnimatedSection>
+      <motion.h2
+        className="text-3xl md:text-4xl font-bold mb-3"
+        style={{ color: COLORS.text }}
+      >
+        كل ما يحتاجه طبيب الأسنان
+      </motion.h2>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {services.map((service, index) => (
-              <ServiceCard
-                key={index}
-                index={index}
-                icon={service.icon}
-                title={service.title}
-                description={service.description}
+      <motion.p
+        className="text-base md:text-lg max-w-2xl mx-auto"
+        style={{ color: COLORS.textSecondary }}
+      >
+        أدوات مبنية على احتياجات العيادة اليومية — بدقة وسهولة
+      </motion.p>
+    </AnimatedSection>
+
+    {/* شبكة المزايا */}
+    <div className="grid md:grid-cols-2 gap-5 md:gap-6">
+      {[
+        {
+          icon: Calendar,
+          title: "مواعيد ذكية غير متضاربة",
+          desc: "نظام تلقائي يمنع تضارب المواعيد ويكشف الفجوات",
+          badge: "تلقائي",
+          color: "#0043fa",
+        },
+        {
+          icon: Layout,
+          title: "مخطط يومي واضح بالكامل",
+          desc: "شاهد يومك بالكامل أمامك: كل موعد في مكانه، الفجوات ظاهرة، والتأخير يُكتشف مبكراً",
+          badge: "منظّم",
+          color: "#06b6d4",
+        },
+        {
+          icon: CheckCircle2,
+          title: "تحسين التزام المرضى",
+          desc: "تذكيرات واتساب تلقائية قبل الموعد، ومتابعة الغياب، ونسبة التزام واضحة لكل مريض",
+          badge: "ذكي",
+          color: "#10b981",
+        },
+        {
+          icon: DollarSign,
+          title: "مدفوعات واضحة تماماً",
+          desc: "كل جلسة، كل دفعة، كل رصيد متبقٍ — بلا حسابات يدوية ولا أخطاء في التحصيل",
+          badge: "دقيق",
+          color: "#f59e0b",
+        },
+      ].map((feature, i) => {
+        const Icon = feature.icon;
+        return (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.5, delay: i * 0.1 }}
+            className="relative group"
+          >
+            <div
+              className="relative p-6 md:p-8 rounded-3xl transition-all duration-500 overflow-hidden h-full"
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.6)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255, 255, 255, 0.8)',
+                boxShadow: '0 8px 32px rgba(0, 67, 250, 0.06)',
+              }}
+            >
+              {/* أيقونة خلفية كبيرة */}
+              <div
+                className="absolute pointer-events-none"
+                style={{
+                  bottom: '-30px',
+                  right: '-30px',
+                  opacity: 0.05,
+                  transform: 'rotate(8deg)',
+                }}
+              >
+                <Icon size={180} strokeWidth={1} style={{ color: feature.color }} />
+              </div>
+
+              {/* المحتوى */}
+              <div className="relative z-10">
+                <div className="flex items-start justify-between gap-3 mb-4">
+                  <div
+                    className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+                    style={{
+                      background: `linear-gradient(135deg, ${feature.color}20, ${feature.color}08)`,
+                      border: `1px solid ${feature.color}25`,
+                    }}
+                  >
+                    <Icon size={24} style={{ color: feature.color }} strokeWidth={1.8} />
+                  </div>
+
+                  {feature.badge && (
+                    <span
+                      className="text-[10px] font-bold px-2.5 py-1 rounded-full"
+                      style={{
+                        backgroundColor: `${feature.color}15`,
+                        color: feature.color,
+                      }}
+                    >
+                      {feature.badge}
+                    </span>
+                  )}
+                </div>
+
+                <h3
+                  className="text-lg md:text-xl font-bold mb-2"
+                  style={{ color: COLORS.text }}
+                >
+                  {feature.title}
+                </h3>
+                <p
+                  className="text-sm md:text-[15px] leading-relaxed"
+                  style={{ color: COLORS.textSecondary }}
+                >
+                  {feature.desc}
+                </p>
+              </div>
+
+              {/* خط سفلي أنيق */}
+              <div
+                className="absolute bottom-0 left-8 right-8 h-px transition-all duration-500 group-hover:left-4 group-hover:right-4"
+                style={{
+                  background: `linear-gradient(to right, transparent, ${feature.color}40, transparent)`,
+                }}
               />
-            ))}
-          </div>
-        </div>
-      </section>
+            </div>
+          </motion.div>
+        );
+      })}
+    </div>
 
+    {/* شريط مزايا إضافية */}
+    <AnimatedSection delay={0.4} className="mt-10 md:mt-14" direction="up">
+      <div
+        className="rounded-3xl p-6 md:p-8"
+        style={{
+          background: `linear-gradient(135deg, ${COLORS.primary}08, ${COLORS.primary}03)`,
+          border: `1px solid ${COLORS.primary}15`,
+        }}
+      >
+        <p
+          className="text-center text-sm md:text-base font-semibold mb-5"
+          style={{ color: COLORS.text }}
+        >
+          ومزايا أخرى تجعل الفرق واضحاً
+        </p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+          {[
+            { icon: Bell, text: "تذكيرات تلقائية" },
+            { icon: BarChart, text: "تقارير ذكية" },
+            { icon: Clock, text: "تتبع الوقت" },
+            { icon: Shield, text: "نسخ احتياطي" },
+            { icon: Camera, text: "أرشيف أشعة" },
+            { icon: Activity, text: "شارت تفاعلي" },
+            { icon: IdCard, text: "بطاقة رقمية" },
+            { icon: FileSpreadsheet, text: "تصدير Excel" },
+          ].map((item, i) => {
+            const Icon = item.icon;
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.05 }}
+                className="flex items-center gap-2.5 px-3 py-2.5 rounded-2xl transition-all duration-300 hover:scale-[1.03]"
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                  border: `1px solid ${COLORS.primary}10`,
+                }}
+              >
+                <Icon size={16} style={{ color: COLORS.primary }} strokeWidth={2} />
+                <span
+                  className="text-xs md:text-sm font-medium truncate"
+                  style={{ color: COLORS.text }}
+                >
+                  {item.text}
+                </span>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+    </AnimatedSection>
+  </div>
+</section>
+
+
+{/* ========================================== */}
+{/* Why LiveDent - لماذا نحن؟                    */}
+{/* ========================================== */}
+<section className="relative py-16 md:py-24 overflow-hidden" style={{ backgroundColor: COLORS.surface }}>
+  <DentalSVG direction="left" size="normal" className="top-10 -right-24 md:-right-40 opacity-[0.05]" />
+
+  <div className="max-w-5xl mx-auto px-4 sm:px-6 relative z-10">
+    <AnimatedSection className="text-center mb-12" direction="up">
+      <motion.h2
+        className="text-3xl md:text-4xl font-bold mb-3"
+        style={{ color: COLORS.text }}
+      >
+        لماذا يختارنا الأطباء؟
+      </motion.h2>
+      <motion.p
+        className="text-base md:text-lg"
+        style={{ color: COLORS.textSecondary }}
+      >
+        لأننا نبني النظام مع طبيب أسنان، لا لطبيب أسنان
+      </motion.p>
+    </AnimatedSection>
+
+    <div className="grid md:grid-cols-3 gap-5">
+      {[
+        {
+          number: "01",
+          title: "أبسط مما تتخيل",
+          desc: "لا حاجة لتدريب. تعلّمه في 10 دقائق، وابدأ من يومك الأول.",
+        },
+        {
+          number: "02",
+          title: "أسرع مما تتوقع",
+          desc: "افتح ملف مريض، أضف موعداً، سجّل دفعة — كلها في 3 نقرات.",
+        },
+        {
+          number: "03",
+          title: "أنسب مما تجد",
+          desc: "مصمم خصيصاً لعيادات الأسنان، لا نظام عام معدّل.",
+        },
+        {
+          number: "04",
+          title: "أحبه المرضى",
+          desc: "مصصم ليعكس شفافية التعامل مع المرضى .. مواعيد / أسعار / إجراءات",
+        },
+      ].map((item, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: i * 0.15 }}
+          className="relative p-6 md:p-8 rounded-3xl"
+          style={{
+            backgroundColor: COLORS.background,
+            border: `1px solid ${COLORS.primary}10`,
+          }}
+        >
+          <span
+            className="text-5xl md:text-6xl font-black mb-4 block leading-none"
+            style={{ color: `${COLORS.primary}15` }}
+          >
+            {item.number}
+          </span>
+          <h3
+            className="text-lg md:text-xl font-bold mb-2"
+            style={{ color: COLORS.text }}
+          >
+            {item.title}
+          </h3>
+          <p
+            className="text-sm md:text-base leading-relaxed"
+            style={{ color: COLORS.textSecondary }}
+          >
+            {item.desc}
+          </p>
+        </motion.div>
+      ))}
+    </div>
+  </div>
+</section>
       {/* Footer */}
       <footer className="py-10" style={{ borderTop: `1px solid ${COLORS.border}` }}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6">

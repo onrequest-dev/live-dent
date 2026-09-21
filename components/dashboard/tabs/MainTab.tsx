@@ -37,6 +37,7 @@ import {
   Save,
   XCircle,
   UserX,
+  Sparkles,
 } from "lucide-react";
 
 import {
@@ -61,6 +62,16 @@ import {DatePicker} from '@/components/ui/DatePicker';
 import {SmartDatePicker} from '@/components/ui/SmartDatePicker';
 import {TimePicker} from '@/components/ui/TimePicker';
 import { SmartTimePicker } from '@/components/ui/SmartTimePicker';
+
+import {
+  toLocalDateString,
+  toLocalDateTimeString,
+  toLocalTimeString,
+  fromLocalDateString,
+  todayLocalString,
+  addLocalDays,
+  mergeLocalDateAndTime,
+} from "@/client/helpers/date-helpers";
 // ============================================================
 // خدمة API محاكية (لتحضير الربط مع الباك إند)
 // ============================================================
@@ -344,10 +355,10 @@ const handleUpdateSessionPayment = useCallback(async (sessionId: string, isPaid:
 const filteredPatients = useMemo(() => {
   let filtered = patients;
   if (showTodayOnly) {
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = todayLocalString();
     const todayPatientIds = sessions
       .filter((s) => {
-        const sessionDate = new Date(s.startTime).toISOString().split("T")[0];
+        const sessionDate = toLocalDateString(new Date(s.startTime));
         return sessionDate === todayStr && s.status === "scheduled";
       })
       .map((s) => s.patientId);
@@ -364,16 +375,16 @@ const filteredPatients = useMemo(() => {
   }
 
   // ✅ ترتيب: موعد اليوم أولاً (الأقرب وقتاً) ثم الأحدث إضافة
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = todayLocalString();
   
   return [...filtered].sort((a, b) => {
     // البحث عن موعد اليوم لكل مريض
     const aTodaySession = sessions.find((s) => {
-      const sessionDate = new Date(s.startTime).toISOString().split("T")[0];
+      const sessionDate = toLocalDateString(new Date(s.startTime));
       return s.patientId === a.id && sessionDate === todayStr && s.status === "scheduled";
     });
     const bTodaySession = sessions.find((s) => {
-      const sessionDate = new Date(s.startTime).toISOString().split("T")[0];
+      const sessionDate = toLocalDateString(new Date(s.startTime));
       return s.patientId === b.id && sessionDate === todayStr && s.status === "scheduled";
     });
 
@@ -398,9 +409,9 @@ const filteredPatients = useMemo(() => {
       const patientSessions = sessions.filter(
         (s) => s.patientId === patient.id,
       );
-      const todayStr = new Date().toISOString().split("T")[0];
+      const todayStr = todayLocalString();
       const todaySession = patientSessions.find((s) => {
-        const sessionDate = new Date(s.startTime).toISOString().split("T")[0];
+        const sessionDate = toLocalDateString(new Date(s.startTime));
         return sessionDate === todayStr && s.status === "scheduled";
       });
       const completedSessions = patientSessions.filter(
@@ -448,6 +459,13 @@ const formatDate = (date: Date | string) => {
   return `${dayName} ${day}/${month}`;
 };
 
+// ✅ تاريخ محلي بصيغة YYYY-MM-DD (بدون UTC)
+const getLocalDateString = (date: Date = new Date()): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 const formatCurrency = (amount: number) => {
   const currencySymbol = getCurrency();
   return `${amount} ${currencySymbol}`;
@@ -1193,105 +1211,214 @@ const handleUpdateSessionStatus = useCallback(async (
                       );
                     })}
                   </AnimatePresence>
-                  {patientsWithDetails.length === 0 && (
-                    <div className="text-center py-10 sm:py-14">
-                      {/* أيقونة مع خلفية دائرية ناعمة */}
-                      <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
-                        <Users
-                          size={28}
-                          className="sm:w-8 sm:h-8 text-gray-300"
-                        />
-                      </div>
+{patientsWithDetails.length === 0 && (
+  <div className="text-center py-10 sm:py-14 px-4">
+    {/* أيقونة مع خلفية دائرية ناعمة */}
+    <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+      <Users size={28} className="sm:w-8 sm:h-8 text-gray-300" />
+    </div>
 
-                      {/* العنوان */}
-                      <p className="text-gray-800 font-semibold mb-1.5 text-sm sm:text-base">
-                        لا يوجد مرضى
-                      </p>
+    {/* العنوان */}
+    <p className="text-gray-800 font-semibold mb-1.5 text-sm sm:text-base">
+      لا يوجد مرضى
+    </p>
 
-                      {/* الوصف */}
-                      <p className="text-gray-400 text-xs sm:text-sm mb-5">
-                        {showTodayOnly
-                          ? "لا توجد مواعيد لهذا اليوم"
-                          : "لا يوجد أي مرضى في القائمة بعد"}
-                      </p>
+    {/* الوصف */}
+    <p className="text-gray-400 text-xs sm:text-sm mb-5">
+      {showTodayOnly
+        ? "لا توجد مواعيد لهذا اليوم"
+        : "لا يوجد أي مرضى في القائمة بعد"}
+    </p>
 
-                      {/* بطاقات صغيرة أفقية (Horizontal Pills) - تصميم iOS Settings Suggestions */}
-                      <div className="inline-flex flex-col gap-2">
-                        {showTodayOnly && (
-                          <button
-                            onClick={() => {
-                              setShowTodayOnly(false);
-                              setSearchQuery("");
-                            }}
-                            className="flex items-center gap-3 px-4 py-2.5 sm:py-3 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors duration-200 group"
-                          >
-                            {/* أيقونة داخل دائرة */}
-                            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white flex items-center justify-center flex-shrink-0 shadow-sm">
-                              <Users
-                                size={15}
-                                className="sm:w-4 sm:h-4 text-gray-500"
-                              />
-                            </div>
+    {/* ============================================================ */}
+    {/* بطاقات المقترحات — مرتبة وأنيقة                              */}
+    {/* ============================================================ */}
+    <div className="inline-flex flex-col gap-2 w-full max-w-md text-right">
 
-                            {/* النص */}
-                            <div className="text-right flex-1">
-                              <p className="text-xs sm:text-sm font-medium text-gray-700">
-                                عرض جميع المرضى
-                              </p>
-                              <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5">
-                                تصفح القائمة الكاملة بدون فلترة
-                              </p>
-                            </div>
+      {/* ⭐ 1) الإجراء الأساسي: إضافة مريض جديد */}
+      <button
+        onClick={() => setShowNewPatientModal(true)}
+        className="flex items-center gap-3 px-4 py-3 sm:py-3.5 rounded-2xl transition-all duration-200 group hover:shadow-md active:scale-[0.98]"
+        style={{
+          background: `linear-gradient(135deg, ${primaryColor}12, ${primaryColor}06)`,
+          border: `1.5px solid ${primaryColor}30`,
+        }}
+      >
+        <div
+          className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm"
+          style={{ backgroundColor: primaryColor }}
+        >
+          <Plus
+            size={16}
+            className="sm:w-[18px] sm:h-[18px] text-white"
+            strokeWidth={2.5}
+          />
+        </div>
 
-                            {/* سهم للإشارة */}
-                            <ChevronRight
-                              size={14}
-                              className="text-gray-300 group-hover:text-gray-500 transition-colors flex-shrink-0"
-                            />
-                          </button>
-                        )}
+        <div className="text-right flex-1 min-w-0">
+          <p
+            className="text-xs sm:text-sm font-bold"
+            style={{ color: primaryColor }}
+          >
+            {showTodayOnly ? "إضافة مريض جديد" : "إضافة أول مريض"}
+          </p>
+          <p
+            className="text-[10px] sm:text-xs mt-0.5"
+            style={{ color: `${primaryColor}99` }}
+          >
+            {showTodayOnly
+              ? "تسجيل مريض وإضافة موعد"
+              : "ابدأ ببناء قاعدة مرضاك"}
+          </p>
+        </div>
 
-                        <button
-                          onClick={() => setShowNewPatientModal(true)}
-                          className="flex items-center gap-3 px-4 py-2.5 sm:py-3 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors duration-200 group"
-                        >
-                          {/* أيقونة داخل دائرة */}
-                          <div
-                            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm"
-                            style={{
-                              backgroundColor: `${primaryColor}15`,
-                            }}
-                          >
-                            <Plus
-                              size={15}
-                              className="sm:w-4 sm:h-4"
-                              style={{ color: primaryColor }}
-                            />
-                          </div>
+        <ChevronRight
+          size={14}
+          className="transition-transform duration-200 group-hover:translate-x-[-3px] flex-shrink-0"
+          style={{ color: primaryColor }}
+        />
+      </button>
 
-                          {/* النص */}
-                          <div className="text-right flex-1">
-                            <p className="text-xs sm:text-sm font-medium text-gray-700">
-                              {showTodayOnly
-                                ? "إضافة مريض جديد"
-                                : "إضافة أول مريض"}
-                            </p>
-                            <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5">
-                              {showTodayOnly
-                                ? "تسجيل مريض وإضافة موعد"
-                                : "ابدأ ببناء قاعدة مرضاك"}
-                            </p>
-                          </div>
+      {/* 📋 فاصل: ابدأ بتهيئة عيادتك */}
+      <div className="flex items-center gap-2 px-2 py-1">
+        <div className="h-px flex-1 bg-gray-100" />
+        <span className="text-[10px] font-semibold text-gray-400 tracking-wide">
+          ابدأ بتهيئة عيادتك
+        </span>
+        <div className="h-px flex-1 bg-gray-100" />
+      </div>
 
-                          {/* سهم للإشارة */}
-                          <ChevronRight
-                            size={14}
-                            className="text-gray-300 group-hover:text-gray-500 transition-colors flex-shrink-0"
-                          />
-                        </button>
-                      </div>
-                    </div>
-                  )}
+      {/* ⏰ 2) عيّن أوقات عملك */}
+      <button
+        onClick={() => {
+          const url = new URL(window.location.href);
+          url.searchParams.set("tab", "clinic");
+          window.location.href = url.toString();
+        }}
+        className="flex items-center gap-3 px-4 py-3 sm:py-3.5 rounded-2xl transition-all duration-200 group hover:bg-white hover:shadow-sm active:scale-[0.98]"
+        style={{
+          backgroundColor: "#fafbfc",
+          border: "1.5px solid #f1f5f9",
+        }}
+      >
+        <div
+          className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-105"
+          style={{ backgroundColor: "#eef2f7" }}
+        >
+          <Clock
+            size={16}
+            className="sm:w-[18px] sm:h-[18px] text-gray-600"
+            strokeWidth={2}
+          />
+        </div>
+
+        <div className="text-right flex-1 min-w-0">
+          <p className="text-xs sm:text-sm font-semibold text-gray-800">
+            عيّن أوقات عملك
+          </p>
+          <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5">
+            حدّد ساعات الدوام والعطل الأسبوعية
+          </p>
+        </div>
+
+        <ChevronRight
+          size={14}
+          className="text-gray-300 group-hover:text-gray-500 group-hover:translate-x-[-3px] transition-all duration-200 flex-shrink-0"
+        />
+      </button>
+
+      {/* 💎 3) عيّن خدمات عيادتك */}
+      <button
+        onClick={() => {
+          const url = new URL(window.location.href);
+          url.searchParams.set("tab", "treatments");
+          window.location.href = url.toString();
+        }}
+        className="flex items-center gap-3 px-4 py-3 sm:py-3.5 rounded-2xl transition-all duration-200 group hover:bg-white hover:shadow-sm active:scale-[0.98]"
+        style={{
+          backgroundColor: "#fafbfc",
+          border: "1.5px solid #f1f5f9",
+        }}
+      >
+        <div
+          className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-105"
+          style={{ backgroundColor: "#eef2f7" }}
+        >
+          <Sparkles
+            size={16}
+            className="sm:w-[18px] sm:h-[18px] text-gray-600"
+            strokeWidth={2}
+          />
+        </div>
+
+        <div className="text-right flex-1 min-w-0">
+          <p className="text-xs sm:text-sm font-semibold text-gray-800">
+            عيّن خدمات عيادتك
+          </p>
+          <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5">
+            أضف العلاجات وأسعارها وقوالبها
+          </p>
+        </div>
+
+        <ChevronRight
+          size={14}
+          className="text-gray-300 group-hover:text-gray-500 group-hover:translate-x-[-3px] transition-all duration-200 flex-shrink-0"
+        />
+      </button>
+
+      {/* 👥 4) عرض جميع المرضى (يظهر فقط إذا كان الفلتر مفعّلاً) */}
+      {showTodayOnly && (
+        <>
+          {/* 📋 فاصل: أو */}
+          <div className="flex items-center gap-2 px-2 py-1">
+            <div className="h-px flex-1 bg-gray-100" />
+            <span className="text-[10px] font-semibold text-gray-400 tracking-wide">
+              أو
+            </span>
+            <div className="h-px flex-1 bg-gray-100" />
+          </div>
+
+          <button
+            onClick={() => {
+              setShowTodayOnly(false);
+              setSearchQuery("");
+            }}
+            className="flex items-center gap-3 px-4 py-3 sm:py-3.5 rounded-2xl transition-all duration-200 group hover:bg-white hover:shadow-sm active:scale-[0.98]"
+            style={{
+              backgroundColor: "#fafbfc",
+              border: "1.5px solid #f1f5f9",
+            }}
+          >
+            <div
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-105"
+              style={{ backgroundColor: "#eef2f7" }}
+            >
+              <Users
+                size={16}
+                className="sm:w-[18px] sm:h-[18px] text-gray-600"
+                strokeWidth={2}
+              />
+            </div>
+
+            <div className="text-right flex-1 min-w-0">
+              <p className="text-xs sm:text-sm font-semibold text-gray-800">
+                عرض جميع المرضى
+              </p>
+              <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5">
+                تصفح القائمة الكاملة بدون فلترة
+              </p>
+            </div>
+
+            <ChevronRight
+              size={14}
+              className="text-gray-300 group-hover:text-gray-500 group-hover:translate-x-[-3px] transition-all duration-200 flex-shrink-0"
+            />
+          </button>
+        </>
+      )}
+    </div>
+  </div>
+)}
                 </div>
               ) : (
                 <div className="max-h-[calc(100vh-260px)] sm:max-h-[calc(100vh-280px)] overflow-y-auto scrollbar-hide py-2">
@@ -2806,7 +2933,7 @@ function EditSessionModal({
     isPaid: session.isPaid,
     paymentMethod: session.paymentMethod || ("cash" as "cash" | "transfer"),
     notes: session.notes || "",
-    startTime: formatToLocalDatetimeLocal(new Date(session.startTime)),
+    startTime: toLocalDateTimeString(new Date(session.startTime)),
   });
   // ✅ حساب تاريخ الموعد من formData.startTime
 const appointmentDate = useMemo(() => {
@@ -2850,7 +2977,8 @@ const bookedSlotsForDate = useMemo(() => {
 
     try {
       const startTime = new Date(formData.startTime);
-      const endTime = new Date(startTime.getTime() + 30 * 60000);
+      const durationMinutes = clinicData?.settings?.defaultAppointmentDuration || 30;
+      const endTime = new Date(startTime.getTime() + durationMinutes * 60000);
 
       await onSave({
         id: session.id,
@@ -3051,9 +3179,9 @@ const bookedSlotsForDate = useMemo(() => {
   required
   value={formData.startTime}
   onChange={(date) => {
-    const year = date.getUTCFullYear();
-    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-    const day = String(date.getUTCDate()).padStart(2, "0");
+    const year = date.getFullYear()
+    const month = String(date.getMonth()+ 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
     
     const currentTime = new Date(formData.startTime);
     const hours = String(currentTime.getHours()).padStart(2, "0");
@@ -3613,8 +3741,8 @@ function NewPatientModal({
     appointmentMode: "date" as "date" | "days",
     appointment: {
       days: "1",
-      date: new Date().toISOString().split("T")[0],
-      time: "10:00",
+      date: todayLocalString(),
+      time: "",
       procedure: "كشف أولي",
       cost: getCurrency() === "$" ? "5" : "700",
       notes: "",
@@ -3628,7 +3756,7 @@ function NewPatientModal({
       date.setDate(date.getDate() + days);
       return date;
     } else {
-      return new Date(formData.appointment.date);
+      return fromLocalDateString(formData.appointment.date); 
     }
   };
 
@@ -3666,7 +3794,15 @@ const bookedSlotsForDate = useMemo(() => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError(null);
-
+      // ✅ التحقق من الوقت عند وجود موعد
+  if (formData.addAppointment && !formData.appointment.time) {
+    const errorMsg = "الرجاء اختيار وقت الموعد";
+    setLocalError(errorMsg);
+    if (addToast) {
+      addToast({ message: errorMsg, type: "error" });
+    }
+    return;
+  }
     // تحقق من صحة البيانات
     if (!formData.fullName.trim()) {
       const errorMsg = "الرجاء إدخال اسم المريض";
@@ -3713,11 +3849,11 @@ const bookedSlotsForDate = useMemo(() => {
 
       let appointmentData = null;
       if (formData.addAppointment) {
-        const appointmentDate = calculateAppointmentDate();
-        const [hours, minutes] = formData.appointment.time.split(":");
-        appointmentDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+const dateStr = toLocalDateString(calculateAppointmentDate());
+const appointmentDate = mergeLocalDateAndTime(dateStr, formData.appointment.time);
 
-        const endTime = new Date(appointmentDate.getTime() + 30 * 60000);
+        const durationMinutes = clinicData?.settings?.defaultAppointmentDuration || 30;
+        const endTime = new Date(appointmentDate.getTime() + durationMinutes * 60000);
 
         appointmentData = {
           startTime: appointmentDate,
@@ -4260,7 +4396,7 @@ const bookedSlotsForDate = useMemo(() => {
   required
   value={formData.appointment.date}
   onChange={(date) => {
-    const dateStr = date.toISOString().split("T")[0];
+    const dateStr = toLocalDateString(date);
     setFormData({
       ...formData,
       appointment: {
@@ -4387,8 +4523,8 @@ function NewAppointmentModal({
   const [formData, setFormData] = useState({
     appointmentMode: "days" as "days" | "date",
     days: "1",
-    date: new Date().toISOString().split("T")[0],
-    time: "10:00",
+    date: todayLocalString(),
+    time: "",
     procedure: "",
     cost: "",
     caseId: "",
@@ -4402,7 +4538,7 @@ function NewAppointmentModal({
       date.setDate(date.getDate() + days);
       return date;
     } else {
-      return new Date(formData.date);
+      return fromLocalDateString(formData.date);
     }
   }, [formData.appointmentMode, formData.days, formData.date]);
   // ✅ حساب المواعيد المحجوزة لليوم المحدد
@@ -4438,7 +4574,14 @@ const bookedSlotsForDate = useMemo(() => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError(null);
-
+      if (!formData.time) {
+    const errorMsg = "الرجاء اختيار وقت الموعد";
+    setLocalError(errorMsg);
+    if (addToast) {
+      addToast({ message: errorMsg, type: "error" });
+    }
+    return;
+  }
     // التحقق من صحة البيانات
     if (!formData.procedure.trim()) {
       const errorMsg = "الرجاء إدخال الإجراء";
@@ -4471,7 +4614,8 @@ const bookedSlotsForDate = useMemo(() => {
       const [hours, minutes] = formData.time.split(":");
       appointmentDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
-      const endTime = new Date(appointmentDate.getTime() + 30 * 60000);
+      const durationMinutes = clinicData?.settings?.defaultAppointmentDuration || 30;
+      const endTime = new Date(appointmentDate.getTime() + durationMinutes * 60000);
 
       await onSubmit({
         startTime: appointmentDate,
@@ -4649,7 +4793,7 @@ const bookedSlotsForDate = useMemo(() => {
   required
   value={formData.date}
   onChange={(date) => {
-    const dateStr = date.toISOString().split("T")[0];
+    const dateStr = toLocalDateString(date);
     setFormData({ ...formData, date: dateStr });
   }}
   minDate={new Date()}
