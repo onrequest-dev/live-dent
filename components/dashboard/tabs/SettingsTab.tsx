@@ -381,17 +381,17 @@ const sections: { id: SettingsSection; label: string; icon: any }[] = [
                   ))}
                 </div>
               </SectionCard>
-
-              <SectionCard title="سلوك القائمة" icon={Settings} primaryColor={primaryColor}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="text-lg font-medium text-gray-700">إغلاق تلقائي للقائمة</label>
-                    <p className="text-sm text-gray-500 mt-1">إغلاق القائمة عند التنقل بين التبويبات</p>
-                  </div>
-                  <ToggleSwitch checked={autoCollapse} onChange={handleAutoCollapseChange} primaryColor={primaryColor} />
-                </div>
-              </SectionCard>
-
+<div className="hidden md:block">
+  <SectionCard title="سلوك القائمة" icon={Settings} primaryColor={primaryColor}>
+    <div className="flex items-center justify-between">
+      <div>
+        <label className="text-lg font-medium text-gray-700">إغلاق تلقائي للقائمة</label>
+        <p className="text-sm text-gray-500 mt-1">إغلاق القائمة عند التنقل بين التبويبات</p>
+      </div>
+      <ToggleSwitch checked={autoCollapse} onChange={handleAutoCollapseChange} primaryColor={primaryColor} />
+    </div>
+  </SectionCard>
+</div>
               <SectionCard title="تطبيق الهاتف" icon={Smartphone} primaryColor={primaryColor}>
                 <PWAInstallSection
                   isInstalled={isInstalled}
@@ -469,21 +469,24 @@ function ToggleSwitch({ checked, onChange, primaryColor }: {
   primaryColor: string;
 }) {
   return (
-    <button
-      onClick={() => onChange(!checked)}
-      className="relative flex-shrink-0"
-    >
-      <div
-        className={`w-14 h-7 rounded-full transition-all ${checked ? "" : "bg-gray-300"}`}
-        style={{ backgroundColor: checked ? primaryColor : undefined }}
-      >
-        <div
-          className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all ${
-            checked ? "right-1" : "left-1"
-          }`}
-        />
-      </div>
-    </button>
+<button
+  onClick={() => onChange(!checked)}
+  className="relative flex-shrink-0 inline-flex items-center"
+  style={{ lineHeight: 0 }}
+>
+  <div
+    className={`relative w-14 h-7 rounded-full transition-all ${
+      checked ? "" : "bg-gray-300"
+    }`}
+    style={{ backgroundColor: checked ? primaryColor : undefined }}
+  >
+    <div
+      className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 bg-white rounded-full shadow-md transition-all ${
+        checked ? "right-1" : "left-1"
+      }`}
+    />
+  </div>
+</button>
   );
 }
 

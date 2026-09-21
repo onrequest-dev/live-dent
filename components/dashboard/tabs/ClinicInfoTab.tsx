@@ -129,6 +129,9 @@ export function ClinicInfoTab({ clinicData, onClinicUpdate }: ClinicInfoTabProps
   const [tempLogo, setTempLogo] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>(clinicData?.logo || '');
 
+  const [durationInput, setDurationInput] = useState<string>(
+  String(clinicData?.settings?.defaultAppointmentDuration || 30)
+);
   // ✅ تحديث البيانات فقط عند تغيير clinicData من الخارج ولسنا في وضع التعديل
   useEffect(() => {
     if (!clinicData) return;
@@ -156,6 +159,11 @@ export function ClinicInfoTab({ clinicData, onClinicUpdate }: ClinicInfoTabProps
       return () => clearTimeout(timer);
     }
   }, [saveMessage]);
+
+  // ✅ مزامنة حقل مدة الموعد
+useEffect(() => {
+  setDurationInput(String(formData.defaultAppointmentDuration || 30));
+}, [formData.defaultAppointmentDuration]);
 
   const handleInputChange = useCallback((field: string, value: string | number) => {
     setFormData(prev => {
@@ -585,27 +593,42 @@ export function ClinicInfoTab({ clinicData, onClinicUpdate }: ClinicInfoTabProps
               </div>
               
               {/* مدة الموعد */}
-              <div className="space-y-2">
-                <label className={labelClassName}>
-                  <Timer size={16} className="text-gray-600" />
-                  مدة الموعد الافتراضية (دقيقة)
-                </label>
-                {isEditing ? (
-                  <input
-                    type="number"
-                    value={formData.defaultAppointmentDuration}
-                    onChange={(e) => handleInputChange('defaultAppointmentDuration', parseInt(e.target.value) || 30)}
-                    min={15}
-                    max={120}
-                    step={15}
-                    className={inputClassName}
-                  />
-                ) : (
-                  <p className={`${displayValueClassName} bg-gray-50 rounded-xl p-3 inline-block`}>
-                    {clinicData.settings?.defaultAppointmentDuration || 30} دقيقة
-                  </p>
-                )}
-              </div>
+             {/* مدة الموعد */}
+<div className="space-y-2">
+  <label className={labelClassName}>
+    <Timer size={16} className="text-gray-600" />
+    مدة الموعد الافتراضية (دقيقة)
+  </label>
+  {isEditing ? (
+    <input
+      type="number"
+      value={durationInput}
+      onChange={(e) => setDurationInput(e.target.value)}
+      onBlur={() => {
+        const val = parseInt(durationInput, 10);
+        if (isNaN(val) || val < 15) {
+          setDurationInput("15");
+          handleInputChange("defaultAppointmentDuration", 15);
+        } else if (val > 120) {
+          setDurationInput("120");
+          handleInputChange("defaultAppointmentDuration", 120);
+        } else {
+          setDurationInput(String(val));
+          handleInputChange("defaultAppointmentDuration", val);
+        }
+      }}
+      min={15}
+      max={120}
+      step={15}
+      placeholder="30"
+      className={inputClassName}
+    />
+  ) : (
+    <p className={`${displayValueClassName} bg-gray-50 rounded-xl p-3 inline-block`}>
+      {clinicData.settings?.defaultAppointmentDuration || 30} دقيقة
+    </p>
+  )}
+</div>
               
               {/* الألوان */}
               <div className="space-y-4">
