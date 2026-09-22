@@ -2831,6 +2831,7 @@ const togglePaymentStatus = useCallback((sessionId: string, currentIsPaid: boole
                 patientId={patient.id}
                 clinicId={patient.clinicId}
                 patientName={patient.fullName}
+                patientPhone={patient.phone}
                 primaryColor={primaryColor}
                 editable={true}
                 onDirtyChange={setIsChartDirty}

@@ -74,6 +74,7 @@ export async function POST(request: NextRequest) {
 
     if (latestIndex !== -1) {
         const info = sessionsData[latestIndex].info;
+        console.log(info)
         const data = createdSessions[latestIndex];
 
         if (info && !info.prevent_auto_messages) {
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest) {
             const month = (localStart.getUTCMonth() + 1).toString().padStart(2, '0');
             const day = localStart.getUTCDate().toString().padStart(2, '0');
             const date = `${year}-${month}-${day}`;
-
+            console.log(`⏰ إرسال رسالة للموعد الأحدث: ${date} ${time} لـ ${info.patientName}`);
             waitUntil(
                 sendMessage(info.phoneNumber, generateWhatsAppMessage({
                     patient: { fullName: info.patientName, gender: info.gender, id: data.patientId },
