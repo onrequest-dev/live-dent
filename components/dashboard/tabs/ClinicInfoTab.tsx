@@ -373,7 +373,7 @@ useEffect(() => {
   const displayWorkingHours = isEditing ? workingHours : createWorkingHoursFromClinic(clinicData);
 
   return (
-    <div className="pt-3 pb-20 px-2 space-y-6" dir="rtl">
+    <div className="pt-3 pb-20 px-0 space-y-6" dir="rtl">
       {/* الهيدر */}
       <div className="flex items-center justify-between">
         <div>

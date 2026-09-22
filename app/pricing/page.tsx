@@ -349,7 +349,7 @@ export default function PricingPage() {
 
               {/* الوصف */}
               <p
-                className="text-sm sm:text-[15px] leading-relaxed mb-6 max-w-sm mx-auto"
+                className="text-sm sm:text-[15px] leading-relaxed mb-3 max-w-sm mx-auto"
                 style={{ color: COLORS.textSecondary }}
               >
                 {step.description}
@@ -374,78 +374,100 @@ export default function PricingPage() {
               </div>
 
               {/* الأسعار */}
-              {step.isPricing && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3, duration: 0.5 }}
-                  className="grid grid-cols-2 gap-3 mt-7 max-w-xs mx-auto"
-                >
-                  {/* شهري */}
-                  <div
-                    className="p-4 rounded-2xl"
-                    style={{
-                      backgroundColor: COLORS.surface,
-                      border: `1px solid ${COLORS.border}`,
-                      boxShadow: '0 8px 30px rgba(0, 67, 250, 0.06)',
-                    }}
-                  >
-                    <p
-                      className="text-[10px] font-semibold uppercase tracking-wider mb-1.5"
-                      style={{ color: COLORS.textSecondary }}
-                    >
-                      شهرياً
-                    </p>
-                    <p className="text-2xl font-bold" style={{ color: COLORS.text }}>
-                      $10
-                    </p>
-                  </div>
+{step.isPricing && (
+  <motion.div
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.3, duration: 0.5 }}
+    className="mt-7 max-w-sm mx-auto"
+  >
+    {/* بطاقتا الأسعار */}
+    <div className="grid grid-cols-2 gap-3">
+      
+      {/* ===== شهري ===== */}
+      <div
+        className="p-4 rounded-2xl text-center"
+        style={{
+          backgroundColor: COLORS.surface,
+          border: `1px solid ${COLORS.border}`,
+          boxShadow: '0 8px 30px rgba(0, 67, 250, 0.06)',
+        }}
+      >
+        <p
+          className="text-[10px] font-semibold uppercase tracking-wider mb-2"
+          style={{ color: COLORS.textSecondary }}
+        >
+          شهرياً
+        </p>
+        <p className="text-3xl font-bold mb-1" style={{ color: COLORS.text }}>
+          $10
+        </p>
+        <p
+          className="text-[10px] font-medium"
+          style={{ color: COLORS.textMuted }}
+        >
+          مرونة كاملة
+        </p>
+      </div>
 
-                  {/* سنوي */}
-                  <div
-                    className="p-4 rounded-2xl relative"
-                    style={{
-                      backgroundColor: `${COLORS.primary}10`,
-                      border: `1.5px solid ${COLORS.primary}50`,
-                      boxShadow: `0 10px 30px ${COLORS.primary}20`,
-                    }}
-                  >
-                    <div
-                      className="absolute -top-2 left-3 text-[9px] font-bold px-2 py-0.5 rounded-full"
-                      style={{
-                        backgroundColor: COLORS.primary,
-                        color: '#fff',
-                      }}
-                    >
-                      الأفضل
-                    </div>
-                    <p
-                      className="text-[10px] font-semibold uppercase tracking-wider mb-1.5"
-                      style={{ color: COLORS.textSecondary }}
-                    >
-                      سنوياً
-                    </p>
-                    <p
-                      className="text-2xl font-bold flex items-baseline gap-1.5"
-                      style={{ color: COLORS.primary }}
-                    >
-                      <span
-                        className="text-xs line-through opacity-50 font-medium"
-                        style={{ color: COLORS.textSecondary }}
-                      >
-                        $120
-                      </span>
-                      $100
-                    </p>
-                  </div>
-                </motion.div>
-              )}
+      {/* ===== سنوي (الأفضل) ===== */}
+      <div
+        className="p-4 rounded-2xl relative overflow-hidden text-center"
+        style={{
+          backgroundColor: `${COLORS.primary}10`,
+          border: `1.5px solid ${COLORS.primary}60`,
+          boxShadow: `0 12px 35px ${COLORS.primary}25`,
+        }}
+      >
+        <p
+          className="text-[10px] font-semibold uppercase tracking-wider mb-2 mt-2"
+          style={{ color: COLORS.primary }}
+        >
+          سنوياً
+        </p>
+        <p
+          className="text-3xl font-bold flex items-baseline justify-center gap-1.5 mb-1"
+          style={{ color: COLORS.primary }}
+        >
+          <span
+            className="text-xs line-through opacity-50 font-medium"
+            style={{ color: COLORS.textSecondary }}
+          >
+            $120
+          </span>
+          $100
+        </p>
+        <p
+          className="text-[10px] font-bold"
+          style={{ color: COLORS.primary }}
+        >
+          توفير $20 · شهرين مجاناً
+        </p>
+      </div>
+    </div>
+
+    {/* ===== سطر الطمأنة ===== */}
+    <motion.p
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.6, duration: 0.5 }}
+      className="text-center text-[11px] sm:text-xs font-medium mt-4 flex items-center justify-center gap-1.5"
+      style={{ color: COLORS.textSecondary }}
+    >
+      <span
+        className="inline-block w-1.5 h-1.5 rounded-full"
+        style={{ backgroundColor: '#10b981' }}
+      />
+      سجّل مباشرة بدون أي رسوم — وجرّب إن كان نظامنا يلائمك
+    </motion.p>
+  </motion.div>
+)}
             </motion.div>
           </AnimatePresence>
         </div>
 
         {/* ===== التنقل ===== */}
-        <div className="mt-10 flex flex-col items-center gap-5">
+        <div className="mt-2 flex flex-col items-center gap-5">
           {/* النقاط */}
           <div className="flex items-center gap-1.5">
             {STEPS.map((_, i) => (
