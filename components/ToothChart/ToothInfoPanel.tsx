@@ -7,6 +7,8 @@ import { Check, X, Plus, CalendarPlus, Trash2, AlertTriangle, Clock, CalendarDay
 import { ToothData } from "./ToothChart";
 import { createBulkSessions } from "@/client/helpers/session";
 import { getToothDisplay } from "@/lib/toothNames";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
+
 // ============================================================
 // الواجهات
 // ============================================================
@@ -285,7 +287,10 @@ export function ToothInfoPanel({
   const [isApplying, setIsApplying] = useState(false);
   const [applyMessage, setApplyMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [displayPreference, setDisplayPreference] = useState<"number" | "name" | "both">("number");
-
+  // ✅ جديد - للتنقل بين التبويبات
+const router = useRouter();
+const pathname = usePathname();
+const searchParams = useSearchParams();
 useEffect(() => {
   const saved = localStorage.getItem('tooth_display_preference');
   if (saved === 'number' || saved === 'name' || saved === 'both') {
@@ -757,9 +762,29 @@ const handleConfirmApply = async () => {
               ) : (
                 <div className="space-y-2">
                   {availableTemplates.length === 0 ? (
-                    <p className="text-sm text-gray-400 py-2">
-                      لا توجد قوالب علاجية. أنشئ قوالب من تبويب العلاجات أولاً.
-                    </p>
+  <div className="py-3 space-y-3">
+    <p className="text-sm text-gray-400">
+      راجع القوالب العلاجية وتأكد أنها ملائمة لأسعارك ومواعيدك
+    </p>
+
+    <motion.button
+      whileHover={{ scale: 1.02, y: -1 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={() => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("tab", "treatments");
+        router.push(`${pathname}?${params.toString()}`, { scroll: false });
+      }}
+      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
+      style={{
+        backgroundColor: `${primaryColor}10`,
+        border: `1.5px solid ${primaryColor}30`,
+        color: primaryColor,
+      }}
+    >
+      <span>الذهاب إلى العلاجات</span>
+    </motion.button>
+  </div>
                   ) : (
                     availableTemplates.map((template) => (
                       <button

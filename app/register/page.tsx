@@ -692,7 +692,20 @@ function LiveDentRegistrationForm({
   const handleGoToDashboard = () => {
     if (!successData) return;
     const cleanPhone = cleanPhoneNumber(formData.phoneNumber);
-    const message = `مرحبًا ${formData.doctorName}، تم إنشاء حسابك بنجاح على LiveDent.\n\nاسم المستخدم: ${formData.username}\ \n\nيمكنك الآن تسجيل الدخول إلى لوحة التحكم الخاصة بك.`;
+    const message = `مرحباً د. ${formData.doctorName}
+
+أهلاً وسهلاً بك في LiveDent.
+
+يمكنك الآن تجربة النظام بكامل راحتك واستكشاف جميع ميزاته.
+
+نحترم وقتك — لن نزعجك بالتواصل الآن.
+
+سنتواصل معك خلال هذا الأسبوع.
+
+إذا احتجت أي مساعدة أو كان لديك استفسار، خدمة العملاء في خدمتك على الرقم:
++963982719525
+
+شكراً لك`;
     fetch("/api/v1/hello-user", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
