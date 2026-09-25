@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 
-const STORAGE_KEY = "live_dent_update_v3_shown"; // المفتاح الجديد
-const OLD_KEY = "live_dent_update_v2_shown"; // المفتاح القديم الذي سنحذفه
+const STORAGE_KEY = "live_dent_update_v4_shown"; // المفتاح الجديد
+const OLD_KEY = "live_dent_update_v3_shown"; // المفتاح القديم الذي سنحذفه
 
 const UpdateModal = () => {
   const [visible, setVisible] = useState(false);
@@ -58,7 +58,7 @@ const UpdateModal = () => {
           <span className="text-blue-500 font-extrabold">Live-Dent</span> 
         </h2>
         <p className="text-center text-sm text-gray-500 mt-1 mb-4">
-          أهلاً بكم في النسخة 3.0.2
+          أهلاً بكم في النسخة 3.0.3
         </p>
 
         <div className="bg-gray-100 rounded-xl p-3.5 mb-4">
@@ -68,20 +68,28 @@ const UpdateModal = () => {
           <ul className="list-none p-0 m-0 space-y-1.5">
             <li className="flex items-start text-sm text-[#2c2c2e]">
               <span className="text-blue-500 font-bold ml-2">•</span>
-              إضافة أنظمة ترقيم الأسنان / نظام FDI و Universal و Palmer
+              إضافة قائمة بأشهر المعالجات السنية بشكل قابل للتخصيص 
             </li>
 
             <li className="flex items-start text-sm text-[#2c2c2e]">
               <span className="text-blue-500 font-bold ml-2">•</span>
-              رسائل تلقائة فورية للمرضى عبر واتساب لتنبيههم للمواعيد 
+              يمكنك الآن اضافة قوالب علاجية على الشارت السني بشكل مباشر 
             </li>
             <li className="flex items-start text-sm text-[#2c2c2e]">
               <span className="text-blue-500 font-bold ml-2">•</span>
-              تحسينات في واجهة المستخدم لتسهيل الإستخدام
+              مواعيد ذكية تحدد تلقائيا بمجرد تطبيق القالب العلاجي
             </li>
             <li className="flex items-start text-sm text-[#2c2c2e]">
               <span className="text-blue-500 font-bold ml-2">•</span>
-              المزيد من الميزات المساعدة قريباً
+              إضافة تحسينات على الآلية الزمنية 
+            </li>
+            <li className="flex items-start text-sm text-[#2c2c2e]">
+              <span className="text-blue-500 font-bold ml-2">•</span>
+              تحسينات في واجهة المستخدم - تضمن عمليات ادخال اسلس
+            </li>
+            <li className="flex items-start text-sm text-[#2c2c2e]">
+              <span className="text-blue-500 font-bold ml-2">•</span>
+              إضافة تبويب خاص لمراجعة المواعيد اليومية وتسهيل التواصل مع المريض
             </li>
           </ul>
         </div>
