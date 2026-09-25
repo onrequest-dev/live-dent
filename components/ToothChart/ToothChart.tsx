@@ -48,6 +48,9 @@ export interface ToothData {
 export interface ToothChartProps {
   patientId?: string;
   patientName?: string;
+  patientPhone?: string; // ✅ جديد
+  patientGender?: string; // ✅ جديد
+  clinicName?: string; // ✅ جديد
   clinicId?: string;
   initialTeethData?: ToothData[];
   onSave?: (teethData: ToothData[]) => Promise<void>;
@@ -55,8 +58,8 @@ export interface ToothChartProps {
   className?: string;
   primaryColor?: string;
   onDirtyChange?: (isDirty: boolean) => void;
-  clinicData?: any; // ✅ إضافة
-  existingSessions?: any[]; // ✅ إضافة
+  clinicData?: any;
+  existingSessions?: any[];
 }
 
 // نوع المرجع الذي سيتم تعريضه للمكون الأب
@@ -450,6 +453,9 @@ export const ToothChart = forwardRef<ToothChartRef, ToothChartProps>(
     {
       patientId,
       patientName,
+      patientPhone, // ✅ جديد
+      patientGender, // ✅ جديد
+      clinicName, // ✅ جديد
       initialTeethData,
       onSave,
       editable = true,
@@ -457,8 +463,8 @@ export const ToothChart = forwardRef<ToothChartRef, ToothChartProps>(
       primaryColor = "#007bff",
       onDirtyChange,
       clinicId,
-      clinicData, // ✅ استقبال
-      existingSessions = [], // ✅ استقبال 
+      clinicData,
+      existingSessions = [],
     },
     ref,
   ) {
@@ -483,28 +489,28 @@ export const ToothChart = forwardRef<ToothChartRef, ToothChartProps>(
     const infoPanelRef = useRef<HTMLDivElement>(null);
 
     // كشف حجم الشاشة
-useEffect(() => {
-  const checkMobile = () => {
-    const width = window.innerWidth;
-    setIsMobile(width < 768);
-    setIsTablet(width >= 768 && width < 1200); // كشف التابلت
-  };
-  checkMobile();
-  window.addEventListener("resize", checkMobile);
-  return () => window.removeEventListener("resize", checkMobile);
-}, []);
-// ✅ استعادة السن المحدد بعد التحديث
-useEffect(() => {
-  const lastSelectedToothId = sessionStorage.getItem("lastSelectedToothId");
-  
-  if (lastSelectedToothId) {
-    const toothId = parseInt(lastSelectedToothId);
-    if (!isNaN(toothId) && toothId >= 1 && toothId <= 32) {
-      setSelectedToothId(toothId);
-    }
-    sessionStorage.removeItem("lastSelectedToothId");
-  }
-}, []);
+    useEffect(() => {
+      const checkMobile = () => {
+        const width = window.innerWidth;
+        setIsMobile(width < 768);
+        setIsTablet(width >= 768 && width < 1200); // كشف التابلت
+      };
+      checkMobile();
+      window.addEventListener("resize", checkMobile);
+      return () => window.removeEventListener("resize", checkMobile);
+    }, []);
+    // ✅ استعادة السن المحدد بعد التحديث
+    useEffect(() => {
+      const lastSelectedToothId = sessionStorage.getItem("lastSelectedToothId");
+
+      if (lastSelectedToothId) {
+        const toothId = parseInt(lastSelectedToothId);
+        if (!isNaN(toothId) && toothId >= 1 && toothId <= 32) {
+          setSelectedToothId(toothId);
+        }
+        sessionStorage.removeItem("lastSelectedToothId");
+      }
+    }, []);
     // جلب البيانات من API عند عدم وجود initialTeethData
     useEffect(() => {
       if (!initialTeethData && patientId) {
@@ -513,23 +519,23 @@ useEffect(() => {
           setFetchError(null);
 
           try {
-const chartData = await fetchDentalChart(patientId);
+            const chartData = await fetchDentalChart(patientId);
 
-let normalized: ToothData[];
+            let normalized: ToothData[];
 
-if (chartData && chartData.teeth) {
-  normalized = normalizeChartTeeth(chartData.teeth);
-} else {
-  normalized = DEFAULT_TEETH_DATA;
-}
+            if (chartData && chartData.teeth) {
+              normalized = normalizeChartTeeth(chartData.teeth);
+            } else {
+              normalized = DEFAULT_TEETH_DATA;
+            }
 
-// ✅ دمج ألوان القوالب المعينة
-if (patientId) {
-  normalized = mergeTemplateColors(normalized, patientId);
-}
+            // ✅ دمج ألوان القوالب المعينة
+            if (patientId) {
+              normalized = mergeTemplateColors(normalized, patientId);
+            }
 
-setTeethData(normalized);
-originalDataRef.current = normalized;
+            setTeethData(normalized);
+            originalDataRef.current = normalized;
           } catch (error: any) {
             setFetchError(error.message || "فشل تحميل بيانات الأسنان");
             setTeethData(DEFAULT_TEETH_DATA);
@@ -544,19 +550,19 @@ originalDataRef.current = normalized;
     }, [patientId, initialTeethData]);
 
     // تحديث البيانات الأولية عند تغيرها من الخارج
-useEffect(() => {
-  if (initialTeethData) {
-    let mergedData = initialTeethData;
-    
-    // ✅ دمج ألوان القوالب المعينة
-    if (patientId) {
-      mergedData = mergeTemplateColors(initialTeethData, patientId);
-    }
-    
-    setTeethData(mergedData);
-    originalDataRef.current = mergedData;
-  }
-}, [initialTeethData, patientId]);
+    useEffect(() => {
+      if (initialTeethData) {
+        let mergedData = initialTeethData;
+
+        // ✅ دمج ألوان القوالب المعينة
+        if (patientId) {
+          mergedData = mergeTemplateColors(initialTeethData, patientId);
+        }
+
+        setTeethData(mergedData);
+        originalDataRef.current = mergedData;
+      }
+    }, [initialTeethData, patientId]);
 
     // مقارنة البيانات الحالية مع الأصلية لاكتشاف التغيير
     useEffect(() => {
@@ -597,16 +603,16 @@ useEffect(() => {
     );
 
     // تحديث بيانات السن
-const handleUpdateTooth = useCallback((updatedTooth: ToothData) => {
-  setTeethData((prev) =>
-    prev.map((t) => (t.id === updatedTooth.id ? updatedTooth : t)),
-  );
-  
-  // ✅ تحديث originalDataRef أيضاً
-  originalDataRef.current = originalDataRef.current.map((t) =>
-    t.id === updatedTooth.id ? updatedTooth : t,
-  );
-}, []);
+    const handleUpdateTooth = useCallback((updatedTooth: ToothData) => {
+      setTeethData((prev) =>
+        prev.map((t) => (t.id === updatedTooth.id ? updatedTooth : t)),
+      );
+
+      // ✅ تحديث originalDataRef أيضاً
+      originalDataRef.current = originalDataRef.current.map((t) =>
+        t.id === updatedTooth.id ? updatedTooth : t,
+      );
+    }, []);
 
     // حفظ البيانات
     const handleSave = useCallback(async () => {
@@ -640,7 +646,7 @@ const handleUpdateTooth = useCallback((updatedTooth: ToothData) => {
       } catch (error: any) {
         setSaveMessage({
           type: "error",
-          text:  "فشل حفظ الشارت",
+          text: "فشل حفظ الشارت",
         });
         throw error;
       } finally {
@@ -659,9 +665,9 @@ const handleUpdateTooth = useCallback((updatedTooth: ToothData) => {
 
     // سكيليتون التحميل
     const renderSkeleton = () => (
-    <div ref={containerRef} className={`tooth-chart-wrapper ${className}`}>
-      <ToothChartSkeleton isMobile={isMobile} />
-    </div>
+      <div ref={containerRef} className={`tooth-chart-wrapper ${className}`}>
+        <ToothChartSkeleton isMobile={isMobile} />
+      </div>
     );
 
     // رسالة الخطأ
@@ -799,29 +805,22 @@ const handleUpdateTooth = useCallback((updatedTooth: ToothData) => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}
                 >
-<ToothInfoPanel
+                  <ToothInfoPanel
   tooth={selectedTooth}
   onUpdate={handleUpdateTooth}
   primaryColor={primaryColor}
   editable={editable}
-  isMobile={true}  // أو false حسب الموقع
-  // ✅ أضف هذه الخصائص:
+  isMobile={true}
   patientId={patientId}
   clinicId={clinicId}
   patientName={patientName}
-  clinicName={undefined}  // يمكن تمرير اسم العيادة إذا متوفر
-  clinicData={clinicData} // ✅ بيانات العيادة
-  existingSessions={existingSessions} // ✅ المواعيد المحجوزة
-  onTemplatesApplied={() => {
-    // تحديث الشارت بعد التطبيق
-    console.log("تم تطبيق القالب");
-  }}
-    onSessionsChanged={() => {
-    // ✅ تحديث المواعيد محلياً بدون إعادة تحميل
-    // يمكنك إعادة جلب الجلسات أو تحديث الحالة
-    console.log("تم تطبيق قالب - تحديث المواعيد");
-    // مثلاً: refetch sessions
-  }}
+  patientPhone={patientPhone}     
+  patientGender={patientGender}   
+  clinicName={clinicName}         
+  clinicData={clinicData}
+  existingSessions={existingSessions}
+  onTemplatesApplied={() => { console.log("تم تطبيق القالب"); }}
+  onSessionsChanged={() => { console.log("تم تطبيق قالب - تحديث المواعيد"); }}
 />
                 </motion.div>
               )}
@@ -843,21 +842,21 @@ const handleUpdateTooth = useCallback((updatedTooth: ToothData) => {
           </div>
         ) : (
           <div className="flex gap-3 items-start">
-<div
-  className="bg-white rounded-2xl border border-gray-100 p-2"
-  style={{ 
-    width: isTablet ? "320px" : "380px", // أصغر في التابلت
-    flexShrink: 0 
-  }}
->
-  <ToothChartSVG
-    teethData={teethData}
-    selectedToothId={selectedToothId}
-    onToothClick={handleToothClick}
-    editable={editable}
-    primaryColor={primaryColor}
-  />
-</div>
+            <div
+              className="bg-white rounded-2xl border border-gray-100 p-2"
+              style={{
+                width: isTablet ? "320px" : "380px", // أصغر في التابلت
+                flexShrink: 0,
+              }}
+            >
+              <ToothChartSVG
+                teethData={teethData}
+                selectedToothId={selectedToothId}
+                onToothClick={handleToothClick}
+                editable={editable}
+                primaryColor={primaryColor}
+              />
+            </div>
 
             <div className="flex-1 min-w-0">
               <AnimatePresence mode="wait">
@@ -868,29 +867,22 @@ const handleUpdateTooth = useCallback((updatedTooth: ToothData) => {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 20 }}
                   >
-<ToothInfoPanel
+                    <ToothInfoPanel
   tooth={selectedTooth}
   onUpdate={handleUpdateTooth}
   primaryColor={primaryColor}
   editable={editable}
-  isMobile={false}  // أو false حسب الموقع
-  // ✅ أضف هذه الخصائص:
+  isMobile={false}
   patientId={patientId}
   clinicId={clinicId}
   patientName={patientName}
-  clinicName={undefined}  // يمكن تمرير اسم العيادة إذا متوفر
-  clinicData={clinicData} // ✅ بيانات العيادة
-  existingSessions={existingSessions} // ✅ المواعيد المحجوزة
-  onTemplatesApplied={() => {
-    // تحديث الشارت بعد التطبيق
-    console.log("تم تطبيق القالب");
-  }}
-    onSessionsChanged={() => {
-    // ✅ تحديث المواعيد محلياً بدون إعادة تحميل
-    // يمكنك إعادة جلب الجلسات أو تحديث الحالة
-    console.log("تم تطبيق قالب - تحديث المواعيد");
-    // مثلاً: refetch sessions
-  }}
+  patientPhone={patientPhone}      
+  patientGender={patientGender}    
+  clinicName={clinicName}          
+  clinicData={clinicData}
+  existingSessions={existingSessions}
+  onTemplatesApplied={() => { console.log("تم تطبيق القالب"); }}
+  onSessionsChanged={() => { console.log("تم تطبيق قالب - تحديث المواعيد"); }}
 />
                   </motion.div>
                 ) : (
