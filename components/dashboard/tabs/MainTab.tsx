@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useParams } from "next/navigation";
+import { useParams, useRouter, usePathname, useSearchParams } from "next/navigation";
 import { ExpandedSessionCard } from "./ExpandedSessionCard";
 import {
   Search,
@@ -222,6 +222,10 @@ const [sessions, setSessions] = useState<Session[]>(() => {
   const [isUpdatingPatient, setIsUpdatingPatient] = useState(false);
 
   const { toasts, addToast, removeToast } = useToast();
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
     try {
@@ -1290,11 +1294,11 @@ const handleUpdateSessionStatus = useCallback(async (
 
       {/* ⏰ 2) عيّن أوقات عملك */}
       <button
-        onClick={() => {
-          const url = new URL(window.location.href);
-          url.searchParams.set("tab", "clinic");
-          window.location.href = url.toString();
-        }}
+onClick={() => {
+  const params = new URLSearchParams(searchParams.toString());
+  params.set("tab", "clinic");
+  router.push(`${pathname}?${params.toString()}`, { scroll: false });
+}}
         className="flex items-center gap-3 px-4 py-3 sm:py-3.5 rounded-2xl transition-all duration-200 group hover:bg-white hover:shadow-sm active:scale-[0.98]"
         style={{
           backgroundColor: "#fafbfc",
@@ -1329,11 +1333,11 @@ const handleUpdateSessionStatus = useCallback(async (
 
       {/* 💎 3) عيّن خدمات عيادتك */}
       <button
-        onClick={() => {
-          const url = new URL(window.location.href);
-          url.searchParams.set("tab", "treatments");
-          window.location.href = url.toString();
-        }}
+onClick={() => {
+  const params = new URLSearchParams(searchParams.toString());
+  params.set("tab", "treatments");
+  router.push(`${pathname}?${params.toString()}`, { scroll: false });
+}}
         className="flex items-center gap-3 px-4 py-3 sm:py-3.5 rounded-2xl transition-all duration-200 group hover:bg-white hover:shadow-sm active:scale-[0.98]"
         style={{
           backgroundColor: "#fafbfc",
@@ -2303,7 +2307,7 @@ const togglePaymentStatus = useCallback((sessionId: string, currentIsPaid: boole
   {/* السعر المتفق عليه وإجمالي التكلفة */}
   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 w-full sm:w-auto">
     {/* السعر المتفق عليه */}
-    <div className="flex items-center gap-1.5">
+    {/* <div className="flex items-center gap-1.5">
       <span className="text-[11px] sm:text-xs text-gray-500 whitespace-nowrap">
         السعر المتفق عليه:
       </span>
@@ -2312,7 +2316,7 @@ const togglePaymentStatus = useCallback((sessionId: string, currentIsPaid: boole
           <span className="text-gray-400 font-medium">غير محدد</span>
         )}
       </span>
-    </div>
+    </div> */}
 
     {/* فاصل */}
     <span className="text-gray-300 text-xs">|</span>
@@ -3731,16 +3735,16 @@ function NewPatientModal({
     fullName: "",
     phone: "",
     email: "",
-    gender: "male" as "male" | "female",
+  gender: (typeof window !== "undefined"
+    ? (localStorage.getItem("last_patient_gender") as "male" | "female" | null)
+    : null) || "male",
     age: "",
     address: "",
     notes: "",
     plannedProcedure: "",
     totalPrice: "",
     addAppointment: true,
-    appointmentMode: "date" as "date" | "days",
     appointment: {
-      days: "1",
       date: todayLocalString(),
       time: "",
       procedure: "كشف أولي",
@@ -3749,16 +3753,9 @@ function NewPatientModal({
     },
   });
 
-  const calculateAppointmentDate = (): Date => {
-    if (formData.appointmentMode === "days") {
-      const days = parseInt(formData.appointment.days) || 1;
-      const date = new Date();
-      date.setDate(date.getDate() + days);
-      return date;
-    } else {
-      return fromLocalDateString(formData.appointment.date); 
-    }
-  };
+const calculateAppointmentDate = (): Date => {
+  return fromLocalDateString(formData.appointment.date);
+};
 
   const calculateBirthYear = (age: number): number => {
     const currentYear = new Date().getFullYear();
@@ -3790,7 +3787,7 @@ const bookedSlotsForDate = useMemo(() => {
         endTime: `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`,
       };
     });
-}, [sessions, formData.appointmentMode, formData.appointment.days, formData.appointment.date]);
+},  [sessions, formData.appointment.date]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError(null);
@@ -4076,15 +4073,19 @@ const appointmentDate = mergeLocalDateAndTime(dateStr, formData.appointment.time
                       title="ذكر"
                     >
                       <input
-                        type="radio"
-                        value="male"
-                        checked={formData.gender === "male"}
-                        onChange={() =>
-                          setFormData({ ...formData, gender: "male" })
-                        }
-                        disabled={isLoading}
-                        className="sr-only"
-                      />
+                          type="radio"
+                          value="male"
+                          checked={formData.gender === "male"}
+                          onChange={() => {
+                            setFormData({ ...formData, gender: "male" });
+                            // ✅ احفظ آخر جنس
+                            try {
+                              localStorage.setItem("last_patient_gender", "male");
+                            } catch {}
+                          }}
+                          disabled={isLoading}
+                          className="sr-only"
+                        />
                       <Mars size={20} className="text-blue-600" />
                     </label>
                     <label
@@ -4099,9 +4100,13 @@ const appointmentDate = mergeLocalDateAndTime(dateStr, formData.appointment.time
                         type="radio"
                         value="female"
                         checked={formData.gender === "female"}
-                        onChange={() =>
-                          setFormData({ ...formData, gender: "female" })
-                        }
+                        onChange={() => {
+                          setFormData({ ...formData, gender: "female" });
+                          // ✅ احفظ آخر جنس
+                          try {
+                            localStorage.setItem("last_patient_gender", "female");
+                          } catch {}
+                        }}
                         disabled={isLoading}
                         className="sr-only"
                       />
@@ -4112,7 +4117,7 @@ const appointmentDate = mergeLocalDateAndTime(dateStr, formData.appointment.time
               </div>
 
               {/* الإجراء المخطط 2/3 والسعر الإجمالي 1/3 */}
-              <div className="flex gap-3 items-start">
+              {/* <div className="flex gap-3 items-start">
                 <div className="w-2/3">
                   <label className="block text-sm font-semibold text-gray-900 mb-2">
                     الإجراء المخطط
@@ -4167,7 +4172,7 @@ const appointmentDate = mergeLocalDateAndTime(dateStr, formData.appointment.time
                     </span>
                   </div>
                 </div>
-              </div>
+              </div> */}
 
               {/* ملاحظات وإضافة موعد أولي في صف واحد على سطح المكتب */}
               <div className="flex flex-col sm:flex-row gap-3 items-start">
@@ -4259,46 +4264,6 @@ const appointmentDate = mergeLocalDateAndTime(dateStr, formData.appointment.time
             {formData.addAppointment && (
               <div className="space-y-4">
                 <div className="p-4 bg-gray-50 rounded-xl space-y-4 border-2 border-dashed border-gray-200">
-                  {/* طريقة تحديد الموعد */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      طريقة تحديد الموعد
-                    </label>
-
-                    <div className="inline-flex w-full bg-gray-100 p-1 rounded-xl">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setFormData({ ...formData, appointmentMode: "days" })
-                        }
-                        disabled={isLoading}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200 ${
-                          formData.appointmentMode === "days"
-                            ? "bg-white text-gray-900 shadow-sm"
-                            : "text-gray-500 hover:text-gray-700"
-                        } disabled:opacity-50 disabled:cursor-not-allowed`}
-                      >
-                        <Calendar size={16} className="flex-shrink-0" />
-                        <span>بعد أيام</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setFormData({ ...formData, appointmentMode: "date" })
-                        }
-                        disabled={isLoading}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200 ${
-                          formData.appointmentMode === "date"
-                            ? "bg-white text-gray-900 shadow-sm"
-                            : "text-gray-500 hover:text-gray-700"
-                        } disabled:opacity-50 disabled:cursor-not-allowed`}
-                      >
-                        <CalendarCheck size={16} className="flex-shrink-0" />
-                        <span>تاريخ محدد</span>
-                      </button>
-                    </div>
-                  </div>
 
                   {/* الإجراء 2/3 والتكلفة 1/3 في صف واحد */}
                   <div className="flex gap-3 items-start">
@@ -4363,80 +4328,53 @@ const appointmentDate = mergeLocalDateAndTime(dateStr, formData.appointment.time
                     </div>
                   </div>
 
-                  {/* التاريخ والوقت في صف واحد */}
-                  <div className="flex gap-3 items-start">
-                   {formData.appointmentMode === "days" ? (
-  <div className="flex-1">
-    <label className="block text-sm font-medium text-gray-700 mb-2">
-      بعد كم يوم؟
-    </label>
-    <input
-      type="number"
-      min="1"
-      max="10"
-      value={formData.appointment.days}
-      onChange={(e) =>
+{/* التاريخ والوقت في صف واحد */}
+<div className="flex gap-3 items-start">
+  <div className="w-2/3">
+    <SmartDatePicker
+      label="التاريخ"
+      required
+      value={formData.appointment.date}
+      onChange={(date) => {
+        const dateStr = toLocalDateString(date);
         setFormData({
           ...formData,
           appointment: {
             ...formData.appointment,
-            days: e.target.value,
+            date: dateStr,
+          },
+        });
+      }}
+      minDate={new Date()}
+      primaryColor={primaryColor}
+      disabled={isLoading}
+      workingHours={clinicData?.settings?.workingHours || []}
+    />
+  </div>
+
+  <div className="flex-1">
+    <SmartTimePicker
+      label="الوقت"
+      required
+      value={formData.appointment.time}
+      onChange={(time) =>
+        setFormData({
+          ...formData,
+          appointment: {
+            ...formData.appointment,
+            time,
           },
         })
       }
+      primaryColor={primaryColor}
       disabled={isLoading}
-      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 shadow-sm focus:ring-2 focus:ring-opacity-50 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-gray-400"
-      style={{ "--tw-ring-color": primaryColor } as any}
+      appointmentDate={appointmentDate}
+      workingHours={clinicData?.settings?.workingHours || []}
+      appointmentDuration={clinicData?.settings?.defaultAppointmentDuration || 30}
+      bookedSlots={bookedSlotsForDate}
     />
   </div>
-) : (
-  <div className="w-2/3">
-<SmartDatePicker
-  label="التاريخ"
-  required
-  value={formData.appointment.date}
-  onChange={(date) => {
-    const dateStr = toLocalDateString(date);
-    setFormData({
-      ...formData,
-      appointment: {
-        ...formData.appointment,
-        date: dateStr,
-      },
-    });
-  }}
-  minDate={new Date()}
-  primaryColor={primaryColor}
-  disabled={isLoading}
-  workingHours={clinicData?.settings?.workingHours || []} // ✅ تمرير ساعات العمل
-/>
-  </div>
-)}
-                    <div className="flex-1">
-<div className="flex-1">
-<SmartTimePicker
-  label="الوقت"
-  required
-  value={formData.appointment.time}
-  onChange={(time) =>
-    setFormData({
-      ...formData,
-      appointment: {
-        ...formData.appointment,
-        time,
-      },
-    })
-  }
-  primaryColor={primaryColor}
-  disabled={isLoading}
-  appointmentDate={appointmentDate}
-  workingHours={clinicData?.settings?.workingHours || []}
-  appointmentDuration={clinicData?.settings?.defaultAppointmentDuration || 30}
-  bookedSlots={bookedSlotsForDate}
-/>
 </div>
-                    </div>
-                  </div>
                 </div>
               </div>
             )}
@@ -4520,27 +4458,18 @@ function NewAppointmentModal({
 
   const isLoading = externalLoading || internalLoading;
 
-  const [formData, setFormData] = useState({
-    appointmentMode: "days" as "days" | "date",
-    days: "1",
-    date: todayLocalString(),
-    time: "",
-    procedure: "",
-    cost: "",
-    caseId: "",
-    notes: "",
-  });
+const [formData, setFormData] = useState({
+  date: todayLocalString(),
+  time: "",
+  procedure: "",
+  cost: "",
+  caseId: "",
+  notes: "",
+});
 
-  const calculateAppointmentDate = useCallback((): Date => {
-    if (formData.appointmentMode === "days") {
-      const days = parseInt(formData.days) || 1;
-      const date = new Date();
-      date.setDate(date.getDate() + days);
-      return date;
-    } else {
-      return fromLocalDateString(formData.date);
-    }
-  }, [formData.appointmentMode, formData.days, formData.date]);
+const calculateAppointmentDate = useCallback((): Date => {
+  return fromLocalDateString(formData.date);
+}, [formData.date]);
   // ✅ حساب المواعيد المحجوزة لليوم المحدد
 const bookedSlotsForDate = useMemo(() => {
   if (!sessions || sessions.length === 0) return [];
@@ -4568,7 +4497,7 @@ const bookedSlotsForDate = useMemo(() => {
         endTime: `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`,
       };
     });
-}, [sessions, formData.appointmentMode, formData.days, formData.date]);
+},  [sessions, formData.date]);
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -4723,102 +4652,43 @@ const bookedSlotsForDate = useMemo(() => {
               </motion.div>
             )}
 
-            {/* طريقة تحديد الموعد */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                طريقة تحديد الموعد
-              </label>
-              <div className="inline-flex w-full bg-gray-100 p-1 rounded-xl">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setFormData({ ...formData, appointmentMode: "days" })
-                  }
-                  disabled={isLoading}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    formData.appointmentMode === "days"
-                      ? "bg-white text-gray-900 shadow-sm"
-                      : "text-gray-500 hover:text-gray-700"
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  <Calendar size={16} className="flex-shrink-0" />
-                  <span>بعد أيام</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setFormData({ ...formData, appointmentMode: "date" })
-                  }
-                  disabled={isLoading}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    formData.appointmentMode === "date"
-                      ? "bg-white text-gray-900 shadow-sm"
-                      : "text-gray-500 hover:text-gray-700"
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  <CalendarCheck size={16} className="flex-shrink-0" />
-                  <span>تاريخ محدد</span>
-                </button>
-              </div>
-            </div>
+
+            
 
             {/* التاريخ والوقت في صف واحد */}
-            <div className="flex gap-3 items-start">
-              {formData.appointmentMode === "days" ? (
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    بعد كم يوم؟ (1 - 10 أيام)
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="10"
-                    value={formData.days}
-                    onChange={(e) =>
-                      setFormData({ ...formData, days: e.target.value })
-                    }
-                    disabled={isLoading}
-                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 shadow-sm focus:ring-2 focus:ring-opacity-50 focus:border-[--tw-ring-color] transition-all disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-gray-400"
-                    style={{ "--tw-ring-color": primaryColor } as any}
-                  />
-                  <p className="text-xs text-gray-500 mt-2 flex items-center gap-1.5">
-                    <Calendar size={14} />
-                    <span>{formattedAppointmentDate}</span>
-                  </p>
-                </div>
-              ) : (
+<div className="flex gap-3 items-start">
   <div className="w-2/3">
-<SmartDatePicker
-  label="التاريخ"
-  required
-  value={formData.date}
-  onChange={(date) => {
-    const dateStr = toLocalDateString(date);
-    setFormData({ ...formData, date: dateStr });
-  }}
-  minDate={new Date()}
-  primaryColor={primaryColor}
-  disabled={isLoading}
-  workingHours={clinicData?.settings?.workingHours || []} // ✅ تمرير ساعات العمل
-/>
+    <SmartDatePicker
+      label="التاريخ"
+      required
+      value={formData.date}
+      onChange={(date) => {
+        const dateStr = toLocalDateString(date);
+        setFormData({ ...formData, date: dateStr });
+      }}
+      minDate={new Date()}
+      primaryColor={primaryColor}
+      disabled={isLoading}
+      workingHours={clinicData?.settings?.workingHours || []}
+    />
   </div>
-              )}
-<div className="flex-1">
-{/* في NewAppointmentModal */}
-<SmartTimePicker
-  label="الوقت"
-  required
-  value={formData.time}
-  onChange={(time) => setFormData({ ...formData, time })}
-  primaryColor={primaryColor}
-  disabled={isLoading}
-  appointmentDate={appointmentDate} // ✅ تاريخ الموعد
-  workingHours={clinicData?.settings?.workingHours || []} // ✅ ساعات العمل
-  appointmentDuration={clinicData?.settings?.defaultAppointmentDuration || 30} // ✅ مدة الموعد
-  bookedSlots={bookedSlotsForDate} // ✅ المواعيد المحجوزة
-/>
+
+  <div className="flex-1">
+    <SmartTimePicker
+      label="الوقت"
+      required
+      value={formData.time}
+      onChange={(time) => setFormData({ ...formData, time })}
+      primaryColor={primaryColor}
+      disabled={isLoading}
+      appointmentDate={appointmentDate}
+      workingHours={clinicData?.settings?.workingHours || []}
+      appointmentDuration={clinicData?.settings?.defaultAppointmentDuration || 30}
+      bookedSlots={bookedSlotsForDate}
+    />
+  </div>
 </div>
-            </div>
+
 
             {/* الإجراء والتكلفة في صف واحد */}
             <div className="flex gap-3 items-start">
@@ -5237,7 +5107,7 @@ function EditPatientModal({
               </div>
 
               {/* الإجراء المخطط 2/3 والسعر الإجمالي 1/3 */}
-              <div className="flex gap-3 items-start">
+              {/* <div className="flex gap-3 items-start">
                 <div className="w-2/3">
                   <label className="block text-sm font-semibold text-gray-900 mb-2">
                     الإجراء المخطط
@@ -5290,7 +5160,7 @@ function EditPatientModal({
                     </span>
                   </div>
                 </div>
-              </div>
+              </div> */}
 
               {/* ملاحظات */}
               <div>

@@ -4,13 +4,16 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { format, parseISO, isValid } from "date-fns";
 import { arSA } from "date-fns/locale";
-import { 
-  Calendar as CalendarIcon, 
-  X, 
-  ChevronUp, 
+import {
+  Calendar as CalendarIcon,
+  X,
+  ChevronUp,
   ChevronDown,
   CalendarX,
-  Info
+  Info,
+  ShieldAlert,
+  ShieldCheck,
+  AlertTriangle,
 } from "lucide-react";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
@@ -38,7 +41,7 @@ interface SmartDatePickerProps {
   maxDate?: Date;
   primaryColor?: string;
   className?: string;
-  workingHours?: any; // ✅ ساعات العمل لمعرفة أيام العطل
+  workingHours?: any;
 }
 
 // ============================================================
@@ -47,62 +50,64 @@ interface SmartDatePickerProps {
 
 const normalizeWorkingHours = (workingHours: any): WorkingHour[] => {
   if (!workingHours) return [];
-  
+
   if (Array.isArray(workingHours)) {
-    return workingHours.filter((wh) => wh && typeof wh === 'object');
+    return workingHours.filter((wh) => wh && typeof wh === "object");
   }
-  
-  if (typeof workingHours === 'object') {
+
+  if (typeof workingHours === "object") {
     const values = Object.values(workingHours);
-    
-    if (values.length > 0 && values.every((v) => v && typeof v === 'object')) {
+
+    if (
+      values.length > 0 &&
+      values.every((v) => v && typeof v === "object")
+    ) {
       return values.map((v: any, index: number) => ({
         day: v.day !== undefined ? v.day : index,
-        start: v.start || '09:00',
-        end: v.end || '17:00',
+        start: v.start || "09:00",
+        end: v.end || "17:00",
         isClosed: v.isClosed || false,
       }));
     }
-    
+
     const dayMap: { [key: string]: number } = {
-      'saturday': 0,
-      'sunday': 1,
-      'monday': 2,
-      'tuesday': 3,
-      'wednesday': 4,
-      'thursday': 5,
-      'friday': 6,
+      saturday: 0,
+      sunday: 1,
+      monday: 2,
+      tuesday: 3,
+      wednesday: 4,
+      thursday: 5,
+      friday: 6,
     };
-    
+
     const result: WorkingHour[] = [];
     for (const [key, value] of Object.entries(workingHours)) {
       const dayKey = dayMap[key.toLowerCase()];
-      if (dayKey !== undefined && value && typeof value === 'object') {
+      if (dayKey !== undefined && value && typeof value === "object") {
         result.push({
           day: dayKey,
-          start: (value as any).start || '09:00',
-          end: (value as any).end || '17:00',
+          start: (value as any).start || "09:00",
+          end: (value as any).end || "17:00",
           isClosed: (value as any).isClosed || false,
         });
       }
     }
-    
+
     if (result.length > 0) return result;
   }
-  
+
   return [];
 };
 
-// تحويل يوم JS (0=الأحد) إلى نظامنا (0=السبت)
 const convertJsDayToOurDay = (jsDay: number): number => {
   const map: { [key: number]: number } = {
-    0: 1, // الأحد -> 1
-    1: 2, // الإثنين -> 2
-    2: 3, // الثلاثاء -> 3
-    3: 4, // الأربعاء -> 4
-    4: 5, // الخميس -> 5
-    5: 6, // الجمعة -> 6
-    6: 0, // السبت -> 0
+    0: 1,
+    1: 2,
+    2: 3,
+    3: 4,
+    4: 5,
+    5: 6,
+    6: 0,
   };
   return map[jsDay];
 };
@@ -133,29 +138,54 @@ export function SmartDatePicker({
   const [isClosing, setIsClosing] = useState(false);
   const [hoveredClosedDay, setHoveredClosedDay] = useState<Date | null>(null);
 
-  // ✅ تطبيع workingHours
-  const normalizedWorkingHours = useMemo(() => {
-    return normalizeWorkingHours(workingHours);
-  }, [workingHours]);
+  // ✅ زر واحد لتجاوز كل القيود
+  const [bypassRestrictions, setBypassRestrictions] = useState(false);
 
-  // ✅ الحصول على أيام العطل (الأيام المغلقة)
-  const closedDays = useMemo(() => {
-    return normalizedWorkingHours
-      .filter((wh) => wh.isClosed)
-      .map((wh) => wh.day);
-  }, [normalizedWorkingHours]);
+  // ✅ قراءة التفضيل من localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("smart_date_picker_bypass");
+      if (saved === "true") setBypassRestrictions(true);
+    } catch {}
+  }, []);
+
+  // ✅ حفظ التفضيل
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        "smart_date_picker_bypass",
+        bypassRestrictions ? "true" : "false"
+      );
+    } catch {}
+  }, [bypassRestrictions]);
+
+  // ✅ تطبيع workingHours
+  const normalizedWorkingHours = useMemo(
+    () => normalizeWorkingHours(workingHours),
+    [workingHours]
+  );
+
+  // ✅ أيام العطل
+  const closedDays = useMemo(
+    () =>
+      normalizedWorkingHours.filter((wh) => wh.isClosed).map((wh) => wh.day),
+    [normalizedWorkingHours]
+  );
 
   // ✅ التحقق إذا كان يوم معين عطلة
-  const isDayClosed = useCallback((date: Date): boolean => {
-    const jsDay = date.getDay();
-    const ourDay = convertJsDayToOurDay(jsDay);
-    return closedDays.includes(ourDay);
-  }, [closedDays]);
+  const isDayClosed = useCallback(
+    (date: Date): boolean => {
+      const jsDay = date.getDay();
+      const ourDay = convertJsDayToOurDay(jsDay);
+      return closedDays.includes(ourDay);
+    },
+    [closedDays]
+  );
 
   // تهيئة التاريخ
   useEffect(() => {
     let date: Date;
-    
+
     if (value instanceof Date && isValid(value)) {
       date = value;
     } else if (typeof value === "string" && value) {
@@ -164,37 +194,53 @@ export function SmartDatePicker({
     } else {
       date = new Date();
     }
-    
+
     setSelectedDate(date);
     setTempSelectedDate(date);
     setCurrentMonth(date);
   }, [value]);
 
-  // ✅ تخصيص الأيام المعطلة
-  const disabledDays = useMemo(() => {
-    const result: any[] = [];
-    
-    if (minDate) result.push({ before: minDate });
-    if (maxDate) result.push({ after: maxDate });
-    
-    return result;
-  }, [minDate, maxDate]);
+  // ✅ دالة التحقق من تعطيل اليوم
+  const isDayDisabled = useCallback(
+    (date: Date): boolean => {
+      // ✅ إذا كان "تجاوز القيود" مفعّلاً، نسمح بكل شيء
+      if (bypassRestrictions) return false;
 
-  // ✅ دالة مخصصة للتحقق من تعطيل اليوم
-  const isDayDisabled = useCallback((date: Date): boolean => {
-    // التحقق من minDate و maxDate
-    if (minDate && date < minDate) return true;
-    if (maxDate && date > maxDate) return true;
-    
-    // التحقق من أيام العطل
-    return isDayClosed(date);
-  }, [minDate, maxDate, isDayClosed]);
+      // ✅ الوضع الافتراضي: كل القيود مفعّلة
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const checkDate = new Date(date);
+      checkDate.setHours(0, 0, 0, 0);
+
+      // منع الأيام الماضية (اليوم الحالي مسموح)
+      if (checkDate < today) return true;
+
+      // احترام minDate (إن وُجد)
+      if (minDate) {
+        const min = new Date(minDate);
+        min.setHours(0, 0, 0, 0);
+        if (checkDate < min) return true;
+      }
+
+      // احترام maxDate (إن وُجد)
+      if (maxDate) {
+        const max = new Date(maxDate);
+        max.setHours(0, 0, 0, 0);
+        if (checkDate > max) return true;
+      }
+
+      // منع أيام العطلة
+      if (isDayClosed(date)) return true;
+
+      return false;
+    },
+    [minDate, maxDate, isDayClosed, bypassRestrictions]
+  );
 
   const handleSelect = (date: Date | undefined) => {
     if (date) {
-      // التحقق من أن اليوم ليس عطلة
       if (isDayDisabled(date)) return;
-      
+
       const correctedDate = new Date(
         date.getFullYear(),
         date.getMonth(),
@@ -203,7 +249,7 @@ export function SmartDatePicker({
         0,
         0
       );
-      
+
       setTempSelectedDate(correctedDate);
     }
   };
@@ -231,10 +277,9 @@ export function SmartDatePicker({
       0,
       0
     );
-    
-    // إذا كان اليوم عطلة، لا نسمح باختياره
+
     if (isDayDisabled(normalizedToday)) return;
-    
+
     setTempSelectedDate(normalizedToday);
     setCurrentMonth(normalizedToday);
   };
@@ -259,14 +304,14 @@ export function SmartDatePicker({
 
   const handleMonthChange = (direction: "prev" | "next") => {
     setAnimation(direction === "prev" ? "slide-down" : "slide-up");
-    
+
     const newMonth = new Date(currentMonth);
     if (direction === "prev") {
       newMonth.setMonth(newMonth.getMonth() - 1);
     } else {
       newMonth.setMonth(newMonth.getMonth() + 1);
     }
-    
+
     setTimeout(() => {
       setCurrentMonth(newMonth);
       setAnimation("");
@@ -284,13 +329,23 @@ export function SmartDatePicker({
 
   const getMonthYearWithNumber = () => {
     const months = [
-      "يناير", "فبراير", "مارس", "إبريل", "مايو", "يونيو",
-      "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
+      "يناير",
+      "فبراير",
+      "مارس",
+      "إبريل",
+      "مايو",
+      "يونيو",
+      "يوليو",
+      "أغسطس",
+      "سبتمبر",
+      "أكتوبر",
+      "نوفمبر",
+      "ديسمبر",
     ];
     const monthNumber = currentMonth.getMonth() + 1;
     const monthName = months[currentMonth.getMonth()];
     const year = currentMonth.getFullYear();
-    return `${monthName} (${monthNumber.toString().padStart(2, '0')}) ${year}`;
+    return `${monthName} (${monthNumber.toString().padStart(2, "0")}) ${year}`;
   };
 
   const getDayOfWeek = () => {
@@ -302,19 +357,50 @@ export function SmartDatePicker({
   // ✅ معلومات عن اليوم المحدد
   const selectedDayInfo = useMemo(() => {
     if (!tempSelectedDate) return null;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const checkDate = new Date(tempSelectedDate);
+    checkDate.setHours(0, 0, 0, 0);
+
+    const isPast = checkDate < today;
     const jsDay = tempSelectedDate.getDay();
     const ourDay = convertJsDayToOurDay(jsDay);
     const wh = normalizedWorkingHours.find((h) => h.day === ourDay);
-    
-    if (!wh || wh.isClosed) {
-      return { isClosed: true, label: "عطلة - العيادة مغلقة" };
+    const isClosed = !wh || wh.isClosed;
+
+    if (isPast) {
+      return {
+        isPast: true,
+        isClosed,
+        label: "تاريخ في الماضي",
+      };
     }
-    
+
+    if (isClosed) {
+      return {
+        isPast: false,
+        isClosed: true,
+        label: "عطلة - العيادة مغلقة",
+      };
+    }
+
     return {
+      isPast: false,
       isClosed: false,
-      label: `دوام من ${wh.start} إلى ${wh.end}`,
+      label: `دوام من ${wh!.start} إلى ${wh!.end}`,
     };
   }, [tempSelectedDate, normalizedWorkingHours]);
+
+  // ✅ هل يوجد أي قيد فعّال؟
+  const hasRestrictions = useMemo(() => {
+    return (
+      closedDays.length > 0 ||
+      minDate !== undefined ||
+      maxDate !== undefined ||
+      true // دائماً يوجد منع للأيام الماضية افتراضياً
+    );
+  }, [closedDays, minDate, maxDate]);
 
   return (
     <div className={`relative ${className}`}>
@@ -355,10 +441,20 @@ export function SmartDatePicker({
         <span className="flex-1 truncate text-sm text-gray-900 font-medium">
           {getDateDisplay()}
         </span>
-        {selectedDayInfo?.isClosed && (
-          <span className="text-xs text-red-500 flex items-center gap-1">
-            <CalendarX size={14} />
+
+        {/* علامة "عطلة" */}
+        {selectedDayInfo?.isClosed && !bypassRestrictions && (
+          <span className="text-xs text-amber-500 flex items-center gap-1">
+            <AlertTriangle size={12} />
             عطلة
+          </span>
+        )}
+
+        {/* علامة "ماضي" */}
+        {selectedDayInfo?.isPast && !bypassRestrictions && (
+          <span className="text-xs text-red-500 flex items-center gap-1">
+            <AlertTriangle size={12} />
+            ماضي
           </span>
         )}
       </button>
@@ -377,19 +473,20 @@ export function SmartDatePicker({
           {/* Backdrop */}
           <div
             className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-all duration-300 ${
-              isClosing ? 'opacity-0' : 'opacity-100'
+              isClosing ? "opacity-0" : "opacity-100"
             }`}
             onClick={handleClose}
           />
 
           {/* Calendar Modal */}
-          <div 
+          <div
             className={`
               relative bg-white rounded-2xl shadow-2xl w-full max-w-[380px] overflow-hidden
               transition-all duration-300 ease-out
-              ${isClosing 
-                ? 'opacity-0 scale-90 translate-y-4' 
-                : 'opacity-100 scale-100 translate-y-0'
+              ${
+                isClosing
+                  ? "opacity-0 scale-90 translate-y-4"
+                  : "opacity-100 scale-100 translate-y-0"
               }
             `}
             dir="rtl"
@@ -400,8 +497,95 @@ export function SmartDatePicker({
                 <h3 className="text-lg font-bold text-gray-900">
                   اختر التاريخ
                 </h3>
+
+                {/* ✅ زر تجاوز القيود */}
+                {/* ✅ مفتاح المواعيد الذكية — بنفس نمط SmartTimePicker */}
+{hasRestrictions && (
+  <div
+    className={`
+      flex items-center gap-2 px-3 py-2 rounded-xl border transition-all duration-300
+      ${
+        !bypassRestrictions
+          ? "bg-gradient-to-l from-emerald-50 to-emerald-50/40 border-emerald-200"
+          : "bg-gradient-to-l from-amber-50 to-amber-50/40 border-amber-200"
+      }
+    `}
+  >
+    {/* النص المصغّر على اليمين */}
+    <div className="flex flex-col min-w-0">
+      <span
+        className={`
+          text-[10px] font-bold leading-tight transition-colors duration-200
+          ${!bypassRestrictions ? "text-emerald-700" : "text-amber-700"}
+        `}
+      >
+        {!bypassRestrictions ? "المواعيد الذكية" : "تجاوز القيود"}
+      </span>
+      <span
+        className={`
+          text-[8.5px] leading-tight transition-colors duration-200 whitespace-nowrap
+          ${!bypassRestrictions ? "text-emerald-600/70" : "text-amber-600/70"}
+        `}
+      >
+        {!bypassRestrictions ? "القيود مفعّلة" : "كل الأيام متاحة"}
+      </span>
+    </div>
+
+    {/* المفتاح */}
+    <div
+      className="cursor-pointer group/date flex-shrink-0"
+      onClick={() => setBypassRestrictions((v) => !v)}
+      title={
+        !bypassRestrictions
+          ? "اضغط لتجاوز القيود (السماح بالماضي والعطل)"
+          : "اضغط لإعادة تفعيل القيود"
+      }
+      role="switch"
+      aria-checked={!bypassRestrictions}
+    >
+      <div
+        className={`
+          relative w-11 h-6 rounded-full transition-all duration-300
+          ${!bypassRestrictions ? "bg-emerald-500" : "bg-amber-500"}
+          group-hover/date:shadow-lg group-hover/date:scale-105
+          flex items-center justify-between px-1
+        `}
+      >
+
+        {/* أيقونة مفعّل (يمين) — ShieldCheck */}
+        <span
+          className={`
+            transition-all duration-300 z-10
+            ${!bypassRestrictions ? "opacity-100 scale-100" : "opacity-0 scale-50"}
+          `}
+        >
+          <ShieldCheck size={11} className="text-white" strokeWidth={2.5} />
+        </span>
+
+        {/* الدائرة المتحركة */}
+        <div
+          className={`
+            absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-md 
+            transition-all duration-300 ease-in-out
+            group-hover/date:scale-110
+            flex items-center justify-center
+          `}
+          style={{
+            left: !bypassRestrictions ? "calc(100% - 22px)" : "2px",
+          }}
+        >
+          {!bypassRestrictions ? (
+            <ShieldCheck size={10} className="text-emerald-500" strokeWidth={3} />
+          ) : (
+            <ShieldAlert size={10} className="text-amber-500" strokeWidth={2.8} />
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+)}
               </div>
-              
+
               {/* عرض الشهر */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -431,51 +615,78 @@ export function SmartDatePicker({
 
               {/* أيام الأسبوع */}
               <div className="flex justify-between mt-4 pt-3 border-t border-gray-200">
-                {weekDays.map((day, index) => (
-                  <div
-                    key={day}
-                    className="flex flex-col items-center gap-1"
-                  >
-                    <span
-                      className={`
-                        text-xs font-medium transition-all duration-200
-                        ${
-                          index === getDayOfWeek()
-                            ? "text-white px-2 py-0.5 rounded-full"
-                            : "text-gray-500"
-                        }
-                      `}
-                      style={
-                        index === getDayOfWeek()
-                          ? {
-                              backgroundColor: primaryColor,
-                              boxShadow: `0 2px 8px ${primaryColor}40`,
-                            }
-                          : undefined
-                      }
+                {weekDays.map((day, index) => {
+                  const ourDay = convertJsDayToOurDay(index);
+                  const isClosedDay = closedDays.includes(ourDay);
+
+                  return (
+                    <div
+                      key={day}
+                      className="flex flex-col items-center gap-1"
                     >
-                      {day}
-                    </span>
-                    {index === getDayOfWeek() && (
                       <span
-                        className="w-1 h-1 rounded-full"
-                        style={{ backgroundColor: primaryColor }}
-                      />
-                    )}
-                  </div>
-                ))}
+                        className={`
+                          text-xs font-medium transition-all duration-200
+                          ${
+                            index === getDayOfWeek()
+                              ? "text-white px-2 py-0.5 rounded-full"
+                              : isClosedDay
+                                ? bypassRestrictions
+                                  ? "text-amber-500"
+                                  : "text-red-400"
+                                : "text-gray-500"
+                          }
+                        `}
+                        style={
+                          index === getDayOfWeek()
+                            ? {
+                                backgroundColor: primaryColor,
+                                boxShadow: `0 2px 8px ${primaryColor}40`,
+                              }
+                            : undefined
+                        }
+                        title={
+                          isClosedDay
+                            ? bypassRestrictions
+                              ? "يوم عطلة — مسموح حالياً"
+                              : "يوم عطلة"
+                            : undefined
+                        }
+                      >
+                        {day}
+                      </span>
+                      {index === getDayOfWeek() && (
+                        <span
+                          className="w-1 h-1 rounded-full"
+                          style={{ backgroundColor: primaryColor }}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
+            {/* ✅ شريط تحذير عند التفعيل */}
+            {bypassRestrictions && (
+              <div className="px-6 py-2 bg-amber-50 border-b border-amber-100 flex items-center gap-2 text-[11px] text-amber-700">
+                <ShieldAlert size={12} className="flex-shrink-0" />
+                <span>
+                  وضع تجاوز القيود: يمكنك اختيار أي يوم (ماضٍ، عطلة، أو خارج
+                  النطاق)
+                </span>
+              </div>
+            )}
+
             {/* Calendar Body */}
             <div className="p-4 flex justify-center overflow-hidden">
-              <div 
+              <div
                 className={`transition-all duration-200 ${
-                  animation === "slide-up" 
-                    ? "transform -translate-y-4 opacity-0" 
-                    : animation === "slide-down" 
-                    ? "transform translate-y-4 opacity-0" 
-                    : "transform translate-y-0 opacity-100"
+                  animation === "slide-up"
+                    ? "transform -translate-y-4 opacity-0"
+                    : animation === "slide-down"
+                      ? "transform translate-y-4 opacity-0"
+                      : "transform translate-y-0 opacity-100"
                 }`}
               >
                 <style>{`
@@ -576,19 +787,37 @@ export function SmartDatePicker({
 
             {/* معلومات اليوم المحدد */}
             {selectedDayInfo && (
-              <div className={`px-6 pb-3 ${selectedDayInfo.isClosed ? 'bg-red-50' : 'bg-gray-50'}`}>
-                <div className={`flex items-center gap-2 text-xs p-2.5 rounded-xl border ${
-                  selectedDayInfo.isClosed 
-                    ? 'text-red-600 border-red-100 bg-white' 
-                    : 'text-gray-600 border-gray-100 bg-white'
-                }`}>
-                  {selectedDayInfo.isClosed ? (
-                    <CalendarX size={14} className="text-red-400" />
+              <div
+                className={`px-6 pb-3 ${
+                  (selectedDayInfo.isPast || selectedDayInfo.isClosed) &&
+                  !bypassRestrictions
+                    ? "bg-amber-50"
+                    : "bg-gray-50"
+                }`}
+              >
+                <div
+                  className={`flex items-center gap-2 text-xs p-2.5 rounded-xl border ${
+                    (selectedDayInfo.isPast || selectedDayInfo.isClosed) &&
+                    !bypassRestrictions
+                      ? "text-amber-600 border-amber-100 bg-white"
+                      : "text-gray-600 border-gray-100 bg-white"
+                  }`}
+                >
+                  {selectedDayInfo.isPast || selectedDayInfo.isClosed ? (
+                    <ShieldAlert size={14} className="text-amber-500" />
                   ) : (
                     <Info size={14} className="text-gray-400" />
                   )}
                   <span>
-                    {selectedDayInfo.label}
+                    {selectedDayInfo.isPast
+                      ? `تاريخ في الماضي — ${
+                          bypassRestrictions ? "مسموح حالياً" : "غير مسموح"
+                        }`
+                      : selectedDayInfo.isClosed
+                        ? `عطلة — ${
+                            bypassRestrictions ? "مسموح حالياً" : "غير مسموح"
+                          }`
+                        : selectedDayInfo.label}
                   </span>
                 </div>
               </div>
@@ -599,7 +828,11 @@ export function SmartDatePicker({
               <button
                 type="button"
                 onClick={handleToday}
-                className="flex-1 py-2.5 px-4 bg-white hover:bg-gray-100 text-gray-700 font-medium rounded-xl transition-all text-sm border border-gray-200 hover:border-gray-300"
+                disabled={
+                  !bypassRestrictions &&
+                  isDayDisabled(new Date())
+                }
+                className="flex-1 py-2.5 px-4 bg-white hover:bg-gray-100 text-gray-700 font-medium rounded-xl transition-all text-sm border border-gray-200 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 اليوم
               </button>
@@ -613,7 +846,10 @@ export function SmartDatePicker({
               <button
                 type="button"
                 onClick={handleConfirm}
-                disabled={selectedDayInfo?.isClosed}
+                disabled={
+                  !bypassRestrictions &&
+                  (selectedDayInfo?.isClosed || selectedDayInfo?.isPast)
+                }
                 className="flex-1 py-2.5 px-4 text-white font-medium rounded-xl transition-all text-sm shadow-lg hover:shadow-xl hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 style={{ backgroundColor: primaryColor }}
               >
