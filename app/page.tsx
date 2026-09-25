@@ -740,7 +740,7 @@ const services = [
     description: "متوافق مع جميع الأجهزة والمنصات، يعمل بسلاسة على هاتفك وحاسوبك وجهازك اللوحي" 
   },
   { 
-    icon: IdCard, 
+    icon: IdCard,  
     title: "ملف مريض شامل", 
     description: "بطاقة رقمية متكاملة لكل مريض تحتوي على التاريخ الطبي والمواعيد والمدفوعات" 
   },
@@ -1758,6 +1758,7 @@ const services = [
     </div>
   </div>
 </section>
+<JoinCommunitySection />
       {/* Footer */}
       <footer className="py-10" style={{ borderTop: `1px solid ${COLORS.border}` }}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -1803,3 +1804,234 @@ const services = [
     </div>
   );
 }
+
+
+
+// ==========================================
+// قسم الانضمام لمجتمع الواتساب والتلغرام
+// ==========================================
+const JoinCommunitySection = () => {
+  const channels = [
+    {
+      name: "مجموعة الواتساب",
+      description: "تواصل مباشر • نصائح يومية • استفسارات سريعة",
+      href: "https://chat.whatsapp.com/BhEagDonHzW8maAq4DuCnk?s=cl&p=a&mlu=4&ilr=4",
+      icon: FaWhatsapp,
+      // أخضر واتساب
+      color: "#25D366",
+      colorDark: "#128C7E",
+      bg: "#25D366",
+      membersText: "انضم للأطباء الحاليين",
+    },
+    {
+      name: "قناة التلغرام",
+      description: "تحديثات المنتج • إعلانات • محتوى تعليمي",
+      href: "https://t.me/livedentl",
+      icon: FaTelegramPlane,
+      // أزرق تلغرام
+      color: "#0088cc",
+      colorDark: "#006699",
+      bg: "#0088cc",
+      membersText: "ابق على اطلاع دائماً",
+    },
+  ];
+
+  return (
+    <section
+      className="relative py-16 md:py-24 overflow-hidden"
+      style={{ backgroundColor: COLORS.surface }}
+    >
+      {/* خلفية SVG خفيفة */}
+      <DentalSVG
+        direction="right"
+        size="normal"
+        className="top-10 -left-24 md:-left-40 opacity-[0.05]"
+      />
+
+      {/* تدرّج لوني خفيف في الخلفية */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `
+            radial-gradient(ellipse at 50% 0%, ${COLORS.primary}06, transparent 60%),
+            radial-gradient(ellipse at 50% 100%, ${COLORS.primary}04, transparent 60%)
+          `,
+        }}
+      />
+
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 relative z-10">
+        {/* العنوان */}
+        <AnimatedSection className="text-center mb-12 md:mb-16" direction="up">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-5"
+            style={{
+              backgroundColor: COLORS.primaryLight,
+              border: `1px solid ${COLORS.primary}15`,
+            }}
+          >
+            <Users size={14} style={{ color: COLORS.primary }} />
+            <span
+              className="text-xs font-semibold tracking-wide"
+              style={{ color: COLORS.primary }}
+            >
+              مجتمع LiveDent
+            </span>
+          </motion.div>
+
+          <motion.h2
+            className="text-3xl md:text-4xl font-bold mb-3"
+            style={{ color: COLORS.text }}
+          >
+            انضم إلى مجتمعنا
+          </motion.h2>
+
+          <motion.p
+            className="text-base md:text-lg max-w-2xl mx-auto"
+            style={{ color: COLORS.textSecondary }}
+          >
+            كن قريباً من الفريق، واطّلع على كل جديد أولاً بأول
+          </motion.p>
+        </AnimatedSection>
+
+        {/* البطاقتان */}
+        <div className="grid md:grid-cols-2 gap-5 md:gap-6">
+          {channels.map((channel, i) => {
+            const Icon = channel.icon;
+
+            return (
+              <motion.a
+                key={i}
+                href={channel.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: i * 0.12 }}
+                whileHover={{ y: -6, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="relative group block p-6 md:p-8 rounded-3xl overflow-hidden transition-all duration-300"
+                style={{
+                  backgroundColor: "rgba(255, 255, 255, 0.7)",
+                  backdropFilter: "blur(12px)",
+                  WebkitBackdropFilter: "blur(12px)",
+                  border: `1.5px solid ${channel.color}25`,
+                  boxShadow: `0 8px 32px ${channel.color}10`,
+                }}
+              >
+                {/* توهج خلفي عند hover */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  whileHover={{ opacity: 1 }}
+                  className="absolute inset-0 pointer-events-none transition-opacity duration-500"
+                  style={{
+                    background: `radial-gradient(circle at 50% 50%, ${channel.color}10, transparent 70%)`,
+                  }}
+                />
+
+                {/* أيقونة خلفية كبيرة */}
+                <div
+                  className="absolute pointer-events-none transition-all duration-500 group-hover:scale-110"
+                  style={{
+                    bottom: "-30px",
+                    left: "-30px",
+                    opacity: 0.06,
+                    transform: "rotate(-8deg)",
+                  }}
+                >
+                  <Icon size={180} style={{ color: channel.color }} />
+                </div>
+
+                {/* المحتوى */}
+                <div className="relative z-10">
+                  {/* الرأس: الأيقونة والاسم */}
+                  <div className="flex items-center gap-4 mb-4">
+                    <motion.div
+                      whileHover={{ scale: 1.1, rotate: 5 }}
+                      transition={{ type: "spring", stiffness: 300 }}
+                      className="w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg"
+                      style={{
+                        background: `linear-gradient(135deg, ${channel.color}, ${channel.colorDark})`,
+                        boxShadow: `0 8px 24px ${channel.color}40`,
+                      }}
+                    >
+                      <Icon size={28} className="text-white" />
+                    </motion.div>
+
+                    <div className="flex-1 min-w-0">
+                      <h3
+                        className="text-lg md:text-xl font-bold mb-1"
+                        style={{ color: COLORS.text }}
+                      >
+                        {channel.name}
+                      </h3>
+                      <p
+                        className="text-xs md:text-sm"
+                        style={{ color: channel.color }}
+                      >
+                        {channel.membersText}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* الوصف */}
+                  <p
+                    className="text-sm md:text-[15px] leading-relaxed mb-5"
+                    style={{ color: COLORS.textSecondary }}
+                  >
+                    {channel.description}
+                  </p>
+
+                  {/* زر الانضمام */}
+                  <motion.div
+                    whileHover={{ x: 4 }}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all"
+                    style={{
+                      backgroundColor: `${channel.color}15`,
+                      border: `1.5px solid ${channel.color}40`,
+                      color: channel.color,
+                    }}
+                  >
+                    <Icon size={16} />
+                    <span>انضم الآن</span>
+                    <motion.div
+                      animate={{ x: [0, 4, 0] }}
+                      transition={{
+                        repeat: Infinity,
+                        duration: 1.5,
+                        ease: "easeInOut",
+                      }}
+                    >
+                      <ArrowLeft size={16} />
+                    </motion.div>
+                  </motion.div>
+                </div>
+
+                {/* خط سفلي أنيق */}
+                <div
+                  className="absolute bottom-0 left-8 right-8 h-px transition-all duration-500 group-hover:left-4 group-hover:right-4"
+                  style={{
+                    background: `linear-gradient(to right, transparent, ${channel.color}40, transparent)`,
+                  }}
+                />
+              </motion.a>
+            );
+          })}
+        </div>
+
+        {/* نص صغير في الأسفل */}
+        <AnimatedSection delay={0.4} className="mt-8 text-center" direction="up">
+          <p
+            className="text-xs md:text-sm flex items-center justify-center gap-2 flex-wrap"
+            style={{ color: COLORS.textSecondary }}
+          >
+            انضم إلى مجتمعاتنا ... ننشر كل ما يهم اطباء الأسنان
+          </p>
+        </AnimatedSection>
+      </div>
+    </section>
+  );
+};
