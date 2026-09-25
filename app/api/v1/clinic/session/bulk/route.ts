@@ -61,25 +61,26 @@ export async function POST(request: NextRequest) {
     console.log('✅ تم إنشاء:', createdSessions.length, 'جلسات');
 
     // ✅ إرسال رسالة واتساب واحدة للموعد الأحدث فقط (بدون انتظار)
-    let latestIndex = -1;
-    let latestTime = -Infinity;
+       // ✅ إرسال رسالة واتساب واحدة للموعد الأقدم فقط (بدون انتظار)
+    let earliestIndex = -1;
+    let earliestTime = Infinity;
 
     for (let i = 0; i < createdSessions.length; i++) {
         const time = new Date(createdSessions[i].startTime).getTime();
-        if (!isNaN(time) && time > latestTime) {
-            latestTime = time;
-            latestIndex = i;
+        if (!isNaN(time) && time < earliestTime) {
+            earliestTime = time;
+            earliestIndex = i;
         }
     }
 
-    if (latestIndex !== -1) {
-        const info = sessionsData[latestIndex].info;
+    if (earliestIndex !== -1) {
+        const info = sessionsData[earliestIndex].info;
         console.log(info)
-        const data = createdSessions[latestIndex];
+        const data = createdSessions[earliestIndex];
 
         if (info && !info.prevent_auto_messages) {
             // توقيت سوريا UTC+3
-            const localStart = new Date(latestTime + 3 * 60 * 60 * 1000);
+            const localStart = new Date(earliestTime + 3 * 60 * 60 * 1000);
 
             let hours = localStart.getUTCHours();
             const minutes = localStart.getUTCMinutes().toString().padStart(2, '0');
@@ -91,7 +92,7 @@ export async function POST(request: NextRequest) {
             const month = (localStart.getUTCMonth() + 1).toString().padStart(2, '0');
             const day = localStart.getUTCDate().toString().padStart(2, '0');
             const date = `${year}-${month}-${day}`;
-            console.log(`⏰ إرسال رسالة للموعد الأحدث: ${date} ${time} لـ ${info.patientName}`);
+            console.log(`⏰ إرسال رسالة للموعد الأقدم: ${date} ${time} لـ ${info.patientName}`);
             waitUntil(
                 sendMessage(info.phoneNumber, generateWhatsAppMessage({
                     patient: { fullName: info.patientName, gender: info.gender, id: data.patientId },
