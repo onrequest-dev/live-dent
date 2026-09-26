@@ -141,7 +141,7 @@ export function SettingsTab({ clinicData }: SettingsTabProps) {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
   const clinicUrl = `${baseUrl}/public-clinic/${clinicId}`;
   const doctorCVUrl = `${baseUrl}/public-clinic/${clinicId}/doctor-cv`;
-  const whatsappUrl = `https://wa.me/+963982719525`;
+  const whatsappUrl = `https://wa.me/+963945299717`;
 
   // ✅ تعريف التبويبات
 const sections: { id: SettingsSection; label: string; icon: any }[] = [
