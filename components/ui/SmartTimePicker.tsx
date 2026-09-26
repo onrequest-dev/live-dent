@@ -3,26 +3,35 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, X, Check, AlertCircle, CalendarX, Info } from "lucide-react";
+import {
+  Clock,
+  X,
+  Check,
+  AlertCircle,
+  CalendarX,
+  Info,
+  ShieldCheck,
+  ShieldAlert,
+} from "lucide-react";
 
 // ============================================================
 // الواجهات
 // ============================================================
 
 interface WorkingHour {
-  day: number; // 0 = السبت، 1 = الأحد، ...
-  start: string; // "HH:MM"
-  end: string; // "HH:MM"
+  day: number;
+  start: string;
+  end: string;
   isClosed: boolean;
 }
 
 interface BookedSlot {
-  startTime: string; // "HH:MM"
-  endTime: string; // "HH:MM"
+  startTime: string;
+  endTime: string;
 }
 
 interface SmartTimePickerProps {
-  value: string; // "HH:MM"
+  value: string;
   onChange: (time: string) => void;
   label?: string;
   required?: boolean;
@@ -30,76 +39,62 @@ interface SmartTimePickerProps {
   primaryColor?: string;
   className?: string;
   error?: string;
-  
-  // ✅ الخصائص الذكية الجديدة
-  appointmentDate: Date; // تاريخ الموعد المحدد
-  workingHours: any; // ✅ تغيير النوع إلى any ليقبل أي صيغة
-  appointmentDuration?: number; // مدة الموعد بالدقائق (افتراضي 30)
-  bookedSlots?: BookedSlot[]; // المواعيد المحجوزة في ذلك اليوم
-  clinicTimezone?: string; // المنطقة الزمنية (اختياري)
+  appointmentDate: Date;
+  workingHours: any;
+  appointmentDuration?: number;
+  bookedSlots?: BookedSlot[];
+  clinicTimezone?: string;
 }
 
 // ============================================================
 // دوال مساعدة
 // ============================================================
 
-/**
- * تطبيع workingHours ليقبل أي صيغة:
- * - مصفوفة: [{ day: 0, start: "09:00", end: "17:00", isClosed: false }, ...]
- * - كائن مفهرس: { 0: { start: "09:00", ... }, 1: { ... }, ... }
- * - كائن بأسماء الأيام: { saturday: { start: "09:00", ... }, ... }
- */
 const normalizeWorkingHours = (workingHours: any): WorkingHour[] => {
-  // إذا كانت null أو undefined
   if (!workingHours) return [];
-  
-  // إذا كانت مصفوفة بالفعل
+
   if (Array.isArray(workingHours)) {
-    return workingHours.filter((wh) => wh && typeof wh === 'object');
+    return workingHours.filter((wh) => wh && typeof wh === "object");
   }
-  
-  // إذا كانت كائن (Object)
-  if (typeof workingHours === 'object') {
+
+  if (typeof workingHours === "object") {
     const values = Object.values(workingHours);
-    
-    // حالة: { 0: {...}, 1: {...}, ... }
-    if (values.length > 0 && values.every((v) => v && typeof v === 'object')) {
+
+    if (values.length > 0 && values.every((v) => v && typeof v === "object")) {
       return values.map((v: any, index: number) => ({
         day: v.day !== undefined ? v.day : index,
-        start: v.start || '09:00',
-        end: v.end || '17:00',
+        start: v.start || "09:00",
+        end: v.end || "17:00",
         isClosed: v.isClosed || false,
       }));
     }
-    
-    // حالة: { saturday: {...}, sunday: {...}, ... }
+
     const dayMap: { [key: string]: number } = {
-      'saturday': 0,
-      'sunday': 1,
-      'monday': 2,
-      'tuesday': 3,
-      'wednesday': 4,
-      'thursday': 5,
-      'friday': 6,
+      saturday: 0,
+      sunday: 1,
+      monday: 2,
+      tuesday: 3,
+      wednesday: 4,
+      thursday: 5,
+      friday: 6,
     };
-    
+
     const result: WorkingHour[] = [];
     for (const [key, value] of Object.entries(workingHours)) {
       const dayKey = dayMap[key.toLowerCase()];
-      if (dayKey !== undefined && value && typeof value === 'object') {
+      if (dayKey !== undefined && value && typeof value === "object") {
         result.push({
           day: dayKey,
-          start: (value as any).start || '09:00',
-          end: (value as any).end || '17:00',
+          start: (value as any).start || "09:00",
+          end: (value as any).end || "17:00",
           isClosed: (value as any).isClosed || false,
         });
       }
     }
-    
+
     if (result.length > 0) return result;
   }
-  
-  // إذا لم نتمكن من التطبيع
+
   return [];
 };
 
@@ -126,13 +121,13 @@ function isSameDay(date1: Date, date2: Date): boolean {
 
 function formatTimeDisplay(time24: string): string {
   if (!time24) return "";
-  
+
   const [hours, minutes] = time24.split(":").map(Number);
   if (isNaN(hours) || isNaN(minutes)) return time24;
-  
+
   const period = hours >= 12 ? "م" : "ص";
   const hours12 = hours % 12 || 12;
-  
+
   return `${String(hours12).padStart(2, "0")}:${String(minutes).padStart(2, "0")} ${period}`;
 }
 
@@ -159,31 +154,49 @@ export function SmartTimePicker({
   const [selectedTime, setSelectedTime] = useState<string | null>(value || null);
   const [hoveredTime, setHoveredTime] = useState<string | null>(null);
 
-  // ✅ تطبيع workingHours داخلياً
+  // ✅ وضع المواعيد الذكية (ON افتراضياً)
+  const [smartMode, setSmartMode] = useState(true);
+
+  // ✅ قراءة التفضيل من localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("smart_time_picker_mode");
+      // الافتراضي: true (ذكي) — فقط إذا كان محفوظاً بـ "false" نعطّله
+      if (saved === "false") setSmartMode(false);
+      else setSmartMode(true);
+    } catch {}
+  }, []);
+
+  // ✅ حفظ التفضيل
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        "smart_time_picker_mode",
+        smartMode ? "true" : "false"
+      );
+    } catch {}
+  }, [smartMode]);
+
+  // ✅ تطبيع workingHours
   const normalizedWorkingHours = useMemo(() => {
-    const normalized = normalizeWorkingHours(workingHours);
-    console.log('📋 normalizedWorkingHours:', normalized); // ✅ للتتبع
-    return normalized;
+    return normalizeWorkingHours(workingHours);
   }, [workingHours]);
 
-  // ✅ استخراج معلومات اليوم
+  // ✅ معلومات اليوم
   const dayInfo = useMemo(() => {
     if (!appointmentDate) return null;
-    
-    // تحويل تاريخ JS إلى يوم الأسبوع (0 = الأحد، 1 = الإثنين، ...)
+
     const jsDay = appointmentDate.getDay();
-    
-    // تحويل إلى نظامنا (0 = السبت، 1 = الأحد، ...)
     const ourDayMap: { [key: number]: number } = {
-      0: 1, // الأحد
-      1: 2, // الإثنين
-      2: 3, // الثلاثاء
-      3: 4, // الأربعاء
-      4: 5, // الخميس
-      5: 6, // الجمعة
-      6: 0, // السبت
+      0: 1,
+      1: 2,
+      2: 3,
+      3: 4,
+      4: 5,
+      5: 6,
+      6: 0,
     };
-    
+
     return {
       dayKey: ourDayMap[jsDay],
       dayLabel: getDayLabel(ourDayMap[jsDay]),
@@ -191,110 +204,137 @@ export function SmartTimePicker({
     };
   }, [appointmentDate]);
 
-  // ✅ الحصول على ساعات العمل لليوم المحدد
+  // ✅ ساعات العمل لليوم المحدد
   const todaysWorkingHours = useMemo(() => {
-    if (!dayInfo || !normalizedWorkingHours || normalizedWorkingHours.length === 0) {
-      console.log('⚠️ لا توجد ساعات عمل:', { dayInfo, normalizedWorkingHours });
+    if (
+      !dayInfo ||
+      !normalizedWorkingHours ||
+      normalizedWorkingHours.length === 0
+    ) {
       return null;
     }
-    
+
     const wh = normalizedWorkingHours.find((h) => h.day === dayInfo.dayKey);
-    
-    console.log('🔍 يوم:', dayInfo.dayKey, 'ساعات العمل:', wh);
-    
+
     if (!wh || wh.isClosed) return null;
-    
+
     return wh;
   }, [dayInfo, normalizedWorkingHours]);
 
-  // ✅ توليد جميع الأوقات المتاحة
+  // ✅ توليد الأوقات المتاحة
+  // ملاحظة مهمة: نولّد كل الأوقات دائماً، ونحتفظ بحالة كل وقت (متاح/محجوز/فائت)
+  // ثم نعرضها للمستخدم حسب smartMode
   const availableTimeSlots = useMemo(() => {
     if (!todaysWorkingHours || !dayInfo) return [];
-    
+
     const slots: {
       time: string;
       display: string;
       isAvailable: boolean;
       isPast: boolean;
+      isBooked: boolean;
       conflictReason?: string;
     }[] = [];
-    
-    const [startHour, startMinute] = todaysWorkingHours.start.split(":").map(Number);
+
+    const [startHour, startMinute] = todaysWorkingHours.start
+      .split(":")
+      .map(Number);
     const [endHour, endMinute] = todaysWorkingHours.end.split(":").map(Number);
-    
-    if (isNaN(startHour) || isNaN(startMinute) || isNaN(endHour) || isNaN(endMinute)) {
+
+    if (
+      isNaN(startHour) ||
+      isNaN(startMinute) ||
+      isNaN(endHour) ||
+      isNaN(endMinute)
+    ) {
       return [];
     }
-    
+
     const startTime = new Date(appointmentDate);
     startTime.setHours(startHour, startMinute, 0, 0);
-    
+
     const endTime = new Date(appointmentDate);
     endTime.setHours(endHour, endMinute, 0, 0);
-    
+
     const now = new Date();
-    
-    // توليد الأوقات بفاصل = مدة الموعد
+
     let currentTime = new Date(startTime);
-    
+
     while (currentTime < endTime) {
       const timeStr = `${String(currentTime.getHours()).padStart(2, "0")}:${String(currentTime.getMinutes()).padStart(2, "0")}`;
-      const slotEndTime = new Date(currentTime.getTime() + appointmentDuration * 60000);
-      
-      // التحقق من أن الموعد لا يتجاوز نهاية الدوام
+      const slotEndTime = new Date(
+        currentTime.getTime() + appointmentDuration * 60000
+      );
+
       if (slotEndTime > endTime) break;
-      
-      // التحقق من عدم التضارب مع المواعيد المحجوزة
-      let isAvailable = true;
+
+      // ✅ كشف التضارب مع المواعيد المحجوزة
+      let isBooked = false;
       let conflictReason: string | undefined;
-      
+
       if (bookedSlots && bookedSlots.length > 0) {
         for (const booked of bookedSlots) {
-          const [bookedStartH, bookedStartM] = booked.startTime.split(":").map(Number);
-          const [bookedEndH, bookedEndM] = booked.endTime.split(":").map(Number);
-          
-          if (isNaN(bookedStartH) || isNaN(bookedStartM) || isNaN(bookedEndH) || isNaN(bookedEndM)) {
+          const [bookedStartH, bookedStartM] = booked.startTime
+            .split(":")
+            .map(Number);
+          const [bookedEndH, bookedEndM] = booked.endTime
+            .split(":")
+            .map(Number);
+
+          if (
+            isNaN(bookedStartH) ||
+            isNaN(bookedStartM) ||
+            isNaN(bookedEndH) ||
+            isNaN(bookedEndM)
+          ) {
             continue;
           }
-          
+
           const bookedStart = new Date(appointmentDate);
           bookedStart.setHours(bookedStartH, bookedStartM, 0, 0);
-          
+
           const bookedEnd = new Date(appointmentDate);
           bookedEnd.setHours(bookedEndH, bookedEndM, 0, 0);
-          
-          // التحقق من التداخل
+
           if (
             (currentTime >= bookedStart && currentTime < bookedEnd) ||
             (slotEndTime > bookedStart && slotEndTime <= bookedEnd) ||
             (currentTime <= bookedStart && slotEndTime >= bookedEnd)
           ) {
-            isAvailable = false;
+            isBooked = true;
             conflictReason = `محجوز (${booked.startTime} - ${booked.endTime})`;
             break;
           }
         }
       }
-      
-      // التحقق من أن الوقت ليس في الماضي (فقط إذا كان اليوم هو اليوم الحالي)
+
+      // ✅ كشف الوقت الفائت
       const isPast = dayInfo.isToday && currentTime <= now;
-      
+
       slots.push({
         time: timeStr,
         display: formatTimeDisplay(timeStr),
-        isAvailable: isAvailable && !isPast,
+        isAvailable: !isBooked && !isPast,
         isPast,
-        conflictReason: isPast ? "وقت ماضي" : conflictReason,
+        isBooked,
+        conflictReason: isPast
+          ? "وقت ماضي"
+          : isBooked
+            ? conflictReason
+            : undefined,
       });
-      
-      // الانتقال للوقت التالي
+
       currentTime = new Date(currentTime.getTime() + appointmentDuration * 60000);
     }
-    
-    console.log('✅ الأوقات المتاحة:', slots.length);
-    
+
     return slots;
-  }, [todaysWorkingHours, dayInfo, appointmentDate, appointmentDuration, bookedSlots]);
+  }, [
+    todaysWorkingHours,
+    dayInfo,
+    appointmentDate,
+    appointmentDuration,
+    bookedSlots,
+  ]);
 
   // ✅ تحديث القيمة عند تغييرها من الخارج
   useEffect(() => {
@@ -318,14 +358,22 @@ export function SmartTimePicker({
     }, 300);
   };
 
-  // ✅ اختيار وقت
-  const handleSelectTime = (time: string, isAvailable: boolean) => {
-    if (!isAvailable || disabled) return;
-    
+  // ✅ اختيار وقت (احترام smartMode)
+  const handleSelectTime = (
+    time: string,
+    isAvailable: boolean,
+    isPast: boolean,
+    isBooked: boolean
+  ) => {
+    if (disabled) return;
+
+    // ✅ في الوضع الذكي: نمنع المحجوز والفائت
+    // ✅ في وضع التجاوز: نسمح بكل شيء
+    if (smartMode && (!isAvailable || isPast || isBooked)) return;
+
     setSelectedTime(time);
     onChange(time);
-    
-    // إغلاق بعد اختيار الوقت مباشرة
+
     setTimeout(() => {
       closePicker();
     }, 200);
@@ -336,6 +384,11 @@ export function SmartTimePicker({
     if (!selectedTime) return "اختر الوقت";
     return formatTimeDisplay(selectedTime);
   };
+
+  // ✅ هل يوجد أي وقت محجوز أو فائت؟ (لإظهار الزر)
+  const hasRestrictedSlots = useMemo(() => {
+    return availableTimeSlots.some((s) => s.isBooked || s.isPast);
+  }, [availableTimeSlots]);
 
   return (
     <div className={`relative ${className}`}>
@@ -355,9 +408,10 @@ export function SmartTimePicker({
           w-full px-4 py-3 text-right rounded-xl
           border-2 transition-all duration-200
           flex items-center gap-3
-          ${disabled
-            ? "bg-gray-50 border-gray-200 cursor-not-allowed opacity-60"
-            : "bg-white hover:shadow-md cursor-pointer"
+          ${
+            disabled
+              ? "bg-gray-50 border-gray-200 cursor-not-allowed opacity-60"
+              : "bg-white hover:shadow-md cursor-pointer"
           }
           ${error ? "border-red-400" : "border-gray-200 hover:border-gray-300"}
           focus:outline-none focus:ring-2 focus:ring-offset-2
@@ -368,6 +422,14 @@ export function SmartTimePicker({
         <span className="flex-1 truncate text-sm text-gray-900 font-medium">
           {getDisplayValue()}
         </span>
+
+        {/* مؤشر الوضع الذكي */}
+        {!smartMode && (
+          <span className="text-[10px] text-amber-500 flex items-center gap-1">
+            <ShieldAlert size={11} />
+            تجاوز
+          </span>
+        )}
       </button>
 
       {error && (
@@ -391,122 +453,334 @@ export function SmartTimePicker({
             />
 
             {/* محتوى المنتقي */}
-{/* حاوية التمركز */}
-<div className="fixed inset-0 z-[101] flex items-center justify-center p-4 pointer-events-none">
-  <motion.div
-    initial={{ opacity: 0, scale: 0.95, y: 20 }}
-    animate={{ 
-      opacity: isVisible ? 1 : 0, 
-      scale: isVisible ? 1 : 0.95, 
-      y: isVisible ? 0 : 20 
-    }}
-    exit={{ opacity: 0, scale: 0.95, y: 20 }}
-    transition={{ duration: 0.3, ease: "easeOut" }}
-    className="pointer-events-auto bg-white rounded-3xl shadow-2xl w-full max-w-lg md:w-[480px] max-h-[80vh] overflow-hidden"
-    onClick={(e) => e.stopPropagation()}
+            <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{
+                  opacity: isVisible ? 1 : 0,
+                  scale: isVisible ? 1 : 0.95,
+                  y: isVisible ? 0 : 20,
+                }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="pointer-events-auto bg-white rounded-3xl shadow-2xl w-full max-w-lg md:w-[480px] max-h-[80vh] overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="p-4 border-b border-gray-100 bg-gray-50/50">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-bold text-gray-900 text-lg">
+                        اختر الوقت
+                      </h3>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {dayInfo?.dayLabel || ""} • مدة الموعد{" "}
+                        {appointmentDuration} دقيقة
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={closePicker}
+                      className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    >
+                      <X size={20} className="text-gray-500" />
+                    </button>
+                  </div>
+
+{/* ✅ مفتاح المواعيد الذكية — نسخة محسّنة */}
+{hasRestrictedSlots && (
+  <div
+    className={`
+      mt-3 flex items-center justify-between gap-3 
+      px-3.5 py-3 rounded-2xl border transition-all duration-300
+      ${
+        smartMode
+          ? "bg-gradient-to-l from-emerald-50 to-emerald-50/40 border-emerald-200"
+          : "bg-gradient-to-l from-amber-50 to-amber-50/40 border-amber-200"
+      }
+    `}
   >
-              {/* Header */}
-              <div className="p-4 border-b border-gray-100 bg-gray-50/50">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-bold text-gray-900 text-lg">اختر الوقت</h3>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {dayInfo?.dayLabel || ""} • مدة الموعد {appointmentDuration} دقيقة
+    {/* النص والأيقونة على اليمين */}
+    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+      <div
+        className={`
+          w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0
+          transition-all duration-300
+          ${
+            smartMode
+              ? "bg-emerald-100 text-emerald-600"
+              : "bg-amber-100 text-amber-600"
+          }
+        `}
+      >
+        {smartMode ? (
+          <ShieldCheck size={18} strokeWidth={2.2} />
+        ) : (
+          <ShieldAlert size={18} strokeWidth={2.2} />
+        )}
+      </div>
+
+      <div className="flex flex-col min-w-0 gap-0.5">
+        <span
+          className={`text-[13px] font-bold transition-colors duration-200 ${
+            smartMode ? "text-emerald-700" : "text-amber-700"
+          }`}
+        >
+          {smartMode ? "المواعيد الذكية" : "وضع تجاوز القيود"}
+        </span>
+        <span
+          className={`text-[10.5px] leading-tight transition-colors duration-200 ${
+            smartMode ? "text-emerald-600/80" : "text-amber-600/80"
+          }`}
+        >
+          {smartMode
+            ? "الأوقات المحجوزة والفائتة معطّلة"
+            : "يمكنك حجز أي وقت — حتى المحجوز"}
+        </span>
+      </div>
+    </div>
+
+    {/* المفتاح — نسخة أوضح وأكبر */}
+    <div
+      className="flex flex-col items-center gap-0.5 cursor-pointer group/smart flex-shrink-0"
+      onClick={() => setSmartMode((v) => !v)}
+      title={
+        smartMode
+          ? "اضغط لإيقاف المواعيد الذكية"
+          : "اضغط لتفعيل المواعيد الذكية"
+      }
+      role="switch"
+      aria-checked={smartMode}
+    >
+      {/* المفتاح */}
+      <div
+        className={`
+          relative w-14 h-8 rounded-full transition-all duration-300
+          ${
+            smartMode
+              ? "bg-emerald-500"
+              : "bg-amber-500"
+          }
+          group-hover/smart:shadow-lg group-hover/smart:scale-105
+          flex items-center justify-between px-1.5
+        `}
+      >
+        {/* أيقونة "مفعّل" (يمين) — ShieldCheck */}
+        <span
+          className={`
+            transition-all duration-300 z-10
+            ${
+              smartMode
+                ? "opacity-100 scale-100"
+                : "opacity-0 scale-50"
+            }
+          `}
+        >
+          <ShieldCheck
+            size={13}
+            className="text-white"
+            strokeWidth={2.5}
+          />
+        </span>
+
+        {/* الدائرة المتحركة */}
+        <div
+          className={`
+            absolute top-1 w-6 h-6 rounded-full bg-white shadow-md 
+            transition-all duration-300 ease-in-out
+            group-hover/smart:scale-110
+            flex items-center justify-center
+          `}
+          style={{
+            left: smartMode ? "calc(100% - 28px)" : "4px",
+          }}
+        >
+          {smartMode ? (
+            <ShieldCheck
+              size={12}
+              className="text-emerald-500"
+              strokeWidth={3}
+            />
+          ) : (
+            <ShieldAlert
+              size={12}
+              className="text-amber-500"
+              strokeWidth={2.8}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
+                  {/* معلومات الدوام */}
+                  {todaysWorkingHours ? (
+                    <div className="mt-3 flex items-center gap-2 text-xs text-gray-600 bg-white rounded-xl p-2.5 border border-gray-100">
+                      <Clock size={14} className="text-gray-400" />
+                      <span>
+                        الدوام من {formatTimeDisplay(todaysWorkingHours.start)}{" "}
+                        إلى {formatTimeDisplay(todaysWorkingHours.end)}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="mt-3 flex items-center gap-2 text-xs text-red-600 bg-red-50 rounded-xl p-2.5 border border-red-100">
+                      <CalendarX size={14} />
+                      <span>العيادة مغلقة في هذا اليوم</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* قائمة الأوقات */}
+                {todaysWorkingHours && availableTimeSlots.length > 0 ? (
+                  <div className="p-4 overflow-y-auto max-h-[50vh]">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      {availableTimeSlots.map((slot) => {
+                        const isSelected = selectedTime === slot.time;
+                        const isBlocked = slot.isPast || slot.isBooked;
+
+                        // ✅ منطق الألوان الجديد
+                        // - الوضع الذكي: المعطّلة رمادية + شفافة
+                        // - وضع التجاوز: المعطّلة ملوّنة بلون شفاف حسب النوع
+
+                        let buttonStyles: React.CSSProperties = {};
+                        let buttonClasses =
+                          "relative p-3 rounded-xl text-sm font-medium transition-all duration-200 border";
+
+                        if (isSelected) {
+                          buttonClasses += " text-white shadow-lg scale-105";
+                          buttonStyles = { backgroundColor: primaryColor };
+                        } else if (smartMode) {
+                          // الوضع الذكي: العادي رمادي، المعطّل رمادي شفاف
+                          if (isBlocked) {
+                            buttonClasses +=
+                              " bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed opacity-60";
+                          } else {
+                            buttonClasses +=
+                              " bg-gray-50 hover:bg-gray-100 text-gray-800 border-gray-200";
+                          }
+                        } else {
+                          // ✅ وضع التجاوز: ألوان شفافة حسب النوع
+                          if (slot.isBooked) {
+                            buttonClasses +=
+                              " cursor-pointer hover:scale-105 border-red-200";
+                            buttonStyles = {
+                              backgroundColor: "#FEE2E220", // أحمر شفاف
+                              color: "#B91C1C",
+                            };
+                          } else if (slot.isPast) {
+                            buttonClasses +=
+                              " cursor-pointer hover:scale-105 border-gray-300";
+                            buttonStyles = {
+                              backgroundColor: "#F3F4F620", // رمادي شفاف
+                              color: "#6B7280",
+                            };
+                          } else {
+                            buttonClasses +=
+                              " cursor-pointer bg-gray-50 hover:bg-gray-100 text-gray-800 border-gray-200";
+                          }
+                        }
+
+                        return (
+                          <button
+                            key={slot.time}
+                            type="button"
+                            onClick={() =>
+                              handleSelectTime(
+                                slot.time,
+                                slot.isAvailable,
+                                slot.isPast,
+                                slot.isBooked
+                              )
+                            }
+                            disabled={smartMode && isBlocked}
+                            className={buttonClasses}
+                            style={buttonStyles}
+                            title={
+                              slot.isBooked
+                                ? `محجوز — ${slot.conflictReason || ""}`
+                                : slot.isPast
+                                  ? "وقت فائت"
+                                  : slot.display
+                            }
+                          >
+                            <span className="relative z-10">{slot.display}</span>
+
+                            {/* ✅ أيقونة التوضيح */}
+                            {slot.isBooked && (
+                              <span
+                                className={`
+                                  absolute top-1 left-1 w-1.5 h-1.5 rounded-full
+                                  ${smartMode ? "bg-red-200" : "bg-red-400"}
+                                `}
+                              />
+                            )}
+                            {slot.isPast && !slot.isBooked && (
+                              <span
+                                className={`
+                                  absolute top-1 left-1 w-1.5 h-1.5 rounded-full
+                                  ${smartMode ? "bg-gray-200" : "bg-gray-400"}
+                                `}
+                              />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* تلميح */}
+                    <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
+                      <Info size={14} className="text-gray-400" />
+                      <span>
+                        {smartMode
+                          ? "المواعيد الذكية تمنع حجز الأوقات المحجوزة والفائتة"
+                          : "وضع التجاوز: يمكنك حجز أي وقت — الأوقات الملوّنة شفافة للتذكير"}
+                      </span>
+                    </div>
+
+                    {/* Legend في وضع التجاوز */}
+                    {!smartMode && (
+                      <div className="mt-3 flex flex-wrap items-center gap-3 text-[10px] text-gray-500">
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                          محجوز
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-gray-400" />
+                          فائت
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-gray-100 border border-gray-300" />
+                          متاح
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-8 text-center">
+                    <CalendarX
+                      size={48}
+                      className="text-gray-300 mx-auto mb-3"
+                    />
+                    <p className="text-gray-500 font-medium">
+                      {!todaysWorkingHours
+                        ? "لا يوجد دوام في هذا اليوم"
+                        : "لا توجد أوقات متاحة"}
                     </p>
                   </div>
+                )}
+
+                {/* Footer */}
+                <div className="p-4 border-t border-gray-100 bg-gray-50/50">
                   <button
                     type="button"
                     onClick={closePicker}
-                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    className="w-full py-3 bg-white hover:bg-gray-50 text-gray-700 font-medium rounded-xl transition-all text-sm border border-gray-200"
                   >
-                    <X size={20} className="text-gray-500" />
+                    إغلاق
                   </button>
                 </div>
-
-                {/* معلومات الدوام */}
-                {todaysWorkingHours ? (
-                  <div className="mt-3 flex items-center gap-2 text-xs text-gray-600 bg-white rounded-xl p-2.5 border border-gray-100">
-                    <Clock size={14} className="text-gray-400" />
-                    <span>
-                      الدوام من {formatTimeDisplay(todaysWorkingHours.start)} إلى {formatTimeDisplay(todaysWorkingHours.end)}
-                    </span>
-                  </div>
-                ) : (
-                  <div className="mt-3 flex items-center gap-2 text-xs text-red-600 bg-red-50 rounded-xl p-2.5 border border-red-100">
-                    <CalendarX size={14} />
-                    <span>العيادة مغلقة في هذا اليوم</span>
-                  </div>
-                )}
-              </div>
-
-              {/* قائمة الأوقات */}
-              {todaysWorkingHours && availableTimeSlots.length > 0 ? (
-                <div className="p-4 overflow-y-auto max-h-[50vh]">
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                    {availableTimeSlots.map((slot) => (
-                      <button
-                        key={slot.time}
-                        type="button"
-                        onClick={() => handleSelectTime(slot.time, slot.isAvailable)}
-                        disabled={!slot.isAvailable}
-                        className={`
-                          relative p-3 rounded-xl text-sm font-medium transition-all duration-200
-                          ${
-                            selectedTime === slot.time
-                              ? "text-white shadow-lg scale-105"
-                              : slot.isAvailable
-                              ? "bg-gray-50 hover:bg-gray-100 text-gray-800 border border-gray-200"
-                              : "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed opacity-50"
-                          }
-                        `}
-                        style={
-                          selectedTime === slot.time
-                            ? { backgroundColor: primaryColor }
-                            : undefined
-                        }
-                        title={slot.conflictReason || slot.display}
-                      >
-                        {slot.display}
-                        
-                        {slot.isPast && (
-                          <span className="absolute top-1 right-1 w-2 h-2 bg-gray-300 rounded-full" />
-                        )}
-                        
-                        {!slot.isAvailable && !slot.isPast && (
-                          <span className="absolute top-1 right-1 w-2 h-2 bg-red-400 rounded-full" />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* تلميح */}
-                  <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
-                    <Info size={14} className="text-gray-400" />
-                    <span>الأوقات المعطلة محجوزة أو غير متاحة</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="p-8 text-center">
-                  <CalendarX size={48} className="text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500 font-medium">
-                    {!todaysWorkingHours
-                      ? "لا يوجد دوام في هذا اليوم"
-                      : "لا توجد أوقات متاحة"}
-                  </p>
-                </div>
-              )}
-
-              {/* Footer */}
-              <div className="p-4 border-t border-gray-100 bg-gray-50/50">
-                <button
-                  type="button"
-                  onClick={closePicker}
-                  className="w-full py-3 bg-white hover:bg-gray-50 text-gray-700 font-medium rounded-xl transition-all text-sm border border-gray-200"
-                >
-                  إغلاق
-                </button>
-              </div>
-            </motion.div>
+              </motion.div>
             </div>
           </>
         )}
