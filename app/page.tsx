@@ -318,9 +318,21 @@ const ScrollProgress = () => {
 const SocialContact = () => {
   const socialLinks = [
     { icon: FaTelegramPlane, href: "https://t.me/LIVEDENTsy", label: "تلغرام" },
-    { icon: FaWhatsapp, href: "https://wa.me/+963982719525", label: "واتساب" },
-    { icon: FaYoutube, href: "https://youtube.com/@OnRequest_dev", label: "يوتيوب" },
-    { icon: FaInstagram, href: "https://www.instagram.com/livedent.official", label: "انستغرام" },
+    {
+      icon: FaWhatsapp,
+      href: "https://wa.me/+963945299717",
+      label: "واتساب",
+    },
+    {
+      icon: FaYoutube,
+      href: "https://youtube.com/@OnRequest_dev",
+      label: "يوتيوب",
+    },
+    {
+      icon: FaInstagram,
+      href: "https://www.instagram.com/livedent.official",
+      label: "انستغرام",
+    },
   ];
 
   return (
