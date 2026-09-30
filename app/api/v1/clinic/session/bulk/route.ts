@@ -79,6 +79,7 @@ export async function POST(request: NextRequest) {
         const data = createdSessions[earliestIndex];
 
         if (info && !info.prevent_auto_messages) {
+            console.log(info.prevent_auto_messages)
             // توقيت سوريا UTC+3
             const localStart = new Date(earliestTime + 3 * 60 * 60 * 1000);
 

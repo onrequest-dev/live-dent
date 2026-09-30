@@ -549,6 +549,12 @@ const handleConfirmApply = async () => {
       const combinedProcedureName = `${getToothDisplay(tooth.id, displayPreference)} - ${appointment.name}`;
 
       // ✅ تجهيز الجلسة للإرسال
+      let prevent_auto_messages = false;
+      const preventautomessagesflag = localStorage.getItem(
+        "prevent_auto_messages",
+      );
+      if (preventautomessagesflag && preventautomessagesflag == "true")
+        prevent_auto_messages = true;
       sessionsToCreate.push({
         patientId,
         startTime,
@@ -563,7 +569,7 @@ const handleConfirmApply = async () => {
           patientName: patientName || "",
           phoneNumber: patientPhone || "",
           gender: patientGender || "",
-          prevent_auto_messages: false,
+          prevent_auto_messages: prevent_auto_messages,
         },
       });
 
