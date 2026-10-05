@@ -138,22 +138,63 @@
 
 import { Clinic, DoctorProfile, Patient, PatientCase, Session } from "@/types";
 import { ApiResponse } from "./fetch_with_retry";
+import { fetchTemplates } from "./templates";
+import { createDefaultTemplates } from "@/components/dashboard/tabs/TreatmentsTab";
+
+
+
+
+
+async function syncTemplatesRaw() {
+  try {
+    const result = await fetchTemplates();
+
+    if (result.success && Array.isArray(result.data)) {
+      const serverTemplates = result.data;
+
+      if (serverTemplates.length > 0) {
+        localStorage.setItem("treatment_templates", JSON.stringify(serverTemplates));
+        window.dispatchEvent(new CustomEvent("treatmentTemplatesChanged"));
+        return serverTemplates;
+      } else {
+        const saved = localStorage.getItem("treatment_templates");
+        let hasLocal = false;
+        try {
+          const parsed = saved ? JSON.parse(saved) : [];
+          hasLocal = Array.isArray(parsed) && parsed.length > 0;
+        } catch {}
+
+        if (!hasLocal) {
+          const defaults = createDefaultTemplates();
+          localStorage.setItem("treatment_templates", JSON.stringify(defaults));
+          return defaults;
+        }
+      }
+    }
+  } catch {}
+  return null;
+}
 
 export async function getClinic(): Promise<ApiResponse<Clinic>> {
   try {
-    const response = await fetch("/api/v1/clinic",{redirect: "manual",});
+    const response = await fetch("/api/v1/clinic", { redirect: "manual" });
+
     if (response.type === "opaqueredirect" || response.status === 0) {
-    // هناك redirect
-    window.location.href = "/suspended";
-    return { success: false, error: "تمت إعادة التوجيه إلى صفحة تسجيل الدخول" };
-}
+      window.location.href = "/suspended";
+      return { success: false, error: "تمت إعادة التوجيه إلى صفحة تسجيل الدخول" };
+    }
+
     const result = await response.json();
-    
-    localStorage.setItem('currency', result.data?.currency || 'USD'); 
+
+    localStorage.setItem('currency', result.data?.currency || 'USD');
 
     if (!response.ok) {
       return { success: false, error: result.error || "فشل جلب بيانات العيادة" };
     }
+
+    // مزامنة القوالب بعد نجاح جلب العيادة
+    await syncTemplatesRaw();
+
     return { success: true, data: result.data };
   } catch (error) {
     return {

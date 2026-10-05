@@ -117,7 +117,7 @@ const applyAutoSplit = (tpl: TreatmentTemplate): TreatmentTemplate => {
 // قوالب افتراضية
 // ============================================================
 
-const createDefaultTemplates = (): TreatmentTemplate[] => [
+export const createDefaultTemplates = (): TreatmentTemplate[] => [
   {
     id: generateId(), name: "قلع سن عادي", description: "خلع سن بسيط",
     totalCost: 5, autoSplitCost: false, color: "#EF4444",
