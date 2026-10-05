@@ -1,7 +1,7 @@
 // components/dashboard/PWAInstallPrompt.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 
@@ -9,6 +9,14 @@ export function PWAInstallPrompt() {
   const { isInstallable, isInstalled, installApp } = usePWAInstall();
   const [showPrompt, setShowPrompt] = useState(true);
   const [isInstalling, setIsInstalling] = useState(false);
+  const [isTutorialStepAllowed, setIsTutorialStepAllowed] = useState(false);
+
+  // فحص قيمة tutorial_step في localStorage
+  useEffect(() => {
+    const tutorialStep = localStorage.getItem("tutorial_step");
+    const stepValue = tutorialStep !== null ? Number(tutorialStep) : null;
+    setIsTutorialStepAllowed(stepValue === 9 || stepValue === -1);
+  }, []);
 
   const handleInstall = async () => {
     setIsInstalling(true);
@@ -19,8 +27,8 @@ export function PWAInstallPrompt() {
     setIsInstalling(false);
   };
 
-  // إذا كان التطبيق مثبتاً بالفعل أو غير قابل للتثبيت، لا نعرض شيئاً
-  if (!isInstallable || isInstalled || !showPrompt) {
+  // إذا كان التطبيق مثبتاً بالفعل أو غير قابل للتثبيت، أو أن tutorial_step غير مسموح، لا نعرض شيئاً
+  if (!isInstallable || isInstalled || !showPrompt || !isTutorialStepAllowed) {
     return null;
   }
 
@@ -129,7 +137,7 @@ export function PWAInstallPrompt() {
             {/* مؤشر للأجهزة المختلفة */}
             <div className="mt-4 p-3 bg-gray-50 rounded-lg">
               <p className="text-xs text-gray-500 text-center">
-                 سيتم إضافة اختصار للتطبيق على الشاشة الرئيسية
+                سيتم إضافة اختصار للتطبيق على الشاشة الرئيسية
               </p>
             </div>
           </div>
