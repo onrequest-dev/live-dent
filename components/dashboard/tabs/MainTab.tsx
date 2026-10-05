@@ -835,16 +835,6 @@ export function MainTab({
     }
   };
 
-  if (!clinicData) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <ToothLoader />
-        </div>
-      </div>
-    );
-  }
-
   useEffect(() => {
     if (
       tutorialStep !== null &&
@@ -855,6 +845,16 @@ export function MainTab({
       setShowNewPatientModal(true);
     }
   }, [tutorialStep, showNewPatientModal]);
+
+  if (!clinicData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <ToothLoader />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
