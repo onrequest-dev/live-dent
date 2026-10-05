@@ -7,17 +7,28 @@ const UpdateModal = () => {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    // حذف العلم القديم (v2) من جميع الأجهزة
     try {
-      localStorage.removeItem(OLD_KEY);
-    } catch (e) {}
+      const isExistingUser = localStorage.getItem(OLD_KEY) !== null;
 
-    const alreadyShown = localStorage.getItem(STORAGE_KEY);
-    if (!alreadyShown) {
-      const timer = setTimeout(() => setVisible(true), 500);
-      return () => clearTimeout(timer);
+      const alreadyShown = localStorage.getItem(STORAGE_KEY);
+      if (isExistingUser && !alreadyShown) {
+        const timer = setTimeout(() => setVisible(true), 500);
+        return () => clearTimeout(timer);
+      }
+    } catch (e) {
+      // Ignore storage access errors.
     }
   }, []);
+
+  useEffect(() => {
+    if (!visible) return;
+
+    try {
+      localStorage.removeItem(OLD_KEY);
+    } catch (e) {
+      // Ignore storage access errors.
+    }
+  }, [visible]);
 
   const handleDismiss = () => {
     setVisible(false);
@@ -55,7 +66,7 @@ const UpdateModal = () => {
 
         <h2 className="text-center text-lg font-bold leading-snug text-[#1c1c1e]">
           مرحباً مستخدمي{" "}
-          <span className="text-blue-500 font-extrabold">Live-Dent</span> 
+          <span className="text-blue-500 font-extrabold">Live-Dent</span>
         </h2>
         <p className="text-center text-sm text-gray-500 mt-1 mb-4">
           أهلاً بكم في النسخة 3.0.3
@@ -68,12 +79,12 @@ const UpdateModal = () => {
           <ul className="list-none p-0 m-0 space-y-1.5">
             <li className="flex items-start text-sm text-[#2c2c2e]">
               <span className="text-blue-500 font-bold ml-2">•</span>
-              إضافة قائمة بأشهر المعالجات السنية بشكل قابل للتخصيص 
+              إضافة قائمة بأشهر المعالجات السنية بشكل قابل للتخصيص
             </li>
 
             <li className="flex items-start text-sm text-[#2c2c2e]">
               <span className="text-blue-500 font-bold ml-2">•</span>
-              يمكنك الآن اضافة قوالب علاجية على الشارت السني بشكل مباشر 
+              يمكنك الآن اضافة قوالب علاجية على الشارت السني بشكل مباشر
             </li>
             <li className="flex items-start text-sm text-[#2c2c2e]">
               <span className="text-blue-500 font-bold ml-2">•</span>
@@ -81,7 +92,7 @@ const UpdateModal = () => {
             </li>
             <li className="flex items-start text-sm text-[#2c2c2e]">
               <span className="text-blue-500 font-bold ml-2">•</span>
-              إضافة تحسينات على الآلية الزمنية 
+              إضافة تحسينات على الآلية الزمنية
             </li>
             <li className="flex items-start text-sm text-[#2c2c2e]">
               <span className="text-blue-500 font-bold ml-2">•</span>
