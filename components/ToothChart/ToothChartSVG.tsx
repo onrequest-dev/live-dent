@@ -394,7 +394,11 @@ useEffect(() => {
   }, [editable, onToothClick, selectedToothId, teethData]);
 
   return (
-    <div ref={svgRef} className="tooth-chart-svg-container">
+    <div
+      ref={svgRef}
+      className="tooth-chart-svg-container"
+      data-tutorial="tooth-svg"
+    >
       <svg
         version="1.1"
         xmlns="http://www.w3.org/2000/svg"
@@ -471,7 +475,7 @@ useEffect(() => {
           </style>
         </defs>
 
-                {/* تعريفات للعلامة + */}
+        {/* تعريفات للعلامة + */}
         <filter id="cross-glow" x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur in="SourceAlpha" stdDeviation="1.5" result="blur" />
           <feFlood floodColor="#3B82F6" floodOpacity="0.3" result="glowColor" />
@@ -484,7 +488,13 @@ useEffect(() => {
 
         {/* ظل للعلامة */}
         <filter id="cross-shadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="1" stdDeviation="2" floodColor="#000000" floodOpacity="0.15" />
+          <feDropShadow
+            dx="0"
+            dy="1"
+            stdDeviation="2"
+            floodColor="#000000"
+            floodOpacity="0.15"
+          />
         </filter>
         <g id="toothLabels" transform="translate(40, -5)" opacity="1">
           {/* الفك العلوي - الجهة اليمنى (1-8) */}
@@ -828,14 +838,14 @@ useEffect(() => {
 	<text id="txtTooth1" transform="matrix(1 0 0 1 5.0001 338.4393)" font-family="'MyriadPro-Regular'" font-size="16px"></text>
 </g> */}
         {/* العلامة + المركزية مع تسميات الأرباع */}
-{/* العلامة + المركزية - متقطعة وباهتة */}
-{/* 
+        {/* العلامة + المركزية - متقطعة وباهتة */}
+        {/* 
   العلامة + المركزية - مع براميترات التحكم 
   يمكنك تغيير القيم في الأعلى للتحكم بموقع وحجم العلامة
 */}
 
-{/* ===== براميترات التحكم ===== */}
-{/* 
+        {/* ===== براميترات التحكم ===== */}
+        {/* 
   centerX, centerY: مركز العلامة
   verticalLength: طول الخط العمودي (كامل)
   horizontalLength: طول الخط الأفقي (كامل)
@@ -846,105 +856,104 @@ useEffect(() => {
   opacity: شفافية المجموعة
 */}
 
-{/* ============================================
+        {/* ============================================
     🔧 قم بتعديل هذه القيم لتحريك العلامة
     ============================================ */}
 
-<g id="center-cross" opacity="0.35">
-  
-  {/* ===== الخط العمودي ===== */}
-  {/* غيّر x1 و x2 لتحريك يمين/يسار */}
-  {/* غيّر y1 و y2 لتحريك أعلى/أسفل */}
-  <line
-    x1="225"   // ← غيّر هذا الرقم (يمين/يسار)
-    y1="305"   // ← غيّر هذا الرقم (أعلى/أسفل)
-    x2="225"   // ← غيّر هذا الرقم (يمين/يسار)
-    y2="395"   // ← غيّر هذا الرقم (أعلى/أسفل)
-    stroke="#94A3B8"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeOpacity="0.5"
-    strokeDasharray="10 6"
-  />
-  
-  {/* ===== الخط الأفقي ===== */}
-  {/* غيّر x1 و x2 لتحريك يمين/يسار */}
-  {/* غيّر y1 و y2 لتحريك أعلى/أسفل */}
-  <line
-    x1="160"   // ← غيّر هذا الرقم (يمين/يسار)
-    y1="350"   // ← غيّر هذا الرقم (أعلى/أسفل)
-    x2="290"   // ← غيّر هذا الرقم (يمين/يسار)
-    y2="350"   // ← غيّر هذا الرقم (أعلى/أسفل)
-    stroke="#94A3B8"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeOpacity="0.5"
-    strokeDasharray="10 6"
-  />
-  
-  {/* ===== نقطة المنتصف ===== */}
-  <circle
-    cx="225"   // ← غيّر هذا الرقم (يمين/يسار)
-    cy="350"   // ← غيّر هذا الرقم (أعلى/أسفل)
-    r="2"
-    fill="#94A3B8"
-    opacity="0.3"
-  />
-  
-{/* ===== التسميات ===== */}
-  
-{/* علوي */}
-<text
-  x="225"
-  y="275"
-  textAnchor="middle"
-  fontFamily="'Avenir-Medium', sans-serif"
-  fontSize="15px"
-  fill="#000000"    // ← غيّر إلى أسود خالص
-  opacity="1"
->
-  علوي
-</text>
+        <g id="center-cross" opacity="0.35">
+          {/* ===== الخط العمودي ===== */}
+          {/* غيّر x1 و x2 لتحريك يمين/يسار */}
+          {/* غيّر y1 و y2 لتحريك أعلى/أسفل */}
+          <line
+            x1="225" // ← غيّر هذا الرقم (يمين/يسار)
+            y1="305" // ← غيّر هذا الرقم (أعلى/أسفل)
+            x2="225" // ← غيّر هذا الرقم (يمين/يسار)
+            y2="395" // ← غيّر هذا الرقم (أعلى/أسفل)
+            stroke="#94A3B8"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeOpacity="0.5"
+            strokeDasharray="10 6"
+          />
 
-{/* سفلي */}
-<text
-  x="225"
-  y="435"
-  textAnchor="middle"
-  fontFamily="'Avenir-Medium', sans-serif"
-  fontSize="15px"
-  fill="#000000"    // ← غيّر إلى أسود خالص
-  opacity="0.7"     // ← يمكنك زيادة الشفافية أيضاً
->
-  سفلي
-</text>
+          {/* ===== الخط الأفقي ===== */}
+          {/* غيّر x1 و x2 لتحريك يمين/يسار */}
+          {/* غيّر y1 و y2 لتحريك أعلى/أسفل */}
+          <line
+            x1="160" // ← غيّر هذا الرقم (يمين/يسار)
+            y1="350" // ← غيّر هذا الرقم (أعلى/أسفل)
+            x2="290" // ← غيّر هذا الرقم (يمين/يسار)
+            y2="350" // ← غيّر هذا الرقم (أعلى/أسفل)
+            stroke="#94A3B8"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeOpacity="0.5"
+            strokeDasharray="10 6"
+          />
 
-{/* يسار */}
-<text
-  x="320"
-  y="354"
-  textAnchor="start"
-  fontFamily="'Avenir-Medium', sans-serif"
-  fontSize="15px"
-  fill="#000000"    // ← غيّر إلى أسود خالص
-  opacity="0.7"
->
-  يسار
-</text>
+          {/* ===== نقطة المنتصف ===== */}
+          <circle
+            cx="225" // ← غيّر هذا الرقم (يمين/يسار)
+            cy="350" // ← غيّر هذا الرقم (أعلى/أسفل)
+            r="2"
+            fill="#94A3B8"
+            opacity="0.3"
+          />
 
-{/* يمين */}
-<text
-  x="125"
-  y="354"
-  textAnchor="end"
-  fontFamily="'Avenir-Medium', sans-serif"
-  fontSize="15px"
-  fill="#000000"    // ← غيّر إلى أسود خالص
-  opacity="0.7"
->
-  يمين
-</text>
-</g>
+          {/* ===== التسميات ===== */}
+
+          {/* علوي */}
+          <text
+            x="225"
+            y="275"
+            textAnchor="middle"
+            fontFamily="'Avenir-Medium', sans-serif"
+            fontSize="15px"
+            fill="#000000" // ← غيّر إلى أسود خالص
+            opacity="1"
+          >
+            علوي
+          </text>
+
+          {/* سفلي */}
+          <text
+            x="225"
+            y="435"
+            textAnchor="middle"
+            fontFamily="'Avenir-Medium', sans-serif"
+            fontSize="15px"
+            fill="#000000" // ← غيّر إلى أسود خالص
+            opacity="0.7" // ← يمكنك زيادة الشفافية أيضاً
+          >
+            سفلي
+          </text>
+
+          {/* يسار */}
+          <text
+            x="320"
+            y="354"
+            textAnchor="start"
+            fontFamily="'Avenir-Medium', sans-serif"
+            fontSize="15px"
+            fill="#000000" // ← غيّر إلى أسود خالص
+            opacity="0.7"
+          >
+            يسار
+          </text>
+
+          {/* يمين */}
+          <text
+            x="125"
+            y="354"
+            textAnchor="end"
+            fontFamily="'Avenir-Medium', sans-serif"
+            fontSize="15px"
+            fill="#000000" // ← غيّر إلى أسود خالص
+            opacity="0.7"
+          >
+            يمين
+          </text>
+        </g>
         <g id="Spots">
           <polygon
             id="Tooth32"

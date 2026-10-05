@@ -627,7 +627,16 @@ const handleConfirmApply = async () => {
     }
     
     window.dispatchEvent(new CustomEvent("toothAssignmentsChanged"));
-    
+    try {
+  const stored = localStorage.getItem("tutorial_step");
+  if (stored !== null) {
+    const stepNum = parseInt(stored);
+    if (stepNum === 8) {
+      localStorage.setItem("tutorial_step", "9");
+      // ملاحظة: لا نحتاج dispatchEvent لأن الصفحة ستعاد تحميلها
+    }
+  }
+} catch {}
     setTimeout(() => {
       window.location.reload();
     }, 1500);
@@ -675,11 +684,18 @@ const handleConfirmApply = async () => {
             {getToothDisplay(tooth.id, displayPreference)}
           </span>
           {assignedTemplate && (
-            <div className="flex items-center gap-2 px-3 py-1 rounded-full"
+            <div
+              className="flex items-center gap-2 px-3 py-1 rounded-full"
               style={{ backgroundColor: `${assignedTemplate.color}15` }}
             >
-              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: assignedTemplate.color }} />
-              <span className="text-xs font-medium" style={{ color: assignedTemplate.color }}>
+              <span
+                className="w-2.5 h-2.5 rounded-full"
+                style={{ backgroundColor: assignedTemplate.color }}
+              />
+              <span
+                className="text-xs font-medium"
+                style={{ color: assignedTemplate.color }}
+              >
                 {assignedTemplate.name}
               </span>
             </div>
@@ -696,12 +712,16 @@ const handleConfirmApply = async () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               className={`p-3 rounded-xl text-sm flex items-center gap-2 ${
-                applyMessage.type === 'success'
-                  ? 'bg-green-50 text-green-700 border border-green-200'
-                  : 'bg-red-50 text-red-700 border border-red-200'
+                applyMessage.type === "success"
+                  ? "bg-green-50 text-green-700 border border-green-200"
+                  : "bg-red-50 text-red-700 border border-red-200"
               }`}
             >
-              {applyMessage.type === 'success' ? <Check size={16} /> : <X size={16} />}
+              {applyMessage.type === "success" ? (
+                <Check size={16} />
+              ) : (
+                <X size={16} />
+              )}
               {applyMessage.text}
             </motion.div>
           )}
@@ -722,8 +742,13 @@ const handleConfirmApply = async () => {
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full" style={{ backgroundColor: assignedTemplate.color }} />
-                  <span className="font-bold text-gray-800">{assignedTemplate.name}</span>
+                  <span
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: assignedTemplate.color }}
+                  />
+                  <span className="font-bold text-gray-800">
+                    {assignedTemplate.name}
+                  </span>
                 </div>
                 <button
                   onClick={() => setShowConfirmRemove(true)}
@@ -733,11 +758,15 @@ const handleConfirmApply = async () => {
                   <Trash2 size={16} className="text-red-400" />
                 </button>
               </div>
-              
+
               <div className="space-y-2">
                 {assignedTemplate.appointments.map((appt, index) => (
-                  <div key={appt.id} className="flex items-center gap-2 text-xs text-gray-600">
-                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-bold"
+                  <div
+                    key={appt.id}
+                    className="flex items-center gap-2 text-xs text-gray-600"
+                  >
+                    <span
+                      className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-bold"
                       style={{ backgroundColor: assignedTemplate.color }}
                     >
                       {index + 1}
@@ -751,14 +780,17 @@ const handleConfirmApply = async () => {
             </div>
           </div>
         ) : (
-          editable && patientId && clinicId && (
+          editable &&
+          patientId &&
+          clinicId && (
             <div className="space-y-3">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
                 تطبيق قالب علاجي
               </p>
-              
+
               {!showTemplateList ? (
                 <button
+                  data-tutorial="apply-template-btn"
                   onClick={() => setShowTemplateList(true)}
                   className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-gray-200 text-sm text-gray-500 hover:border-gray-300 hover:text-gray-600 transition-colors"
                 >
@@ -768,29 +800,33 @@ const handleConfirmApply = async () => {
               ) : (
                 <div className="space-y-2">
                   {availableTemplates.length === 0 ? (
-  <div className="py-3 space-y-3">
-    <p className="text-sm text-gray-400">
-      راجع القوالب العلاجية وتأكد أنها ملائمة لأسعارك ومواعيدك
-    </p>
+                    <div className="py-3 space-y-3">
+                      <p className="text-sm text-gray-400">
+                        راجع القوالب العلاجية وتأكد أنها ملائمة لأسعارك ومواعيدك
+                      </p>
 
-    <motion.button
-      whileHover={{ scale: 1.02, y: -1 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={() => {
-        const params = new URLSearchParams(searchParams.toString());
-        params.set("tab", "treatments");
-        router.push(`${pathname}?${params.toString()}`, { scroll: false });
-      }}
-      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
-      style={{
-        backgroundColor: `${primaryColor}10`,
-        border: `1.5px solid ${primaryColor}30`,
-        color: primaryColor,
-      }}
-    >
-      <span>الذهاب إلى العلاجات</span>
-    </motion.button>
-  </div>
+                      <motion.button
+                        whileHover={{ scale: 1.02, y: -1 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => {
+                          const params = new URLSearchParams(
+                            searchParams.toString(),
+                          );
+                          params.set("tab", "treatments");
+                          router.push(`${pathname}?${params.toString()}`, {
+                            scroll: false,
+                          });
+                        }}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                        style={{
+                          backgroundColor: `${primaryColor}10`,
+                          border: `1.5px solid ${primaryColor}30`,
+                          color: primaryColor,
+                        }}
+                      >
+                        <span>الذهاب إلى العلاجات</span>
+                      </motion.button>
+                    </div>
                   ) : (
                     availableTemplates.map((template) => (
                       <button
@@ -800,15 +836,22 @@ const handleConfirmApply = async () => {
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: template.color }} />
-                            <span className="font-medium text-gray-800 text-sm">{template.name}</span>
+                            <span
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: template.color }}
+                            />
+                            <span className="font-medium text-gray-800 text-sm">
+                              {template.name}
+                            </span>
                           </div>
-                          <span className="text-xs text-gray-500">{template.appointments.length} مواعيد</span>
+                          <span className="text-xs text-gray-500">
+                            {template.appointments.length} مواعيد
+                          </span>
                         </div>
                       </button>
                     ))
                   )}
-                  
+
                   <button
                     onClick={() => setShowTemplateList(false)}
                     className="w-full py-2 text-xs text-gray-400 hover:text-gray-600 transition-colors"
@@ -835,7 +878,9 @@ const handleConfirmApply = async () => {
           <div className="space-y-2">
             {localTreatments.map((treatment, index) => (
               <div key={index} className="flex items-center gap-2">
-                <span className="text-[10px] text-gray-300 w-5 text-center">{index + 1}</span>
+                <span className="text-[10px] text-gray-300 w-5 text-center">
+                  {index + 1}
+                </span>
                 <input
                   type="search"
                   value={treatment}
@@ -852,7 +897,9 @@ const handleConfirmApply = async () => {
                 {editable && (
                   <button
                     onClick={() => {
-                      const newTreatments = localTreatments.filter((_, i) => i !== index);
+                      const newTreatments = localTreatments.filter(
+                        (_, i) => i !== index,
+                      );
                       setLocalTreatments(newTreatments);
                       saveTreatmentsToParent(newTreatments);
                     }}
@@ -863,11 +910,13 @@ const handleConfirmApply = async () => {
                 )}
               </div>
             ))}
-            
+
             {!hasTreatments && (
-              <p className="text-sm text-gray-300 py-4 text-center">لا توجد أعمال مسجلة</p>
+              <p className="text-sm text-gray-300 py-4 text-center">
+                لا توجد أعمال مسجلة
+              </p>
             )}
-            
+
             {editable && localTreatments.length < 10 && (
               <button
                 onClick={() => {
@@ -889,7 +938,9 @@ const handleConfirmApply = async () => {
 
         {/* الملاحظات */}
         <div className="space-y-3">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">ملاحظات</p>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            ملاحظات
+          </p>
           <textarea
             value={tooth.notes}
             onChange={(e) => onUpdate({ ...tooth, notes: e.target.value })}
@@ -902,112 +953,145 @@ const handleConfirmApply = async () => {
       </div>
 
       {/* ✅ مودال تأكيد التطبيق */}
-<AnimatePresence>
-  {showConfirmApply && (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4"
-      onClick={() => !isApplying && setShowConfirmApply(null)}
-    >
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        className="bg-white rounded-2xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h3 className="text-lg font-bold text-gray-900 mb-2">تأكيد تطبيق القالب</h3>
-        <p className="text-gray-600 mb-4">
-          سيتم تطبيق قالب{" "}
-          <span className="font-bold" style={{ color: showConfirmApply.color }}>
-            {showConfirmApply.name}
-          </span>{" "}
-          على {getToothDisplay(tooth.id, displayPreference)} وإنشاء{" "}
-          {showConfirmApply.appointments.length} مواعيد.
-        </p>
-
-        {/* ✅ قائمة المواعيد مع التاريخ والوقت المحسوبين */}
-        <div className="space-y-3 mb-6">
-          {calculateExpectedAppointments().map((item, index) => (
-            <div
-              key={item.appointment.id}
-              className="p-3 rounded-xl border"
-              style={{
-                borderColor: item.date ? `${showConfirmApply.color}30` : "#FCA5A5",
-                backgroundColor: item.date ? `${showConfirmApply.color}05` : "#FEF2F2",
-              }}
+      <AnimatePresence>
+        {showConfirmApply && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4"
+            onClick={() => !isApplying && setShowConfirmApply(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-2xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span
-                    className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                    style={{ backgroundColor: item.date ? showConfirmApply.color : "#EF4444" }}
+              <h3 className="text-lg font-bold text-gray-900 mb-2">
+                تأكيد تطبيق القالب
+              </h3>
+              <p className="text-gray-600 mb-4">
+                سيتم تطبيق قالب{" "}
+                <span
+                  className="font-bold"
+                  style={{ color: showConfirmApply.color }}
+                >
+                  {showConfirmApply.name}
+                </span>{" "}
+                على {getToothDisplay(tooth.id, displayPreference)} وإنشاء{" "}
+                {showConfirmApply.appointments.length} مواعيد.
+              </p>
+
+              {/* ✅ قائمة المواعيد مع التاريخ والوقت المحسوبين */}
+              <div className="space-y-3 mb-6">
+                {calculateExpectedAppointments().map((item, index) => (
+                  <div
+                    key={item.appointment.id}
+                    className="p-3 rounded-xl border"
+                    style={{
+                      borderColor: item.date
+                        ? `${showConfirmApply.color}30`
+                        : "#FCA5A5",
+                      backgroundColor: item.date
+                        ? `${showConfirmApply.color}05`
+                        : "#FEF2F2",
+                    }}
                   >
-                    {index + 1}
-                  </span>
-                  <span className="font-medium text-gray-800 text-sm">
-                    {item.appointment.name}
-                  </span>
-                </div>
-                {item.appointment.cost > 0 && (
-                  <span className="text-xs font-bold text-gray-700">
-                    {item.appointment.cost}
-                  </span>
-                )}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                          style={{
+                            backgroundColor: item.date
+                              ? showConfirmApply.color
+                              : "#EF4444",
+                          }}
+                        >
+                          {index + 1}
+                        </span>
+                        <span className="font-medium text-gray-800 text-sm">
+                          {item.appointment.name}
+                        </span>
+                      </div>
+                      {item.appointment.cost > 0 && (
+                        <span className="text-xs font-bold text-gray-700">
+                          {item.appointment.cost}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 mt-2 text-xs">
+                      <CalendarDays
+                        size={12}
+                        className={item.date ? "text-gray-400" : "text-red-400"}
+                      />
+                      <span
+                        className={
+                          item.date
+                            ? "text-gray-600"
+                            : "text-red-500 font-medium"
+                        }
+                      >
+                        {item.dayName} {item.dateStr}
+                      </span>
+                      <span className="text-gray-300">•</span>
+                      <Clock
+                        size={12}
+                        className={item.date ? "text-gray-400" : "text-red-400"}
+                      />
+                      <span
+                        className={
+                          item.date
+                            ? "text-gray-600 font-medium"
+                            : "text-red-500 font-medium"
+                        }
+                      >
+                        {item.time}
+                      </span>
+                    </div>
+
+                    {item.appointment.notes && (
+                      <p className="text-xs text-gray-400 mt-1">
+                        {item.appointment.notes}
+                      </p>
+                    )}
+                  </div>
+                ))}
               </div>
 
-              <div className="flex items-center gap-2 mt-2 text-xs">
-                <CalendarDays size={12} className={item.date ? "text-gray-400" : "text-red-400"} />
-                <span className={item.date ? "text-gray-600" : "text-red-500 font-medium"}>
-                  {item.dayName} {item.dateStr}
-                </span>
-                <span className="text-gray-300">•</span>
-                <Clock size={12} className={item.date ? "text-gray-400" : "text-red-400"} />
-                <span className={item.date ? "text-gray-600 font-medium" : "text-red-500 font-medium"}>
-                  {item.time}
-                </span>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleConfirmApply}
+                  disabled={isApplying}
+                  className="flex-1 py-3 rounded-xl text-white font-medium flex items-center justify-center gap-2"
+                  style={{ backgroundColor: showConfirmApply.color }}
+                >
+                  {isApplying ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      جاري التطبيق...
+                    </>
+                  ) : (
+                    <>
+                      <Check size={18} />
+                      تأكيد التطبيق
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => setShowConfirmApply(null)}
+                  disabled={isApplying}
+                  className="flex-1 py-3 rounded-xl bg-gray-100 text-gray-700 font-medium"
+                >
+                  إلغاء
+                </button>
               </div>
-
-              {item.appointment.notes && (
-                <p className="text-xs text-gray-400 mt-1">{item.appointment.notes}</p>
-              )}
-            </div>
-          ))}
-        </div>
-
-        <div className="flex gap-3">
-          <button
-            onClick={handleConfirmApply}
-            disabled={isApplying}
-            className="flex-1 py-3 rounded-xl text-white font-medium flex items-center justify-center gap-2"
-            style={{ backgroundColor: showConfirmApply.color }}
-          >
-            {isApplying ? (
-              <>
-                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                جاري التطبيق...
-              </>
-            ) : (
-              <>
-                <Check size={18} />
-                تأكيد التطبيق
-              </>
-            )}
-          </button>
-          <button
-            onClick={() => setShowConfirmApply(null)}
-            disabled={isApplying}
-            className="flex-1 py-3 rounded-xl bg-gray-100 text-gray-700 font-medium"
-          >
-            إلغاء
-          </button>
-        </div>
-      </motion.div>
-    </motion.div>
-  )}
-</AnimatePresence>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ✅ مودال تأكيد الإزالة */}
       <AnimatePresence>
@@ -1030,15 +1114,20 @@ const handleConfirmApply = async () => {
                 <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center">
                   <AlertTriangle size={24} className="text-amber-500" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900">إزالة القالب</h3>
+                <h3 className="text-lg font-bold text-gray-900">
+                  إزالة القالب
+                </h3>
               </div>
-              
+
               <p className="text-gray-600 mb-4">
                 سيتم إزالة القالب من هذا السن. <br />
-                <span className="font-medium">المواعيد التي تم إنشاؤها سابقاً ستبقى موجودة.</span> <br />
+                <span className="font-medium">
+                  المواعيد التي تم إنشاؤها سابقاً ستبقى موجودة.
+                </span>{" "}
+                <br />
                 يمكنك تعيين قالب آخر مكانه.
               </p>
-              
+
               <div className="flex gap-3">
                 <button
                   onClick={handleConfirmRemove}

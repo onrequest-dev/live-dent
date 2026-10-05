@@ -4,7 +4,12 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useParams, useRouter, usePathname, useSearchParams } from "next/navigation";
+import {
+  useParams,
+  useRouter,
+  usePathname,
+  useSearchParams,
+} from "next/navigation";
 import { ExpandedSessionCard } from "./ExpandedSessionCard";
 import {
   Search,
@@ -55,13 +60,17 @@ import { ToastContainer, useToast } from "./Toast";
 import { XRayViewerButton } from "../XRayViewer";
 import { useModalBackHandler } from "@/hooks/useModalBackHandler";
 import ToothLoader from "../../loding";
-import { ToothChart, ToothChartRef, ToothData } from "../../ToothChart/ToothChart";
+import {
+  ToothChart,
+  ToothChartRef,
+  ToothData,
+} from "../../ToothChart/ToothChart";
 import { saveDentalChart } from "@/client/helpers/dental-chart";
-import getCurrency from '@/client/helpers/getCurrency';
-import {DatePicker} from '@/components/ui/DatePicker';
-import {SmartDatePicker} from '@/components/ui/SmartDatePicker';
-import {TimePicker} from '@/components/ui/TimePicker';
-import { SmartTimePicker } from '@/components/ui/SmartTimePicker';
+import getCurrency from "@/client/helpers/getCurrency";
+import { DatePicker } from "@/components/ui/DatePicker";
+import { SmartDatePicker } from "@/components/ui/SmartDatePicker";
+import { TimePicker } from "@/components/ui/TimePicker";
+import { SmartTimePicker } from "@/components/ui/SmartTimePicker";
 
 import {
   toLocalDateString,
@@ -72,6 +81,7 @@ import {
   addLocalDays,
   mergeLocalDateAndTime,
 } from "@/client/helpers/date-helpers";
+import { TutorialOverlay, useTutorialStep } from "@/components/TutorialOverlay";
 // ============================================================
 // خدمة API محاكية (لتحضير الربط مع الباك إند)
 // ============================================================
@@ -155,49 +165,48 @@ export function MainTab({
   const primaryColor = clinicData?.settings.primaryColor || "#528ff7";
   const secondaryColor = clinicData?.settings.secondaryColor || "#528ff7";
 
-const mergeUniqueById = <T extends { id: string }>(items: T[]) => {
-  const map = new Map<string, T>();
-  items.forEach((item) => {
-    if (!map.has(item.id)) {
-      map.set(item.id, item);
+  const mergeUniqueById = <T extends { id: string }>(items: T[]) => {
+    const map = new Map<string, T>();
+    items.forEach((item) => {
+      if (!map.has(item.id)) {
+        map.set(item.id, item);
+      }
+    });
+    return Array.from(map.values());
+  };
+
+  const [patients, setPatients] = useState<Patient[]>(() => {
+    // دمج البيانات الأولية مع المخزنة في sessionStorage
+    const storedNewPatients = sessionStorage.getItem("newpatients");
+    if (storedNewPatients) {
+      try {
+        const newPatients: Patient[] = JSON.parse(storedNewPatients);
+        if (Array.isArray(newPatients) && newPatients.length > 0) {
+          // sessionStorage.removeItem("newpatients"); // تنظيف فوري
+          return mergeUniqueById([...initialPatients, ...newPatients]);
+        }
+      } catch (e) {
+        console.error(e);
+      }
     }
+    return mergeUniqueById(initialPatients);
   });
-  return Array.from(map.values());
-};
 
-const [patients, setPatients] = useState<Patient[]>(() => {
-  // دمج البيانات الأولية مع المخزنة في sessionStorage
-  const storedNewPatients = sessionStorage.getItem("newpatients");
-  if (storedNewPatients) {
-    try {
-      const newPatients: Patient[] = JSON.parse(storedNewPatients);
-      if (Array.isArray(newPatients) && newPatients.length > 0) {
-        // sessionStorage.removeItem("newpatients"); // تنظيف فوري
-        return mergeUniqueById([...initialPatients, ...newPatients]);
+  const [sessions, setSessions] = useState<Session[]>(() => {
+    const storedNewSessions = sessionStorage.getItem("newsessions");
+    if (storedNewSessions) {
+      try {
+        const newSessions: Session[] = JSON.parse(storedNewSessions);
+        if (Array.isArray(newSessions) && newSessions.length > 0) {
+          // sessionStorage.removeItem("newsessions"); // تنظيف فوري
+          return mergeUniqueById([...initialSessions, ...newSessions]);
+        }
+      } catch (e) {
+        console.error(e);
       }
-    } catch (e) {
-      console.error(e);
     }
-  }
-  return mergeUniqueById(initialPatients);
-});
-
-const [sessions, setSessions] = useState<Session[]>(() => {
-  const storedNewSessions = sessionStorage.getItem("newsessions");
-  if (storedNewSessions) {
-    try {
-      const newSessions: Session[] = JSON.parse(storedNewSessions);
-      if (Array.isArray(newSessions) && newSessions.length > 0) {
-        // sessionStorage.removeItem("newsessions"); // تنظيف فوري
-        return mergeUniqueById([...initialSessions, ...newSessions]);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  }
-  return mergeUniqueById(initialSessions);
-});
-
+    return mergeUniqueById(initialSessions);
+  });
 
   const [cases, setCases] = useState<PatientCase[]>(initialCases);
 
@@ -242,66 +251,73 @@ const [sessions, setSessions] = useState<Session[]>(() => {
     return 320;
   });
 
-const handleUpdateSessionPayment = useCallback(async (sessionId: string, isPaid: boolean) => {
-  // 💾 حفظ الحالة القديمة
-  const oldSession = sessions.find(s => s.id === sessionId);
-  if (!oldSession) return;
-  const oldIsPaid = oldSession.isPaid;
-  const oldPaidAt = oldSession.paidAt;
-  const oldPaymentMethod = oldSession.paymentMethod;
+  const { step: tutorialStep, goToStep, endTutorial } = useTutorialStep();
 
-  // ✅ التحديث الفوري للـ UI
-  setSessions((prev) =>
-    prev.map((s) =>
-      s.id === sessionId 
-        ? { 
-            ...s, 
-            isPaid, 
-            paidAt: isPaid ? new Date() : undefined,
-            paymentMethod: isPaid ? "cash" : undefined
-          } 
-        : s
-    )
+  const handleUpdateSessionPayment = useCallback(
+    async (sessionId: string, isPaid: boolean) => {
+      // 💾 حفظ الحالة القديمة
+      const oldSession = sessions.find((s) => s.id === sessionId);
+      if (!oldSession) return;
+      const oldIsPaid = oldSession.isPaid;
+      const oldPaidAt = oldSession.paidAt;
+      const oldPaymentMethod = oldSession.paymentMethod;
+
+      // ✅ التحديث الفوري للـ UI
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.id === sessionId
+            ? {
+                ...s,
+                isPaid,
+                paidAt: isPaid ? new Date() : undefined,
+                paymentMethod: isPaid ? "cash" : undefined,
+              }
+            : s,
+        ),
+      );
+
+      try {
+        // 📡 إرسال الطلب إلى السيرفر
+        const result = await updateSession(sessionId, {
+          isPaid,
+          paidAt: isPaid ? new Date() : undefined,
+          paymentMethod: isPaid ? "cash" : undefined,
+        });
+
+        if (!result.success) {
+          throw new Error(result.error || "فشل تحديث حالة الدفع");
+        }
+
+        // ✅ نجاح: رسالة نجاح
+        addToast({
+          message: isPaid
+            ? " تم تحديث حالة الدفع إلى مدفوع"
+            : " تم تحديث حالة الدفع إلى غير مدفوع",
+          type: "success",
+        });
+      } catch (error: any) {
+        // ❌ فشل: نرجع الحالة القديمة + رسالة خطأ
+        setSessions((prev) =>
+          prev.map((s) =>
+            s.id === sessionId
+              ? {
+                  ...s,
+                  isPaid: oldIsPaid,
+                  paidAt: oldPaidAt,
+                  paymentMethod: oldPaymentMethod,
+                }
+              : s,
+          ),
+        );
+
+        addToast({
+          message: error?.message || "❌ حدث خطأ أثناء تحديث حالة الدفع",
+          type: "error",
+        });
+      }
+    },
+    [sessions, setSessions, addToast],
   );
-
-  try {
-    // 📡 إرسال الطلب إلى السيرفر
-    const result = await updateSession(sessionId, { 
-      isPaid,
-      paidAt: isPaid ? new Date() : undefined,
-      paymentMethod: isPaid ? "cash" : undefined
-    });
-    
-    if (!result.success) {
-      throw new Error(result.error || "فشل تحديث حالة الدفع");
-    }
-    
-    // ✅ نجاح: رسالة نجاح
-    addToast({
-      message: isPaid ? " تم تحديث حالة الدفع إلى مدفوع" : " تم تحديث حالة الدفع إلى غير مدفوع",
-      type: "success",
-    });
-  } catch (error: any) {
-    // ❌ فشل: نرجع الحالة القديمة + رسالة خطأ
-    setSessions((prev) =>
-      prev.map((s) =>
-        s.id === sessionId 
-          ? { 
-              ...s, 
-              isPaid: oldIsPaid, 
-              paidAt: oldPaidAt,
-              paymentMethod: oldPaymentMethod
-            } 
-          : s
-      )
-    );
-    
-    addToast({
-      message: error?.message || "❌ حدث خطأ أثناء تحديث حالة الدفع",
-      type: "error",
-    });
-  }
-}, [sessions, setSessions, addToast]);
 
   const resizingRef = useRef<boolean>(false);
   const listRef = useRef<HTMLDivElement>(null);
@@ -356,57 +372,68 @@ const handleUpdateSessionPayment = useCallback(async (sessionId: string, isPaid:
       .toLowerCase();
   };
 
-const filteredPatients = useMemo(() => {
-  let filtered = patients;
-  if (showTodayOnly) {
-    const todayStr = todayLocalString();
-    const todayPatientIds = sessions
-      .filter((s) => {
-        const sessionDate = toLocalDateString(new Date(s.startTime));
-        return sessionDate === todayStr && s.status === "scheduled";
-      })
-      .map((s) => s.patientId);
-    filtered = filtered.filter((p) => todayPatientIds.includes(p.id));
-  }
-  if (searchQuery) {
-    const query = searchQuery.toLowerCase();
-    filtered = filtered.filter(
-      (p) =>
-        normalizeText(p.fullName).includes(normalizeText(query)) ||
-        normalizeText(p.phone).includes(normalizeText(query)) ||
-        normalizeText(p.id).includes(normalizeText(query)),
-    );
-  }
-
-  // ✅ ترتيب: موعد اليوم أولاً (الأقرب وقتاً) ثم الأحدث إضافة
-  const todayStr = todayLocalString();
-  
-  return [...filtered].sort((a, b) => {
-    // البحث عن موعد اليوم لكل مريض
-    const aTodaySession = sessions.find((s) => {
-      const sessionDate = toLocalDateString(new Date(s.startTime));
-      return s.patientId === a.id && sessionDate === todayStr && s.status === "scheduled";
-    });
-    const bTodaySession = sessions.find((s) => {
-      const sessionDate = toLocalDateString(new Date(s.startTime));
-      return s.patientId === b.id && sessionDate === todayStr && s.status === "scheduled";
-    });
-
-    // من لديه موعد اليوم يأتي أولاً
-    if (aTodaySession && !bTodaySession) return -1;
-    if (!aTodaySession && bTodaySession) return 1;
-
-    // كلاهما لديه موعد اليوم - الأقرب وقتاً أولاً
-    if (aTodaySession && bTodaySession) {
-      return new Date(aTodaySession.startTime).getTime() - new Date(bTodaySession.startTime).getTime();
+  const filteredPatients = useMemo(() => {
+    let filtered = patients;
+    if (showTodayOnly) {
+      const todayStr = todayLocalString();
+      const todayPatientIds = sessions
+        .filter((s) => {
+          const sessionDate = toLocalDateString(new Date(s.startTime));
+          return sessionDate === todayStr && s.status === "scheduled";
+        })
+        .map((s) => s.patientId);
+      filtered = filtered.filter((p) => todayPatientIds.includes(p.id));
+    }
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (p) =>
+          normalizeText(p.fullName).includes(normalizeText(query)) ||
+          normalizeText(p.phone).includes(normalizeText(query)) ||
+          normalizeText(p.id).includes(normalizeText(query)),
+      );
     }
 
-    // لا يوجد مواعيد اليوم - الأحدث إضافة أولاً
-    const aCreated = new Date(a.createdAt || 0).getTime();
-    const bCreated = new Date(b.createdAt || 0).getTime();
-    return bCreated - aCreated;
-  });
-}, [patients, sessions, searchQuery, showTodayOnly]);
+    // ✅ ترتيب: موعد اليوم أولاً (الأقرب وقتاً) ثم الأحدث إضافة
+    const todayStr = todayLocalString();
+
+    return [...filtered].sort((a, b) => {
+      // البحث عن موعد اليوم لكل مريض
+      const aTodaySession = sessions.find((s) => {
+        const sessionDate = toLocalDateString(new Date(s.startTime));
+        return (
+          s.patientId === a.id &&
+          sessionDate === todayStr &&
+          s.status === "scheduled"
+        );
+      });
+      const bTodaySession = sessions.find((s) => {
+        const sessionDate = toLocalDateString(new Date(s.startTime));
+        return (
+          s.patientId === b.id &&
+          sessionDate === todayStr &&
+          s.status === "scheduled"
+        );
+      });
+
+      // من لديه موعد اليوم يأتي أولاً
+      if (aTodaySession && !bTodaySession) return -1;
+      if (!aTodaySession && bTodaySession) return 1;
+
+      // كلاهما لديه موعد اليوم - الأقرب وقتاً أولاً
+      if (aTodaySession && bTodaySession) {
+        return (
+          new Date(aTodaySession.startTime).getTime() -
+          new Date(bTodaySession.startTime).getTime()
+        );
+      }
+
+      // لا يوجد مواعيد اليوم - الأحدث إضافة أولاً
+      const aCreated = new Date(a.createdAt || 0).getTime();
+      const bCreated = new Date(b.createdAt || 0).getTime();
+      return bCreated - aCreated;
+    });
+  }, [patients, sessions, searchQuery, showTodayOnly]);
 
   const patientsWithDetails = useMemo(() => {
     return filteredPatients.map((patient) => {
@@ -454,26 +481,26 @@ const filteredPatients = useMemo(() => {
     });
   };
 
-const formatDate = (date: Date | string) => {
-  const d = new Date(date);
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  const dayName = d.toLocaleDateString("ar-SA", { weekday: "short" });
-  
-  return `${dayName} ${day}/${month}`;
-};
+  const formatDate = (date: Date | string) => {
+    const d = new Date(date);
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const dayName = d.toLocaleDateString("ar-SA", { weekday: "short" });
 
-// ✅ تاريخ محلي بصيغة YYYY-MM-DD (بدون UTC)
-const getLocalDateString = (date: Date = new Date()): string => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
-const formatCurrency = (amount: number) => {
-  const currencySymbol = getCurrency();
-  return `${amount} ${currencySymbol}`;
-};
+    return `${dayName} ${day}/${month}`;
+  };
+
+  // ✅ تاريخ محلي بصيغة YYYY-MM-DD (بدون UTC)
+  const getLocalDateString = (date: Date = new Date()): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+  const formatCurrency = (amount: number) => {
+    const currencySymbol = getCurrency();
+    return `${amount} ${currencySymbol}`;
+  };
 
   const calculateBirthYear = (age: number) => new Date().getFullYear() - age;
 
@@ -555,45 +582,45 @@ const formatCurrency = (amount: number) => {
     }
   };
 
-const handlePatientSelect = (patient: Patient) => {
-  setSelectedPatient(patient);
-  
-  // ✅ حفظ المريض الحالي
-  sessionStorage.setItem("lastPatientId", patient.id);
-  
-  if (isMobile) {
-    setIsMobileDrawerOpen(true);
-  }
-  if (isCollapsed) {
-    setIsCollapsed(false);
-  }
-};
-// ✅ 2. إضافة useEffect لاستعادة الحالة
-// ✅ استعادة الحالة بعد التحديث من تطبيق القالب
-useEffect(() => {
-  const refreshToothChart = sessionStorage.getItem("refresh_tooth_chart");
-  const lastPatientId = sessionStorage.getItem("lastPatientId");
-  
-  if (refreshToothChart === "true" && lastPatientId) {
-    const patient = patients.find((p) => p.id === lastPatientId);
-    
-    if (patient) {
-      setSelectedPatient(patient);
-      setIsCollapsed(false);
-      
-      // ✅ للهاتف - فتح الدرج
-      if (isMobile) {
-        setIsMobileDrawerOpen(true);
-      }
-      if (window.innerWidth < 1024) {
+  const handlePatientSelect = (patient: Patient) => {
+    setSelectedPatient(patient);
+
+    // ✅ حفظ المريض الحالي
+    sessionStorage.setItem("lastPatientId", patient.id);
+
+    if (isMobile) {
       setIsMobileDrawerOpen(true);
     }
-      // ✅ تنظيف الإشارات
-      sessionStorage.removeItem("refresh_tooth_chart");
-      // لا نزيل lastPatientId و lastActiveTab لأن PatientDetailsCard سيقرأها
+    if (isCollapsed) {
+      setIsCollapsed(false);
     }
-  }
-}, [patients, isMobile]);
+  };
+  // ✅ 2. إضافة useEffect لاستعادة الحالة
+  // ✅ استعادة الحالة بعد التحديث من تطبيق القالب
+  useEffect(() => {
+    const refreshToothChart = sessionStorage.getItem("refresh_tooth_chart");
+    const lastPatientId = sessionStorage.getItem("lastPatientId");
+
+    if (refreshToothChart === "true" && lastPatientId) {
+      const patient = patients.find((p) => p.id === lastPatientId);
+
+      if (patient) {
+        setSelectedPatient(patient);
+        setIsCollapsed(false);
+
+        // ✅ للهاتف - فتح الدرج
+        if (isMobile) {
+          setIsMobileDrawerOpen(true);
+        }
+        if (window.innerWidth < 1024) {
+          setIsMobileDrawerOpen(true);
+        }
+        // ✅ تنظيف الإشارات
+        sessionStorage.removeItem("refresh_tooth_chart");
+        // لا نزيل lastPatientId و lastActiveTab لأن PatientDetailsCard سيقرأها
+      }
+    }
+  }, [patients, isMobile]);
   const handleWhatsApp = (
     patient: Patient,
     session?: Session,
@@ -612,51 +639,50 @@ useEffect(() => {
     openWhatsAppChat(patient.phone, message);
   };
 
-const handleUpdateSessionStatus = useCallback(async (
-  sessionId: string,
-  newStatus: Session["status"],
-) => {
-  // 💾 حفظ الحالة القديمة للتراجع في حالة الفشل
-  const oldSession = sessions.find(s => s.id === sessionId);
-  if (!oldSession) return;
-  const oldStatus = oldSession.status;
+  const handleUpdateSessionStatus = useCallback(
+    async (sessionId: string, newStatus: Session["status"]) => {
+      // 💾 حفظ الحالة القديمة للتراجع في حالة الفشل
+      const oldSession = sessions.find((s) => s.id === sessionId);
+      if (!oldSession) return;
+      const oldStatus = oldSession.status;
 
-  // ✅ التحديث الفوري للـ UI (المستخدم يرى التغيير فوراً)
-  setSessions((prev) =>
-    prev.map((s) =>
-      s.id === sessionId ? { ...s, status: newStatus } : s
-    )
+      // ✅ التحديث الفوري للـ UI (المستخدم يرى التغيير فوراً)
+      setSessions((prev) =>
+        prev.map((s) => (s.id === sessionId ? { ...s, status: newStatus } : s)),
+      );
+
+      try {
+        // 📡 إرسال الطلب إلى السيرفر
+        const result = await updateSession(sessionId, { status: newStatus });
+
+        if (!result.success) {
+          throw new Error(result.error || "فشل تحديث الحالة");
+        }
+
+        // ✅ نجاح: رسالة نجاح
+        addToast({
+          message:
+            newStatus === "completed"
+              ? " تم إكمال الجلسة بنجاح"
+              : " تم جدولة الجلسة بنجاح",
+          type: "success",
+        });
+      } catch (error: any) {
+        // ❌ فشل: نرجع الحالة القديمة + رسالة خطأ
+        setSessions((prev) =>
+          prev.map((s) =>
+            s.id === sessionId ? { ...s, status: oldStatus } : s,
+          ),
+        );
+
+        addToast({
+          message: error?.message || " حدث خطأ أثناء تحديث الحالة",
+          type: "error",
+        });
+      }
+    },
+    [sessions, setSessions, addToast],
   );
-
-  try {
-    // 📡 إرسال الطلب إلى السيرفر
-    const result = await updateSession(sessionId, { status: newStatus });
-    
-    if (!result.success) {
-      throw new Error(result.error || "فشل تحديث الحالة");
-    }
-    
-    // ✅ نجاح: رسالة نجاح
-    addToast({
-      message: newStatus === "completed" 
-        ? " تم إكمال الجلسة بنجاح" 
-        : " تم جدولة الجلسة بنجاح",
-      type: "success",
-    });
-  } catch (error: any) {
-    // ❌ فشل: نرجع الحالة القديمة + رسالة خطأ
-    setSessions((prev) =>
-      prev.map((s) =>
-        s.id === sessionId ? { ...s, status: oldStatus } : s
-      )
-    );
-    
-    addToast({
-      message: error?.message || " حدث خطأ أثناء تحديث الحالة",
-      type: "error",
-    });
-  }
-}, [sessions, setSessions, addToast]);
 
   const handleEditSession = (session: Session) => {
     setEditingSession(session);
@@ -734,27 +760,28 @@ const handleUpdateSessionStatus = useCallback(async (
       const preventautomessagesflag = localStorage.getItem(
         "prevent_auto_messages",
       );
-      if (preventautomessagesflag&&preventautomessagesflag=="true") prevent_auto_messages = true
-        if (patientData.addAppointment && patientData.appointment) {
-          const newSession = await api.addSession(clinicId, {
-            patientId: newPatient.id,
-            startTime: patientData.appointment.startTime,
-            endTime: patientData.appointment.endTime,
-            status: "scheduled",
-            plannedProcedure: patientData.appointment.procedure,
-            sessionCost: patientData.appointment.cost || 0,
-            isPaid: false,
-            notes: patientData.appointment.notes,
-            info: {
-              clinicName: clinicData?.name || "",
-              patientName: newPatient.fullName,
-              phoneNumber: newPatient.phone,
-              gender: newPatient.gender,
-              prevent_auto_messages:prevent_auto_messages
-            },
-          });
-          setSessions((prev) => [...prev, newSession]);
-        }
+      if (preventautomessagesflag && preventautomessagesflag == "true")
+        prevent_auto_messages = true;
+      if (patientData.addAppointment && patientData.appointment) {
+        const newSession = await api.addSession(clinicId, {
+          patientId: newPatient.id,
+          startTime: patientData.appointment.startTime,
+          endTime: patientData.appointment.endTime,
+          status: "scheduled",
+          plannedProcedure: patientData.appointment.procedure,
+          sessionCost: patientData.appointment.cost || 0,
+          isPaid: false,
+          notes: patientData.appointment.notes,
+          info: {
+            clinicName: clinicData?.name || "",
+            patientName: newPatient.fullName,
+            phoneNumber: newPatient.phone,
+            gender: newPatient.gender,
+            prevent_auto_messages: prevent_auto_messages,
+          },
+        });
+        setSessions((prev) => [...prev, newSession]);
+      }
 
       setShowNewPatientModal(false);
 
@@ -790,13 +817,13 @@ const handleUpdateSessionStatus = useCallback(async (
         isPaid: false,
         caseId: appointmentData.caseId,
         notes: appointmentData.notes,
-        info:{
-        "clinicName": clinicData?.name||"",
-          "patientName": selectedPatient.fullName,
-          phoneNumber:selectedPatient.phone,
-          gender:selectedPatient.gender,
-          prevent_auto_messages:prevent_auto_messages
-        }
+        info: {
+          clinicName: clinicData?.name || "",
+          patientName: selectedPatient.fullName,
+          phoneNumber: selectedPatient.phone,
+          gender: selectedPatient.gender,
+          prevent_auto_messages: prevent_auto_messages,
+        },
       });
       setSessions((prev) => [...prev, newSession]);
       // لا حاجة لتحديث selectedPatientSessions لأنه مشتق تلقائياً
@@ -817,6 +844,17 @@ const handleUpdateSessionStatus = useCallback(async (
       </div>
     );
   }
+
+  useEffect(() => {
+    if (
+      tutorialStep !== null &&
+      tutorialStep >= 3 &&
+      tutorialStep <= 6 &&
+      !showNewPatientModal
+    ) {
+      setShowNewPatientModal(true);
+    }
+  }, [tutorialStep, showNewPatientModal]);
 
   return (
     <>
@@ -898,7 +936,11 @@ const handleUpdateSessionStatus = useCallback(async (
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
-              onClick={() => setShowNewPatientModal(true)}
+              data-tutorial="add-patient"
+              onClick={() => {
+                setShowNewPatientModal(true);
+                if (tutorialStep === 2) goToStep(3); // ← السطر الجديد فقط
+              }}
               className="flex items-center gap-2 px-5 py-3 rounded-full font-medium text-sm text-white transition-all duration-200 flex-shrink-0 shadow-sm"
               style={{
                 background: primaryColor,
@@ -922,7 +964,11 @@ const handleUpdateSessionStatus = useCallback(async (
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={() => setShowNewPatientModal(true)}
+                data-tutorial="add-patient"
+                onClick={() => {
+                  setShowNewPatientModal(true);
+                  if (tutorialStep === 2) goToStep(3); // ← السطر الجديد فقط
+                }}
                 className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full font-medium text-xs sm:text-sm text-white transition-all duration-200 flex-shrink-0 shadow-sm"
                 style={{
                   background: primaryColor,
@@ -1021,7 +1067,7 @@ const handleUpdateSessionStatus = useCallback(async (
             } ${isCollapsed ? "w-16 sm:w-20" : ""}`}
             style={
               selectedPatient && !isCollapsed
-                ? { width: `${listWidth}px` , maxWidth: "300px" }
+                ? { width: `${listWidth}px`, maxWidth: "300px" }
                 : undefined
             }
           >
@@ -1215,214 +1261,230 @@ const handleUpdateSessionStatus = useCallback(async (
                       );
                     })}
                   </AnimatePresence>
-{patientsWithDetails.length === 0 && (
-  <div className="text-center py-10 sm:py-14 px-4">
-    {/* أيقونة مع خلفية دائرية ناعمة */}
-    <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
-      <Users size={28} className="sm:w-8 sm:h-8 text-gray-300" />
-    </div>
+                  {patientsWithDetails.length === 0 && (
+                    <div className="text-center py-10 sm:py-14 px-4">
+                      {/* أيقونة مع خلفية دائرية ناعمة */}
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+                        <Users
+                          size={28}
+                          className="sm:w-8 sm:h-8 text-gray-300"
+                        />
+                      </div>
 
-    {/* العنوان */}
-    <p className="text-gray-800 font-semibold mb-1.5 text-sm sm:text-base">
-      لا يوجد مرضى
-    </p>
+                      {/* العنوان */}
+                      <p className="text-gray-800 font-semibold mb-1.5 text-sm sm:text-base">
+                        لا يوجد مرضى
+                      </p>
 
-    {/* الوصف */}
-    <p className="text-gray-400 text-xs sm:text-sm mb-5">
-      {showTodayOnly
-        ? "لا توجد مواعيد لهذا اليوم"
-        : "لا يوجد أي مرضى في القائمة بعد"}
-    </p>
+                      {/* الوصف */}
+                      <p className="text-gray-400 text-xs sm:text-sm mb-5">
+                        {showTodayOnly
+                          ? "لا توجد مواعيد لهذا اليوم"
+                          : "لا يوجد أي مرضى في القائمة بعد"}
+                      </p>
 
-    {/* ============================================================ */}
-    {/* بطاقات المقترحات — مرتبة وأنيقة                              */}
-    {/* ============================================================ */}
-    <div className="inline-flex flex-col gap-2 w-full max-w-md text-right">
+                      {/* ============================================================ */}
+                      {/* بطاقات المقترحات — مرتبة وأنيقة                              */}
+                      {/* ============================================================ */}
+                      <div className="inline-flex flex-col gap-2 w-full max-w-md text-right">
+                        {/* ⭐ 1) الإجراء الأساسي: إضافة مريض جديد */}
+                        <button
+                          data-tutorial="add-patient"
+                          onClick={() => {
+                            setShowNewPatientModal(true);
+                            if (tutorialStep === 2) goToStep(3); // ← السطر الجديد فقط
+                          }}
+                          className="flex items-center gap-3 px-4 py-3 sm:py-3.5 rounded-2xl transition-all duration-200 group hover:shadow-md active:scale-[0.98]"
+                          style={{
+                            background: `linear-gradient(135deg, ${primaryColor}12, ${primaryColor}06)`,
+                            border: `1.5px solid ${primaryColor}30`,
+                          }}
+                        >
+                          <div
+                            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm"
+                            style={{ backgroundColor: primaryColor }}
+                          >
+                            <Plus
+                              size={16}
+                              className="sm:w-[18px] sm:h-[18px] text-white"
+                              strokeWidth={2.5}
+                            />
+                          </div>
 
-      {/* ⭐ 1) الإجراء الأساسي: إضافة مريض جديد */}
-      <button
-        onClick={() => setShowNewPatientModal(true)}
-        className="flex items-center gap-3 px-4 py-3 sm:py-3.5 rounded-2xl transition-all duration-200 group hover:shadow-md active:scale-[0.98]"
-        style={{
-          background: `linear-gradient(135deg, ${primaryColor}12, ${primaryColor}06)`,
-          border: `1.5px solid ${primaryColor}30`,
-        }}
-      >
-        <div
-          className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm"
-          style={{ backgroundColor: primaryColor }}
-        >
-          <Plus
-            size={16}
-            className="sm:w-[18px] sm:h-[18px] text-white"
-            strokeWidth={2.5}
-          />
-        </div>
+                          <div className="text-right flex-1 min-w-0">
+                            <p
+                              className="text-xs sm:text-sm font-bold"
+                              style={{ color: primaryColor }}
+                            >
+                              {showTodayOnly
+                                ? "إضافة مريض جديد"
+                                : "إضافة أول مريض"}
+                            </p>
+                            <p
+                              className="text-[10px] sm:text-xs mt-0.5"
+                              style={{ color: `${primaryColor}99` }}
+                            >
+                              {showTodayOnly
+                                ? "تسجيل مريض وإضافة موعد"
+                                : "ابدأ ببناء قاعدة مرضاك"}
+                            </p>
+                          </div>
 
-        <div className="text-right flex-1 min-w-0">
-          <p
-            className="text-xs sm:text-sm font-bold"
-            style={{ color: primaryColor }}
-          >
-            {showTodayOnly ? "إضافة مريض جديد" : "إضافة أول مريض"}
-          </p>
-          <p
-            className="text-[10px] sm:text-xs mt-0.5"
-            style={{ color: `${primaryColor}99` }}
-          >
-            {showTodayOnly
-              ? "تسجيل مريض وإضافة موعد"
-              : "ابدأ ببناء قاعدة مرضاك"}
-          </p>
-        </div>
+                          <ChevronRight
+                            size={14}
+                            className="transition-transform duration-200 group-hover:translate-x-[-3px] flex-shrink-0"
+                            style={{ color: primaryColor }}
+                          />
+                        </button>
 
-        <ChevronRight
-          size={14}
-          className="transition-transform duration-200 group-hover:translate-x-[-3px] flex-shrink-0"
-          style={{ color: primaryColor }}
-        />
-      </button>
+                        {/* 📋 فاصل: ابدأ بتهيئة عيادتك */}
+                        <div className="flex items-center gap-2 px-2 py-1">
+                          <div className="h-px flex-1 bg-gray-100" />
+                          <span className="text-[10px] font-semibold text-gray-400 tracking-wide">
+                            ابدأ بتهيئة عيادتك
+                          </span>
+                          <div className="h-px flex-1 bg-gray-100" />
+                        </div>
 
-      {/* 📋 فاصل: ابدأ بتهيئة عيادتك */}
-      <div className="flex items-center gap-2 px-2 py-1">
-        <div className="h-px flex-1 bg-gray-100" />
-        <span className="text-[10px] font-semibold text-gray-400 tracking-wide">
-          ابدأ بتهيئة عيادتك
-        </span>
-        <div className="h-px flex-1 bg-gray-100" />
-      </div>
+                        {/* ⏰ 2) عيّن أوقات عملك */}
+                        <button
+                          onClick={() => {
+                            const params = new URLSearchParams(
+                              searchParams.toString(),
+                            );
+                            params.set("tab", "clinic");
+                            router.push(`${pathname}?${params.toString()}`, {
+                              scroll: false,
+                            });
+                          }}
+                          className="flex items-center gap-3 px-4 py-3 sm:py-3.5 rounded-2xl transition-all duration-200 group hover:bg-white hover:shadow-sm active:scale-[0.98]"
+                          style={{
+                            backgroundColor: "#fafbfc",
+                            border: "1.5px solid #f1f5f9",
+                          }}
+                        >
+                          <div
+                            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-105"
+                            style={{ backgroundColor: "#eef2f7" }}
+                          >
+                            <Clock
+                              size={16}
+                              className="sm:w-[18px] sm:h-[18px] text-gray-600"
+                              strokeWidth={2}
+                            />
+                          </div>
 
-      {/* ⏰ 2) عيّن أوقات عملك */}
-      <button
-onClick={() => {
-  const params = new URLSearchParams(searchParams.toString());
-  params.set("tab", "clinic");
-  router.push(`${pathname}?${params.toString()}`, { scroll: false });
-}}
-        className="flex items-center gap-3 px-4 py-3 sm:py-3.5 rounded-2xl transition-all duration-200 group hover:bg-white hover:shadow-sm active:scale-[0.98]"
-        style={{
-          backgroundColor: "#fafbfc",
-          border: "1.5px solid #f1f5f9",
-        }}
-      >
-        <div
-          className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-105"
-          style={{ backgroundColor: "#eef2f7" }}
-        >
-          <Clock
-            size={16}
-            className="sm:w-[18px] sm:h-[18px] text-gray-600"
-            strokeWidth={2}
-          />
-        </div>
+                          <div className="text-right flex-1 min-w-0">
+                            <p className="text-xs sm:text-sm font-semibold text-gray-800">
+                              عيّن أوقات عملك
+                            </p>
+                            <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5">
+                              حدّد ساعات الدوام والعطل الأسبوعية
+                            </p>
+                          </div>
 
-        <div className="text-right flex-1 min-w-0">
-          <p className="text-xs sm:text-sm font-semibold text-gray-800">
-            عيّن أوقات عملك
-          </p>
-          <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5">
-            حدّد ساعات الدوام والعطل الأسبوعية
-          </p>
-        </div>
+                          <ChevronRight
+                            size={14}
+                            className="text-gray-300 group-hover:text-gray-500 group-hover:translate-x-[-3px] transition-all duration-200 flex-shrink-0"
+                          />
+                        </button>
 
-        <ChevronRight
-          size={14}
-          className="text-gray-300 group-hover:text-gray-500 group-hover:translate-x-[-3px] transition-all duration-200 flex-shrink-0"
-        />
-      </button>
+                        {/* 💎 3) عيّن خدمات عيادتك */}
+                        <button
+                          onClick={() => {
+                            const params = new URLSearchParams(
+                              searchParams.toString(),
+                            );
+                            params.set("tab", "treatments");
+                            router.push(`${pathname}?${params.toString()}`, {
+                              scroll: false,
+                            });
+                          }}
+                          className="flex items-center gap-3 px-4 py-3 sm:py-3.5 rounded-2xl transition-all duration-200 group hover:bg-white hover:shadow-sm active:scale-[0.98]"
+                          style={{
+                            backgroundColor: "#fafbfc",
+                            border: "1.5px solid #f1f5f9",
+                          }}
+                        >
+                          <div
+                            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-105"
+                            style={{ backgroundColor: "#eef2f7" }}
+                          >
+                            <Sparkles
+                              size={16}
+                              className="sm:w-[18px] sm:h-[18px] text-gray-600"
+                              strokeWidth={2}
+                            />
+                          </div>
 
-      {/* 💎 3) عيّن خدمات عيادتك */}
-      <button
-onClick={() => {
-  const params = new URLSearchParams(searchParams.toString());
-  params.set("tab", "treatments");
-  router.push(`${pathname}?${params.toString()}`, { scroll: false });
-}}
-        className="flex items-center gap-3 px-4 py-3 sm:py-3.5 rounded-2xl transition-all duration-200 group hover:bg-white hover:shadow-sm active:scale-[0.98]"
-        style={{
-          backgroundColor: "#fafbfc",
-          border: "1.5px solid #f1f5f9",
-        }}
-      >
-        <div
-          className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-105"
-          style={{ backgroundColor: "#eef2f7" }}
-        >
-          <Sparkles
-            size={16}
-            className="sm:w-[18px] sm:h-[18px] text-gray-600"
-            strokeWidth={2}
-          />
-        </div>
+                          <div className="text-right flex-1 min-w-0">
+                            <p className="text-xs sm:text-sm font-semibold text-gray-800">
+                              عيّن خدمات عيادتك
+                            </p>
+                            <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5">
+                              أضف العلاجات وأسعارها وقوالبها
+                            </p>
+                          </div>
 
-        <div className="text-right flex-1 min-w-0">
-          <p className="text-xs sm:text-sm font-semibold text-gray-800">
-            عيّن خدمات عيادتك
-          </p>
-          <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5">
-            أضف العلاجات وأسعارها وقوالبها
-          </p>
-        </div>
+                          <ChevronRight
+                            size={14}
+                            className="text-gray-300 group-hover:text-gray-500 group-hover:translate-x-[-3px] transition-all duration-200 flex-shrink-0"
+                          />
+                        </button>
 
-        <ChevronRight
-          size={14}
-          className="text-gray-300 group-hover:text-gray-500 group-hover:translate-x-[-3px] transition-all duration-200 flex-shrink-0"
-        />
-      </button>
+                        {/* 👥 4) عرض جميع المرضى (يظهر فقط إذا كان الفلتر مفعّلاً) */}
+                        {showTodayOnly && (
+                          <>
+                            {/* 📋 فاصل: أو */}
+                            <div className="flex items-center gap-2 px-2 py-1">
+                              <div className="h-px flex-1 bg-gray-100" />
+                              <span className="text-[10px] font-semibold text-gray-400 tracking-wide">
+                                أو
+                              </span>
+                              <div className="h-px flex-1 bg-gray-100" />
+                            </div>
 
-      {/* 👥 4) عرض جميع المرضى (يظهر فقط إذا كان الفلتر مفعّلاً) */}
-      {showTodayOnly && (
-        <>
-          {/* 📋 فاصل: أو */}
-          <div className="flex items-center gap-2 px-2 py-1">
-            <div className="h-px flex-1 bg-gray-100" />
-            <span className="text-[10px] font-semibold text-gray-400 tracking-wide">
-              أو
-            </span>
-            <div className="h-px flex-1 bg-gray-100" />
-          </div>
+                            <button
+                              onClick={() => {
+                                setShowTodayOnly(false);
+                                setSearchQuery("");
+                              }}
+                              className="flex items-center gap-3 px-4 py-3 sm:py-3.5 rounded-2xl transition-all duration-200 group hover:bg-white hover:shadow-sm active:scale-[0.98]"
+                              style={{
+                                backgroundColor: "#fafbfc",
+                                border: "1.5px solid #f1f5f9",
+                              }}
+                            >
+                              <div
+                                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-105"
+                                style={{ backgroundColor: "#eef2f7" }}
+                              >
+                                <Users
+                                  size={16}
+                                  className="sm:w-[18px] sm:h-[18px] text-gray-600"
+                                  strokeWidth={2}
+                                />
+                              </div>
 
-          <button
-            onClick={() => {
-              setShowTodayOnly(false);
-              setSearchQuery("");
-            }}
-            className="flex items-center gap-3 px-4 py-3 sm:py-3.5 rounded-2xl transition-all duration-200 group hover:bg-white hover:shadow-sm active:scale-[0.98]"
-            style={{
-              backgroundColor: "#fafbfc",
-              border: "1.5px solid #f1f5f9",
-            }}
-          >
-            <div
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-105"
-              style={{ backgroundColor: "#eef2f7" }}
-            >
-              <Users
-                size={16}
-                className="sm:w-[18px] sm:h-[18px] text-gray-600"
-                strokeWidth={2}
-              />
-            </div>
+                              <div className="text-right flex-1 min-w-0">
+                                <p className="text-xs sm:text-sm font-semibold text-gray-800">
+                                  عرض جميع المرضى
+                                </p>
+                                <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5">
+                                  تصفح القائمة الكاملة بدون فلترة
+                                </p>
+                              </div>
 
-            <div className="text-right flex-1 min-w-0">
-              <p className="text-xs sm:text-sm font-semibold text-gray-800">
-                عرض جميع المرضى
-              </p>
-              <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5">
-                تصفح القائمة الكاملة بدون فلترة
-              </p>
-            </div>
-
-            <ChevronRight
-              size={14}
-              className="text-gray-300 group-hover:text-gray-500 group-hover:translate-x-[-3px] transition-all duration-200 flex-shrink-0"
-            />
-          </button>
-        </>
-      )}
-    </div>
-  </div>
-)}
+                              <ChevronRight
+                                size={14}
+                                className="text-gray-300 group-hover:text-gray-500 group-hover:translate-x-[-3px] transition-all duration-200 flex-shrink-0"
+                              />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="max-h-[calc(100vh-260px)] sm:max-h-[calc(100vh-280px)] overflow-y-auto scrollbar-hide py-2">
@@ -1514,7 +1576,6 @@ onClick={() => {
                   setEditingPatient(selectedPatient);
                   setShowEditPatientModal(true);
                 }}
-                
               />
             </motion.div>
           )}
@@ -1637,19 +1698,19 @@ onClick={() => {
 
       <AnimatePresence>
         {showEditSessionModal && editingSession && (
-        <EditSessionModal
-          session={editingSession}
-          primaryColor={primaryColor}
-          onClose={() => {
-            setShowEditSessionModal(false);
-            setEditingSession(null);
-          }}
-          onSave={handleSaveSessionEdit}
-          onDelete={handleDeleteSession}
-          addToast={addToast}
-          clinicData={clinicData} // ✅ تمرير clinicData
-          sessions={sessions} // ✅ تمرير كل الجلسات
-        />
+          <EditSessionModal
+            session={editingSession}
+            primaryColor={primaryColor}
+            onClose={() => {
+              setShowEditSessionModal(false);
+              setEditingSession(null);
+            }}
+            onSave={handleSaveSessionEdit}
+            onDelete={handleDeleteSession}
+            addToast={addToast}
+            clinicData={clinicData} // ✅ تمرير clinicData
+            sessions={sessions} // ✅ تمرير كل الجلسات
+          />
         )}
       </AnimatePresence>
 
@@ -1679,10 +1740,24 @@ onClick={() => {
         }
         addToast={addToast}
       />
+      {tutorialStep !== null && tutorialStep >= 1 && tutorialStep <= 6 && (
+        <TutorialOverlay
+          step={tutorialStep}
+          primaryColor={primaryColor}
+          onStart={() => goToStep(2)}
+          onEnd={endTutorial}
+          onNext={() => {
+            if (tutorialStep === 2) setShowNewPatientModal(true);
+            goToStep(tutorialStep + 1);
+          }}
+          onPrev={() => {
+            if (tutorialStep > 2) goToStep(tutorialStep - 1);
+          }}
+        />
+      )}
     </>
   );
 }
-
 
 function UnsavedChangesModal({
   isOpen,
@@ -1702,7 +1777,7 @@ function UnsavedChangesModal({
   const handleSave = () => {
     setIsSaving(true);
     onSave(); // استدعاء فوري بدون انتظار
-    
+
     // التحميل الوهمي يشتغل في الخلفية فقط للشكل
     setTimeout(() => {
       setIsSaving(false);
@@ -1732,7 +1807,12 @@ function UnsavedChangesModal({
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ type: "spring", damping: 12, stiffness: 200, delay: 0.1 }}
+              transition={{
+                type: "spring",
+                damping: 12,
+                stiffness: 200,
+                delay: 0.1,
+              }}
               className="relative inline-block mb-3"
             >
               <div className="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center mx-auto">
@@ -1740,12 +1820,18 @@ function UnsavedChangesModal({
               </div>
               <motion.div
                 animate={{ scale: [1, 1.3, 1], opacity: [0.4, 0, 0.4] }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
                 className="absolute inset-0 rounded-full border-2 border-amber-400"
               />
             </motion.div>
 
-            <h3 className="font-bold text-lg text-gray-900 mb-2">تغييرات غير محفوظة</h3>
+            <h3 className="font-bold text-lg text-gray-900 mb-2">
+              تغييرات غير محفوظة
+            </h3>
             <p className="text-sm text-gray-500 mb-6 leading-relaxed">
               لديك تعديلات على الشارت السني، هل تريد حفظها قبل المغادرة؟
             </p>
@@ -1763,14 +1849,35 @@ function UnsavedChangesModal({
                 {isSaving ? (
                   <span className="flex items-center justify-center gap-2">
                     <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                      />
                     </svg>
                     جاري الحفظ...
                   </span>
                 ) : (
                   <span className="flex items-center justify-center gap-2">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
                       <polyline points="17 21 17 13 7 13 7 21" />
                       <polyline points="7 3 7 8 15 8" />
@@ -1821,7 +1928,7 @@ interface PatientDetailsCardProps {
   onAddAppointment: () => void;
   onWhatsApp: (patient: Patient, session?: Session) => void;
   onUpdateSessionStatus: (sessionId: string, status: Session["status"]) => void;
-  onUpdateSessionPayment: (sessionId: string, isPaid: boolean) => Promise<void>; 
+  onUpdateSessionPayment: (sessionId: string, isPaid: boolean) => Promise<void>;
   expandedCaseId: string | null;
   setExpandedCaseId: (id: string | null) => void;
   formatDate: (date: Date | string) => string;
@@ -1873,9 +1980,9 @@ function PatientDetailsCard({
   const finance = calculateFinance();
   const pastSessions = sessions;
   const [selectedSession, setSelectedSession] = useState<any>(null);
-const [activeTab, setActiveTab] = useState<"appointments" | "chart" | "xray">(
-  "chart", // ✅ تغيير من "appointments" إلى "chart"
-);
+  const [activeTab, setActiveTab] = useState<"appointments" | "chart" | "xray">(
+    "chart", // ✅ تغيير من "appointments" إلى "chart"
+  );
   const [showXRayViewer, setShowXRayViewer] = useState(false);
 
   // ============================================================
@@ -1885,7 +1992,7 @@ const [activeTab, setActiveTab] = useState<"appointments" | "chart" | "xray">(
   const [showUnsavedModal, setShowUnsavedModal] = useState(false);
   const pendingActionRef = useRef<(() => void) | null>(null);
   const chartRef = useRef<ToothChartRef>(null);
-  
+
   // دالة مساعدة لمحاولة تنفيذ إجراء مع التحقق من التغييرات
   const withUnsavedCheck = useCallback(
     (action: () => void) => {
@@ -1907,41 +2014,45 @@ const [activeTab, setActiveTab] = useState<"appointments" | "chart" | "xray">(
   }, [withUnsavedCheck, onClose]);
 
   // معالج التبديل إلى تبويب آخر
-// ✅ تعديل handleTabChange
-const handleTabChange = useCallback(
-  (tab: "appointments" | "chart" | "xray") => {
-    withUnsavedCheck(() => {
-      setActiveTab(tab);
-      // ✅ حفظ التبويب النشط
-      sessionStorage.setItem("lastActiveTab", tab);
-    });
-  },
-  [withUnsavedCheck],
-);
+  // ✅ تعديل handleTabChange
+  const handleTabChange = useCallback(
+    (tab: "appointments" | "chart" | "xray") => {
+      withUnsavedCheck(() => {
+        setActiveTab(tab);
+        // ✅ حفظ التبويب النشط
+        sessionStorage.setItem("lastActiveTab", tab);
+      });
+    },
+    [withUnsavedCheck],
+  );
 
-// ✅ استعادة التبويب عند التحميل
-// ✅ استعادة التبويب عند التحميل
-useEffect(() => {
-  const savedTab = sessionStorage.getItem("lastActiveTab");
-  const refreshToothChart = sessionStorage.getItem("refresh_tooth_chart");
-  const lastSelectedToothId = sessionStorage.getItem("lastSelectedToothId");
-  
-  if (savedTab === "appointments" || savedTab === "chart" || savedTab === "xray") {
-    setActiveTab(savedTab);
-  }
-  
-  // ✅ إذا كان التحديث من تطبيق قالب - فتح الشارت مباشرة
-  if (refreshToothChart === "true") {
-    setActiveTab("chart");
-    
-    // ✅ تنظيف
-    sessionStorage.removeItem("refresh_tooth_chart");
-    sessionStorage.removeItem("lastSelectedToothId");
-  }
-  
-  // ✅ تنظيف lastActiveTab بعد الاستخدام
-  sessionStorage.removeItem("lastActiveTab");
-}, []);
+  // ✅ استعادة التبويب عند التحميل
+  // ✅ استعادة التبويب عند التحميل
+  useEffect(() => {
+    const savedTab = sessionStorage.getItem("lastActiveTab");
+    const refreshToothChart = sessionStorage.getItem("refresh_tooth_chart");
+    const lastSelectedToothId = sessionStorage.getItem("lastSelectedToothId");
+
+    if (
+      savedTab === "appointments" ||
+      savedTab === "chart" ||
+      savedTab === "xray"
+    ) {
+      setActiveTab(savedTab);
+    }
+
+    // ✅ إذا كان التحديث من تطبيق قالب - فتح الشارت مباشرة
+    if (refreshToothChart === "true") {
+      setActiveTab("chart");
+
+      // ✅ تنظيف
+      sessionStorage.removeItem("refresh_tooth_chart");
+      sessionStorage.removeItem("lastSelectedToothId");
+    }
+
+    // ✅ تنظيف lastActiveTab بعد الاستخدام
+    sessionStorage.removeItem("lastActiveTab");
+  }, []);
 
   // حفظ ثم متابعة الإجراء
   const handleSaveAndProceed = async () => {
@@ -1975,33 +2086,55 @@ useEffect(() => {
     setShowUnsavedModal(false);
   };
 
-// ✅ فرز الجلسات من الأقدم إلى الأحدث (ما يجب القيام به أولاً)
-const sortedSessions = [...pastSessions].sort(
-  (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
-);
+  // ✅ فرز الجلسات من الأقدم إلى الأحدث (ما يجب القيام به أولاً)
+  const sortedSessions = [...pastSessions].sort(
+    (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+  );
 
   // دالة مساعدة لعرض حالة الجلسة بشكل موحد
-const getSessionStatusBadge = (status: Session["status"]) => {
-  switch (status) {
-    case "scheduled":
-      return { dotColor: "bg-yellow-400", textColor: "text-yellow-700", bgColor: "bg-yellow-50", label: "مجدولة" };
-    case "completed":
-      return { dotColor: "bg-green-500", textColor: "text-green-700", bgColor: "bg-green-50", label: "مكتملة" };
-    default:
-      // إذا كانت هناك حالة غير متوقعة، نعاملها كمجدولة
-      return { dotColor: "bg-yellow-400", textColor: "text-yellow-700", bgColor: "bg-yellow-50", label: "مجدولة" };
-  }
-};
-// دالة تبديل حالة الجلسة (تستخدم الدالة الموجودة)
-const toggleSessionStatus = useCallback((sessionId: string, currentStatus: Session["status"]) => {
-  const newStatus = currentStatus === "scheduled" ? "completed" : "scheduled";
-  onUpdateSessionStatus(sessionId, newStatus);
-}, [onUpdateSessionStatus]);
+  const getSessionStatusBadge = (status: Session["status"]) => {
+    switch (status) {
+      case "scheduled":
+        return {
+          dotColor: "bg-yellow-400",
+          textColor: "text-yellow-700",
+          bgColor: "bg-yellow-50",
+          label: "مجدولة",
+        };
+      case "completed":
+        return {
+          dotColor: "bg-green-500",
+          textColor: "text-green-700",
+          bgColor: "bg-green-50",
+          label: "مكتملة",
+        };
+      default:
+        // إذا كانت هناك حالة غير متوقعة، نعاملها كمجدولة
+        return {
+          dotColor: "bg-yellow-400",
+          textColor: "text-yellow-700",
+          bgColor: "bg-yellow-50",
+          label: "مجدولة",
+        };
+    }
+  };
+  // دالة تبديل حالة الجلسة (تستخدم الدالة الموجودة)
+  const toggleSessionStatus = useCallback(
+    (sessionId: string, currentStatus: Session["status"]) => {
+      const newStatus =
+        currentStatus === "scheduled" ? "completed" : "scheduled";
+      onUpdateSessionStatus(sessionId, newStatus);
+    },
+    [onUpdateSessionStatus],
+  );
 
-// دالة تبديل حالة الدفع (تستخدم الدالة الجديدة)
-const togglePaymentStatus = useCallback((sessionId: string, currentIsPaid: boolean) => {
-  onUpdateSessionPayment(sessionId, !currentIsPaid);
-}, [onUpdateSessionPayment]);
+  // دالة تبديل حالة الدفع (تستخدم الدالة الجديدة)
+  const togglePaymentStatus = useCallback(
+    (sessionId: string, currentIsPaid: boolean) => {
+      onUpdateSessionPayment(sessionId, !currentIsPaid);
+    },
+    [onUpdateSessionPayment],
+  );
   return (
     <>
       <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm sm:shadow-md border border-gray-100 overflow-hidden">
@@ -2009,10 +2142,10 @@ const togglePaymentStatus = useCallback((sessionId: string, currentIsPaid: boole
         {/* شريط التبويبات - ثابت في الأعلى */}
         {/* ============================================================ */}
         <div className="flex items-center border-b border-gray-200 bg-gray-50/50 overflow-x-auto scrollbar-hide min-h-[48px] sm:min-h-0">
-  {/* ✅ تبويب الشارت - أولاً */}
-  <button
-    onClick={() => handleTabChange("chart")}
-    className={`
+          {/* ✅ تبويب الشارت - أولاً */}
+          <button
+            onClick={() => handleTabChange("chart")}
+            className={`
       relative flex items-center gap-2 px-4 sm:px-5 py-5 sm:py-3 
       text-sm sm:text-base font-medium transition-all duration-200
       whitespace-nowrap flex-shrink-0
@@ -2022,23 +2155,23 @@ const togglePaymentStatus = useCallback((sessionId: string, currentIsPaid: boole
           : "text-gray-500 hover:text-gray-700 hover:bg-gray-100 border-b-2 border-transparent"
       }
     `}
-    style={
-      activeTab === "chart"
-        ? {
-            borderBottomColor: primaryColor,
-            color: primaryColor,
-          }
-        : {}
-    }
-  >
-    <Stethoscope size={16} className="sm:w-[18px] sm:h-[18px]" />
-    <span>الشارت</span>
-  </button>
+            style={
+              activeTab === "chart"
+                ? {
+                    borderBottomColor: primaryColor,
+                    color: primaryColor,
+                  }
+                : {}
+            }
+          >
+            <Stethoscope size={16} className="sm:w-[18px] sm:h-[18px]" />
+            <span>الشارت</span>
+          </button>
 
-  {/* ✅ تبويب المواعيد - ثانياً */}
-  <button
-    onClick={() => handleTabChange("appointments")}
-    className={`
+          {/* ✅ تبويب المواعيد - ثانياً */}
+          <button
+            onClick={() => handleTabChange("appointments")}
+            className={`
       relative flex items-center gap-2 px-4 sm:px-5 py-6 sm:py-3 
       text-sm sm:text-base font-medium transition-all duration-200
       whitespace-nowrap flex-shrink-0
@@ -2048,31 +2181,31 @@ const togglePaymentStatus = useCallback((sessionId: string, currentIsPaid: boole
           : "text-gray-500 hover:text-gray-700 hover:bg-gray-100 border-b-2 border-transparent"
       }
     `}
-    style={
-      activeTab === "appointments"
-        ? {
-            borderBottomColor: primaryColor,
-            color: primaryColor,
-          }
-        : {}
-    }
-  >
-    <Calendar size={16} className="sm:w-[18px] sm:h-[18px]" />
-    <span>المواعيد</span>
-    {sessions.length > 0 && (
-      <span className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-600 ml-1">
-        {sessions.length}
-      </span>
-    )}
-  </button>
+            style={
+              activeTab === "appointments"
+                ? {
+                    borderBottomColor: primaryColor,
+                    color: primaryColor,
+                  }
+                : {}
+            }
+          >
+            <Calendar size={16} className="sm:w-[18px] sm:h-[18px]" />
+            <span>المواعيد</span>
+            {sessions.length > 0 && (
+              <span className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-600 ml-1">
+                {sessions.length}
+              </span>
+            )}
+          </button>
 
-  {/* ✅ تبويب الأشعة - ثالثاً */}
-  <XRayViewerButton
-    patientId={patient.id}
-    patientName={patient.fullName}
-    primaryColor={primaryColor}
-    isMobile={isMobile}
-    className={`
+          {/* ✅ تبويب الأشعة - ثالثاً */}
+          <XRayViewerButton
+            patientId={patient.id}
+            patientName={patient.fullName}
+            primaryColor={primaryColor}
+            isMobile={isMobile}
+            className={`
       relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-5 sm:py-3 
       text-xs sm:text-sm font-medium transition-all duration-300
       whitespace-nowrap flex-shrink-0 rounded-t-xl
@@ -2082,47 +2215,47 @@ const togglePaymentStatus = useCallback((sessionId: string, currentIsPaid: boole
           : "text-gray-400 hover:text-gray-600 hover:bg-white/60"
       }
     `}
-    style={
-      activeTab === "xray"
-        ? {
-            boxShadow:
-              "0 -2px 8px rgba(0,0,0,0.03), 0 -1px 3px rgba(0,0,0,0.02)",
-            borderBottomColor: primaryColor,
-            color: primaryColor,
-          }
-        : ({
-            boxShadow: "none",
-            borderBottomColor: "transparent",
-            color: undefined,
-          } as React.CSSProperties)
-    }
-  >
-    <svg
-      viewBox="0 0 24 24"
-      width="14"
-      height="14"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="sm:w-[16px] sm:h-[16px]"
-    >
-      <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-    </svg>
-    <span>الأشعة</span>
-  </XRayViewerButton>
+            style={
+              activeTab === "xray"
+                ? {
+                    boxShadow:
+                      "0 -2px 8px rgba(0,0,0,0.03), 0 -1px 3px rgba(0,0,0,0.02)",
+                    borderBottomColor: primaryColor,
+                    color: primaryColor,
+                  }
+                : ({
+                    boxShadow: "none",
+                    borderBottomColor: "transparent",
+                    color: undefined,
+                  } as React.CSSProperties)
+            }
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="sm:w-[16px] sm:h-[16px]"
+            >
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+            </svg>
+            <span>الأشعة</span>
+          </XRayViewerButton>
 
-  {/* زر الإغلاق */}
-  <div className="flex-1" />
-  <button
-    onClick={handleClose}
-    className="flex items-center gap-1.5 px-3 sm:px-4 py-5 sm:py-3 text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
-    title="إغلاق"
-  >
-    <X size={18} className="sm:w-[20px] sm:h-[20px]" />
-  </button>
-</div>
+          {/* زر الإغلاق */}
+          <div className="flex-1" />
+          <button
+            onClick={handleClose}
+            className="flex items-center gap-1.5 px-3 sm:px-4 py-5 sm:py-3 text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
+            title="إغلاق"
+          >
+            <X size={18} className="sm:w-[20px] sm:h-[20px]" />
+          </button>
+        </div>
         {/* ============================================================ */}
         {/* محتوى التبويبات مع أنيميشن */}
         {/* ============================================================ */}
@@ -2153,28 +2286,30 @@ const togglePaymentStatus = useCallback((sessionId: string, currentIsPaid: boole
 
                         <div className="flex items-center gap-3 sm:gap-4 text-gray-600">
                           <span className="flex items-center gap-1 sm:gap-1.5">
-<button
-  onClick={(e) => {
-    e.stopPropagation();
-    onWhatsApp(patient);
-  }}
-  className="inline-flex items-center justify-center gap-1 sm:gap-1.5 rounded-full bg-green-50 text-green-600 hover:bg-green-100 transition-colors active:scale-95 px-3 py-1.5"
-  title="واتساب"
->
-  <svg
-    viewBox="0 0 24 24"
-    width="18"
-    height="18"
-    fill="currentColor"
-    className="flex-shrink-0"
-  >
-    <path d="M19.077 4.928C17.191 3.041 14.683 2 12.006 2 6.498 2 2.017 6.477 2.012 11.984c-.001 1.76.46 3.478 1.335 4.992L2 21.991l5.172-1.356c1.46.796 3.104 1.215 4.828 1.216h.004c5.508 0 9.99-4.478 9.995-9.984.002-2.667-1.035-5.175-2.922-7.064zm-7.071 15.355h-.003c-1.507 0-2.985-.405-4.273-1.169l-.306-.181-3.069.805.819-2.991-.202-.32a8.268 8.268 0 0 1-1.267-4.439c.003-4.572 3.724-8.29 8.301-8.29 2.216.001 4.299.865 5.866 2.432a8.238 8.238 0 0 1 2.428 5.873c-.003 4.572-3.724 8.29-8.297 8.29zm4.551-6.208c-.25-.125-1.476-.728-1.705-.812-.229-.083-.396-.124-.562.125-.167.25-.647.812-.793.978-.146.167-.292.187-.542.062-.25-.124-1.054-.389-2.008-1.24-.742-.662-1.243-1.48-1.389-1.729-.146-.25-.015-.385.11-.509.112-.112.25-.292.375-.438.125-.146.167-.25.25-.417.083-.167.042-.313-.021-.438-.062-.125-.562-1.355-.771-1.855-.203-.486-.409-.42-.562-.427-.144-.007-.308-.009-.473-.009-.166 0-.437.063-.666.313-.229.25-.874.854-.874 2.083s.895 2.416 1.02 2.583c.125.166 1.761 2.688 4.267 3.77.596.257 1.062.411 1.425.526.599.19 1.144.163 1.575.099.48-.072 1.476-.604 1.684-1.187.208-.583.208-1.083.146-1.187-.062-.104-.229-.167-.479-.292z" />
-  </svg>
-  <span dir="ltr" className="text-xs sm:text-sm font-medium">
-    {patient.phone}
-  </span>
-</button>
-
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onWhatsApp(patient);
+                              }}
+                              className="inline-flex items-center justify-center gap-1 sm:gap-1.5 rounded-full bg-green-50 text-green-600 hover:bg-green-100 transition-colors active:scale-95 px-3 py-1.5"
+                              title="واتساب"
+                            >
+                              <svg
+                                viewBox="0 0 24 24"
+                                width="18"
+                                height="18"
+                                fill="currentColor"
+                                className="flex-shrink-0"
+                              >
+                                <path d="M19.077 4.928C17.191 3.041 14.683 2 12.006 2 6.498 2 2.017 6.477 2.012 11.984c-.001 1.76.46 3.478 1.335 4.992L2 21.991l5.172-1.356c1.46.796 3.104 1.215 4.828 1.216h.004c5.508 0 9.99-4.478 9.995-9.984.002-2.667-1.035-5.175-2.922-7.064zm-7.071 15.355h-.003c-1.507 0-2.985-.405-4.273-1.169l-.306-.181-3.069.805.819-2.991-.202-.32a8.268 8.268 0 0 1-1.267-4.439c.003-4.572 3.724-8.29 8.301-8.29 2.216.001 4.299.865 5.866 2.432a8.238 8.238 0 0 1 2.428 5.873c-.003 4.572-3.724 8.29-8.297 8.29zm4.551-6.208c-.25-.125-1.476-.728-1.705-.812-.229-.083-.396-.124-.562.125-.167.25-.647.812-.793.978-.146.167-.292.187-.542.062-.25-.124-1.054-.389-2.008-1.24-.742-.662-1.243-1.48-1.389-1.729-.146-.25-.015-.385.11-.509.112-.112.25-.292.375-.438.125-.146.167-.25.25-.417.083-.167.042-.313-.021-.438-.062-.125-.562-1.355-.771-1.855-.203-.486-.409-.42-.562-.427-.144-.007-.308-.009-.473-.009-.166 0-.437.063-.666.313-.229.25-.874.854-.874 2.083s.895 2.416 1.02 2.583c.125.166 1.761 2.688 4.267 3.77.596.257 1.062.411 1.425.526.599.19 1.144.163 1.575.099.48-.072 1.476-.604 1.684-1.187.208-.583.208-1.083.146-1.187-.062-.104-.229-.167-.479-.292z" />
+                              </svg>
+                              <span
+                                dir="ltr"
+                                className="text-xs sm:text-sm font-medium"
+                              >
+                                {patient.phone}
+                              </span>
+                            </button>
                           </span>
                           <span className="flex items-center gap-1 sm:gap-1.5">
                             <Calendar
@@ -2274,40 +2409,42 @@ const togglePaymentStatus = useCallback((sessionId: string, currentIsPaid: boole
                   </div>
 
                   {/* معلومات إضافية */}
-<div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-4 pt-3 sm:pt-4 border-t border-gray-100">
-  
-  {/* الإجراء المخطط */}
-  {patient.plannedProcedure && (
-    <div className="flex items-start gap-2 w-full sm:w-auto">
-      <div className="flex items-center gap-1.5 mt-0.5">
-        <Stethoscope size={14} className="text-gray-400 flex-shrink-0" />
-        <span className="text-[11px] sm:text-xs text-gray-500 whitespace-nowrap">
-          الإجراء المخطط:
-        </span>
-      </div>
-      <span 
-        className="text-xs sm:text-sm font-medium text-gray-900 leading-relaxed break-words"
-        style={{
-          display: '-webkit-box',
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical',
-          overflow: 'hidden',
-        }}
-      >
-        {patient.plannedProcedure}
-      </span>
-    </div>
-  )}
+                  <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-4 pt-3 sm:pt-4 border-t border-gray-100">
+                    {/* الإجراء المخطط */}
+                    {patient.plannedProcedure && (
+                      <div className="flex items-start gap-2 w-full sm:w-auto">
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <Stethoscope
+                            size={14}
+                            className="text-gray-400 flex-shrink-0"
+                          />
+                          <span className="text-[11px] sm:text-xs text-gray-500 whitespace-nowrap">
+                            الإجراء المخطط:
+                          </span>
+                        </div>
+                        <span
+                          className="text-xs sm:text-sm font-medium text-gray-900 leading-relaxed break-words"
+                          style={{
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {patient.plannedProcedure}
+                        </span>
+                      </div>
+                    )}
 
-  {/* فصل عمودي - يظهر فقط في سطح المكتب */}
-  {patient.plannedProcedure && (
-    <div className="hidden sm:block w-px h-6 bg-gray-200 flex-shrink-0" />
-  )}
+                    {/* فصل عمودي - يظهر فقط في سطح المكتب */}
+                    {patient.plannedProcedure && (
+                      <div className="hidden sm:block w-px h-6 bg-gray-200 flex-shrink-0" />
+                    )}
 
-  {/* السعر المتفق عليه وإجمالي التكلفة */}
-  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 w-full sm:w-auto">
-    {/* السعر المتفق عليه */}
-    {/* <div className="flex items-center gap-1.5">
+                    {/* السعر المتفق عليه وإجمالي التكلفة */}
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 w-full sm:w-auto">
+                      {/* السعر المتفق عليه */}
+                      {/* <div className="flex items-center gap-1.5">
       <span className="text-[11px] sm:text-xs text-gray-500 whitespace-nowrap">
         السعر المتفق عليه:
       </span>
@@ -2318,20 +2455,20 @@ const togglePaymentStatus = useCallback((sessionId: string, currentIsPaid: boole
       </span>
     </div> */}
 
-    {/* فاصل */}
-    <span className="text-gray-300 text-xs">|</span>
+                      {/* فاصل */}
+                      <span className="text-gray-300 text-xs">|</span>
 
-    {/* إجمالي تكلفة الجلسات */}
-    <div className="flex items-center gap-1.5">
-      <span className="text-[11px] sm:text-xs text-gray-500 whitespace-nowrap">
-        إجمالي التكلفة:
-      </span>
-      <span className="text-xs sm:text-sm font-bold text-gray-900">
-        {formatCurrency(finance.totalCost)}
-      </span>
-    </div>
-  </div>
-</div>
+                      {/* إجمالي تكلفة الجلسات */}
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[11px] sm:text-xs text-gray-500 whitespace-nowrap">
+                          إجمالي التكلفة:
+                        </span>
+                        <span className="text-xs sm:text-sm font-bold text-gray-900">
+                          {formatCurrency(finance.totalCost)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* ملاحظات إن وجدت */}
@@ -2392,38 +2529,39 @@ const togglePaymentStatus = useCallback((sessionId: string, currentIsPaid: boole
                                 className="grid grid-cols-[100px_1.5fr_1fr_100px_100px_100px_100px] px-4 py-2.5 items-center hover:bg-gray-50/50 cursor-pointer transition-colors"
                                 onClick={() => setSelectedSession(session)}
                               >
-{/* حالة الجلسة - Badge تفاعلي */}
-<div 
-  className="flex items-center gap-1.5 cursor-pointer group/status"
-  onClick={(e) => {
-    e.stopPropagation();
-    toggleSessionStatus(session.id, session.status);
-  }}
-  title={`انقر لتغيير الحالة (حالياً: ${statusBadge.label})`}
->
-  <div 
-    className={`
+                                {/* حالة الجلسة - Badge تفاعلي */}
+                                <div
+                                  className="flex items-center gap-1.5 cursor-pointer group/status"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleSessionStatus(
+                                      session.id,
+                                      session.status,
+                                    );
+                                  }}
+                                  title={`انقر لتغيير الحالة (حالياً: ${statusBadge.label})`}
+                                >
+                                  <div
+                                    className={`
       inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full
       transition-all duration-300
-      ${session.status === "completed" 
-        ? "bg-emerald-50 border border-emerald-200 text-emerald-700" 
-        : "bg-amber-50 border border-amber-200 text-amber-700"
+      ${
+        session.status === "completed"
+          ? "bg-emerald-50 border border-emerald-200 text-emerald-700"
+          : "bg-amber-50 border border-amber-200 text-amber-700"
       }
       group-hover/status:scale-[1.04] 
       group-hover/status:shadow-md 
       group-hover/status:brightness-105
       active:scale-[0.95]
     `}
-  >
-
-    {/* النص */}
-    <span className="text-[11px] sm:text-xs font-semibold">
-      {statusBadge.label}
-    </span>
-
-  </div>
-
-</div>
+                                  >
+                                    {/* النص */}
+                                    <span className="text-[11px] sm:text-xs font-semibold">
+                                      {statusBadge.label}
+                                    </span>
+                                  </div>
+                                </div>
 
                                 {/* الإجراء */}
                                 <div
@@ -2454,23 +2592,27 @@ const togglePaymentStatus = useCallback((sessionId: string, currentIsPaid: boole
                                   {formatCurrency(session.sessionCost)}
                                 </div>
 
-{/* حالة الدفع - Badge تفاعلي */}
-<div 
-  className="relative cursor-pointer group/payment"
-  onClick={(e) => {
-    e.stopPropagation();
-    togglePaymentStatus(session.id, session.isPaid);
-  }}
-  title={`انقر لتغيير حالة الدفع`}
->
-  <span 
-    className={`
+                                {/* حالة الدفع - Badge تفاعلي */}
+                                <div
+                                  className="relative cursor-pointer group/payment"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    togglePaymentStatus(
+                                      session.id,
+                                      session.isPaid,
+                                    );
+                                  }}
+                                  title={`انقر لتغيير حالة الدفع`}
+                                >
+                                  <span
+                                    className={`
       inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
       text-[11px] sm:text-xs font-medium
       transition-all duration-300
-      ${session.isPaid 
-        ? "bg-emerald-100 text-emerald-700 border border-emerald-200" 
-        : "bg-rose-100 text-rose-700 border border-rose-200"
+      ${
+        session.isPaid
+          ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+          : "bg-rose-100 text-rose-700 border border-rose-200"
       }
       group-hover/payment:scale-105 
       group-hover/payment:shadow-md
@@ -2478,20 +2620,26 @@ const togglePaymentStatus = useCallback((sessionId: string, currentIsPaid: boole
       active:scale-95
       relative
     `}
-  >
-    {/* أيقونة الحالة */}
-    {session.isPaid ? (
-      <CheckCircle size={12} className="text-emerald-600" />
-    ) : (
-      <AlertCircle size={12} className="text-rose-600" />
-    )}
-    
-    {session.isPaid ? "مدفوع" : "غير مدفوع"}
-    
-    {/* شريط تقدم تحت البادج */}
-    <span className="absolute -bottom-1 left-2 right-2 h-0.5 rounded-full bg-current opacity-0 group-hover/payment:opacity-30 transition-all duration-300" />
-  </span>
-</div>
+                                  >
+                                    {/* أيقونة الحالة */}
+                                    {session.isPaid ? (
+                                      <CheckCircle
+                                        size={12}
+                                        className="text-emerald-600"
+                                      />
+                                    ) : (
+                                      <AlertCircle
+                                        size={12}
+                                        className="text-rose-600"
+                                      />
+                                    )}
+
+                                    {session.isPaid ? "مدفوع" : "غير مدفوع"}
+
+                                    {/* شريط تقدم تحت البادج */}
+                                    <span className="absolute -bottom-1 left-2 right-2 h-0.5 rounded-full bg-current opacity-0 group-hover/payment:opacity-30 transition-all duration-300" />
+                                  </span>
+                                </div>
 
                                 {/* أزرار الإجراءات */}
                                 <div className="flex items-center justify-end gap-1.5 sm:gap-2">
@@ -2534,275 +2682,403 @@ const togglePaymentStatus = useCallback((sessionId: string, currentIsPaid: boole
                     {/* عرض البطاقات للشاشات الصغيرة (الجوال والتابلت) */}
                     {/* ============================================================ */}
                     <div className="flex flex-col gap-2 sm:gap-3 lg:hidden">
-  {sortedSessions.map((session) => {
-    const statusBadge = getSessionStatusBadge(session.status);
-    return (
-      <div
-        key={session.id}
-        className="bg-gray-50 rounded-xl sm:rounded-2xl p-3 sm:p-4 cursor-pointer hover:bg-gray-100 transition-colors border border-gray-100"
-        onClick={() => setSelectedSession(session)}
-      >
-{/* الصف الأول: الإجراء والملاحظة */}
-<div className="mb-2">
-  <span
-    className="text-sm sm:text-base font-semibold text-gray-900 line-clamp-2"
-    title={
-      session.performedProcedure ||
-      session.plannedProcedure ||
-      "جلسة"
-    }
-  >
-    {session.performedProcedure ||
-      session.plannedProcedure ||
-      "جلسة"}
-  </span>
-  
-  {/* الملاحظة - تظهر إذا وجدت */}
-  {session.notes && (
-    <div className="mt-1 flex items-start gap-1">
-      <svg className="w-3.5 h-3.5 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-        <polyline points="14 2 14 8 20 8" />
-        <line x1="16" y1="13" x2="8" y2="13" />
-        <line x1="16" y1="17" x2="8" y2="17" />
-      </svg>
-      <p className="text-[11px] sm:text-xs text-gray-500 line-clamp-2 leading-relaxed">
-        {session.notes}
-      </p>
-    </div>
-  )}
-</div>
+                      {sortedSessions.map((session) => {
+                        const statusBadge = getSessionStatusBadge(
+                          session.status,
+                        );
+                        return (
+                          <div
+                            key={session.id}
+                            className="bg-gray-50 rounded-xl sm:rounded-2xl p-3 sm:p-4 cursor-pointer hover:bg-gray-100 transition-colors border border-gray-100"
+                            onClick={() => setSelectedSession(session)}
+                          >
+                            {/* الصف الأول: الإجراء والملاحظة */}
+                            <div className="mb-2">
+                              <span
+                                className="text-sm sm:text-base font-semibold text-gray-900 line-clamp-2"
+                                title={
+                                  session.performedProcedure ||
+                                  session.plannedProcedure ||
+                                  "جلسة"
+                                }
+                              >
+                                {session.performedProcedure ||
+                                  session.plannedProcedure ||
+                                  "جلسة"}
+                              </span>
 
-        {/* الصف الثاني: التاريخ والوقت - في اليسار */}
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-[11px] sm:text-xs text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-full flex items-center gap-1">
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-              <line x1="16" y1="2" x2="16" y2="6" />
-              <line x1="8" y1="2" x2="8" y2="6" />
-              <line x1="3" y1="10" x2="21" y2="10" />
-            </svg>
-            {formatDate(session.startTime)}
-          </span>
-          <span className="text-[11px] sm:text-xs text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-full flex items-center gap-1">
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 16 14" />
-            </svg>
-            {formatTime(session.startTime)}
-          </span>
-          
-          {/* التكلفة */}
-          <span className="text-xs sm:text-sm font-semibold text-gray-900 mr-auto bg-white px-2.5 py-1 rounded-full shadow-sm">
-            {formatCurrency(session.sessionCost)}
-          </span>
-        </div>
+                              {/* الملاحظة - تظهر إذا وجدت */}
+                              {session.notes && (
+                                <div className="mt-1 flex items-start gap-1">
+                                  <svg
+                                    className="w-3.5 h-3.5 text-gray-400 mt-0.5 flex-shrink-0"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                    <polyline points="14 2 14 8 20 8" />
+                                    <line x1="16" y1="13" x2="8" y2="13" />
+                                    <line x1="16" y1="17" x2="8" y2="17" />
+                                  </svg>
+                                  <p className="text-[11px] sm:text-xs text-gray-500 line-clamp-2 leading-relaxed">
+                                    {session.notes}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
 
-        {/* خط فاصل */}
-        <div className="border-t border-gray-200 mb-3"></div>
+                            {/* الصف الثاني: التاريخ والوقت - في اليسار */}
+                            <div className="flex items-center gap-2 mb-3">
+                              <span className="text-[11px] sm:text-xs text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-full flex items-center gap-1">
+                                <svg
+                                  className="w-3 h-3"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <rect
+                                    x="3"
+                                    y="4"
+                                    width="18"
+                                    height="18"
+                                    rx="2"
+                                    ry="2"
+                                  />
+                                  <line x1="16" y1="2" x2="16" y2="6" />
+                                  <line x1="8" y1="2" x2="8" y2="6" />
+                                  <line x1="3" y1="10" x2="21" y2="10" />
+                                </svg>
+                                {formatDate(session.startTime)}
+                              </span>
+                              <span className="text-[11px] sm:text-xs text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-full flex items-center gap-1">
+                                <svg
+                                  className="w-3 h-3"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <circle cx="12" cy="12" r="10" />
+                                  <polyline points="12 6 12 12 16 14" />
+                                </svg>
+                                {formatTime(session.startTime)}
+                              </span>
 
-        {/* الصف الثالث: الأزرار والمفاتيح */}
-        <div className="flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
-          {/* المجموعة اليسرى: حالة الجلسة + حالة الدفع */}
-          <div className="flex items-center gap-3 flex-wrap">
-{/* مفتاح حالة الجلسة (مجدول/مكتمل) */}
-<div 
-  className="flex flex-col items-center gap-0.5 cursor-pointer group/status"
-  onClick={(e) => {
-    e.stopPropagation();
-    toggleSessionStatus(session.id, session.status);
-  }}
-  title={`انقر لتغيير الحالة (حالياً: ${statusBadge.label})`}
->
-  {/* النص فوق المفتاح */}
-  <span className={`
+                              {/* التكلفة */}
+                              <span className="text-xs sm:text-sm font-semibold text-gray-900 mr-auto bg-white px-2.5 py-1 rounded-full shadow-sm">
+                                {formatCurrency(session.sessionCost)}
+                              </span>
+                            </div>
+
+                            {/* خط فاصل */}
+                            <div className="border-t border-gray-200 mb-3"></div>
+
+                            {/* الصف الثالث: الأزرار والمفاتيح */}
+                            <div
+                              className="flex items-center justify-between gap-2"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {/* المجموعة اليسرى: حالة الجلسة + حالة الدفع */}
+                              <div className="flex items-center gap-3 flex-wrap">
+                                {/* مفتاح حالة الجلسة (مجدول/مكتمل) */}
+                                <div
+                                  className="flex flex-col items-center gap-0.5 cursor-pointer group/status"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleSessionStatus(
+                                      session.id,
+                                      session.status,
+                                    );
+                                  }}
+                                  title={`انقر لتغيير الحالة (حالياً: ${statusBadge.label})`}
+                                >
+                                  {/* النص فوق المفتاح */}
+                                  <span
+                                    className={`
     text-[10px] font-medium transition-all duration-300
     ${session.status === "completed" ? "text-emerald-600" : "text-amber-600"}
     group-hover/status:scale-105
-  `}>
-    {statusBadge.label}
-  </span>
-  
-  {/* المفتاح - أكبر قليلاً */}
-  <div 
-    className={`
+  `}
+                                  >
+                                    {statusBadge.label}
+                                  </span>
+
+                                  {/* المفتاح - أكبر قليلاً */}
+                                  <div
+                                    className={`
       relative w-11 h-6 rounded-full transition-all duration-300
-      ${session.status === "completed" 
-        ? "bg-emerald-400/60" 
-        : "bg-amber-400/60"
+      ${
+        session.status === "completed" ? "bg-emerald-400/60" : "bg-amber-400/60"
       }
       group-hover/status:shadow-md
       flex items-center justify-between px-1
     `}
-  >
-    {/* أيقونة المجدول (يسار) */}
-    <span className={`
+                                  >
+                                    {/* أيقونة المجدول (يسار) */}
+                                    <span
+                                      className={`
       text-[8px] transition-all duration-300 z-10
-      ${session.status === "completed" 
-        ? "opacity-0" 
-        : "opacity-100 text-white"
-      }
-    `}>
-      <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="10" />
-        <polyline points="12 6 12 12 16 14" />
-      </svg>
-    </span>
+      ${session.status === "completed" ? "opacity-0" : "opacity-100 text-white"}
+    `}
+                                    >
+                                      <svg
+                                        className="w-2.5 h-2.5"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2.5"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <circle cx="12" cy="12" r="10" />
+                                        <polyline points="12 6 12 12 16 14" />
+                                      </svg>
+                                    </span>
 
-    {/* أيقونة المكتمل (يمين) */}
-    <span className={`
+                                    {/* أيقونة المكتمل (يمين) */}
+                                    <span
+                                      className={`
       text-[8px] transition-all duration-300 z-10
-      ${session.status === "completed" 
-        ? "opacity-100 text-white" 
-        : "opacity-0"
-      }
-    `}>
-      <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-        <polyline points="20 6 9 17 4 12" />
-      </svg>
-    </span>
+      ${session.status === "completed" ? "opacity-100 text-white" : "opacity-0"}
+    `}
+                                    >
+                                      <svg
+                                        className="w-2.5 h-2.5"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2.5"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <polyline points="20 6 9 17 4 12" />
+                                      </svg>
+                                    </span>
 
-    {/* الدائرة المتحركة - أكبر قليلاً */}
-    <div 
-      className={`
+                                    {/* الدائرة المتحركة - أكبر قليلاً */}
+                                    <div
+                                      className={`
         absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm 
         transition-all duration-300 ease-in-out
         group-hover/status:scale-110
         flex items-center justify-center
       `}
-      style={{
-        left: session.status === "scheduled" ? "2px" : "calc(100% - 22px)"
-      }}
-    >
-      {session.status === "completed" ? (
-        <svg className="w-2.5 h-2.5 text-emerald-500" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      ) : (
-        <svg className="w-2.5 h-2.5 text-amber-500" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="10" />
-          <polyline points="12 6 12 12 16 14" />
-        </svg>
-      )}
-    </div>
-  </div>
-</div>
+                                      style={{
+                                        left:
+                                          session.status === "scheduled"
+                                            ? "2px"
+                                            : "calc(100% - 22px)",
+                                      }}
+                                    >
+                                      {session.status === "completed" ? (
+                                        <svg
+                                          className="w-2.5 h-2.5 text-emerald-500"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          strokeWidth="3"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          viewBox="0 0 24 24"
+                                        >
+                                          <polyline points="20 6 9 17 4 12" />
+                                        </svg>
+                                      ) : (
+                                        <svg
+                                          className="w-2.5 h-2.5 text-amber-500"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          strokeWidth="2.5"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          viewBox="0 0 24 24"
+                                        >
+                                          <circle cx="12" cy="12" r="10" />
+                                          <polyline points="12 6 12 12 16 14" />
+                                        </svg>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
 
-{/* مفتاح حالة الدفع */}
-<div
-  className="flex flex-col items-center gap-0.5 cursor-pointer group/payment"
-  onClick={(e) => {
-    e.stopPropagation();
-    togglePaymentStatus(session.id, session.isPaid);
-  }}
-  title={`انقر لتغيير حالة الدفع (حالياً: ${session.isPaid ? 'مدفوع' : 'غير مدفوع'})`}
->
-  {/* النص فوق المفتاح */}
-  <span className={`
+                                {/* مفتاح حالة الدفع */}
+                                <div
+                                  className="flex flex-col items-center gap-0.5 cursor-pointer group/payment"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    togglePaymentStatus(
+                                      session.id,
+                                      session.isPaid,
+                                    );
+                                  }}
+                                  title={`انقر لتغيير حالة الدفع (حالياً: ${session.isPaid ? "مدفوع" : "غير مدفوع"})`}
+                                >
+                                  {/* النص فوق المفتاح */}
+                                  <span
+                                    className={`
     text-[10px] font-medium transition-all duration-300
     ${session.isPaid ? "text-emerald-600" : "text-rose-600"}
     group-hover/payment:scale-105
-  `}>
-    {session.isPaid ? "مدفوع" : "غير مدفوع"}
-  </span>
-  
-  {/* المفتاح - أكبر قليلاً */}
-  <div 
-    className={`
+  `}
+                                  >
+                                    {session.isPaid ? "مدفوع" : "غير مدفوع"}
+                                  </span>
+
+                                  {/* المفتاح - أكبر قليلاً */}
+                                  <div
+                                    className={`
       relative w-11 h-6 rounded-full transition-all duration-300
-      ${session.isPaid 
-        ? "bg-emerald-400/60" 
-        : "bg-rose-400/60"
-      }
+      ${session.isPaid ? "bg-emerald-400/60" : "bg-rose-400/60"}
       group-hover/payment:shadow-md
       flex items-center justify-between px-1
     `}
-  >
-    {/* أيقونة غير مدفوع (يسار) */}
-    <span className={`
+                                  >
+                                    {/* أيقونة غير مدفوع (يسار) */}
+                                    <span
+                                      className={`
       text-[8px] transition-all duration-300 z-10
-      ${session.isPaid 
-        ? "opacity-0" 
-        : "opacity-100 text-white"
-      }
-    `}>
-      <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="10" />
-        <line x1="12" y1="8" x2="12" y2="12" />
-        <line x1="12" y1="16" x2="12.01" y2="16" />
-      </svg>
-    </span>
+      ${session.isPaid ? "opacity-0" : "opacity-100 text-white"}
+    `}
+                                    >
+                                      <svg
+                                        className="w-2.5 h-2.5"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2.5"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <circle cx="12" cy="12" r="10" />
+                                        <line x1="12" y1="8" x2="12" y2="12" />
+                                        <line
+                                          x1="12"
+                                          y1="16"
+                                          x2="12.01"
+                                          y2="16"
+                                        />
+                                      </svg>
+                                    </span>
 
-    {/* أيقونة مدفوع (يمين) */}
-    <span className={`
+                                    {/* أيقونة مدفوع (يمين) */}
+                                    <span
+                                      className={`
       text-[8px] transition-all duration-300 z-10
-      ${session.isPaid 
-        ? "opacity-100 text-white" 
-        : "opacity-0"
-      }
-    `}>
-      <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-        <polyline points="20 6 9 17 4 12" />
-      </svg>
-    </span>
+      ${session.isPaid ? "opacity-100 text-white" : "opacity-0"}
+    `}
+                                    >
+                                      <svg
+                                        className="w-2.5 h-2.5"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2.5"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <polyline points="20 6 9 17 4 12" />
+                                      </svg>
+                                    </span>
 
-    {/* الدائرة المتحركة - أكبر قليلاً */}
-    <div 
-      className={`
+                                    {/* الدائرة المتحركة - أكبر قليلاً */}
+                                    <div
+                                      className={`
         absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm 
         transition-all duration-300 ease-in-out
         group-hover/payment:scale-110
         flex items-center justify-center
       `}
-      style={{
-        left: session.isPaid ? "calc(100% - 22px)" : "2px"
-      }}
-    >
-      {session.isPaid ? (
-        <svg className="w-2.5 h-2.5 text-emerald-500" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      ) : (
-        <svg className="w-2.5 h-2.5 text-rose-500" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="8" x2="12" y2="12" />
-          <line x1="12" y1="16" x2="12.01" y2="16" />
-        </svg>
-      )}
-    </div>
-  </div>
-</div>
-          </div>
+                                      style={{
+                                        left: session.isPaid
+                                          ? "calc(100% - 22px)"
+                                          : "2px",
+                                      }}
+                                    >
+                                      {session.isPaid ? (
+                                        <svg
+                                          className="w-2.5 h-2.5 text-emerald-500"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          strokeWidth="3"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          viewBox="0 0 24 24"
+                                        >
+                                          <polyline points="20 6 9 17 4 12" />
+                                        </svg>
+                                      ) : (
+                                        <svg
+                                          className="w-2.5 h-2.5 text-rose-500"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          strokeWidth="2.5"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          viewBox="0 0 24 24"
+                                        >
+                                          <circle cx="12" cy="12" r="10" />
+                                          <line
+                                            x1="12"
+                                            y1="8"
+                                            x2="12"
+                                            y2="12"
+                                          />
+                                          <line
+                                            x1="12"
+                                            y1="16"
+                                            x2="12.01"
+                                            y2="16"
+                                          />
+                                        </svg>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
 
-          {/* المجموعة اليمنى: أزرار التعديل والحذف */}
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onEditSession(session);
-              }}
-              className="p-2 rounded-lg bg-white hover:bg-blue-50 hover:text-blue-600 transition-all flex-shrink-0 shadow-sm border border-gray-100 group/btn"
-              title="تعديل الجلسة"
-            >
-              <Edit size={14} className="text-gray-600 group-hover/btn:text-blue-600 transition-colors" />
-            </button>
+                              {/* المجموعة اليمنى: أزرار التعديل والحذف */}
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onEditSession(session);
+                                  }}
+                                  className="p-2 rounded-lg bg-white hover:bg-blue-50 hover:text-blue-600 transition-all flex-shrink-0 shadow-sm border border-gray-100 group/btn"
+                                  title="تعديل الجلسة"
+                                >
+                                  <Edit
+                                    size={14}
+                                    className="text-gray-600 group-hover/btn:text-blue-600 transition-colors"
+                                  />
+                                </button>
 
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onRequestDeleteSession(session.id);
-              }}
-              className="p-2 rounded-lg bg-white hover:bg-red-50 hover:text-red-600 transition-all flex-shrink-0 shadow-sm border border-gray-100 group/btn"
-              title="حذف الجلسة"
-            >
-              <Trash2 size={14} className="text-red-500 group-hover/btn:text-red-600 transition-colors" />
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  })}
-</div>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onRequestDeleteSession(session.id);
+                                  }}
+                                  className="p-2 rounded-lg bg-white hover:bg-red-50 hover:text-red-600 transition-all flex-shrink-0 shadow-sm border border-gray-100 group/btn"
+                                  title="حذف الجلسة"
+                                >
+                                  <Trash2
+                                    size={14}
+                                    className="text-red-500 group-hover/btn:text-red-600 transition-colors"
+                                  />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 ) : (
                   /* حالة عدم وجود جلسات */
@@ -2830,18 +3106,18 @@ const togglePaymentStatus = useCallback((sessionId: string, currentIsPaid: boole
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
               >
-              <ToothChart
-                ref={chartRef}
-                patientId={patient.id}
-                clinicId={patient.clinicId}
-                patientName={patient.fullName}
-                patientPhone={patient.phone}
-                primaryColor={primaryColor}
-                editable={true}
-                onDirtyChange={setIsChartDirty}
-                clinicData={clinicData} // ✅ إضافة بيانات العيادة
-                existingSessions={allClinicSessions} 
-              />
+                <ToothChart
+                  ref={chartRef}
+                  patientId={patient.id}
+                  clinicId={patient.clinicId}
+                  patientName={patient.fullName}
+                  patientPhone={patient.phone}
+                  primaryColor={primaryColor}
+                  editable={true}
+                  onDirtyChange={setIsChartDirty}
+                  clinicData={clinicData} // ✅ إضافة بيانات العيادة
+                  existingSessions={allClinicSessions}
+                />
               </motion.div>
             )}
 
@@ -2941,48 +3217,51 @@ function EditSessionModal({
     startTime: toLocalDateTimeString(new Date(session.startTime)),
   });
   // ✅ حساب تاريخ الموعد من formData.startTime
-const appointmentDate = useMemo(() => {
-  return new Date(formData.startTime);
-}, [formData.startTime]);
+  const appointmentDate = useMemo(() => {
+    return new Date(formData.startTime);
+  }, [formData.startTime]);
 
-// ✅ حساب المواعيد المحجوزة في نفس اليوم (باستثناء الجلسة الحالية)
-const bookedSlotsForDate = useMemo(() => {
-  if (!sessions || sessions.length === 0) return [];
-  
-  const targetDate = new Date(formData.startTime);
-  
-  return sessions
-    .filter((s) => {
-      // استبعاد الجلسة الحالية
-      if (s.id === session.id) return false;
-      
-      const sessionDate = new Date(s.startTime);
-      
-      // نفس اليوم فقط
-      return (
-        sessionDate.getFullYear() === targetDate.getFullYear() &&
-        sessionDate.getMonth() === targetDate.getMonth() &&
-        sessionDate.getDate() === targetDate.getDate() &&
-        s.status === "scheduled" // فقط المجدولة
-      );
-    })
-    .map((s) => {
-      const start = new Date(s.startTime);
-      const end = new Date(s.endTime || new Date(start.getTime() + 30 * 60000));
-      
-      return {
-        startTime: `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`,
-        endTime: `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`,
-      };
-    });
-}, [sessions, session.id, formData.startTime]);
+  // ✅ حساب المواعيد المحجوزة في نفس اليوم (باستثناء الجلسة الحالية)
+  const bookedSlotsForDate = useMemo(() => {
+    if (!sessions || sessions.length === 0) return [];
+
+    const targetDate = new Date(formData.startTime);
+
+    return sessions
+      .filter((s) => {
+        // استبعاد الجلسة الحالية
+        if (s.id === session.id) return false;
+
+        const sessionDate = new Date(s.startTime);
+
+        // نفس اليوم فقط
+        return (
+          sessionDate.getFullYear() === targetDate.getFullYear() &&
+          sessionDate.getMonth() === targetDate.getMonth() &&
+          sessionDate.getDate() === targetDate.getDate() &&
+          s.status === "scheduled" // فقط المجدولة
+        );
+      })
+      .map((s) => {
+        const start = new Date(s.startTime);
+        const end = new Date(
+          s.endTime || new Date(start.getTime() + 30 * 60000),
+        );
+
+        return {
+          startTime: `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`,
+          endTime: `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`,
+        };
+      });
+  }, [sessions, session.id, formData.startTime]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
 
     try {
       const startTime = new Date(formData.startTime);
-      const durationMinutes = clinicData?.settings?.defaultAppointmentDuration || 30;
+      const durationMinutes =
+        clinicData?.settings?.defaultAppointmentDuration || 30;
       const endTime = new Date(startTime.getTime() + durationMinutes * 60000);
 
       await onSave({
@@ -3096,7 +3375,7 @@ const bookedSlotsForDate = useMemo(() => {
             )}
           </div>
 
-          <form onSubmit={handleSubmit} className="p-4 space-y-4 pb-24">
+          <form onSubmit={handleSubmit} className="p-4 space-y-4">
             {/* حالة الجلسة */}
             <div>
               <label className="block text-sm font-semibold text-gray-900 mb-3">
@@ -3176,68 +3455,79 @@ const bookedSlotsForDate = useMemo(() => {
                 <div className="absolute right-0 top-0 bottom-3 w-6 bg-gradient-to-l from-white via-white/80 to-transparent pointer-events-none sm:hidden" />
               </div>
             </div>
-{/* تاريخ ووقت الجلسة - في سطر واحد مع حل مشكلة التوقيت */}
-<div className="flex flex-col sm:flex-row gap-3">
-<div className="flex-1">
-<SmartDatePicker
-  label="تاريخ الجلسة"
-  required
-  value={formData.startTime}
-  onChange={(date) => {
-    const year = date.getFullYear()
-    const month = String(date.getMonth()+ 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    
-    const currentTime = new Date(formData.startTime);
-    const hours = String(currentTime.getHours()).padStart(2, "0");
-    const minutes = String(currentTime.getMinutes()).padStart(2, "0");
-    
-    const newDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
-    
-    setFormData({
-      ...formData,
-      startTime: newDateTime,
-    });
-  }}
-  minDate={new Date()}
-  primaryColor={primaryColor}
-  disabled={isLoading}
-  workingHours={clinicData?.settings?.workingHours || []} // ✅ تمرير ساعات العمل
-/>
-</div>
+            {/* تاريخ ووقت الجلسة - في سطر واحد مع حل مشكلة التوقيت */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1">
+                <SmartDatePicker
+                  label="تاريخ الجلسة"
+                  required
+                  value={formData.startTime}
+                  onChange={(date) => {
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, "0");
+                    const day = String(date.getDate()).padStart(2, "0");
 
-<div className="flex-1">
-  <SmartTimePicker
-    label="الوقت"
-    required
-    value={(() => {
-      const d = new Date(formData.startTime);
-      return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-    })()}
-    onChange={(time) => {
-      // استخراج التاريخ من القيمة الحالية
-      const currentDate = new Date(formData.startTime);
-      const year = currentDate.getFullYear();
-      const month = String(currentDate.getMonth() + 1).padStart(2, "0");
-      const day = String(currentDate.getDate()).padStart(2, "0");
-      
-      // بناء التاريخ الجديد مع الوقت الجديد
-      const newDateTime = `${year}-${month}-${day}T${time}`;
-      
-      setFormData({
-        ...formData,
-        startTime: newDateTime,
-      });
-    }}
-    primaryColor={primaryColor}
-    disabled={isLoading}
-    appointmentDate={appointmentDate}
-    workingHours={clinicData?.settings?.workingHours || []}
-    appointmentDuration={clinicData?.settings?.defaultAppointmentDuration || 30}
-    bookedSlots={bookedSlotsForDate}
-  />
-</div>
-</div>
+                    const currentTime = new Date(formData.startTime);
+                    const hours = String(currentTime.getHours()).padStart(
+                      2,
+                      "0",
+                    );
+                    const minutes = String(currentTime.getMinutes()).padStart(
+                      2,
+                      "0",
+                    );
+
+                    const newDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+
+                    setFormData({
+                      ...formData,
+                      startTime: newDateTime,
+                    });
+                  }}
+                  minDate={new Date()}
+                  primaryColor={primaryColor}
+                  disabled={isLoading}
+                  workingHours={clinicData?.settings?.workingHours || []} // ✅ تمرير ساعات العمل
+                />
+              </div>
+
+              <div className="flex-1">
+                <SmartTimePicker
+                  label="الوقت"
+                  required
+                  value={(() => {
+                    const d = new Date(formData.startTime);
+                    return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+                  })()}
+                  onChange={(time) => {
+                    // استخراج التاريخ من القيمة الحالية
+                    const currentDate = new Date(formData.startTime);
+                    const year = currentDate.getFullYear();
+                    const month = String(currentDate.getMonth() + 1).padStart(
+                      2,
+                      "0",
+                    );
+                    const day = String(currentDate.getDate()).padStart(2, "0");
+
+                    // بناء التاريخ الجديد مع الوقت الجديد
+                    const newDateTime = `${year}-${month}-${day}T${time}`;
+
+                    setFormData({
+                      ...formData,
+                      startTime: newDateTime,
+                    });
+                  }}
+                  primaryColor={primaryColor}
+                  disabled={isLoading}
+                  appointmentDate={appointmentDate}
+                  workingHours={clinicData?.settings?.workingHours || []}
+                  appointmentDuration={
+                    clinicData?.settings?.defaultAppointmentDuration || 30
+                  }
+                  bookedSlots={bookedSlotsForDate}
+                />
+              </div>
+            </div>
 
             {/* الإجراء المخطط */}
             <div>
@@ -3324,169 +3614,237 @@ const bookedSlotsForDate = useMemo(() => {
               </div>
             </div>
             {/* قسم حالة الدفع */}
-<div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
-  {/* رأس القسم مع المفتاح */}
-  <div className="flex items-center justify-between mb-4">
-    <span className="text-sm font-semibold text-gray-800">
-      حالة الدفع
-    </span>
-    
-    {/* مفتاح حالة الدفع */}
-    <div
-      className="flex flex-col items-center gap-0.5 cursor-pointer group/payment"
-      onClick={(e) => {
-        e.stopPropagation();
-        if (!isLoading) {
-          setFormData({ ...formData, isPaid: !formData.isPaid });
-        }
-      }}
-      title={formData.isPaid ? "انقر للتغيير إلى غير مدفوع" : "انقر للتغيير إلى مدفوع"}
-    >
-      {/* النص فوق المفتاح */}
-      <span className={`
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
+              {/* رأس القسم مع المفتاح */}
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-sm font-semibold text-gray-800">
+                  حالة الدفع
+                </span>
+
+                {/* مفتاح حالة الدفع */}
+                <div
+                  className="flex flex-col items-center gap-0.5 cursor-pointer group/payment"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!isLoading) {
+                      setFormData({ ...formData, isPaid: !formData.isPaid });
+                    }
+                  }}
+                  title={
+                    formData.isPaid
+                      ? "انقر للتغيير إلى غير مدفوع"
+                      : "انقر للتغيير إلى مدفوع"
+                  }
+                >
+                  {/* النص فوق المفتاح */}
+                  <span
+                    className={`
         text-[10px] font-medium transition-all duration-300
         ${formData.isPaid ? "text-emerald-600" : "text-rose-600"}
         group-hover/payment:scale-105
-      `}>
-        {formData.isPaid ? "مدفوع" : "غير مدفوع"}
-      </span>
-      
-      {/* المفتاح */}
-      <div 
-        className={`
+      `}
+                  >
+                    {formData.isPaid ? "مدفوع" : "غير مدفوع"}
+                  </span>
+
+                  {/* المفتاح */}
+                  <div
+                    className={`
           relative w-11 h-6 rounded-full transition-all duration-300
-          ${formData.isPaid 
-            ? "bg-emerald-400/60" 
-            : "bg-rose-400/60"
-          }
+          ${formData.isPaid ? "bg-emerald-400/60" : "bg-rose-400/60"}
           group-hover/payment:shadow-md
           flex items-center justify-between px-1
         `}
-      >
-        {/* أيقونة غير مدفوع (يسار) */}
-        <span className={`
+                  >
+                    {/* أيقونة غير مدفوع (يسار) */}
+                    <span
+                      className={`
           text-[8px] transition-all duration-300 z-10
           ${formData.isPaid ? "opacity-0" : "opacity-100 text-white"}
-        `}>
-          <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
-        </span>
+        `}
+                    >
+                      <svg
+                        className="w-2.5 h-2.5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="8" x2="12" y2="12" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                      </svg>
+                    </span>
 
-        {/* أيقونة مدفوع (يمين) */}
-        <span className={`
+                    {/* أيقونة مدفوع (يمين) */}
+                    <span
+                      className={`
           text-[8px] transition-all duration-300 z-10
           ${formData.isPaid ? "opacity-100 text-white" : "opacity-0"}
-        `}>
-          <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        </span>
+        `}
+                    >
+                      <svg
+                        className="w-2.5 h-2.5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        viewBox="0 0 24 24"
+                      >
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    </span>
 
-        {/* الدائرة المتحركة */}
-        <div 
-          className={`
+                    {/* الدائرة المتحركة */}
+                    <div
+                      className={`
             absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm 
             transition-all duration-300 ease-in-out
             group-hover/payment:scale-110
             flex items-center justify-center
           `}
-          style={{
-            left: formData.isPaid ? "calc(100% - 22px)" : "2px"
-          }}
-        >
-          {formData.isPaid ? (
-            <svg className="w-2.5 h-2.5 text-emerald-500" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          ) : (
-            <svg className="w-2.5 h-2.5 text-rose-500" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-          )}
-        </div>
-      </div>
-    </div>
-  </div>
+                      style={{
+                        left: formData.isPaid ? "calc(100% - 22px)" : "2px",
+                      }}
+                    >
+                      {formData.isPaid ? (
+                        <svg
+                          className="w-2.5 h-2.5 text-emerald-500"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          viewBox="0 0 24 24"
+                        >
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      ) : (
+                        <svg
+                          className="w-2.5 h-2.5 text-rose-500"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="12" y1="8" x2="12" y2="12" />
+                          <line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-  {/* حقل طريقة الدفع - يظهر فقط عند التفعيل */}
-  <div className={`
+              {/* حقل طريقة الدفع - يظهر فقط عند التفعيل */}
+              <div
+                className={`
     transition-all duration-500 ease-in-out
-    ${formData.isPaid 
-      ? "opacity-100 max-h-40 translate-y-0" 
-      : "opacity-0 max-h-0 translate-y-2 overflow-hidden"
+    ${
+      formData.isPaid
+        ? "opacity-100 max-h-40 translate-y-0"
+        : "opacity-0 max-h-0 translate-y-2 overflow-hidden"
     }
-  `}>
-    <div className="relative">
-      <label className="block text-xs font-medium text-gray-600 mb-2">
-        طريقة الدفع
-      </label>
-      
-      {/* شبكة خيارات الدفع */}
-      <div className="grid grid-cols-2 gap-2">
-        {/* خيار نقداً */}
-        <button
-          type="button"
-          onClick={() => setFormData({ ...formData, paymentMethod: "cash" })}
-          disabled={isLoading}
-          className={`
+  `}
+              >
+                <div className="relative">
+                  <label className="block text-xs font-medium text-gray-600 mb-2">
+                    طريقة الدفع
+                  </label>
+
+                  {/* شبكة خيارات الدفع */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* خيار نقداً */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormData({ ...formData, paymentMethod: "cash" })
+                      }
+                      disabled={isLoading}
+                      className={`
             relative flex items-center gap-2 px-4 py-3 rounded-xl border-2 
             transition-all duration-300
-            ${formData.paymentMethod === "cash"
-              ? "border-emerald-400 bg-emerald-50/50 shadow-sm"
-              : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+            ${
+              formData.paymentMethod === "cash"
+                ? "border-emerald-400 bg-emerald-50/50 shadow-sm"
+                : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
             }
             disabled:opacity-50 disabled:cursor-not-allowed
           `}
-        >
-          <span className={`
+                    >
+                      <span
+                        className={`
             text-sm font-medium
             ${formData.paymentMethod === "cash" ? "text-emerald-700" : "text-gray-700"}
-          `}>
-            نقداً
-          </span>
-          {formData.paymentMethod === "cash" && (
-            <svg className="absolute top-1 right-1 w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-          )}
-        </button>
+          `}
+                      >
+                        نقداً
+                      </span>
+                      {formData.paymentMethod === "cash" && (
+                        <svg
+                          className="absolute top-1 right-1 w-4 h-4 text-emerald-500"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      )}
+                    </button>
 
-        {/* خيار تحويل بنكي */}
-        <button
-          type="button"
-          onClick={() => setFormData({ ...formData, paymentMethod: "transfer" })}
-          disabled={isLoading}
-          className={`
+                    {/* خيار تحويل بنكي */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormData({ ...formData, paymentMethod: "transfer" })
+                      }
+                      disabled={isLoading}
+                      className={`
             relative flex items-center gap-2 px-4 py-3 rounded-xl border-2 
             transition-all duration-300
-            ${formData.paymentMethod === "transfer"
-              ? "border-emerald-400 bg-emerald-50/50 shadow-sm"
-              : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+            ${
+              formData.paymentMethod === "transfer"
+                ? "border-emerald-400 bg-emerald-50/50 shadow-sm"
+                : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
             }
             disabled:opacity-50 disabled:cursor-not-allowed
           `}
-        >
-          <span className={`
+                    >
+                      <span
+                        className={`
             text-sm font-medium
             ${formData.paymentMethod === "transfer" ? "text-emerald-700" : "text-gray-700"}
-          `}>
-            تحويل بنكي
-          </span>
-          {formData.paymentMethod === "transfer" && (
-            <svg className="absolute top-1 right-1 w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-          )}
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
+          `}
+                      >
+                        تحويل بنكي
+                      </span>
+                      {formData.paymentMethod === "transfer" && (
+                        <svg
+                          className="absolute top-1 right-1 w-4 h-4 text-emerald-500"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             {/* ملاحظات */}
             <div>
@@ -3511,7 +3869,10 @@ const bookedSlotsForDate = useMemo(() => {
           <div className="sticky bottom-[70px] z-10 pointer-events-none h-10 bg-gradient-to-t from-white to-transparent" />
 
           {/* Footer - Sticky with buttons */}
-          <div className="sticky bottom-0 z-20 bg-white border-t border-gray-200 p-4 shadow-lg">
+          <div
+            className="sticky bottom-0 z-20 bg-white border-t border-gray-200 p-4 shadow-lg"
+            data-tutorial="submit-patient"
+          >
             <div className="flex gap-3">
               <button
                 type="submit"
@@ -3736,15 +4097,19 @@ function NewPatientModal({
     fullName: "",
     phone: "",
     email: "",
-  gender: (typeof window !== "undefined"
-    ? (localStorage.getItem("last_patient_gender") as "male" | "female" | null)
-    : null) || "male",
+    gender:
+      (typeof window !== "undefined"
+        ? (localStorage.getItem("last_patient_gender") as
+            | "male"
+            | "female"
+            | null)
+        : null) || "male",
     age: "",
     address: "",
     notes: "",
     plannedProcedure: "",
     totalPrice: "",
-    addAppointment: true,
+    addAppointment: false,
     appointment: {
       date: todayLocalString(),
       time: "",
@@ -3754,53 +4119,55 @@ function NewPatientModal({
     },
   });
 
-const calculateAppointmentDate = (): Date => {
-  return fromLocalDateString(formData.appointment.date);
-};
+  const calculateAppointmentDate = (): Date => {
+    return fromLocalDateString(formData.appointment.date);
+  };
 
   const calculateBirthYear = (age: number): number => {
     const currentYear = new Date().getFullYear();
     return currentYear - age;
   };
   // ✅ حساب المواعيد المحجوزة لليوم المحدد
-const bookedSlotsForDate = useMemo(() => {
-  if (!sessions || sessions.length === 0) return [];
-  
-  const targetDate = calculateAppointmentDate();
-  
-  return sessions
-    .filter((s) => {
-      const sessionDate = new Date(s.startTime);
-      
-      return (
-        sessionDate.getFullYear() === targetDate.getFullYear() &&
-        sessionDate.getMonth() === targetDate.getMonth() &&
-        sessionDate.getDate() === targetDate.getDate() &&
-        s.status === "scheduled"
-      );
-    })
-    .map((s) => {
-      const start = new Date(s.startTime);
-      const end = new Date(s.endTime || new Date(start.getTime() + 30 * 60000));
-      
-      return {
-        startTime: `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`,
-        endTime: `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`,
-      };
-    });
-},  [sessions, formData.appointment.date]);
+  const bookedSlotsForDate = useMemo(() => {
+    if (!sessions || sessions.length === 0) return [];
+
+    const targetDate = calculateAppointmentDate();
+
+    return sessions
+      .filter((s) => {
+        const sessionDate = new Date(s.startTime);
+
+        return (
+          sessionDate.getFullYear() === targetDate.getFullYear() &&
+          sessionDate.getMonth() === targetDate.getMonth() &&
+          sessionDate.getDate() === targetDate.getDate() &&
+          s.status === "scheduled"
+        );
+      })
+      .map((s) => {
+        const start = new Date(s.startTime);
+        const end = new Date(
+          s.endTime || new Date(start.getTime() + 30 * 60000),
+        );
+
+        return {
+          startTime: `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`,
+          endTime: `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`,
+        };
+      });
+  }, [sessions, formData.appointment.date]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError(null);
-      // ✅ التحقق من الوقت عند وجود موعد
-  if (formData.addAppointment && !formData.appointment.time) {
-    const errorMsg = "الرجاء اختيار وقت الموعد";
-    setLocalError(errorMsg);
-    if (addToast) {
-      addToast({ message: errorMsg, type: "error" });
+    // ✅ التحقق من الوقت عند وجود موعد
+    if (formData.addAppointment && !formData.appointment.time) {
+      const errorMsg = "الرجاء اختيار وقت الموعد";
+      setLocalError(errorMsg);
+      if (addToast) {
+        addToast({ message: errorMsg, type: "error" });
+      }
+      return;
     }
-    return;
-  }
     // تحقق من صحة البيانات
     if (!formData.fullName.trim()) {
       const errorMsg = "الرجاء إدخال اسم المريض";
@@ -3847,11 +4214,17 @@ const bookedSlotsForDate = useMemo(() => {
 
       let appointmentData = null;
       if (formData.addAppointment) {
-const dateStr = toLocalDateString(calculateAppointmentDate());
-const appointmentDate = mergeLocalDateAndTime(dateStr, formData.appointment.time);
+        const dateStr = toLocalDateString(calculateAppointmentDate());
+        const appointmentDate = mergeLocalDateAndTime(
+          dateStr,
+          formData.appointment.time,
+        );
 
-        const durationMinutes = clinicData?.settings?.defaultAppointmentDuration || 30;
-        const endTime = new Date(appointmentDate.getTime() + durationMinutes * 60000);
+        const durationMinutes =
+          clinicData?.settings?.defaultAppointmentDuration || 30;
+        const endTime = new Date(
+          appointmentDate.getTime() + durationMinutes * 60000,
+        );
 
         appointmentData = {
           startTime: appointmentDate,
@@ -3874,7 +4247,16 @@ const appointmentDate = mergeLocalDateAndTime(dateStr, formData.appointment.time
           type: "success",
         });
       }
-
+      try {
+        const stored = localStorage.getItem("tutorial_step");
+        if (stored !== null) {
+          const stepNum = parseInt(stored);
+          if (stepNum >= 2 && stepNum <= 6) {
+            localStorage.setItem("tutorial_step", "7"); // ← الانتقال للشارت
+            window.dispatchEvent(new Event("tutorial-update"));
+          }
+        }
+      } catch {}
       onClose();
     } catch (error: any) {
       const errorMessage = error?.message || "حدث خطأ أثناء إضافة المريض";
@@ -3910,11 +4292,13 @@ const appointmentDate = mergeLocalDateAndTime(dateStr, formData.appointment.time
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto modal-fullscreen [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          className={`bg-white rounded-3xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden modal-fullscreen ${
+            formData.addAppointment ? "max-h-[85vh]" : "h-[85vh]"
+          }`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header - Sticky */}
-          <div className="sticky top-0 z-20 bg-white p-4 shadow-sm border-b border-gray-100">
+          <div className="shrink-0 relative bg-white p-4 shadow-sm border-b border-gray-100 z-20">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 {/* شريط عمودي ملون */}
@@ -3940,7 +4324,11 @@ const appointmentDate = mergeLocalDateAndTime(dateStr, formData.appointment.time
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-4 space-y-4 pb-24">
+          <form
+            onSubmit={handleSubmit}
+            className="flex-1 flex flex-col overflow-y-auto p-4 gap-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          >
+            {" "}
             {/* عرض الخطأ المحلي */}
             {localError && (
               <motion.div
@@ -3965,11 +4353,10 @@ const appointmentDate = mergeLocalDateAndTime(dateStr, formData.appointment.time
                 </button>
               </motion.div>
             )}
-
             {/* معلومات أساسية */}
             <div className="space-y-4">
               {/* الاسم الكامل */}
-              <div>
+              <div data-tutorial="patient-name">
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
                   الاسم الكامل <span className="text-red-500 font-bold">*</span>
                 </label>
@@ -4000,7 +4387,7 @@ const appointmentDate = mergeLocalDateAndTime(dateStr, formData.appointment.time
               </div>
 
               {/* رقم الجوال */}
-              <div>
+              <div data-tutorial="patient-phone">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   رقم الجوال (واتساب)
                 </label>
@@ -4041,7 +4428,10 @@ const appointmentDate = mergeLocalDateAndTime(dateStr, formData.appointment.time
               </div>
 
               {/* العمر والجنس في صف واحد - متساويان في الارتفاع */}
-              <div className="flex gap-3 items-stretch">
+              <div
+                className="flex gap-3 items-stretch"
+                data-tutorial="patient-age-gender"
+              >
                 <div className="w-1/2 flex-shrink-0 flex flex-col">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     العمر
@@ -4074,19 +4464,19 @@ const appointmentDate = mergeLocalDateAndTime(dateStr, formData.appointment.time
                       title="ذكر"
                     >
                       <input
-                          type="radio"
-                          value="male"
-                          checked={formData.gender === "male"}
-                          onChange={() => {
-                            setFormData({ ...formData, gender: "male" });
-                            // ✅ احفظ آخر جنس
-                            try {
-                              localStorage.setItem("last_patient_gender", "male");
-                            } catch {}
-                          }}
-                          disabled={isLoading}
-                          className="sr-only"
-                        />
+                        type="radio"
+                        value="male"
+                        checked={formData.gender === "male"}
+                        onChange={() => {
+                          setFormData({ ...formData, gender: "male" });
+                          // ✅ احفظ آخر جنس
+                          try {
+                            localStorage.setItem("last_patient_gender", "male");
+                          } catch {}
+                        }}
+                        disabled={isLoading}
+                        className="sr-only"
+                      />
                       <Mars size={20} className="text-blue-600" />
                     </label>
                     <label
@@ -4105,7 +4495,10 @@ const appointmentDate = mergeLocalDateAndTime(dateStr, formData.appointment.time
                           setFormData({ ...formData, gender: "female" });
                           // ✅ احفظ آخر جنس
                           try {
-                            localStorage.setItem("last_patient_gender", "female");
+                            localStorage.setItem(
+                              "last_patient_gender",
+                              "female",
+                            );
                           } catch {}
                         }}
                         disabled={isLoading}
@@ -4200,7 +4593,10 @@ const appointmentDate = mergeLocalDateAndTime(dateStr, formData.appointment.time
                   <label className="hidden sm:block text-sm font-medium text-gray-700 mb-2 opacity-0">
                     &nbsp;
                   </label>
-                  <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200 hover:border-gray-300 transition-colors h-full">
+                  <div
+                    className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200 hover:border-gray-300 transition-colors h-full"
+                    data-tutorial="add-appointment"
+                  >
                     <div
                       className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0 cursor-pointer ${
                         formData.addAppointment
@@ -4260,12 +4656,10 @@ const appointmentDate = mergeLocalDateAndTime(dateStr, formData.appointment.time
                 </div>
               </div>
             </div>
-
             {/* الموعد الأول */}
             {formData.addAppointment && (
               <div className="space-y-4">
                 <div className="p-4 bg-gray-50 rounded-xl space-y-4 border-2 border-dashed border-gray-200">
-
                   {/* الإجراء 2/3 والتكلفة 1/3 في صف واحد */}
                   <div className="flex gap-3 items-start">
                     <div className="w-2/3">
@@ -4329,69 +4723,68 @@ const appointmentDate = mergeLocalDateAndTime(dateStr, formData.appointment.time
                     </div>
                   </div>
 
-{/* التاريخ والوقت في صف واحد */}
-<div className="flex gap-3 items-start">
-  <div className="w-2/3">
-    <SmartDatePicker
-      label="التاريخ"
-      required
-      value={formData.appointment.date}
-      onChange={(date) => {
-        const dateStr = toLocalDateString(date);
-        setFormData({
-          ...formData,
-          appointment: {
-            ...formData.appointment,
-            date: dateStr,
-          },
-        });
-      }}
-      minDate={new Date()}
-      primaryColor={primaryColor}
-      disabled={isLoading}
-      workingHours={clinicData?.settings?.workingHours || []}
-    />
-  </div>
+                  {/* التاريخ والوقت في صف واحد */}
+                  <div className="flex gap-3 items-start">
+                    <div className="w-2/3">
+                      <SmartDatePicker
+                        label="التاريخ"
+                        required
+                        value={formData.appointment.date}
+                        onChange={(date) => {
+                          const dateStr = toLocalDateString(date);
+                          setFormData({
+                            ...formData,
+                            appointment: {
+                              ...formData.appointment,
+                              date: dateStr,
+                            },
+                          });
+                        }}
+                        minDate={new Date()}
+                        primaryColor={primaryColor}
+                        disabled={isLoading}
+                        workingHours={clinicData?.settings?.workingHours || []}
+                      />
+                    </div>
 
-  <div className="flex-1">
-    <SmartTimePicker
-      label="الوقت"
-      required
-      value={formData.appointment.time}
-      onChange={(time) =>
-        setFormData({
-          ...formData,
-          appointment: {
-            ...formData.appointment,
-            time,
-          },
-        })
-      }
-      primaryColor={primaryColor}
-      disabled={isLoading}
-      appointmentDate={appointmentDate}
-      workingHours={clinicData?.settings?.workingHours || []}
-      appointmentDuration={clinicData?.settings?.defaultAppointmentDuration || 30}
-      bookedSlots={bookedSlotsForDate}
-    />
-  </div>
-</div>
+                    <div className="flex-1">
+                      <SmartTimePicker
+                        label="الوقت"
+                        required
+                        value={formData.appointment.time}
+                        onChange={(time) =>
+                          setFormData({
+                            ...formData,
+                            appointment: {
+                              ...formData.appointment,
+                              time,
+                            },
+                          })
+                        }
+                        primaryColor={primaryColor}
+                        disabled={isLoading}
+                        appointmentDate={appointmentDate}
+                        workingHours={clinicData?.settings?.workingHours || []}
+                        appointmentDuration={
+                          clinicData?.settings?.defaultAppointmentDuration || 30
+                        }
+                        bookedSlots={bookedSlotsForDate}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
-          </form>
-          <div className="sticky bottom-[70px] z-10 pointer-events-none h-10 shadow-lg  bg-gradient-to-t from-white to-transparent" />
-
-          {/* Footer - Sticky */}
-          <div className="sticky bottom-0 z-20 bg-white border-t border-gray-200 p-4 shadow-lg">
-            <div className="flex  gap-3">
+            <div
+              className="flex gap-3 mt-auto sticky bottom-0 z-20 bg-white border-t border-gray-200 -mx-4 -mb-4 p-4 shadow-lg"
+              data-tutorial="submit-patient"
+            >
               <button
                 type="submit"
-                onClick={handleSubmit}
                 disabled={isLoading}
                 className="flex-1 px-4 py-3.5 rounded-xl text-white font-medium transition-all
-                      disabled:opacity-70 disabled:cursor-not-allowed
-                      flex items-center justify-center gap-2 shadow-lg active:scale-[0.98]"
+          disabled:opacity-70 disabled:cursor-not-allowed
+          flex items-center justify-center gap-2 shadow-lg active:scale-[0.98]"
                 style={{ background: primaryColor }}
               >
                 {isLoading ? (
@@ -4415,7 +4808,7 @@ const appointmentDate = mergeLocalDateAndTime(dateStr, formData.appointment.time
                 إلغاء
               </button>
             </div>
-          </div>
+          </form>
         </motion.div>
       </motion.div>
     </>
@@ -4459,59 +4852,60 @@ function NewAppointmentModal({
 
   const isLoading = externalLoading || internalLoading;
 
-const [formData, setFormData] = useState({
-  date: todayLocalString(),
-  time: "",
-  procedure: "",
-  cost: "",
-  caseId: "",
-  notes: "",
-});
+  const [formData, setFormData] = useState({
+    date: todayLocalString(),
+    time: "",
+    procedure: "",
+    cost: "",
+    caseId: "",
+    notes: "",
+  });
 
-const calculateAppointmentDate = useCallback((): Date => {
-  return fromLocalDateString(formData.date);
-}, [formData.date]);
+  const calculateAppointmentDate = useCallback((): Date => {
+    return fromLocalDateString(formData.date);
+  }, [formData.date]);
   // ✅ حساب المواعيد المحجوزة لليوم المحدد
-const bookedSlotsForDate = useMemo(() => {
-  if (!sessions || sessions.length === 0) return [];
-  
-  const targetDate = calculateAppointmentDate();
-  
-  return sessions
-    .filter((s) => {
-      const sessionDate = new Date(s.startTime);
-      
-      // نفس اليوم فقط
-      return (
-        sessionDate.getFullYear() === targetDate.getFullYear() &&
-        sessionDate.getMonth() === targetDate.getMonth() &&
-        sessionDate.getDate() === targetDate.getDate() &&
-        s.status === "scheduled" // فقط المجدولة
-      );
-    })
-    .map((s) => {
-      const start = new Date(s.startTime);
-      const end = new Date(s.endTime || new Date(start.getTime() + 30 * 60000));
-      
-      return {
-        startTime: `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`,
-        endTime: `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`,
-      };
-    });
-},  [sessions, formData.date]);
+  const bookedSlotsForDate = useMemo(() => {
+    if (!sessions || sessions.length === 0) return [];
 
+    const targetDate = calculateAppointmentDate();
+
+    return sessions
+      .filter((s) => {
+        const sessionDate = new Date(s.startTime);
+
+        // نفس اليوم فقط
+        return (
+          sessionDate.getFullYear() === targetDate.getFullYear() &&
+          sessionDate.getMonth() === targetDate.getMonth() &&
+          sessionDate.getDate() === targetDate.getDate() &&
+          s.status === "scheduled" // فقط المجدولة
+        );
+      })
+      .map((s) => {
+        const start = new Date(s.startTime);
+        const end = new Date(
+          s.endTime || new Date(start.getTime() + 30 * 60000),
+        );
+
+        return {
+          startTime: `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`,
+          endTime: `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`,
+        };
+      });
+  }, [sessions, formData.date]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError(null);
-      if (!formData.time) {
-    const errorMsg = "الرجاء اختيار وقت الموعد";
-    setLocalError(errorMsg);
-    if (addToast) {
-      addToast({ message: errorMsg, type: "error" });
+    if (!formData.time) {
+      const errorMsg = "الرجاء اختيار وقت الموعد";
+      setLocalError(errorMsg);
+      if (addToast) {
+        addToast({ message: errorMsg, type: "error" });
+      }
+      return;
     }
-    return;
-  }
     // التحقق من صحة البيانات
     if (!formData.procedure.trim()) {
       const errorMsg = "الرجاء إدخال الإجراء";
@@ -4544,8 +4938,11 @@ const bookedSlotsForDate = useMemo(() => {
       const [hours, minutes] = formData.time.split(":");
       appointmentDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
-      const durationMinutes = clinicData?.settings?.defaultAppointmentDuration || 30;
-      const endTime = new Date(appointmentDate.getTime() + durationMinutes * 60000);
+      const durationMinutes =
+        clinicData?.settings?.defaultAppointmentDuration || 30;
+      const endTime = new Date(
+        appointmentDate.getTime() + durationMinutes * 60000,
+      );
 
       await onSubmit({
         startTime: appointmentDate,
@@ -4577,8 +4974,11 @@ const bookedSlotsForDate = useMemo(() => {
       setInternalLoading(false);
     }
   };
-  
-  const appointmentDate = useMemo(() => calculateAppointmentDate(), [calculateAppointmentDate]);
+
+  const appointmentDate = useMemo(
+    () => calculateAppointmentDate(),
+    [calculateAppointmentDate],
+  );
   const formattedAppointmentDate = appointmentDate.toLocaleDateString("ar-SA", {
     weekday: "long",
     year: "numeric",
@@ -4653,43 +5053,41 @@ const bookedSlotsForDate = useMemo(() => {
               </motion.div>
             )}
 
-
-            
-
             {/* التاريخ والوقت في صف واحد */}
-<div className="flex gap-3 items-start">
-  <div className="w-2/3">
-    <SmartDatePicker
-      label="التاريخ"
-      required
-      value={formData.date}
-      onChange={(date) => {
-        const dateStr = toLocalDateString(date);
-        setFormData({ ...formData, date: dateStr });
-      }}
-      minDate={new Date()}
-      primaryColor={primaryColor}
-      disabled={isLoading}
-      workingHours={clinicData?.settings?.workingHours || []}
-    />
-  </div>
+            <div className="flex gap-3 items-start">
+              <div className="w-2/3">
+                <SmartDatePicker
+                  label="التاريخ"
+                  required
+                  value={formData.date}
+                  onChange={(date) => {
+                    const dateStr = toLocalDateString(date);
+                    setFormData({ ...formData, date: dateStr });
+                  }}
+                  minDate={new Date()}
+                  primaryColor={primaryColor}
+                  disabled={isLoading}
+                  workingHours={clinicData?.settings?.workingHours || []}
+                />
+              </div>
 
-  <div className="flex-1">
-    <SmartTimePicker
-      label="الوقت"
-      required
-      value={formData.time}
-      onChange={(time) => setFormData({ ...formData, time })}
-      primaryColor={primaryColor}
-      disabled={isLoading}
-      appointmentDate={appointmentDate}
-      workingHours={clinicData?.settings?.workingHours || []}
-      appointmentDuration={clinicData?.settings?.defaultAppointmentDuration || 30}
-      bookedSlots={bookedSlotsForDate}
-    />
-  </div>
-</div>
-
+              <div className="flex-1">
+                <SmartTimePicker
+                  label="الوقت"
+                  required
+                  value={formData.time}
+                  onChange={(time) => setFormData({ ...formData, time })}
+                  primaryColor={primaryColor}
+                  disabled={isLoading}
+                  appointmentDate={appointmentDate}
+                  workingHours={clinicData?.settings?.workingHours || []}
+                  appointmentDuration={
+                    clinicData?.settings?.defaultAppointmentDuration || 30
+                  }
+                  bookedSlots={bookedSlotsForDate}
+                />
+              </div>
+            </div>
 
             {/* الإجراء والتكلفة في صف واحد */}
             <div className="flex gap-3 items-start">

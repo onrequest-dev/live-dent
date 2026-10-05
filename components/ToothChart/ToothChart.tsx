@@ -22,6 +22,7 @@ import {
 import { fetchDentalChart, saveDentalChart } from "@/client/helpers/dental-chart";
 import { ToothChartSkeleton } from "./ToothChartSkeleton";
 import { getToothName } from "@/lib/toothNames";
+import { TutorialOverlay, useTutorialStep } from "../TutorialOverlay";
 // ============================================================
 // أنواع البيانات
 // ============================================================
@@ -642,6 +643,16 @@ export const ToothChart = forwardRef<ToothChartRef, ToothChartProps>(
         originalDataRef.current = JSON.parse(JSON.stringify(teethData));
         setIsDirty(false);
         onDirtyChange?.(false);
+        try {
+          const stored = localStorage.getItem("tutorial_step");
+          if (stored !== null) {
+            const stepNum = parseInt(stored);
+            if (stepNum === 9) {
+              localStorage.setItem("tutorial_step", "-1");
+              window.dispatchEvent(new Event("tutorial-update"));
+            }
+          }
+        } catch {}
         setSaveMessage({ type: "success", text: "تم حفظ الشارت بنجاح!" });
       } catch (error: any) {
         setSaveMessage({
@@ -662,7 +673,7 @@ export const ToothChart = forwardRef<ToothChartRef, ToothChartProps>(
       }),
       [handleSave],
     );
-
+ const { step: tutorialStep, goToStep, endTutorial } = useTutorialStep();
     // سكيليتون التحميل
     const renderSkeleton = () => (
       <div ref={containerRef} className={`tooth-chart-wrapper ${className}`}>
@@ -806,22 +817,26 @@ export const ToothChart = forwardRef<ToothChartRef, ToothChartProps>(
                   exit={{ opacity: 0, y: 20 }}
                 >
                   <ToothInfoPanel
-  tooth={selectedTooth}
-  onUpdate={handleUpdateTooth}
-  primaryColor={primaryColor}
-  editable={editable}
-  isMobile={true}
-  patientId={patientId}
-  clinicId={clinicId}
-  patientName={patientName}
-  patientPhone={patientPhone}     
-  patientGender={patientGender}   
-  clinicName={clinicName}         
-  clinicData={clinicData}
-  existingSessions={existingSessions}
-  onTemplatesApplied={() => { console.log("تم تطبيق القالب"); }}
-  onSessionsChanged={() => { console.log("تم تطبيق قالب - تحديث المواعيد"); }}
-/>
+                    tooth={selectedTooth}
+                    onUpdate={handleUpdateTooth}
+                    primaryColor={primaryColor}
+                    editable={editable}
+                    isMobile={true}
+                    patientId={patientId}
+                    clinicId={clinicId}
+                    patientName={patientName}
+                    patientPhone={patientPhone}
+                    patientGender={patientGender}
+                    clinicName={clinicName}
+                    clinicData={clinicData}
+                    existingSessions={existingSessions}
+                    onTemplatesApplied={() => {
+                      console.log("تم تطبيق القالب");
+                    }}
+                    onSessionsChanged={() => {
+                      console.log("تم تطبيق قالب - تحديث المواعيد");
+                    }}
+                  />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -868,22 +883,26 @@ export const ToothChart = forwardRef<ToothChartRef, ToothChartProps>(
                     exit={{ opacity: 0, x: 20 }}
                   >
                     <ToothInfoPanel
-  tooth={selectedTooth}
-  onUpdate={handleUpdateTooth}
-  primaryColor={primaryColor}
-  editable={editable}
-  isMobile={false}
-  patientId={patientId}
-  clinicId={clinicId}
-  patientName={patientName}
-  patientPhone={patientPhone}      
-  patientGender={patientGender}    
-  clinicName={clinicName}          
-  clinicData={clinicData}
-  existingSessions={existingSessions}
-  onTemplatesApplied={() => { console.log("تم تطبيق القالب"); }}
-  onSessionsChanged={() => { console.log("تم تطبيق قالب - تحديث المواعيد"); }}
-/>
+                      tooth={selectedTooth}
+                      onUpdate={handleUpdateTooth}
+                      primaryColor={primaryColor}
+                      editable={editable}
+                      isMobile={false}
+                      patientId={patientId}
+                      clinicId={clinicId}
+                      patientName={patientName}
+                      patientPhone={patientPhone}
+                      patientGender={patientGender}
+                      clinicName={clinicName}
+                      clinicData={clinicData}
+                      existingSessions={existingSessions}
+                      onTemplatesApplied={() => {
+                        console.log("تم تطبيق القالب");
+                      }}
+                      onSessionsChanged={() => {
+                        console.log("تم تطبيق قالب - تحديث المواعيد");
+                      }}
+                    />
                   </motion.div>
                 ) : (
                   <motion.div
@@ -906,6 +925,19 @@ export const ToothChart = forwardRef<ToothChartRef, ToothChartProps>(
               </AnimatePresence>
             </div>
           </div>
+        )}
+        {tutorialStep !== null && tutorialStep >= 7 && tutorialStep <= 9 && (
+          <TutorialOverlay
+            step={tutorialStep}
+            primaryColor={primaryColor}
+            onStart={() => {}}
+            onEnd={endTutorial}
+            onNext={() => goToStep(tutorialStep + 1)}
+            onPrev={() => {
+              // منع العودة قبل 7 (المودال مغلق)
+              if (tutorialStep > 7) goToStep(tutorialStep - 1);
+            }}
+          />
         )}
       </div>
     );
