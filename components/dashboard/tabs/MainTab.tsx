@@ -707,39 +707,101 @@ export function MainTab({
     setEditingSession(null);
   };
 
-  const handleDeleteSession = async (sessionId: string) => {
-    const result = await deleteSession(sessionId);
-    if (!result.success) {
-      throw new Error("فشل حذف الجلسة");
+const handleDeleteSession = async (sessionId: string) => {
+  const result = await deleteSession(sessionId);
+
+  const errorMsg = (result.error || "").toLowerCase();
+  const isNotFound =
+    errorMsg.includes("not found") ||
+    errorMsg.includes("غير موجود") ||
+    errorMsg.includes("no rows") ||
+    errorMsg.includes("pgrst116");
+
+  if (!result.success && !isNotFound) {
+    throw new Error(result.error || "فشل حذف الجلسة");
+  }
+
+  setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+
+  // ✅ تنظيف sessionStorage
+  try {
+    const storedNewSessions = sessionStorage.getItem("newsessions");
+    if (storedNewSessions) {
+      const parsed = JSON.parse(storedNewSessions);
+      if (Array.isArray(parsed)) {
+        const filtered = parsed.filter((s: any) => s.id !== sessionId);
+        sessionStorage.setItem("newsessions", JSON.stringify(filtered));
+      }
     }
-    setSessions((prev) => prev.filter((s) => s.id !== sessionId));
-    // لا حاجة لتحديث selectedPatientSessions يدوياً لأنه مشتق من sessions مباشرة
-    if (editingSession?.id === sessionId) {
-      setShowEditSessionModal(false);
-      setEditingSession(null);
-    }
-  };
+  } catch (storageErr) {
+    console.warn("failed to clean sessionStorage:", storageErr);
+  }
+
+  if (editingSession?.id === sessionId) {
+    setShowEditSessionModal(false);
+    setEditingSession(null);
+  }
+};
 
   const handleRequestDeleteSession = (sessionId: string) => {
     setSessionToDelete(sessionId);
     setShowDeleteConfirm(true);
   };
 
-  const handleConfirmDeleteSession = async () => {
-    if (!sessionToDelete) return;
+const handleConfirmDeleteSession = async () => {
+  if (!sessionToDelete) return;
+
+  try {
     const result = await deleteSession(sessionToDelete);
-    if (!result.success) {
-      throw new Error("فشل حذف الجلسة");
+
+    // ✅ إذا فشل الحذف بسبب "الجلسة غير موجودة" — نعتبره نجاحاً (سبق حذفها)
+    const errorMsg = (result.error || "").toLowerCase();
+    const isNotFound =
+      errorMsg.includes("not found") ||
+      errorMsg.includes("غير موجود") ||
+      errorMsg.includes("no rows") ||
+      errorMsg.includes("pgrst116");
+
+    if (!result.success && !isNotFound) {
+      throw new Error(result.error || "فشل حذف الجلسة");
     }
+
+    // ✅ إزالة من الحالة المحلية
     setSessions((prev) => prev.filter((s) => s.id !== sessionToDelete));
-    // لا حاجة لتحديث selectedPatientSessions يدوياً لأنه مشتق من sessions مباشرة
+
+    // ✅ إزالة من sessionStorage (إن وُجدت)
+    try {
+      const storedNewSessions = sessionStorage.getItem("newsessions");
+      if (storedNewSessions) {
+        const parsed = JSON.parse(storedNewSessions);
+        if (Array.isArray(parsed)) {
+          const filtered = parsed.filter(
+            (s: any) => s.id !== sessionToDelete
+          );
+          sessionStorage.setItem(
+            "newsessions",
+            JSON.stringify(filtered)
+          );
+        }
+      }
+    } catch (storageErr) {
+      console.warn("failed to clean sessionStorage:", storageErr);
+    }
+
+    // ✅ إغلاق مودال التعديل إن كان لنفس الجلسة
     if (editingSession?.id === sessionToDelete) {
       setShowEditSessionModal(false);
       setEditingSession(null);
     }
+
+    // ✅ إغلاق مودال التأكيد
     setShowDeleteConfirm(false);
     setSessionToDelete(null);
-  };
+  } catch (error: any) {
+    console.error("خطأ في حذف الجلسة:", error);
+    throw error; // ConfirmDeleteModal سيعرض الرسالة
+  }
+};
 
   const handleAddPatient = async (patientData: any) => {
     setIsAddingPatient(true);
@@ -835,26 +897,29 @@ export function MainTab({
     }
   };
 
-  if (!clinicData) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <ToothLoader />
-        </div>
-      </div>
-    );
+  // ✅ useEffect قبل الشرط
+useEffect(() => {
+  if (
+    tutorialStep !== null &&
+    tutorialStep >= 3 &&
+    tutorialStep <= 6 &&
+    !showNewPatientModal
+  ) {
+    setShowNewPatientModal(true);
   }
+}, [tutorialStep, showNewPatientModal]);
 
-  useEffect(() => {
-    if (
-      tutorialStep !== null &&
-      tutorialStep >= 3 &&
-      tutorialStep <= 6 &&
-      !showNewPatientModal
-    ) {
-      setShowNewPatientModal(true);
-    }
-  }, [tutorialStep, showNewPatientModal]);
+// ✅ الآن يمكن عمل return مشروط
+if (!clinicData) {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <ToothLoader />
+      </div>
+    </div>
+  );
+}
+
 
   return (
     <>
@@ -2259,7 +2324,7 @@ function PatientDetailsCard({
         {/* ============================================================ */}
         {/* محتوى التبويبات مع أنيميشن */}
         {/* ============================================================ */}
-        <div className="p-4 sm:p-4">
+        <div className="p-2 sm:p-2">
           <AnimatePresence mode="wait">
             {/* تبويب المواعيد */}
             {activeTab === "appointments" && (
@@ -3948,6 +4013,7 @@ function ConfirmDeleteModal({
   if (!isOpen) return null;
 
   const handleConfirm = async () => {
+    if (isLoading) return
     setIsLoading(true);
     try {
       await onConfirm();

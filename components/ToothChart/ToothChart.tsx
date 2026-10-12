@@ -404,8 +404,6 @@ function normalizeChartTeeth(
 }
 
 
-
-// ✅ دالة لدمج ألوان القوالب المعينة مع بيانات الشارت
 const mergeTemplateColors = (teeth: ToothData[], patientId: string): ToothData[] => {
   const storageKey = `tooth_template_assignments_${patientId}`;
   const savedAssignments = localStorage.getItem(storageKey);
@@ -417,25 +415,38 @@ const mergeTemplateColors = (teeth: ToothData[], patientId: string): ToothData[]
     const assignments = JSON.parse(savedAssignments);
     const templates = JSON.parse(savedTemplates);
     
-    // إنشاء خريطة: رقم السن -> القالب
-    const toothTemplateMap = new Map<number, any>();
+    // خريطة: رقم السن → مصفوفة قوالب
+    const toothTemplatesMap = new Map<number, any[]>();
     
     for (const assignment of assignments) {
-      const template = templates.find((t: any) => t.id === assignment.templateId);
-      if (template) {
-        toothTemplateMap.set(assignment.toothNumber, template);
+      // ✅ دعم البنية القديمة والجديدة
+      const templateIds = assignment.templates
+        ? assignment.templates.map((t: any) => t.templateId)
+        : [assignment.templateId];
+      
+      const matched = templateIds
+        .map((id: string) => templates.find((t: any) => t.id === id))
+        .filter(Boolean);
+      
+      if (matched.length > 0) {
+        toothTemplatesMap.set(assignment.toothNumber, matched);
       }
     }
     
-    // تطبيق الألوان والأسماء على الأسنان
     return teeth.map((tooth) => {
-      const template = toothTemplateMap.get(tooth.id);
-      if (template) {
+      const toothTemplates = toothTemplatesMap.get(tooth.id);
+      if (toothTemplates && toothTemplates.length > 0) {
+        // ✅ آخر قالب يحدد اللون
+        const lastTemplate = toothTemplates[toothTemplates.length - 1];
+        
+        // ✅ دمج الأسماء: "حشوة + تلبيسة"
+        const combinedName = toothTemplates.map((t) => t.name).join(" + ");
+        
         return {
           ...tooth,
-          color: template.color,
+          color: lastTemplate.color,
           procedure: "custom" as const,
-          customProcedure: template.name,
+          customProcedure: combinedName,
         };
       }
       return tooth;
