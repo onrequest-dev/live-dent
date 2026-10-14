@@ -8,6 +8,7 @@ import { ToothData } from "./ToothChart";
 import { createBulkSessions } from "@/client/helpers/session";
 import { getToothDisplay } from "@/lib/toothNames";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { setItemAndSync } from "@/client/helpers/sync-storage";
 
 // ============================================================
 // الواجهات
@@ -630,11 +631,9 @@ if (existing) {
     templates: [{
       templateId: showConfirmApply.id,
       assignedAt: new Date().toISOString(),
-    }],
-  });
-}
-
-localStorage.setItem(storageKey, JSON.stringify(assignments));
+    });
+    
+await setItemAndSync(storageKey, JSON.stringify(filtered));
 
     // ✅ تحديث السن فوراً
    // ✅ تحديث السن فوراً
@@ -694,45 +693,25 @@ setShowTemplateList(false);
 };
 
   // ✅ إزالة القالب مع تأكيد
- const handleConfirmRemove = (templateId: string) => {
-  const storageKey = getStorageKey();
-  if (!storageKey) return;
+  const handleConfirmRemove = async () => {
+    const storageKey = getStorageKey();
+    if (!storageKey) return;
 
-  const savedAssignments = localStorage.getItem(storageKey);
-  const assignments = savedAssignments ? JSON.parse(savedAssignments) : [];
-  
-  const toothAssignment = assignments.find((a: any) => a.toothNumber === tooth.id);
-  if (!toothAssignment) return;
-  
-  // ✅ دعم البنية القديمة
-  if (!toothAssignment.templates) {
-    toothAssignment.templates = [{ templateId: toothAssignment.templateId }];
-    delete toothAssignment.templateId;
-    delete toothAssignment.assignedAt;
-  }
-  
-  // ✅ إزالة القالب المحدد فقط
-  toothAssignment.templates = toothAssignment.templates.filter(
-    (t: any) => t.templateId !== templateId
-  );
-  
-  // ✅ إذا لم يتبقَّ أي قالب → احذف التعيين بالكامل
-  const filtered = toothAssignment.templates.length > 0
-    ? assignments.map((a: any) => a.toothNumber === tooth.id ? toothAssignment : a)
-    : assignments.filter((a: any) => a.toothNumber !== tooth.id);
-  
-  localStorage.setItem(storageKey, JSON.stringify(filtered));
-  
-  loadAssignedTemplates();
-  setShowConfirmRemove(false);
-  window.dispatchEvent(new CustomEvent("toothAssignmentsChanged"));
-  
-  setApplyMessage({ 
-    type: 'success', 
-    text: 'تم إزالة القالب. المواعيد السابقة ستبقى موجودة.' 
-  });
-};
-  const [templateToRemove, setTemplateToRemove] = useState<string | null>(null);
+    const savedAssignments = localStorage.getItem(storageKey);
+    const assignments = savedAssignments ? JSON.parse(savedAssignments) : [];
+    const updated = assignments.filter((a: any) => a.toothNumber !== tooth.id);
+await setItemAndSync(storageKey, JSON.stringify(updated));
+    
+    setAssignedTemplate(null);
+    setShowConfirmRemove(false);
+    window.dispatchEvent(new CustomEvent("toothAssignmentsChanged"));
+    
+    setApplyMessage({ 
+      type: 'success', 
+      text: 'تم إزالة القالب. المواعيد السابقة ستبقى موجودة.' 
+    });
+  };
+
   const hasTreatments = localTreatments.length > 0;
 
   return (
