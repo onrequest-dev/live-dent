@@ -23,6 +23,7 @@ import { fetchDentalChart, saveDentalChart } from "@/client/helpers/dental-chart
 import { ToothChartSkeleton } from "./ToothChartSkeleton";
 import { getToothName } from "@/lib/toothNames";
 import { TutorialOverlay, useTutorialStep } from "../TutorialOverlay";
+import { pullFromServer } from "@/client/helpers/sync-storage";
 // ============================================================
 // أنواع البيانات
 // ============================================================
@@ -488,6 +489,10 @@ export const ToothChart = forwardRef<ToothChartRef, ToothChartProps>(
     const [isLoading, setIsLoading] = useState(false);
     const [fetchError, setFetchError] = useState<string | null>(null);
     const infoPanelRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+      pullFromServer();
+    }, []); 
 
     // كشف حجم الشاشة
     useEffect(() => {

@@ -8,6 +8,7 @@ import { ToothData } from "./ToothChart";
 import { createBulkSessions } from "@/client/helpers/session";
 import { getToothDisplay } from "@/lib/toothNames";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { setItemAndSync } from "@/client/helpers/sync-storage";
 
 // ============================================================
 // الواجهات
@@ -598,7 +599,7 @@ const handleConfirmApply = async () => {
       assignedAt: new Date().toISOString(),
     });
     
-    localStorage.setItem(storageKey, JSON.stringify(filtered));
+await setItemAndSync(storageKey, JSON.stringify(filtered));
 
     // ✅ تحديث السن فوراً
     const updatedTooth: ToothData = {
@@ -654,14 +655,14 @@ const handleConfirmApply = async () => {
 };
 
   // ✅ إزالة القالب مع تأكيد
-  const handleConfirmRemove = () => {
+  const handleConfirmRemove = async () => {
     const storageKey = getStorageKey();
     if (!storageKey) return;
 
     const savedAssignments = localStorage.getItem(storageKey);
     const assignments = savedAssignments ? JSON.parse(savedAssignments) : [];
     const updated = assignments.filter((a: any) => a.toothNumber !== tooth.id);
-    localStorage.setItem(storageKey, JSON.stringify(updated));
+await setItemAndSync(storageKey, JSON.stringify(updated));
     
     setAssignedTemplate(null);
     setShowConfirmRemove(false);
