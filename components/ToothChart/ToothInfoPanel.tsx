@@ -3,7 +3,16 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, X, Plus, CalendarPlus, Trash2, AlertTriangle, Clock, CalendarDays } from "lucide-react";
+import {
+  Check,
+  X,
+  Plus,
+  CalendarPlus,
+  Trash2,
+  AlertTriangle,
+  Clock,
+  CalendarDays,
+} from "lucide-react";
 import { ToothData } from "./ToothChart";
 import { createBulkSessions } from "@/client/helpers/session";
 import { getToothDisplay } from "@/lib/toothNames";
@@ -59,83 +68,80 @@ interface WorkingHour {
 
 // ✅ تطبيع ساعات العمل - نسخة محسنة
 const normalizeWorkingHours = (workingHours: any): WorkingHour[] => {
-
-  
   if (!workingHours) {
-
     return [];
   }
-  
+
   // ✅ إذا كانت مصفوفة
   if (Array.isArray(workingHours)) {
-
     return workingHours
-      .filter((wh: any) => wh && typeof wh === 'object')
+      .filter((wh: any) => wh && typeof wh === "object")
       .map((wh: any) => ({
         day: wh.day !== undefined ? wh.day : 0,
-        start: wh.start || '09:00',
-        end: wh.end || '17:00',
+        start: wh.start || "09:00",
+        end: wh.end || "17:00",
         isClosed: wh.isClosed || false,
       }));
   }
-  
+
   // ✅ إذا كانت كائن
-  if (typeof workingHours === 'object') {
+  if (typeof workingHours === "object") {
     const result: WorkingHour[] = [];
-    
+
     // محاولة قراءة المفاتيح الرقمية (0-6)
     for (let i = 0; i <= 6; i++) {
       const dayData = workingHours[String(i)] || workingHours[i];
-      if (dayData && typeof dayData === 'object') {
+      if (dayData && typeof dayData === "object") {
         result.push({
           day: i,
-          start: dayData.start || '09:00',
-          end: dayData.end || '17:00',
+          start: dayData.start || "09:00",
+          end: dayData.end || "17:00",
           isClosed: dayData.isClosed || false,
         });
       }
     }
-    
-    if (result.length > 0) {
 
+    if (result.length > 0) {
       return result;
     }
-    
+
     // محاولة قراءة أسماء الأيام
     const dayNames: { [key: string]: number } = {
-      'saturday': 0, 'sunday': 1, 'monday': 2, 'tuesday': 3,
-      'wednesday': 4, 'thursday': 5, 'friday': 6,
+      saturday: 0,
+      sunday: 1,
+      monday: 2,
+      tuesday: 3,
+      wednesday: 4,
+      thursday: 5,
+      friday: 6,
     };
-    
+
     for (const [dayName, dayIndex] of Object.entries(dayNames)) {
       const dayData = workingHours[dayName];
-      if (dayData && typeof dayData === 'object') {
+      if (dayData && typeof dayData === "object") {
         result.push({
           day: dayIndex,
-          start: dayData.start || '09:00',
-          end: dayData.end || '17:00',
+          start: dayData.start || "09:00",
+          end: dayData.end || "17:00",
           isClosed: dayData.isClosed || false,
         });
       }
     }
-    
-    if (result.length > 0) {
 
+    if (result.length > 0) {
       return result;
     }
   }
-  
 
-  
   // ✅ ساعات عمل افتراضية (9-5) إذا فشل كل شيء
   return [
-    { day: 0, start: '09:00', end: '17:00', isClosed: false },
-    { day: 1, start: '09:00', end: '17:00', isClosed: false },
-    { day: 2, start: '09:00', end: '17:00', isClosed: false },
-    { day: 3, start: '09:00', end: '17:00', isClosed: false },
-    { day: 4, start: '09:00', end: '17:00', isClosed: false },
-    { day: 5, start: '09:00', end: '17:00', isClosed: false },
-    { day: 6, start: '09:00', end: '17:00', isClosed: true }, // الجمعة عطلة افتراضية
+    { day: 0, start: "09:00", end: "17:00", isClosed: false },
+    { day: 1, start: "09:00", end: "17:00", isClosed: false },
+    { day: 2, start: "09:00", end: "17:00", isClosed: false },
+    { day: 3, start: "09:00", end: "17:00", isClosed: false },
+    { day: 4, start: "09:00", end: "17:00", isClosed: false },
+    { day: 5, start: "09:00", end: "17:00", isClosed: false },
+    { day: 6, start: "09:00", end: "17:00", isClosed: true }, // الجمعة عطلة افتراضية
   ];
 };
 
@@ -158,11 +164,10 @@ const convertJsDayToOurDay = (jsDay: number): number => {
 // ✅ التحقق إذا كان اليوم عطلة
 const isDayClosed = (date: Date, workingHours: WorkingHour[]): boolean => {
   if (!workingHours || workingHours.length === 0) return false;
-  
+
   const ourDay = convertJsDayToOurDay(date.getDay());
   const wh = workingHours.find((h) => h.day === ourDay);
-  
-  
+
   return !wh || wh.isClosed;
 };
 
@@ -175,7 +180,7 @@ const getFirstAvailableTime = (
 ): Date | null => {
   const ourDay = convertJsDayToOurDay(date.getDay());
   const wh = workingHours.find((h) => h.day === ourDay);
-  
+
   if (!wh || wh.isClosed) {
     return null;
   }
@@ -190,13 +195,19 @@ const getFirstAvailableTime = (
 
   const now = new Date();
   let currentSlot = new Date(workStart);
-  
+
   // ✅ إذا كان اليوم هو اليوم الحالي - ابدأ من الساعة الحالية
   if (date.toDateString() === now.toDateString()) {
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    const roundedMinutes = Math.ceil(currentMinutes / appointmentDuration) * appointmentDuration;
+    const roundedMinutes =
+      Math.ceil(currentMinutes / appointmentDuration) * appointmentDuration;
     const roundedDate = new Date(date);
-    roundedDate.setHours(Math.floor(roundedMinutes / 60), roundedMinutes % 60, 0, 0);
+    roundedDate.setHours(
+      Math.floor(roundedMinutes / 60),
+      roundedMinutes % 60,
+      0,
+      0,
+    );
     if (roundedDate > workStart) {
       currentSlot = new Date(roundedDate);
     }
@@ -204,8 +215,10 @@ const getFirstAvailableTime = (
 
   // ✅ البحث عن أول وقت متاح
   while (currentSlot < workEnd) {
-    const slotEnd = new Date(currentSlot.getTime() + appointmentDuration * 60000);
-    
+    const slotEnd = new Date(
+      currentSlot.getTime() + appointmentDuration * 60000,
+    );
+
     if (slotEnd > workEnd) break;
 
     let isAvailable = true;
@@ -240,9 +253,7 @@ const getNextAvailableDate = (
   let currentDate = new Date(startDate);
   currentDate.setHours(0, 0, 0, 0);
 
-
   for (let i = 0; i < 365; i++) {
-    
     if (!isDayClosed(currentDate, workingHours)) {
       const availableTime = getFirstAvailableTime(
         currentDate,
@@ -250,15 +261,15 @@ const getNextAvailableDate = (
         bookedSessions,
         appointmentDuration,
       );
-      
+
       if (availableTime) {
         return { date: new Date(currentDate), time: availableTime };
       }
     }
-    
+
     currentDate = new Date(currentDate.getTime() + 24 * 60 * 60 * 1000);
   }
-  
+
   return null;
 };
 
@@ -280,79 +291,83 @@ export function ToothInfoPanel({
   onSessionsChanged,
 }: ToothInfoPanelProps) {
   const [localTreatments, setLocalTreatments] = useState<string[]>([]);
-  const [assignedTemplates, setAssignedTemplates] = useState<TreatmentTemplateSummary[]>([]);
-  const [availableTemplates, setAvailableTemplates] = useState<TreatmentTemplateSummary[]>([]);
+  const [assignedTemplate, setAssignedTemplate] =
+    useState<TreatmentTemplateSummary | null>(null);
+  const [availableTemplates, setAvailableTemplates] = useState<
+    TreatmentTemplateSummary[]
+  >([]);
   const [showTemplateList, setShowTemplateList] = useState(false);
-  const [showConfirmApply, setShowConfirmApply] = useState<TreatmentTemplateSummary | null>(null);
+  const [showConfirmApply, setShowConfirmApply] =
+    useState<TreatmentTemplateSummary | null>(null);
   const [showConfirmRemove, setShowConfirmRemove] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
-  const [applyMessage, setApplyMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [displayPreference, setDisplayPreference] = useState<"number" | "name" | "both">("number");
+  const [applyMessage, setApplyMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+  const [displayPreference, setDisplayPreference] = useState<
+    "number" | "name" | "both"
+  >("number");
   // ✅ جديد - للتنقل بين التبويبات
-const router = useRouter();
-const pathname = usePathname();
-const searchParams = useSearchParams();
-useEffect(() => {
-  const saved = localStorage.getItem('tooth_display_preference');
-  if (saved === 'number' || saved === 'name' || saved === 'both') {
-    setDisplayPreference(saved);
-  }
-  
-  const handleChange = (e: Event) => {
-    const customEvent = e as CustomEvent;
-    setDisplayPreference(customEvent.detail);
-  };
-  
-  window.addEventListener('toothDisplayPreferenceChanged', handleChange);
-  return () => window.removeEventListener('toothDisplayPreferenceChanged', handleChange);
-}, []);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const saved = localStorage.getItem("tooth_display_preference");
+    if (saved === "number" || saved === "name" || saved === "both") {
+      setDisplayPreference(saved);
+    }
+
+    const handleChange = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      setDisplayPreference(customEvent.detail);
+    };
+
+    window.addEventListener("toothDisplayPreferenceChanged", handleChange);
+    return () =>
+      window.removeEventListener("toothDisplayPreferenceChanged", handleChange);
+  }, []);
   // ✅ مفتاح التخزين الخاص بالمريض
   const getStorageKey = () => {
     return patientId ? `tooth_template_assignments_${patientId}` : null;
   };
 
   // ✅ قراءة القالب المعين لهذا السن (لهذا المريض)
-const loadAssignedTemplates = () => {
-  const storageKey = getStorageKey();
-  if (!storageKey) {
-    setAssignedTemplates([]);
-    return;
-  }
-
-  const savedAssignments = localStorage.getItem(storageKey);
-  const savedTemplates = localStorage.getItem("treatment_templates");
-  
-  if (savedAssignments && savedTemplates) {
-    try {
-      const assignments = JSON.parse(savedAssignments);
-      const templates = JSON.parse(savedTemplates);
-      
-      const toothAssignment = assignments.find(
-        (a: any) => a.toothNumber === tooth.id
-      );
-      
-      if (toothAssignment) {
-        // ✅ دعم البنية القديمة (templateId مفرد) والجديدة (templates مصفوفة)
-        const templateIds = toothAssignment.templates 
-          ? toothAssignment.templates.map((t: any) => t.templateId)
-          : [toothAssignment.templateId];
-        
-        const matched = templateIds
-          .map((id: string) => templates.find((t: any) => t.id === id))
-          .filter(Boolean);
-        
-        setAssignedTemplates(matched);
-      } else {
-        setAssignedTemplates([]);
-      }
-    } catch (e) {
-      console.error("خطأ في قراءة التعيينات:", e);
-      setAssignedTemplates([]);
+  const loadAssignedTemplate = () => {
+    const storageKey = getStorageKey();
+    if (!storageKey) {
+      setAssignedTemplate(null);
+      return;
     }
-  } else {
-    setAssignedTemplates([]);
-  }
-};
+
+    const savedAssignments = localStorage.getItem(storageKey);
+    const savedTemplates = localStorage.getItem("treatment_templates");
+
+    if (savedAssignments && savedTemplates) {
+      try {
+        const assignments = JSON.parse(savedAssignments);
+        const templates = JSON.parse(savedTemplates);
+
+        const toothAssignment = assignments.find(
+          (a: any) => a.toothNumber === tooth.id,
+        );
+
+        if (toothAssignment) {
+          const template = templates.find(
+            (t: any) => t.id === toothAssignment.templateId,
+          );
+          setAssignedTemplate(template || null);
+        } else {
+          setAssignedTemplate(null);
+        }
+      } catch (e) {
+        console.error("خطأ في قراءة التعيينات:", e);
+        setAssignedTemplate(null);
+      }
+    } else {
+      setAssignedTemplate(null);
+    }
+  };
 
   // ✅ قراءة القوالب المتاحة
   const loadAvailableTemplates = () => {
@@ -369,104 +384,119 @@ const loadAssignedTemplates = () => {
     }
   };
 
-
   // ✅ حساب المواعيد المتوقعة للعرض في المودال
-const calculateExpectedAppointments = (): { 
-  appointment: any; 
-  date: Date; 
-  time: string; 
-  dayName: string;
-  dateStr: string;
-}[] => {
-  if (!showConfirmApply) return [];
+  const calculateExpectedAppointments = (): {
+    appointment: any;
+    date: Date;
+    time: string;
+    dayName: string;
+    dateStr: string;
+  }[] => {
+    if (!showConfirmApply) return [];
 
-  const workingHours = normalizeWorkingHours(clinicData?.settings?.workingHours);
-  const appointmentDuration = clinicData?.settings?.defaultAppointmentDuration || 30;
+    const workingHours = normalizeWorkingHours(
+      clinicData?.settings?.workingHours,
+    );
+    const appointmentDuration =
+      clinicData?.settings?.defaultAppointmentDuration || 30;
 
-  // ✅ تحميل المواعيد المحجوزة
-  const bookedSessions: { startTime: Date; endTime: Date }[] = [];
-  
-  if (existingSessions && existingSessions.length > 0) {
-    for (const session of existingSessions) {
-      if (session.status === "scheduled") {
-        bookedSessions.push({
-          startTime: new Date(session.startTime),
-          endTime: new Date(session.endTime || new Date(new Date(session.startTime).getTime() + appointmentDuration * 60000)),
+    // ✅ تحميل المواعيد المحجوزة
+    const bookedSessions: { startTime: Date; endTime: Date }[] = [];
+
+    if (existingSessions && existingSessions.length > 0) {
+      for (const session of existingSessions) {
+        if (session.status === "scheduled") {
+          bookedSessions.push({
+            startTime: new Date(session.startTime),
+            endTime: new Date(
+              session.endTime ||
+                new Date(
+                  new Date(session.startTime).getTime() +
+                    appointmentDuration * 60000,
+                ),
+            ),
+          });
+        }
+      }
+    }
+
+    const expectedAppointments: any[] = [];
+    let currentDate = new Date();
+
+    for (const appointment of showConfirmApply.appointments) {
+      currentDate = new Date(
+        currentDate.getTime() +
+          appointment.daysFromPrevious * 24 * 60 * 60 * 1000,
+      );
+
+      const availableSlot = getNextAvailableDate(
+        currentDate,
+        workingHours,
+        bookedSessions,
+        appointmentDuration,
+      );
+
+      if (availableSlot) {
+        const startTime = availableSlot.time;
+        const endTime = new Date(
+          startTime.getTime() + appointmentDuration * 60000,
+        );
+
+        // ✅ إضافة للمحجوزات
+        bookedSessions.push({ startTime, endTime });
+
+        const dayName = startTime.toLocaleDateString("ar-SA", {
+          weekday: "long",
+        });
+        const dayNumber = String(startTime.getDate()).padStart(2, "0");
+        const monthNumber = String(startTime.getMonth() + 1).padStart(2, "0");
+        const yearNumber = startTime.getFullYear();
+        const dateStr = `${dayNumber}/${monthNumber}/${yearNumber}`;
+
+        const hours = startTime.getHours();
+        const minutes = startTime.getMinutes();
+        const period = hours >= 12 ? "م" : "ص";
+        const displayHours = hours % 12 || 12;
+        const timeStr = `${displayHours}:${String(minutes).padStart(2, "0")} ${period}`;
+
+        expectedAppointments.push({
+          appointment,
+          date: startTime,
+          dayName,
+          dateStr,
+          time: timeStr,
+        });
+      } else {
+        expectedAppointments.push({
+          appointment,
+          date: null,
+          dayName: "غير متاح",
+          dateStr: "لا يوجد وقت متاح",
+          time: "-",
         });
       }
     }
-  }
 
-  const expectedAppointments: any[] = [];
-  let currentDate = new Date();
-
-  for (const appointment of showConfirmApply.appointments) {
-    currentDate = new Date(currentDate.getTime() + appointment.daysFromPrevious * 24 * 60 * 60 * 1000);
-
-    const availableSlot = getNextAvailableDate(
-      currentDate,
-      workingHours,
-      bookedSessions,
-      appointmentDuration,
-    );
-
-    if (availableSlot) {
-      const startTime = availableSlot.time;
-      const endTime = new Date(startTime.getTime() + appointmentDuration * 60000);
-      
-      // ✅ إضافة للمحجوزات
-      bookedSessions.push({ startTime, endTime });
-
-      const dayName = startTime.toLocaleDateString("ar-SA", { weekday: "long" });
-      const dayNumber = String(startTime.getDate()).padStart(2, "0");
-      const monthNumber = String(startTime.getMonth() + 1).padStart(2, "0");
-      const yearNumber = startTime.getFullYear();
-      const dateStr = `${dayNumber}/${monthNumber}/${yearNumber}`;
-
-      const hours = startTime.getHours();
-      const minutes = startTime.getMinutes();
-      const period = hours >= 12 ? "م" : "ص";
-      const displayHours = hours % 12 || 12;
-      const timeStr = `${displayHours}:${String(minutes).padStart(2, "0")} ${period}`;
-
-      expectedAppointments.push({
-        appointment,
-        date: startTime,
-        dayName,
-        dateStr,
-        time: timeStr,
-      });
-    } else {
-      expectedAppointments.push({
-        appointment,
-        date: null,
-        dayName: "غير متاح",
-        dateStr: "لا يوجد وقت متاح",
-        time: "-",
-      });
-    }
-  }
-
-  return expectedAppointments;
-};
-// ✅ تحويل "HH:MM" إلى "HH:MM ص/م"
-const formatTimeFromString = (time: string): string => {
-  if (!time) return "";
-  const [hours, minutes] = time.split(":").map(Number);
-  if (isNaN(hours) || isNaN(minutes)) return time;
-  const period = hours >= 12 ? "م" : "ص";
-  const displayHours = hours % 12 || 12;
-  return `${displayHours}:${String(minutes).padStart(2, "0")} ${period}`;
-};
+    return expectedAppointments;
+  };
+  // ✅ تحويل "HH:MM" إلى "HH:MM ص/م"
+  const formatTimeFromString = (time: string): string => {
+    if (!time) return "";
+    const [hours, minutes] = time.split(":").map(Number);
+    if (isNaN(hours) || isNaN(minutes)) return time;
+    const period = hours >= 12 ? "م" : "ص";
+    const displayHours = hours % 12 || 12;
+    return `${displayHours}:${String(minutes).padStart(2, "0")} ${period}`;
+  };
   useEffect(() => {
-    setLocalTreatments(tooth.treatments.filter(t => t.trim()));
-    loadAssignedTemplates();
+    setLocalTreatments(tooth.treatments.filter((t) => t.trim()));
+    loadAssignedTemplate();
     loadAvailableTemplates();
   }, [tooth.id, patientId]);
 
   useEffect(() => {
     const handleChange = () => {
-      loadAssignedTemplates();
+      loadAssignedTemplate();
       loadAvailableTemplates();
     };
     window.addEventListener("toothAssignmentsChanged", handleChange);
@@ -492,205 +522,194 @@ const formatTimeFromString = (time: string): string => {
 
   // ✅ تطبيق القالب - تحديث فوري بدون إعادة تحميل
   // ✅ تطبيق القالب - مع الذكاء
-// ✅ تطبيق القالب - إنشاء كل المواعيد بطلب واحد
-const handleConfirmApply = async () => {
-  if (!showConfirmApply || !patientId || !clinicId) return;
-  
-  sessionStorage.setItem("refresh_tooth_chart", "true");
-  sessionStorage.setItem("lastPatientId", patientId);
-  sessionStorage.setItem("lastActiveTab", "chart");
-  sessionStorage.setItem("lastSelectedToothId", tooth.id.toString());
-  
-  setIsApplying(true);
-  setApplyMessage(null);
+  // ✅ تطبيق القالب - إنشاء كل المواعيد بطلب واحد
+  const handleConfirmApply = async () => {
+    if (!showConfirmApply || !patientId || !clinicId) return;
 
-  try {
-    const workingHours = normalizeWorkingHours(clinicData?.settings?.workingHours);
-    const appointmentDuration = clinicData?.settings?.defaultAppointmentDuration || 30;
+    sessionStorage.setItem("refresh_tooth_chart", "true");
+    sessionStorage.setItem("lastPatientId", patientId);
+    sessionStorage.setItem("lastActiveTab", "chart");
+    sessionStorage.setItem("lastSelectedToothId", tooth.id.toString());
 
-    console.log('📋 ساعات العمل:', workingHours);
-    console.log('⏱️ مدة الموعد:', appointmentDuration);
+    setIsApplying(true);
+    setApplyMessage(null);
 
-    // ✅ تحميل المواعيد المحجوزة
-    const bookedSessions: { startTime: Date; endTime: Date }[] = [];
-    
-    if (existingSessions && existingSessions.length > 0) {
-      for (const session of existingSessions) {
-        if (session.status === "scheduled") {
-          bookedSessions.push({
-            startTime: new Date(session.startTime),
-            endTime: new Date(session.endTime || new Date(new Date(session.startTime).getTime() + appointmentDuration * 60000)),
-          });
+    try {
+      const workingHours = normalizeWorkingHours(
+        clinicData?.settings?.workingHours,
+      );
+      const appointmentDuration =
+        clinicData?.settings?.defaultAppointmentDuration || 30;
+
+      console.log("📋 ساعات العمل:", workingHours);
+      console.log("⏱️ مدة الموعد:", appointmentDuration);
+
+      // ✅ تحميل المواعيد المحجوزة
+      const bookedSessions: { startTime: Date; endTime: Date }[] = [];
+
+      if (existingSessions && existingSessions.length > 0) {
+        for (const session of existingSessions) {
+          if (session.status === "scheduled") {
+            bookedSessions.push({
+              startTime: new Date(session.startTime),
+              endTime: new Date(
+                session.endTime ||
+                  new Date(
+                    new Date(session.startTime).getTime() +
+                      appointmentDuration * 60000,
+                  ),
+              ),
+            });
+          }
         }
       }
-    }
 
-    console.log('📅 المواعيد المحجوزة:', bookedSessions.length);
+      console.log("📅 المواعيد المحجوزة:", bookedSessions.length);
 
-    // ✅ تجهيز مصفوفة الجلسات للإرسال
-    const sessionsToCreate: any[] = [];
-    let currentDate = new Date();
+      // ✅ تجهيز مصفوفة الجلسات للإرسال
+      const sessionsToCreate: any[] = [];
+      let currentDate = new Date();
 
-    for (const appointment of showConfirmApply.appointments) {
-      currentDate = new Date(currentDate.getTime() + appointment.daysFromPrevious * 24 * 60 * 60 * 1000);
-      
-      console.log(`🔍 البحث عن موعد: ${appointment.name} - ابتداء من ${currentDate.toLocaleDateString('ar-SA')}`);
+      for (const appointment of showConfirmApply.appointments) {
+        currentDate = new Date(
+          currentDate.getTime() +
+            appointment.daysFromPrevious * 24 * 60 * 60 * 1000,
+        );
 
-      const availableSlot = getNextAvailableDate(
-        currentDate,
-        workingHours,
-        bookedSessions,
-        appointmentDuration,
-      );
+        console.log(
+          `🔍 البحث عن موعد: ${appointment.name} - ابتداء من ${currentDate.toLocaleDateString("ar-SA")}`,
+        );
 
-      if (!availableSlot) {
-        throw new Error(`لا توجد أوقات متاحة للموعد: ${appointment.name}`);
+        const availableSlot = getNextAvailableDate(
+          currentDate,
+          workingHours,
+          bookedSessions,
+          appointmentDuration,
+        );
+
+        if (!availableSlot) {
+          throw new Error(`لا توجد أوقات متاحة للموعد: ${appointment.name}`);
+        }
+
+        const startTime = availableSlot.time;
+        const endTime = new Date(
+          startTime.getTime() + appointmentDuration * 60000,
+        );
+
+        console.log(
+          `✅ تم العثور على موعد: ${startTime.toLocaleString("ar-SA")}`,
+        );
+
+        // ✅ إضافة للمحجوزات
+        bookedSessions.push({ startTime, endTime });
+
+        const combinedProcedureName = `${getToothDisplay(tooth.id, displayPreference)} - ${appointment.name}`;
+
+        // ✅ تجهيز الجلسة للإرسال
+        let prevent_auto_messages = false;
+        const preventautomessagesflag = localStorage.getItem(
+          "prevent_auto_messages",
+        );
+        if (preventautomessagesflag && preventautomessagesflag == "true")
+          prevent_auto_messages = true;
+        sessionsToCreate.push({
+          patientId,
+          startTime,
+          endTime,
+          status: "scheduled",
+          plannedProcedure: combinedProcedureName,
+          sessionCost: appointment.cost,
+          isPaid: false,
+          notes: `${getToothDisplay(tooth.id, displayPreference)} - ${showConfirmApply.name}${appointment.notes ? " - " + appointment.notes : ""}`,
+          info: {
+            clinicName: clinicName || "",
+            patientName: patientName || "",
+            phoneNumber: patientPhone || "",
+            gender: patientGender || "",
+            prevent_auto_messages: prevent_auto_messages,
+          },
+        });
+
+        // ✅ تحديث currentDate
+        currentDate = new Date(startTime);
       }
 
-      const startTime = availableSlot.time;
-      const endTime = new Date(startTime.getTime() + appointmentDuration * 60000);
+      // ✅ إنشاء كل المواعيد بطلب واحد
+      const result = await createBulkSessions(sessionsToCreate);
 
-      console.log(`✅ تم العثور على موعد: ${startTime.toLocaleString('ar-SA')}`);
+      if (!result.success || !result.data || result.data.length === 0) {
+        throw new Error(result.error || "فشل إنشاء المواعيد");
+      }
 
-      // ✅ إضافة للمحجوزات
-      bookedSessions.push({ startTime, endTime });
+      console.log(`✅ تم إنشاء ${result.data.length} مواعيد بطلب واحد`);
 
-      const combinedProcedureName = `${getToothDisplay(tooth.id, displayPreference)} - ${appointment.name}`;
+      // ✅ حفظ التعيين
+      const storageKey = `tooth_template_assignments_${patientId}`;
+      const savedAssignments = localStorage.getItem(storageKey);
+      const assignments = savedAssignments ? JSON.parse(savedAssignments) : [];
 
-      // ✅ تجهيز الجلسة للإرسال
-      let prevent_auto_messages = false;
-      const preventautomessagesflag = localStorage.getItem(
-        "prevent_auto_messages",
+      const filtered = assignments.filter(
+        (a: any) => a.toothNumber !== tooth.id,
       );
-      if (preventautomessagesflag && preventautomessagesflag == "true")
-        prevent_auto_messages = true;
-      sessionsToCreate.push({
-        patientId,
-        startTime,
-        endTime,
-        status: "scheduled",
-        plannedProcedure: combinedProcedureName,
-        sessionCost: appointment.cost,
-        isPaid: false,
-        notes: `${getToothDisplay(tooth.id, displayPreference)} - ${showConfirmApply.name}${appointment.notes ? ' - ' + appointment.notes : ''}`,
-        info: {
-          clinicName: clinicName || "",
-          patientName: patientName || "",
-          phoneNumber: patientPhone || "",
-          gender: patientGender || "",
-          prevent_auto_messages: prevent_auto_messages,
-        },
+      filtered.push({
+        toothNumber: tooth.id,
+        templateId: showConfirmApply.id,
+        assignedAt: new Date().toISOString(),
       });
 
-      // ✅ تحديث currentDate
-      currentDate = new Date(startTime);
+      await setItemAndSync(storageKey, JSON.stringify(filtered));
+
+      // ✅ تحديث السن فوراً
+      const updatedTooth: ToothData = {
+        ...tooth,
+        color: showConfirmApply.color,
+        procedure: "custom",
+        customProcedure: showConfirmApply.name,
+      };
+
+      onUpdate(updatedTooth);
+      setAssignedTemplate(showConfirmApply);
+      setShowConfirmApply(null);
+      setShowTemplateList(false);
+
+      setApplyMessage({
+        type: "success",
+        text: `تم تطبيق "${showConfirmApply.name}" وإنشاء ${result.data.length} مواعيد`,
+      });
+
+      if (onSessionsChanged) {
+        onSessionsChanged();
+      }
+
+      if (onTemplatesApplied) {
+        onTemplatesApplied();
+      }
+
+      window.dispatchEvent(new CustomEvent("toothAssignmentsChanged"));
+      try {
+        const stored = localStorage.getItem("tutorial_step");
+        if (stored !== null) {
+          const stepNum = parseInt(stored);
+          if (stepNum === 8) {
+            localStorage.setItem("tutorial_step", "9");
+            // ملاحظة: لا نحتاج dispatchEvent لأن الصفحة ستعاد تحميلها
+          }
+        }
+      } catch {}
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (error: any) {
+      console.error("❌ خطأ:", error);
+      setApplyMessage({
+        type: "error",
+        text: error?.message || "فشل تطبيق القالب",
+      });
+      setShowConfirmApply(null);
+    } finally {
+      setIsApplying(false);
     }
-
-    // ✅ إنشاء كل المواعيد بطلب واحد
-    const result = await createBulkSessions(sessionsToCreate);
-    
-    if (!result.success || !result.data || result.data.length === 0) {
-      throw new Error(result.error || 'فشل إنشاء المواعيد');
-    }
-
-    console.log(`✅ تم إنشاء ${result.data.length} مواعيد بطلب واحد`);
-
-    // ✅ حفظ التعيين
-// ✅ حفظ التعيين (دعم قوالب متعددة)
-const storageKey = `tooth_template_assignments_${patientId}`;
-const savedAssignments = localStorage.getItem(storageKey);
-const assignments = savedAssignments ? JSON.parse(savedAssignments) : [];
-
-const existing = assignments.find((a: any) => a.toothNumber === tooth.id);
-
-if (existing) {
-  // ✅ دعم البنية القديمة
-  if (!existing.templates) {
-    existing.templates = [{
-      templateId: existing.templateId,
-      assignedAt: existing.assignedAt,
-    }];
-    delete existing.templateId;
-    delete existing.assignedAt;
-  }
-  
-  // ✅ منع التكرار
-  const alreadyExists = existing.templates.some(
-    (t: any) => t.templateId === showConfirmApply.id
-  );
-  
-  if (!alreadyExists) {
-    existing.templates.push({
-      templateId: showConfirmApply.id,
-      assignedAt: new Date().toISOString(),
-    });
-  }
-} else {
-  assignments.push({
-    toothNumber: tooth.id,
-    templates: [{
-      templateId: showConfirmApply.id,
-      assignedAt: new Date().toISOString(),
-    });
-    
-await setItemAndSync(storageKey, JSON.stringify(filtered));
-
-    // ✅ تحديث السن فوراً
-   // ✅ تحديث السن فوراً
-const updatedTooth: ToothData = {
-  ...tooth,
-  color: showConfirmApply.color,
-  procedure: "custom",
-  customProcedure: showConfirmApply.name,
-};
-
-onUpdate(updatedTooth);
-setAssignedTemplates((prev) => {
-  // منع التكرار
-  if (prev.some((t) => t.id === showConfirmApply.id)) return prev;
-  return [...prev, showConfirmApply];
-});
-setShowConfirmApply(null);
-setShowTemplateList(false);
-    setApplyMessage({ 
-      type: 'success', 
-      text: `تم تطبيق "${showConfirmApply.name}" وإنشاء ${result.data.length} مواعيد` 
-    });
-    
-    if (onSessionsChanged) {
-      onSessionsChanged();
-    }
-    
-    if (onTemplatesApplied) {
-      onTemplatesApplied();
-    }
-    
-    window.dispatchEvent(new CustomEvent("toothAssignmentsChanged"));
-    try {
-  const stored = localStorage.getItem("tutorial_step");
-  if (stored !== null) {
-    const stepNum = parseInt(stored);
-    if (stepNum === 8) {
-      localStorage.setItem("tutorial_step", "9");
-      // ملاحظة: لا نحتاج dispatchEvent لأن الصفحة ستعاد تحميلها
-    }
-  }
-} catch {}
-    setTimeout(() => {
-      window.location.reload();
-    }, 1500);
-    
-  } catch (error: any) {
-    console.error('❌ خطأ:', error);
-    setApplyMessage({ 
-      type: 'error', 
-      text: error?.message || 'فشل تطبيق القالب' 
-    });
-    setShowConfirmApply(null);
-  } finally {
-    setIsApplying(false);
-  }
-};
+  };
 
   // ✅ إزالة القالب مع تأكيد
   const handleConfirmRemove = async () => {
@@ -700,15 +719,15 @@ setShowTemplateList(false);
     const savedAssignments = localStorage.getItem(storageKey);
     const assignments = savedAssignments ? JSON.parse(savedAssignments) : [];
     const updated = assignments.filter((a: any) => a.toothNumber !== tooth.id);
-await setItemAndSync(storageKey, JSON.stringify(updated));
-    
+    await setItemAndSync(storageKey, JSON.stringify(updated));
+
     setAssignedTemplate(null);
     setShowConfirmRemove(false);
     window.dispatchEvent(new CustomEvent("toothAssignmentsChanged"));
-    
-    setApplyMessage({ 
-      type: 'success', 
-      text: 'تم إزالة القالب. المواعيد السابقة ستبقى موجودة.' 
+
+    setApplyMessage({
+      type: "success",
+      text: "تم إزالة القالب. المواعيد السابقة ستبقى موجودة.",
     });
   };
 
@@ -722,28 +741,23 @@ await setItemAndSync(storageKey, JSON.stringify(updated));
           <span className="text-lg font-bold text-gray-900">
             {getToothDisplay(tooth.id, displayPreference)}
           </span>
-{assignedTemplates.length > 0 && (
-  <div className="flex items-center gap-1.5 flex-wrap">
-    {assignedTemplates.map((t) => (
-      <div
-        key={t.id}
-        className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
-        style={{ backgroundColor: `${t.color}15` }}
-      >
-        <span
-          className="w-2 h-2 rounded-full"
-          style={{ backgroundColor: t.color }}
-        />
-        <span
-          className="text-[11px] font-medium"
-          style={{ color: t.color }}
-        >
-          {t.name}
-        </span>
-      </div>
-    ))}
-  </div>
-)}
+          {assignedTemplate && (
+            <div
+              className="flex items-center gap-2 px-3 py-1 rounded-full"
+              style={{ backgroundColor: `${assignedTemplate.color}15` }}
+            >
+              <span
+                className="w-2.5 h-2.5 rounded-full"
+                style={{ backgroundColor: assignedTemplate.color }}
+              />
+              <span
+                className="text-xs font-medium"
+                style={{ color: assignedTemplate.color }}
+              >
+                {assignedTemplate.name}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -770,220 +784,143 @@ await setItemAndSync(storageKey, JSON.stringify(updated));
             </motion.div>
           )}
         </AnimatePresence>
-{/* قالب معين أو زر اختيار */}
 
-{assignedTemplates.length > 0 ? (
-  <div className="space-y-2">
-    <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-      القوالب المطبقة ({assignedTemplates.length})
-    </p>
+        {/* قالب معين أو زر اختيار */}
+        {assignedTemplate ? (
+          <div className="space-y-3">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              القالب العلاجي المعين
+            </p>
+            <div
+              className="p-4 rounded-xl border"
+              style={{
+                borderColor: `${assignedTemplate.color}40`,
+                backgroundColor: `${assignedTemplate.color}08`,
+              }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: assignedTemplate.color }}
+                  />
+                  <span className="font-bold text-gray-800">
+                    {assignedTemplate.name}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setShowConfirmRemove(true)}
+                  className="p-1.5 hover:bg-red-50 rounded-lg transition-colors"
+                  title="إزالة القالب"
+                >
+                  <Trash2 size={16} className="text-red-400" />
+                </button>
+              </div>
 
-    {/* ✅ قائمة القوالب - مضغوطة */}
-    {assignedTemplates.map((template) => (
-      <div
-        key={template.id}
-        className="flex items-start gap-2 p-2.5 rounded-xl border transition-all"
-        style={{
-          borderColor: `${template.color}30`,
-          backgroundColor: `${template.color}05`,
-        }}
-      >
-        {/* نقطة اللون */}
-        <span
-          className="w-2 h-2 rounded-full flex-shrink-0 mt-1"
-          style={{ backgroundColor: template.color }}
-        />
-
-        {/* الاسم + المواعيد في سطر */}
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold text-gray-800 truncate leading-tight">
-            {template.name}
-          </p>
-          <p className="text-[10px] text-gray-500 mt-0.5 truncate">
-            {template.appointments.map((a) => a.name).join(" • ")}
-          </p>
-        </div>
-
-        {/* زر الحذف */}
-        <button
-          onClick={() => {
-            setTemplateToRemove(template.id);
-            setShowConfirmRemove(true);
-          }}
-          className="p-1 hover:bg-red-50 rounded-md transition-colors flex-shrink-0 -mt-0.5"
-          title="إزالة"
-        >
-          <Trash2 size={13} className="text-red-400" />
-        </button>
-      </div>
-    ))}
-
-    {/* زر إضافة قالب آخر */}
-    {editable && patientId && clinicId && (
-      <>
-{!showTemplateList ? (
-  <>
-    {/* ✅ تحذير قبل إضافة قالب جديد */}
-    <div
-      className="rounded-xl p-2.5 border flex items-start gap-2"
-      style={{
-        backgroundColor: "#FEF3C7", // أصفر فاتح
-        borderColor: "#FDE68A", // ذهبي فاتح
-      }}
-    >
-      <AlertTriangle
-        size={14}
-        className="flex-shrink-0 mt-0.5"
-        style={{ color: "#D97706" }} // برتقالي غامق
-      />
-      <div className="flex-1 min-w-0">
-        <p
-          className="text-[10.5px] font-bold leading-tight"
-          style={{ color: "#92400E" }} // بني غامق
-        >
-         قد يؤدي اضافة قالب آخر الى انشاء مواعيد لا تلائم عمل الإجرائين معا
-         (يفضل الإنتهاء من العمل السابق اولا)
-        </p>
-      </div>
-    </div>
-
-    {/* زر إضافة القالب */}
-    <button
-      onClick={() => setShowTemplateList(true)}
-      className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-dashed border-gray-200 text-xs text-gray-500 hover:border-gray-300 hover:text-gray-700 hover:bg-gray-50/50 transition-all"
-    >
-      <Plus size={13} />
-      <span>إضافة قالب آخر</span>
-    </button>
-  </>
-) : (
-          <div className="space-y-1.5 pt-1">
-  <div className="max-h-[280px] overflow-y-auto scrollbar-hide space-y-1.5 pr-0.5">
-    {availableTemplates
-      .filter((t) => !assignedTemplates.some((at) => at.id === t.id))
-      .map((template) => (
-        <button
-          key={template.id}
-          onClick={() => setShowConfirmApply(template)}
-          className="w-full flex items-center gap-2 p-2 rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all text-right flex-shrink-0"
-        >
-          <span
-            className="w-2 h-2 rounded-full flex-shrink-0"
-            style={{ backgroundColor: template.color }}
-          />
-          <span className="flex-1 text-xs font-medium text-gray-800 truncate">
-            {template.name}
-          </span>
-          <span className="text-[10px] text-gray-400 flex-shrink-0">
-            {template.appointments.length} مواعيد
-          </span>
-        </button>
-      ))}
-
-    {availableTemplates.filter(
-      (t) => !assignedTemplates.some((at) => at.id === t.id)
-    ).length === 0 && (
-      <p className="text-center text-[11px] text-gray-400 py-2">
-        كل القوالب مطبقة
-      </p>
-    )}
-  </div>
-
-  {/* تلميح سفلي يُظهر أن هناك المزيد */}
-  {availableTemplates.filter(
-    (t) => !assignedTemplates.some((at) => at.id === t.id)
-  ).length > 8 && (
-    <p className="text-center text-[10px] text-gray-400 pt-1">
-      مرر لرؤية المزيد
-    </p>
-  )}
-
-  <button
-    onClick={() => setShowTemplateList(false)}
-    className="w-full py-1.5 text-[11px] text-gray-400 hover:text-gray-600 transition-colors"
-  >
-    إغلاق
-  </button>
-</div>
-        )}
-      </>
-    )}
-  </div>
-) : (
-  editable && patientId && clinicId && (
-    <div className="space-y-2">
-      <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-        تطبيق قالب علاجي
-      </p>
-
-      {!showTemplateList ? (
-        <button
-          data-tutorial="apply-template-btn"
-          onClick={() => setShowTemplateList(true)}
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-gray-200 text-xs text-gray-500 hover:border-gray-300 hover:text-gray-600 hover:bg-gray-50/50 transition-all"
-        >
-          <CalendarPlus size={15} />
-          <span>اختيار قالب علاجي</span>
-        </button>
-      ) : (
-        <div className="space-y-1.5">
-          {availableTemplates.length === 0 ? (
-            <div className="py-2 space-y-2">
-              <p className="text-[11px] text-gray-400">
-                لا توجد قوالب. أنشئ قوالبك أولاً
-              </p>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => {
-                  const params = new URLSearchParams(searchParams.toString());
-                  params.set("tab", "treatments");
-                  router.push(`${pathname}?${params.toString()}`, {
-                    scroll: false,
-                  });
-                }}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all"
-                style={{
-                  backgroundColor: `${primaryColor}10`,
-                  border: `1px solid ${primaryColor}30`,
-                  color: primaryColor,
-                }}
-              >
-                <span>الذهاب إلى العلاجات</span>
-              </motion.button>
+              <div className="space-y-2">
+                {assignedTemplate.appointments.map((appt, index) => (
+                  <div
+                    key={appt.id}
+                    className="flex items-center gap-2 text-xs text-gray-600"
+                  >
+                    <span
+                      className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-bold"
+                      style={{ backgroundColor: assignedTemplate.color }}
+                    >
+                      {index + 1}
+                    </span>
+                    <span className="font-medium">{appt.name}</span>
+                    <span className="text-gray-400">•</span>
+                    <span>بعد {appt.daysFromPrevious} يوم</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          ) : (
-            availableTemplates.map((template) => (
-              <button
-                key={template.id}
-                onClick={() => setShowConfirmApply(template)}
-                className="w-full flex items-center gap-2 p-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-all text-right"
-              >
-                <span
-                  className="w-2 h-2 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: template.color }}
-                />
-                <span className="flex-1 text-xs font-medium text-gray-800 truncate">
-                  {template.name}
-                </span>
-                <span className="text-[10px] text-gray-400 flex-shrink-0">
-                  {template.appointments.length}
-                </span>
-              </button>
-            ))
-          )}
+          </div>
+        ) : (
+          editable &&
+          patientId &&
+          clinicId && (
+            <div className="space-y-3">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                تطبيق قالب علاجي
+              </p>
 
-          <button
-            onClick={() => setShowTemplateList(false)}
-            className="w-full py-1.5 text-[11px] text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            إغلاق
-          </button>
-        </div>
-      )}
-    </div>
-  )
-)}
+              {!showTemplateList ? (
+                <button
+                  data-tutorial="apply-template-btn"
+                  onClick={() => setShowTemplateList(true)}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-gray-200 text-sm text-gray-500 hover:border-gray-300 hover:text-gray-600 transition-colors"
+                >
+                  <CalendarPlus size={18} />
+                  <span>اختيار قالب من القوالب العلاجية</span>
+                </button>
+              ) : (
+                <div className="space-y-2">
+                  {availableTemplates.length === 0 ? (
+                    <div className="py-3 space-y-3">
+                      <p className="text-sm text-gray-400">
+                        راجع القوالب العلاجية وتأكد أنها ملائمة لأسعارك ومواعيدك
+                      </p>
+
+                      <motion.button
+                        whileHover={{ scale: 1.02, y: -1 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => {
+                          const params = new URLSearchParams(
+                            searchParams.toString(),
+                          );
+                          params.set("tab", "treatments");
+                          router.push(`${pathname}?${params.toString()}`, {
+                            scroll: false,
+                          });
+                        }}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                        style={{
+                          backgroundColor: `${primaryColor}10`,
+                          border: `1.5px solid ${primaryColor}30`,
+                          color: primaryColor,
+                        }}
+                      >
+                        <span>الذهاب إلى العلاجات</span>
+                      </motion.button>
+                    </div>
+                  ) : (
+                    availableTemplates.map((template) => (
+                      <button
+                        key={template.id}
+                        onClick={() => setShowConfirmApply(template)}
+                        className="w-full p-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all text-right"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: template.color }}
+                            />
+                            <span className="font-medium text-gray-800 text-sm">
+                              {template.name}
+                            </span>
+                          </div>
+                          <span className="text-xs text-gray-500">
+                            {template.appointments.length} مواعيد
+                          </span>
+                        </div>
+                      </button>
+                    ))
+                  )}
+
+                  <button
+                    onClick={() => setShowTemplateList(false)}
+                    className="w-full py-2 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    إغلاق
+                  </button>
+                </div>
+              )}
+            </div>
+          )
+        )}
 
         {/* فاصل */}
         <div className="h-px bg-gray-100" />
@@ -992,7 +929,7 @@ await setItemAndSync(storageKey, JSON.stringify(updated));
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-              الأعمال المنفذة (تظهر للمريض)
+              الأعمال المنفذة
             </p>
           </div>
 
@@ -1222,10 +1159,7 @@ await setItemAndSync(storageKey, JSON.stringify(updated));
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4"
-            onClick={() => {
-  setShowConfirmRemove(false);
-  setTemplateToRemove(null);
-}}
+            onClick={() => setShowConfirmRemove(false)}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
@@ -1253,22 +1187,14 @@ await setItemAndSync(storageKey, JSON.stringify(updated));
               </p>
 
               <div className="flex gap-3">
-<button
-  onClick={() => {
-    if (templateToRemove) {
-      handleConfirmRemove(templateToRemove);
-      setTemplateToRemove(null);
-    }
-  }}
-  className="flex-1 py-3 rounded-xl bg-red-600 text-white font-medium"
->
-  إزالة القالب
-</button>
                 <button
-                  onClick={() => {
-  setShowConfirmRemove(false);
-  setTemplateToRemove(null);
-}}
+                  onClick={handleConfirmRemove}
+                  className="flex-1 py-3 rounded-xl bg-red-600 text-white font-medium"
+                >
+                  إزالة القالب
+                </button>
+                <button
+                  onClick={() => setShowConfirmRemove(false)}
                   className="flex-1 py-3 rounded-xl bg-gray-100 text-gray-700 font-medium"
                 >
                   إلغاء

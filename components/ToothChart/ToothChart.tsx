@@ -19,7 +19,10 @@ import {
   AlertCircle,
   ChevronRight,
 } from "lucide-react";
-import { fetchDentalChart, saveDentalChart } from "@/client/helpers/dental-chart";
+import {
+  fetchDentalChart,
+  saveDentalChart,
+} from "@/client/helpers/dental-chart";
 import { ToothChartSkeleton } from "./ToothChartSkeleton";
 import { getToothName } from "@/lib/toothNames";
 import { TutorialOverlay, useTutorialStep } from "../TutorialOverlay";
@@ -404,50 +407,42 @@ function normalizeChartTeeth(
   });
 }
 
-
-const mergeTemplateColors = (teeth: ToothData[], patientId: string): ToothData[] => {
+// ✅ دالة لدمج ألوان القوالب المعينة مع بيانات الشارت
+const mergeTemplateColors = (
+  teeth: ToothData[],
+  patientId: string,
+): ToothData[] => {
   const storageKey = `tooth_template_assignments_${patientId}`;
   const savedAssignments = localStorage.getItem(storageKey);
   const savedTemplates = localStorage.getItem("treatment_templates");
-  
+
   if (!savedAssignments || !savedTemplates) return teeth;
-  
+
   try {
     const assignments = JSON.parse(savedAssignments);
     const templates = JSON.parse(savedTemplates);
-    
-    // خريطة: رقم السن → مصفوفة قوالب
-    const toothTemplatesMap = new Map<number, any[]>();
-    
+
+    // إنشاء خريطة: رقم السن -> القالب
+    const toothTemplateMap = new Map<number, any>();
+
     for (const assignment of assignments) {
-      // ✅ دعم البنية القديمة والجديدة
-      const templateIds = assignment.templates
-        ? assignment.templates.map((t: any) => t.templateId)
-        : [assignment.templateId];
-      
-      const matched = templateIds
-        .map((id: string) => templates.find((t: any) => t.id === id))
-        .filter(Boolean);
-      
-      if (matched.length > 0) {
-        toothTemplatesMap.set(assignment.toothNumber, matched);
+      const template = templates.find(
+        (t: any) => t.id === assignment.templateId,
+      );
+      if (template) {
+        toothTemplateMap.set(assignment.toothNumber, template);
       }
     }
-    
+
+    // تطبيق الألوان والأسماء على الأسنان
     return teeth.map((tooth) => {
-      const toothTemplates = toothTemplatesMap.get(tooth.id);
-      if (toothTemplates && toothTemplates.length > 0) {
-        // ✅ آخر قالب يحدد اللون
-        const lastTemplate = toothTemplates[toothTemplates.length - 1];
-        
-        // ✅ دمج الأسماء: "حشوة + تلبيسة"
-        const combinedName = toothTemplates.map((t) => t.name).join(" + ");
-        
+      const template = toothTemplateMap.get(tooth.id);
+      if (template) {
         return {
           ...tooth,
-          color: lastTemplate.color,
+          color: template.color,
           procedure: "custom" as const,
-          customProcedure: combinedName,
+          customProcedure: template.name,
         };
       }
       return tooth;
@@ -503,7 +498,7 @@ export const ToothChart = forwardRef<ToothChartRef, ToothChartProps>(
 
     useEffect(() => {
       pullFromServer();
-    }, []); 
+    }, []);
 
     // كشف حجم الشاشة
     useEffect(() => {
@@ -689,7 +684,7 @@ export const ToothChart = forwardRef<ToothChartRef, ToothChartProps>(
       }),
       [handleSave],
     );
- const { step: tutorialStep, goToStep, endTutorial } = useTutorialStep();
+    const { step: tutorialStep, goToStep, endTutorial } = useTutorialStep();
     // سكيليتون التحميل
     const renderSkeleton = () => (
       <div ref={containerRef} className={`tooth-chart-wrapper ${className}`}>
