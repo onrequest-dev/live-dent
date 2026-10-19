@@ -408,6 +408,7 @@ function normalizeChartTeeth(
 }
 
 // ✅ دالة لدمج ألوان القوالب المعينة مع بيانات الشارت
+// ✅ دالة لدمج ألوان القوالب المعينة مع بيانات الشارت
 const mergeTemplateColors = (
   teeth: ToothData[],
   patientId: string,
@@ -422,29 +423,45 @@ const mergeTemplateColors = (
     const assignments = JSON.parse(savedAssignments);
     const templates = JSON.parse(savedTemplates);
 
-    // إنشاء خريطة: رقم السن -> القالب
-    const toothTemplateMap = new Map<number, any>();
+    // ✅ خريطة: رقم السن → مصفوفة قوالب
+    const toothTemplatesMap = new Map<number, any[]>();
 
     for (const assignment of assignments) {
-      const template = templates.find(
-        (t: any) => t.id === assignment.templateId,
-      );
-      if (template) {
-        toothTemplateMap.set(assignment.toothNumber, template);
+      // ✅ دعم البنية القديمة (templateId مفرد) والجديدة (templates مصفوفة)
+      const templateIds = assignment.templates
+        ? assignment.templates.map((t: any) => t.templateId)
+        : [assignment.templateId];
+
+      const matched = templateIds
+        .map((id: string) => templates.find((t: any) => t.id === id))
+        .filter(Boolean);
+
+      if (matched.length > 0) {
+        toothTemplatesMap.set(assignment.toothNumber, matched);
       }
     }
 
-    // تطبيق الألوان والأسماء على الأسنان
+    // ✅ تطبيق الألوان والأسماء على الأسنان
     return teeth.map((tooth) => {
-      const template = toothTemplateMap.get(tooth.id);
-      if (template) {
+      const toothTemplates = toothTemplatesMap.get(tooth.id);
+
+      if (toothTemplates && toothTemplates.length > 0) {
+        // ✅ آخر قالب يحدد اللون (بترتيب الإضافة)
+        const lastTemplate = toothTemplates[toothTemplates.length - 1];
+
+        // ✅ دمج أسماء كل القوالب: "حشوة + تلبيسة"
+        const combinedName = toothTemplates
+          .map((t) => t.name)
+          .join(" + ");
+
         return {
           ...tooth,
-          color: template.color,
+          color: lastTemplate.color,       // ← لون آخر قالب
           procedure: "custom" as const,
-          customProcedure: template.name,
+          customProcedure: combinedName,    // ← "حشوة + تلبيسة"
         };
       }
+
       return tooth;
     });
   } catch (e) {
@@ -524,6 +541,7 @@ export const ToothChart = forwardRef<ToothChartRef, ToothChartProps>(
       }
     }, []);
     // جلب البيانات من API عند عدم وجود initialTeethData
+    // جلب البيانات من API عند عدم وجود initialTeethData
     useEffect(() => {
       if (!initialTeethData && patientId) {
         const loadDentalChart = async () => {
@@ -544,6 +562,24 @@ export const ToothChart = forwardRef<ToothChartRef, ToothChartProps>(
             // ✅ دمج ألوان القوالب المعينة
             if (patientId) {
               normalized = mergeTemplateColors(normalized, patientId);
+            }
+
+            // 💾 3) استعادة المسودة المحلية إن وُجدت (أحدث من السيرفر)
+            const draftKey = `dental_chart_draft_${patientId}`;
+            const draftRaw = sessionStorage.getItem(draftKey);
+            if (draftRaw) {
+              try {
+                const draft = JSON.parse(draftRaw);
+                if (draft && Array.isArray(draft.teeth)) {
+                  // ✅ استخدام المسودة (مع دمج القوالب لضمان الألوان الصحيحة)
+                  normalized = mergeTemplateColors(draft.teeth, patientId);
+                  console.log(
+                    "📂 تم استعادة مسودة محلية غير محفوظة على السيرفر",
+                  );
+                }
+              } catch (e) {
+                console.warn("تعذر قراءة المسودة المحلية:", e);
+              }
             }
 
             setTeethData(normalized);
@@ -614,21 +650,169 @@ export const ToothChart = forwardRef<ToothChartRef, ToothChartProps>(
       [editable],
     );
 
-    // تحديث بيانات السن
-    const handleUpdateTooth = useCallback((updatedTooth: ToothData) => {
-      setTeethData((prev) =>
-        prev.map((t) => (t.id === updatedTooth.id ? updatedTooth : t)),
-      );
+        // ✅ مرجع لحفظ تلقائي مؤجل
+    const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const [isAutoSaving, setIsAutoSaving] = useState(false);
 
-      // ✅ تحديث originalDataRef أيضاً
-      originalDataRef.current = originalDataRef.current.map((t) =>
-        t.id === updatedTooth.id ? updatedTooth : t,
-      );
+    // ✅ دالة الحفظ الفعلية (تُستخدم من الزر + الـ auto-save + من الأب)
+    const performSave = useCallback(
+      async (data: ToothData[]) => {
+        if (onSave) {
+          await onSave(data);
+        } else if (patientId && clinicId) {
+          const teethForApi = data.map(({ id, ...rest }) => ({
+            toothNumber: id,
+            ...rest,
+          }));
+          await saveDentalChart({
+            patientId,
+            clinicId,
+            teeth: teethForApi,
+          });
+        } else {
+          throw new Error("معرّف المريض أو العيادة غير متوفر");
+        }
+      },
+      [onSave, patientId, clinicId],
+    );
+
+    // ✅ حفظ تلقائي مؤجل (debounce) — للأعمال والملاحظات فقط
+       // ✅ مفتاح تخزين المسودة المحلية
+    const getDraftKey = useCallback(() => {
+      return patientId ? `dental_chart_draft_${patientId}` : null;
+    }, [patientId]);
+
+    // ✅ حفظ المسودة محلياً في sessionStorage (فوري)
+    const saveDraftLocally = useCallback(
+      (data: ToothData[]) => {
+        const key = getDraftKey();
+        if (!key) return;
+
+        try {
+          sessionStorage.setItem(
+            key,
+            JSON.stringify({
+              teeth: data,
+              savedAt: Date.now(),
+            }),
+          );
+        } catch (e) {
+          console.warn("تعذر حفظ المسودة محلياً:", e);
+        }
+      },
+      [getDraftKey],
+    );
+
+    // ✅ مسح المسودة بعد نجاح الحفظ على السيرفر
+    const clearDraftLocally = useCallback(() => {
+      const key = getDraftKey();
+      if (!key) return;
+      try {
+        sessionStorage.removeItem(key);
+      } catch {}
+    }, [getDraftKey]);
+
+    // ✅ حفظ تلقائي مؤجل (debounce) — للأعمال والملاحظات فقط
+    const scheduleAutoSave = useCallback(
+      (updatedData: ToothData[]) => {
+        // 💾 1) حفظ محلي فوري (لا ينتظر)
+        saveDraftLocally(updatedData);
+
+        // ⏱️ 2) حفظ على السيرفر بعد debounce
+        if (autoSaveTimerRef.current) {
+          clearTimeout(autoSaveTimerRef.current);
+        }
+
+        autoSaveTimerRef.current = setTimeout(async () => {
+          // منع الحفظ إذا لم يكن هناك patientId/clinicId
+          if (!patientId || !clinicId) return;
+          if (isAutoSaving) return;
+
+          setIsAutoSaving(true);
+          try {
+            await performSave(updatedData);
+
+            // ✅ تحديث المرجع الأصلي
+            originalDataRef.current = JSON.parse(JSON.stringify(updatedData));
+
+            // ✅ نجاح: امسح المسودة المحلية
+            clearDraftLocally();
+
+            // ✅ إعادة حساب isDirty
+            const stillDirty =
+              JSON.stringify(updatedData) !==
+              JSON.stringify(originalDataRef.current);
+            if (!stillDirty) {
+              setIsDirty(false);
+              onDirtyChange?.(false);
+            }
+          } catch (err) {
+            console.error("❌ فشل الحفظ التلقائي:", err);
+            // ⚠️ فشل: المسودة المحلية تبقى موجودة، dirty=true
+            setIsDirty(true);
+            onDirtyChange?.(true);
+          } finally {
+            setIsAutoSaving(false);
+          }
+        }, 800); // ⏱️ 0.8 ثانية بعد آخر تعديل
+      },
+      [
+        performSave,
+        patientId,
+        clinicId,
+        isAutoSaving,
+        onDirtyChange,
+        saveDraftLocally,
+        clearDraftLocally,
+      ],
+    );
+
+    // ✅ تنظيف المؤقت عند إلغاء التثبيت
+    useEffect(() => {
+      return () => {
+        if (autoSaveTimerRef.current) {
+          clearTimeout(autoSaveTimerRef.current);
+        }
+      };
     }, []);
 
+    // تحديث بيانات السن
+    const handleUpdateTooth = useCallback(
+      (updatedTooth: ToothData) => {
+        // ✅ اكتشاف هل التعديل يخص الأعمال أو الملاحظات
+        const currentTooth = teethData.find((t) => t.id === updatedTooth.id);
+        const treatmentsChanged =
+          currentTooth &&
+          JSON.stringify(currentTooth.treatments) !==
+            JSON.stringify(updatedTooth.treatments);
+        const notesChanged =
+          currentTooth && currentTooth.notes !== updatedTooth.notes;
+
+        const shouldAutoSave = treatmentsChanged || notesChanged;
+
+        setTeethData((prev) => {
+          const newData = prev.map((t) =>
+            t.id === updatedTooth.id ? updatedTooth : t,
+          );
+
+          // ✅ جدولة الحفظ التلقائي إذا كان التعديل يخص الأعمال/الملاحظات
+          if (shouldAutoSave) {
+            scheduleAutoSave(newData);
+          }
+
+          return newData;
+        });
+      },
+      [teethData, scheduleAutoSave],
+    );
     // حفظ البيانات
     const handleSave = useCallback(async () => {
       if (isSaving) return;
+
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+        autoSaveTimerRef.current = null;
+      }
       setIsSaving(true);
       setSaveMessage(null);
       try {
@@ -651,7 +835,10 @@ export const ToothChart = forwardRef<ToothChartRef, ToothChartProps>(
         }
 
         // بعد الحفظ الناجح نحدّث المرجع الأصلي
+        // بعد الحفظ الناجح نحدّث المرجع الأصلي
         originalDataRef.current = JSON.parse(JSON.stringify(teethData));
+        // 💾 امسح المسودة المحلية (لم تعد لازمة)
+        clearDraftLocally();
         setIsDirty(false);
         onDirtyChange?.(false);
         try {
@@ -674,7 +861,16 @@ export const ToothChart = forwardRef<ToothChartRef, ToothChartProps>(
       } finally {
         setIsSaving(false);
       }
-    }, [onSave, teethData, isSaving, onDirtyChange, patientId, clinicId]);
+        }, [
+      onSave,
+      teethData,
+      isSaving,
+      onDirtyChange,
+      patientId,
+      clinicId,
+      performSave,
+      clearDraftLocally,
+    ]);
 
     // تعريض دالة الحفظ للمكون الأب
     useImperativeHandle(
@@ -767,6 +963,13 @@ export const ToothChart = forwardRef<ToothChartRef, ToothChartProps>(
             </div>
           </div>
 
+
+                    {isAutoSaving && (
+            <span className="flex items-center gap-1.5 text-[11px] text-gray-500">
+              <Loader2 size={12} className="animate-spin" />
+              حفظ تلقائي...
+            </span>
+          )}
           {editable && (onSave || (patientId && clinicId)) && (
             <button
               onClick={handleSave}
@@ -847,6 +1050,7 @@ export const ToothChart = forwardRef<ToothChartRef, ToothChartProps>(
                     onSessionsChanged={() => {
                       console.log("تم تطبيق قالب - تحديث المواعيد");
                     }}
+                    onForceSave={handleSave} // ✅ إضافة
                   />
                 </motion.div>
               )}
@@ -913,6 +1117,7 @@ export const ToothChart = forwardRef<ToothChartRef, ToothChartProps>(
                       onSessionsChanged={() => {
                         console.log("تم تطبيق قالب - تحديث المواعيد");
                       }}
+                      onForceSave={handleSave} // ✅ إضافة
                     />
                   </motion.div>
                 ) : (

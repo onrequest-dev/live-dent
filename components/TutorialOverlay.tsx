@@ -77,14 +77,14 @@ export const TUTORIAL_STEPS_CONFIG: Record<
   4: {
     selector: '[data-tutorial="patient-phone"]',
     title: "رقم الهاتف",
-    text: "أدخل رقم هاتف المريض (اختياري)",
+    text: "أدخل رقم هاتف المريض (اختياري لكن مهم لإرسال البطاقة)",
     position: "bottom",
     // optional: true,
   },
   5: {
     selector: '[data-tutorial="patient-age-gender"]',
     title: "العمر والجنس",
-    text: "أدخل العمر واختر الجنس",
+    text: "أدخل العمر  واختر الجنس (اختياري)",
     position: "bottom",
   },
   6: {

@@ -18,6 +18,7 @@ import { createBulkSessions } from "@/client/helpers/session";
 import { getToothDisplay } from "@/lib/toothNames";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { setItemAndSync } from "@/client/helpers/sync-storage";
+import { fetchDentalChartFromServer, saveDentalChart } from "@/client/helpers/dental-chart";
 
 // ============================================================
 // الواجهات
@@ -54,6 +55,7 @@ interface ToothInfoPanelProps {
   existingSessions?: any[]; // ✅ إضافة
   onTemplatesApplied?: () => void;
   onSessionsChanged?: () => void;
+  onForceSave?: () => Promise<void>;
 }
 // ============================================================
 // دوال ذكية - النسخة المصححة
@@ -289,17 +291,27 @@ export function ToothInfoPanel({
   existingSessions = [],
   onTemplatesApplied,
   onSessionsChanged,
+   onForceSave,
 }: ToothInfoPanelProps) {
   const [localTreatments, setLocalTreatments] = useState<string[]>([]);
-  const [assignedTemplate, setAssignedTemplate] =
-    useState<TreatmentTemplateSummary | null>(null);
+// ✅ نوع جديد يحمل القالب + تاريخ إضافته
+interface AssignedTemplateWithDate extends TreatmentTemplateSummary {
+  assignedAt: string;
+}
+
+const [assignedTemplates, setAssignedTemplates] = useState<
+  AssignedTemplateWithDate[]
+>([]);
   const [availableTemplates, setAvailableTemplates] = useState<
     TreatmentTemplateSummary[]
   >([]);
   const [showTemplateList, setShowTemplateList] = useState(false);
   const [showConfirmApply, setShowConfirmApply] =
     useState<TreatmentTemplateSummary | null>(null);
-  const [showConfirmRemove, setShowConfirmRemove] = useState(false);
+const [showConfirmRemove, setShowConfirmRemove] = useState(false);
+const [templateToRemove, setTemplateToRemove] = useState<string | null>(
+  null,
+);
   const [isApplying, setIsApplying] = useState(false);
   const [applyMessage, setApplyMessage] = useState<{
     type: "success" | "error";
@@ -333,41 +345,58 @@ export function ToothInfoPanel({
   };
 
   // ✅ قراءة القالب المعين لهذا السن (لهذا المريض)
-  const loadAssignedTemplate = () => {
-    const storageKey = getStorageKey();
-    if (!storageKey) {
-      setAssignedTemplate(null);
-      return;
+const loadAssignedTemplates = () => {
+  const storageKey = getStorageKey();
+  if (!storageKey) {
+    setAssignedTemplates([]);
+    return;
+  }
+
+  const savedAssignments = localStorage.getItem(storageKey);
+  const savedTemplates = localStorage.getItem("treatment_templates");
+
+  if (savedAssignments && savedTemplates) {
+    try {
+      const assignments = JSON.parse(savedAssignments);
+      const templates = JSON.parse(savedTemplates);
+
+      const toothAssignment = assignments.find(
+        (a: any) => a.toothNumber === tooth.id,
+      );
+if (toothAssignment) {
+  // ✅ دعم البنية القديمة والجديدة
+  const templateEntries = toothAssignment.templates
+    ? toothAssignment.templates
+    : [
+        {
+          templateId: toothAssignment.templateId,
+          assignedAt: toothAssignment.assignedAt,
+        },
+      ];
+
+  const matched = templateEntries
+    .map((entry: any) => {
+      const template = templates.find((t: any) => t.id === entry.templateId);
+      if (!template) return null;
+      return {
+        ...template,
+        assignedAt: entry.assignedAt || new Date().toISOString(),
+      };
+    })
+    .filter(Boolean);
+
+  setAssignedTemplates(matched);
+} else {
+  setAssignedTemplates([]);
+}
+    } catch (e) {
+      console.error("خطأ في قراءة التعيينات:", e);
+      setAssignedTemplates([]);
     }
-
-    const savedAssignments = localStorage.getItem(storageKey);
-    const savedTemplates = localStorage.getItem("treatment_templates");
-
-    if (savedAssignments && savedTemplates) {
-      try {
-        const assignments = JSON.parse(savedAssignments);
-        const templates = JSON.parse(savedTemplates);
-
-        const toothAssignment = assignments.find(
-          (a: any) => a.toothNumber === tooth.id,
-        );
-
-        if (toothAssignment) {
-          const template = templates.find(
-            (t: any) => t.id === toothAssignment.templateId,
-          );
-          setAssignedTemplate(template || null);
-        } else {
-          setAssignedTemplate(null);
-        }
-      } catch (e) {
-        console.error("خطأ في قراءة التعيينات:", e);
-        setAssignedTemplate(null);
-      }
-    } else {
-      setAssignedTemplate(null);
-    }
-  };
+  } else {
+    setAssignedTemplates([]);
+  }
+};
 
   // ✅ قراءة القوالب المتاحة
   const loadAvailableTemplates = () => {
@@ -490,13 +519,13 @@ export function ToothInfoPanel({
   };
   useEffect(() => {
     setLocalTreatments(tooth.treatments.filter((t) => t.trim()));
-    loadAssignedTemplate();
+    loadAssignedTemplates();
     loadAvailableTemplates();
   }, [tooth.id, patientId]);
 
   useEffect(() => {
     const handleChange = () => {
-      loadAssignedTemplate();
+      loadAssignedTemplates();
       loadAvailableTemplates();
     };
     window.addEventListener("toothAssignmentsChanged", handleChange);
@@ -644,33 +673,91 @@ export function ToothInfoPanel({
       console.log(`✅ تم إنشاء ${result.data.length} مواعيد بطلب واحد`);
 
       // ✅ حفظ التعيين
-      const storageKey = `tooth_template_assignments_${patientId}`;
-      const savedAssignments = localStorage.getItem(storageKey);
-      const assignments = savedAssignments ? JSON.parse(savedAssignments) : [];
+     // ✅ حفظ التعيين (دعم قوالب متعددة)
+const storageKey = `tooth_template_assignments_${patientId}`;
+const savedAssignments = localStorage.getItem(storageKey);
+const assignments = savedAssignments ? JSON.parse(savedAssignments) : [];
 
-      const filtered = assignments.filter(
-        (a: any) => a.toothNumber !== tooth.id,
-      );
-      filtered.push({
-        toothNumber: tooth.id,
+const existing = assignments.find(
+  (a: any) => a.toothNumber === tooth.id,
+);
+
+if (existing) {
+  // ✅ دعم البنية القديمة
+  if (!existing.templates) {
+    existing.templates = [
+      {
+        templateId: existing.templateId,
+        assignedAt: existing.assignedAt,
+      },
+    ];
+    delete existing.templateId;
+    delete existing.assignedAt;
+  }
+
+  // ✅ منع التكرار
+  const alreadyExists = existing.templates.some(
+    (t: any) => t.templateId === showConfirmApply.id,
+  );
+
+  if (!alreadyExists) {
+    existing.templates.push({
+      templateId: showConfirmApply.id,
+      assignedAt: new Date().toISOString(),
+    });
+  }
+} else {
+  assignments.push({
+    toothNumber: tooth.id,
+    templates: [
+      {
         templateId: showConfirmApply.id,
         assignedAt: new Date().toISOString(),
-      });
+      },
+    ],
+  });
+}
 
-      await setItemAndSync(storageKey, JSON.stringify(filtered));
-
+await setItemAndSync(storageKey, JSON.stringify(assignments));
       // ✅ تحديث السن فوراً
+      // ✅ تحديث السن فوراً (في الـ state المحلي)
+           // ✅ تحديث السن فوراً (في الـ state المحلي)
       const updatedTooth: ToothData = {
         ...tooth,
         color: showConfirmApply.color,
         procedure: "custom",
         customProcedure: showConfirmApply.name,
+        // ✅ حيلة: نضع مسافة في treatments[0] لتشغيل auto-save
+        // (سيتم استبدالها عند إضافة عمل حقيقي)
+        treatments: (() => {
+          const arr = [...(tooth.treatments || [])];
+          // إذا لم يكن هناك نص، ضع مسافة
+          if (!arr.some((t) => t && t.trim())) {
+            while (arr.length < 10) arr.push("");
+            arr[0] = " "; // مسافة واحدة
+          }
+          return arr;
+        })(),
       };
 
+
       onUpdate(updatedTooth);
-      setAssignedTemplate(showConfirmApply);
-      setShowConfirmApply(null);
-      setShowTemplateList(false);
+
+
+// ✅ إضافة القالب للقائمة (بدون تكرار)
+setAssignedTemplates((prev) => {
+  if (prev.some((t) => t.id === showConfirmApply.id)) return prev;
+  return [
+    ...prev,
+    {
+      ...showConfirmApply,
+      assignedAt: new Date().toISOString(),
+    },
+  ];
+});
+
+setShowConfirmApply(null);
+setShowTemplateList(false);
 
       setApplyMessage({
         type: "success",
@@ -686,19 +773,32 @@ export function ToothInfoPanel({
       }
 
       window.dispatchEvent(new CustomEvent("toothAssignmentsChanged"));
+
+      // ✅ حفظ الشارت في السيرفر قبل الـ reload (حتى لا تُفقد بيانات القالب)
+      if (onForceSave) {
+        try {
+          await onForceSave();
+          console.log("✅ تم حفظ الشارت بعد تطبيق القالب");
+        } catch (saveErr) {
+          console.error("⚠️ فشل حفظ الشارت بعد القالب:", saveErr);
+          // نكمل الـ reload على أي حال — المواعيد أُنشئت، ولا نريد تعليق المستخدم
+        }
+      }
+
       try {
         const stored = localStorage.getItem("tutorial_step");
         if (stored !== null) {
           const stepNum = parseInt(stored);
           if (stepNum === 8) {
             localStorage.setItem("tutorial_step", "9");
-            // ملاحظة: لا نحتاج dispatchEvent لأن الصفحة ستعاد تحميلها
           }
         }
       } catch {}
+
+      // ✅ reload بعد الحفظ (كان 1500ms — نبقيه لتجربة مستخدم سلسة)
       setTimeout(() => {
         window.location.reload();
-      }, 1500);
+      }, 1000);
     } catch (error: any) {
       console.error("❌ خطأ:", error);
       setApplyMessage({
@@ -712,24 +812,54 @@ export function ToothInfoPanel({
   };
 
   // ✅ إزالة القالب مع تأكيد
-  const handleConfirmRemove = async () => {
-    const storageKey = getStorageKey();
-    if (!storageKey) return;
+ const handleConfirmRemove = async (templateId: string) => {
+  const storageKey = getStorageKey();
+  if (!storageKey) return;
 
-    const savedAssignments = localStorage.getItem(storageKey);
-    const assignments = savedAssignments ? JSON.parse(savedAssignments) : [];
-    const updated = assignments.filter((a: any) => a.toothNumber !== tooth.id);
-    await setItemAndSync(storageKey, JSON.stringify(updated));
+  const savedAssignments = localStorage.getItem(storageKey);
+  const assignments = savedAssignments ? JSON.parse(savedAssignments) : [];
 
-    setAssignedTemplate(null);
-    setShowConfirmRemove(false);
-    window.dispatchEvent(new CustomEvent("toothAssignmentsChanged"));
+  const toothAssignment = assignments.find(
+    (a: any) => a.toothNumber === tooth.id,
+  );
+  if (!toothAssignment) return;
 
-    setApplyMessage({
-      type: "success",
-      text: "تم إزالة القالب. المواعيد السابقة ستبقى موجودة.",
-    });
-  };
+  // ✅ دعم البنية القديمة
+  if (!toothAssignment.templates) {
+    toothAssignment.templates = [
+      { templateId: toothAssignment.templateId },
+    ];
+    delete toothAssignment.templateId;
+    delete toothAssignment.assignedAt;
+  }
+
+  // ✅ إزالة القالب المحدد فقط
+  toothAssignment.templates = toothAssignment.templates.filter(
+    (t: any) => t.templateId !== templateId,
+  );
+
+  // ✅ إذا لم يتبقَّ أي قالب → احذف التعيين بالكامل
+  const filtered =
+    toothAssignment.templates.length > 0
+      ? assignments.map((a: any) =>
+          a.toothNumber === tooth.id ? toothAssignment : a,
+        )
+      : assignments.filter((a: any) => a.toothNumber !== tooth.id);
+
+  await setItemAndSync(storageKey, JSON.stringify(filtered));
+
+  // ✅ إعادة القراءة من التخزين
+  loadAssignedTemplates();
+
+  setShowConfirmRemove(false);
+  setTemplateToRemove(null);
+  window.dispatchEvent(new CustomEvent("toothAssignmentsChanged"));
+
+  setApplyMessage({
+    type: "success",
+    text: "تم إزالة القالب. المواعيد السابقة ستبقى موجودة.",
+  });
+};
 
   const hasTreatments = localTreatments.length > 0;
 
@@ -741,23 +871,28 @@ export function ToothInfoPanel({
           <span className="text-lg font-bold text-gray-900">
             {getToothDisplay(tooth.id, displayPreference)}
           </span>
-          {assignedTemplate && (
-            <div
-              className="flex items-center gap-2 px-3 py-1 rounded-full"
-              style={{ backgroundColor: `${assignedTemplate.color}15` }}
-            >
-              <span
-                className="w-2.5 h-2.5 rounded-full"
-                style={{ backgroundColor: assignedTemplate.color }}
-              />
-              <span
-                className="text-xs font-medium"
-                style={{ color: assignedTemplate.color }}
-              >
-                {assignedTemplate.name}
-              </span>
-            </div>
-          )}
+{assignedTemplates.length > 0 && (
+  <div className="flex items-center gap-1.5 flex-wrap">
+    {assignedTemplates.map((t) => (
+      <div
+        key={t.id}
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+        style={{ backgroundColor: `${t.color}15` }}
+      >
+        <span
+          className="w-2 h-2 rounded-full"
+          style={{ backgroundColor: t.color }}
+        />
+        <span
+          className="text-[11px] font-medium"
+          style={{ color: t.color }}
+        >
+          {t.name}
+        </span>
+      </div>
+    ))}
+  </div>
+)}
         </div>
       </div>
 
@@ -786,141 +921,239 @@ export function ToothInfoPanel({
         </AnimatePresence>
 
         {/* قالب معين أو زر اختيار */}
-        {assignedTemplate ? (
-          <div className="space-y-3">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-              القالب العلاجي المعين
-            </p>
+{/* قوالب معينة أو زر اختيار */}
+{assignedTemplates.length > 0 ? (
+  <div className="space-y-2">
+    <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+      القوالب المطبقة ({assignedTemplates.length})
+    </p>
+
+    {/* ✅ قائمة القوالب - مضغوطة */}
+    {assignedTemplates.map((template) => (
+      <div
+        key={template.id}
+        className="flex items-start gap-2 p-2.5 rounded-xl border transition-all"
+        style={{
+          borderColor: `${template.color}30`,
+          backgroundColor: `${template.color}05`,
+        }}
+      >
+        {/* نقطة اللون */}
+        <span
+          className="w-2 h-2 rounded-full flex-shrink-0 mt-1"
+          style={{ backgroundColor: template.color }}
+        />
+
+        {/* الاسم + المواعيد في سطر */}
+{/* الاسم + المواعيد + التاريخ */}
+<div className="flex-1 min-w-0">
+  <div className="flex items-center justify-between gap-2">
+    <p className="text-xs font-bold text-gray-800 truncate leading-tight">
+      {template.name}
+    </p>
+    <p className="text-[9px] text-gray-400 flex-shrink-0">
+      {new Date(template.assignedAt).toLocaleDateString("ar-SA", {
+        day: "2-digit",
+        month: "2-digit",
+      })}
+    </p>
+  </div>
+  <p className="text-[10px] text-gray-500 mt-0.5 truncate">
+    {template.appointments.map((a) => a.name).join(" • ")}
+  </p>
+</div>
+
+        {/* زر الحذف */}
+        <button
+          onClick={() => {
+            setTemplateToRemove(template.id);
+            setShowConfirmRemove(true);
+          }}
+          className="p-1 hover:bg-red-50 rounded-md transition-colors flex-shrink-0 -mt-0.5"
+          title="إزالة"
+        >
+          <Trash2 size={13} className="text-red-400" />
+        </button>
+      </div>
+    ))}
+
+    {/* ✅ تحذير + زر "إضافة قالب آخر" */}
+    {editable && patientId && clinicId && (
+      <>
+        {!showTemplateList ? (
+          <>
+            {/* تحذير */}
             <div
-              className="p-4 rounded-xl border"
+              className="rounded-xl p-2.5 border flex items-start gap-2"
               style={{
-                borderColor: `${assignedTemplate.color}40`,
-                backgroundColor: `${assignedTemplate.color}08`,
+                backgroundColor: "#FEF3C7",
+                borderColor: "#FDE68A",
               }}
             >
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <span
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: assignedTemplate.color }}
-                  />
-                  <span className="font-bold text-gray-800">
-                    {assignedTemplate.name}
-                  </span>
-                </div>
-                <button
-                  onClick={() => setShowConfirmRemove(true)}
-                  className="p-1.5 hover:bg-red-50 rounded-lg transition-colors"
-                  title="إزالة القالب"
+              <AlertTriangle
+                size={14}
+                className="flex-shrink-0 mt-0.5"
+                style={{ color: "#D97706" }}
+              />
+              <div className="flex-1 min-w-0">
+                <p
+                  className="text-[10.5px] font-bold leading-tight"
+                  style={{ color: "#92400E" }}
                 >
-                  <Trash2 size={16} className="text-red-400" />
-                </button>
+                  تحقق قبل الإضافة
+                </p>
+                <p
+                  className="text-[10px] leading-tight mt-0.5"
+                  style={{ color: "#B45309" }}
+                >
+                  إذا لم ينتهِ العمل السابق، قد تتداخل المواعيد بين القالبين.
+                  راجع خطة العلاج أولاً.
+                </p>
               </div>
+            </div>
 
-              <div className="space-y-2">
-                {assignedTemplate.appointments.map((appt, index) => (
-                  <div
-                    key={appt.id}
-                    className="flex items-center gap-2 text-xs text-gray-600"
+            <button
+              onClick={() => setShowTemplateList(true)}
+              className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-dashed border-gray-200 text-xs text-gray-500 hover:border-gray-300 hover:text-gray-700 hover:bg-gray-50/50 transition-all"
+            >
+              <Plus size={13} />
+              <span>إضافة قالب آخر</span>
+            </button>
+          </>
+        ) : (
+          <div className="space-y-1.5 pt-1">
+            {/* ✅ قائمة القوالب المتاحة - بسكرول لـ 8 */}
+            <div className="max-h-[280px] overflow-y-auto scrollbar-hide space-y-1.5 pr-0.5">
+              {availableTemplates
+                .filter(
+                  (t) => !assignedTemplates.some((at) => at.id === t.id),
+                )
+                .map((template) => (
+                  <button
+                    key={template.id}
+                    onClick={() => setShowConfirmApply(template)}
+                    className="w-full flex items-center gap-2 p-2 rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all text-right flex-shrink-0"
                   >
                     <span
-                      className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-bold"
-                      style={{ backgroundColor: assignedTemplate.color }}
-                    >
-                      {index + 1}
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: template.color }}
+                    />
+                    <span className="flex-1 text-xs font-medium text-gray-800 truncate">
+                      {template.name}
                     </span>
-                    <span className="font-medium">{appt.name}</span>
-                    <span className="text-gray-400">•</span>
-                    <span>بعد {appt.daysFromPrevious} يوم</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        ) : (
-          editable &&
-          patientId &&
-          clinicId && (
-            <div className="space-y-3">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                تطبيق قالب علاجي
-              </p>
-
-              {!showTemplateList ? (
-                <button
-                  data-tutorial="apply-template-btn"
-                  onClick={() => setShowTemplateList(true)}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-gray-200 text-sm text-gray-500 hover:border-gray-300 hover:text-gray-600 transition-colors"
-                >
-                  <CalendarPlus size={18} />
-                  <span>اختيار قالب من القوالب العلاجية</span>
-                </button>
-              ) : (
-                <div className="space-y-2">
-                  {availableTemplates.length === 0 ? (
-                    <div className="py-3 space-y-3">
-                      <p className="text-sm text-gray-400">
-                        راجع القوالب العلاجية وتأكد أنها ملائمة لأسعارك ومواعيدك
-                      </p>
-
-                      <motion.button
-                        whileHover={{ scale: 1.02, y: -1 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => {
-                          const params = new URLSearchParams(
-                            searchParams.toString(),
-                          );
-                          params.set("tab", "treatments");
-                          router.push(`${pathname}?${params.toString()}`, {
-                            scroll: false,
-                          });
-                        }}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
-                        style={{
-                          backgroundColor: `${primaryColor}10`,
-                          border: `1.5px solid ${primaryColor}30`,
-                          color: primaryColor,
-                        }}
-                      >
-                        <span>الذهاب إلى العلاجات</span>
-                      </motion.button>
-                    </div>
-                  ) : (
-                    availableTemplates.map((template) => (
-                      <button
-                        key={template.id}
-                        onClick={() => setShowConfirmApply(template)}
-                        className="w-full p-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all text-right"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className="w-3 h-3 rounded-full"
-                              style={{ backgroundColor: template.color }}
-                            />
-                            <span className="font-medium text-gray-800 text-sm">
-                              {template.name}
-                            </span>
-                          </div>
-                          <span className="text-xs text-gray-500">
-                            {template.appointments.length} مواعيد
-                          </span>
-                        </div>
-                      </button>
-                    ))
-                  )}
-
-                  <button
-                    onClick={() => setShowTemplateList(false)}
-                    className="w-full py-2 text-xs text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    إغلاق
+                    <span className="text-[10px] text-gray-400 flex-shrink-0">
+                      {template.appointments.length} مواعيد
+                    </span>
                   </button>
-                </div>
+                ))}
+
+              {availableTemplates.filter(
+                (t) => !assignedTemplates.some((at) => at.id === t.id),
+              ).length === 0 && (
+                <p className="text-center text-[11px] text-gray-400 py-2">
+                  كل القوالب المتاحة مطبقة على هذا السن
+                </p>
               )}
             </div>
-          )
+
+            {availableTemplates.filter(
+              (t) => !assignedTemplates.some((at) => at.id === t.id),
+            ).length > 8 && (
+              <p className="text-center text-[10px] text-gray-400 pt-1">
+                مرر لرؤية المزيد
+              </p>
+            )}
+
+            <button
+              onClick={() => setShowTemplateList(false)}
+              className="w-full py-1.5 text-[11px] text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              إغلاق
+            </button>
+          </div>
         )}
+      </>
+    )}
+  </div>
+) : (
+  editable &&
+  patientId &&
+  clinicId && (
+    <div className="space-y-2">
+      <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+        تطبيق قالب علاجي
+      </p>
+
+      {!showTemplateList ? (
+        <button
+          data-tutorial="apply-template-btn"
+          onClick={() => setShowTemplateList(true)}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-gray-200 text-xs text-gray-500 hover:border-gray-300 hover:text-gray-600 hover:bg-gray-50/50 transition-all"
+        >
+          <CalendarPlus size={15} />
+          <span>اختيار قالب علاجي</span>
+        </button>
+      ) : (
+        <div className="space-y-1.5">
+          {availableTemplates.length === 0 ? (
+            <div className="py-2 space-y-2">
+              <p className="text-[11px] text-gray-400">
+                لا توجد قوالب. أنشئ قوالبك أولاً
+              </p>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  const params = new URLSearchParams(
+                    searchParams.toString(),
+                  );
+                  params.set("tab", "treatments");
+                  router.push(`${pathname}?${params.toString()}`, {
+                    scroll: false,
+                  });
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all"
+                style={{
+                  backgroundColor: `${primaryColor}10`,
+                  border: `1px solid ${primaryColor}30`,
+                  color: primaryColor,
+                }}
+              >
+                <span>الذهاب إلى العلاجات</span>
+              </motion.button>
+            </div>
+          ) : (
+            availableTemplates.map((template) => (
+              <button
+                key={template.id}
+                onClick={() => setShowConfirmApply(template)}
+                className="w-full flex items-center gap-2 p-2 rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all text-right"
+              >
+                <span
+                  className="w-2 h-2 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: template.color }}
+                />
+                <span className="flex-1 text-xs font-medium text-gray-800 truncate">
+                  {template.name}
+                </span>
+                <span className="text-[10px] text-gray-400 flex-shrink-0">
+                  {template.appointments.length}
+                </span>
+              </button>
+            ))
+          )}
+
+          <button
+            onClick={() => setShowTemplateList(false)}
+            className="w-full py-1.5 text-[11px] text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            إغلاق
+          </button>
+        </div>
+      )}
+    </div>
+  )
+)}
 
         {/* فاصل */}
         <div className="h-px bg-gray-100" />
@@ -1159,7 +1392,10 @@ export function ToothInfoPanel({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4"
-            onClick={() => setShowConfirmRemove(false)}
+            onClick={() => {
+  setShowConfirmRemove(false);
+  setTemplateToRemove(null);
+}}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
@@ -1187,14 +1423,21 @@ export function ToothInfoPanel({
               </p>
 
               <div className="flex gap-3">
+<button
+  onClick={() => {
+    if (templateToRemove) {
+      handleConfirmRemove(templateToRemove);
+    }
+  }}
+  className="flex-1 py-3 rounded-xl bg-red-600 text-white font-medium"
+>
+  إزالة القالب
+</button>
                 <button
-                  onClick={handleConfirmRemove}
-                  className="flex-1 py-3 rounded-xl bg-red-600 text-white font-medium"
-                >
-                  إزالة القالب
-                </button>
-                <button
-                  onClick={() => setShowConfirmRemove(false)}
+                  onClick={() => {
+  setShowConfirmRemove(false);
+  setTemplateToRemove(null);
+}}
                   className="flex-1 py-3 rounded-xl bg-gray-100 text-gray-700 font-medium"
                 >
                   إلغاء

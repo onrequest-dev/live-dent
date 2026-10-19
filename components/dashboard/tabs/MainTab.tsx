@@ -2057,7 +2057,7 @@ function PatientDetailsCard({
   const [showUnsavedModal, setShowUnsavedModal] = useState(false);
   const pendingActionRef = useRef<(() => void) | null>(null);
   const chartRef = useRef<ToothChartRef>(null);
-
+  
   // دالة مساعدة لمحاولة تنفيذ إجراء مع التحقق من التغييرات
   const withUnsavedCheck = useCallback(
     (action: () => void) => {
